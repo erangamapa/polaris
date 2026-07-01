@@ -15,6 +15,8 @@ import { GameTile } from "./components/casino/GameTile";
 import { CategoryGrid } from "./components/casino/CategoryGrid";
 import { LiveFeed } from "./components/casino/LiveFeed";
 import { GameLauncher } from "./components/casino/GameLauncher";
+import { BetSwirlGame } from "./components/casino/BetSwirlGame";
+import { BETSWIRL_GAMES } from "./web3/useBetSwirl";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { ActivityDialog } from "./components/activity/ActivityDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
@@ -72,6 +74,7 @@ export default function App() {
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
   const [launched, setLaunched] = useState(null);
+  const [onchainGame, setOnchainGame] = useState(null);
   const [fundsOpen, setFundsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [favs, setFavs] = useState(() => new Set());
@@ -210,6 +213,7 @@ export default function App() {
                 query={query}
                 setQuery={setQuery}
                 onLaunch={setLaunched}
+                onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }}
                 favs={favs}
                 onFav={toggleFav}
               />
@@ -232,6 +236,9 @@ export default function App() {
       {launched && (
         <GameLauncher game={launched} balance={balance} setBalance={setBalance} onRound={logRound} ensureAuth={ensureAuth} onClose={() => setLaunched(null)} />
       )}
+      {onchainGame && (
+        <BetSwirlGame game={onchainGame} onRound={logRound} onClose={() => setOnchainGame(null)} />
+      )}
       <ActivityDialog open={activityOpen} onClose={() => setActivityOpen(false)} activity={activity} onCashOut={cashOut} cashoutValue={cashoutValue} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
@@ -250,7 +257,30 @@ function TileSkeletons({ count = 6 }) {
   );
 }
 
-function CasinoLobby({ category, query, setQuery, onLaunch, favs, onFav }) {
+function OnchainRail({ onLaunch }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-bold">On-chain games</h2>
+        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">BetSwirl · Base Sepolia · provably fair</span>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {BETSWIRL_GAMES.map((g) => (
+          <button
+            key={g.key}
+            onClick={() => onLaunch(g)}
+            data-test-id={`onchain-${g.key}`}
+            className={`grid h-[120px] w-[160px] place-items-center rounded-xl bg-gradient-to-br ${g.hue} text-lg font-bold text-white shadow transition hover:brightness-110`}
+          >
+            {g.title}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CasinoLobby({ category, query, setQuery, onLaunch, onLaunchOnchain, favs, onFav }) {
   const ready = useBriefLoad();
   const isFav = (g) => favs.has(`${g.title}-${g.provider}`);
   const searching = query.trim().length > 0;
@@ -261,6 +291,7 @@ function CasinoLobby({ category, query, setQuery, onLaunch, favs, onFav }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {category === "Lobby" && !searching && <PromoHero />}
+      {category === "Lobby" && !searching && <OnchainRail onLaunch={onLaunchOnchain} />}
 
       <div className="relative">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">⌕</span>
