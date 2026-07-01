@@ -27,10 +27,14 @@
   contracts/games packages.)
 - **DoD:** `npm run build` green; app runs identically; thin api scaffold deploys.
 
-## Phase 2 — Wallet connection
-- Reown AppKit + wagmi + viem; connect EVM wallets. Chain awareness + switch/bridge CTA (Base Sepolia for
-  casino, Azuro chain for sports).
-- **DoD:** connect/disconnect works; correct-chain detection + switch CTA works.
+## Phase 2 — Wallet connection + auth UI swap (`10`)
+- Reown AppKit + wagmi + viem; connect EVM wallets on **Base Sepolia**. Network indicator + **Switch to
+  Base Sepolia** CTA.
+- **UI:** replace **Login/Register with a “Connect Wallet” button**; connected state = address + balance
+  pill + account menu (disconnect). Remove `AuthModal` (password); `AccountDialog` → Wallet/Account;
+  `WalletDialog` → **Funds** panel (balances + faucet, no deposit-to-us); `KycModal` dormant.
+- **DoD:** no Login/Register; Connect Wallet connects a real wallet and shows address + balance;
+  wrong-network switch CTA works.
 
 ## Phase 3 — Sports & Predictions via Azuro
 - Integrate Azuro SDK into the existing sports + predictions verticals (replace mock data). Enforce our
