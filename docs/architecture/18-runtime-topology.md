@@ -1,109 +1,69 @@
 # 18 — Runtime Topology (Where Everything Runs)
 
-The definitive "where does each piece run" map. Short version: **everything we own runs on Vercel**
-(compute + data + static), **custody/settlement is on Base** (the chain), and the rest are **SaaS APIs
-we call out to**. No always-on server is required for the MVP.
+> **Updated for the WINR + Azuro pivot.** No custom Vault, no settlement signer, no off-chain ledger,
+> no seamless-wallet backend. Our footprint is a frontend + a thin read-only backend on Vercel; the
+> heavy lifting (custody, bankroll, RNG, settlement) is on the protocols' chains.
 
 ## Diagram
 
 ```
-        ┌──────────────────────────── VERCEL (everything we own) ────────────────────────────┐
-        │                                                                                       │
-        │  apps/web (React SPA)      packages/games/* (iframes)                                  │
-        │        │                          │                                                    │
-        │        ▼                          ▼                                                    │
-        │  ┌─────────────────────── apps/api  (serverless functions) ───────────────────────┐   │
-        │  │ /session/launch  /wallet/{balance,bet,win,rollback}  /vault/{deposit-watch,settle}│  │
-        │  │ provably-fair engine · settlement relayer (holds signer key)                     │  │
-        │  └──────────────┬───────────────────────────────┬──────────────────────────────────┘  │
-        │                 │                                │                                       │
-        │        ┌────────▼────────┐              ┌────────▼────────┐        ┌───────────────┐    │
-        │        │ Vercel Postgres │              │   Vercel KV     │        │  Vercel Cron  │    │
-        │        │ ledger, txns,   │              │ tokens, nonces  │        │ deposit-watch │    │
-        │        │ rounds, seeds   │              │                 │        │ + settle idle │    │
-        │        └─────────────────┘              └─────────────────┘        └───────────────┘    │
-        └───────────────┬───────────────────────────┬───────────────────────────┬───────────────┘
-                        │ RPC (Alchemy/thirdweb)     │ AA (thirdweb)             │ wallet-connect (Reown)
-                        ▼                            ▼                           ▼
-            ┌──────────────────────┐    ┌───────────────────────┐   (frontend ↔ user's wallet)
-            │  BASE (on-chain)     │    │ thirdweb: bundler,    │
-            │  Vault.sol (custody) │    │ paymaster, session    │
-            │  USDC · Azuro · VRF  │    │ keys                  │
-            └──────────────────────┘    └───────────────────────┘
+        ┌──────────────────── VERCEL (everything we run) ────────────────────┐
+        │  apps/web (React SPA)  ──  Reown/wagmi wallet connect               │
+        │        │                                                            │
+        │        ▼                                                            │
+        │  apps/api (thin serverless): GET /balance, /history (read-only),    │
+        │  POST /bet/prepare (inject affiliate), /geo gate, /session          │
+        │        │  (+ optional cache: Vercel KV/Postgres)                     │
+        └────────┼───────────────┬───────────────────────┬───────────────────┘
+                 │ reads         │ casino                 │ sports/predictions
+                 ▼               ▼                        ▼
+        ┌────────────────┐  ┌─────────────────┐   ┌──────────────────────┐
+        │ Indexers/RPC   │  │ WINR Protocol   │   │ Azuro Protocol       │
+        │ WINR indexer   │  │ WINR Chain (L3  │   │ Azuro chain (Arb/    │
+        │ Azuro subgraph │  │ on Arbitrum)    │   │ Polygon/Gnosis/…)    │
+        │ Arbitrum RPC   │  │ bankroll·VRF·   │   │ liquidity·odds·      │
+        │                │  │ settlement·games│   │ settlement·markets   │
+        └────────────────┘  └─────────────────┘   └──────────────────────┘
+                 ▲                   ▲                        ▲
+                 └──────── player wallet (non-custodial) ─────┘
+                            LI.FI bridging if cross-chain
 ```
 
-## Our own services → Vercel serverless functions (`apps/api`)
+## Where each thing runs
 
-| Service / endpoint | Purpose | Runs on |
+| Thing | Runs on | Notes |
 |---|---|---|
-| `/session/launch` | mint session token, return game URL | Vercel function |
-| `/wallet/balance` | return ledger balance (game calls) | Vercel function |
-| `/wallet/bet` | debit + resolve round (server-authoritative, `07`/`14` T3) | Vercel function |
-| `/wallet/win` | credit ledger (validated, not client-trusted) | Vercel function |
-| `/wallet/rollback` | reverse failed round | Vercel function |
-| `/vault/settle` | sign net result, submit `Vault.settle` | Vercel function (holds signer key) |
-| `/vault/deposit-watch` | credit ledger when a deposit lands | Vercel function (see caveat) |
-| Provably-fair engine | commit-reveal outcomes | inside functions (`packages/shared`) |
-| Settlement relayer | signs settle txs w/ `SETTLEMENT_SIGNER_PRIVATE_KEY` | inside functions |
+| Frontend SPA + game lobby | **Vercel** (static/CDN) | the existing app |
+| Thin backend (reads, affiliate inject, geo gate) | **Vercel** functions | no custody, no money path |
+| Optional cache | **Vercel KV / Postgres** | speed only, not source of truth |
+| Casino (games, bankroll, VRF, settlement) | **WINR Chain** (L3 on Arbitrum) | consumed via WINR SDK |
+| Sports/predictions (markets, liquidity, settlement) | **Azuro chain** | consumed via Azuro SDK |
+| Wallet connect relay | **Reown / WalletConnect** | client-side |
+| Chain reads (balance/history) | **RPC + WINR indexer + Azuro subgraph** | Alchemy/public RPC |
+| Cross-chain bridging (unified balance) | **LI.FI** | when casino/sports on different chains |
+| Custody of funds | **player's own wallet** | non-custodial end to end |
 
-## Our own data → Vercel storage
+## No always-on server, no signer
 
-| Store | Holds | Provider |
+- No deposit-watcher, no settlement cron, no signer key — the protocols settle on-chain themselves.
+- The backend is stateless read/gate functions. Optional cache refresh can be a light Vercel Cron.
+
+## Secrets vs origin
+
+| Origin | Holds secrets? | Talks to |
 |---|---|---|
-| **Postgres** | `ledger`, `txns`, `rounds`, `pf_seeds`, `sessions` | Vercel Postgres (or Neon) |
-| **KV** | session tokens, used-nonce sets | Vercel KV (or Upstash) |
+| Frontend | ❌ public only (`VITE_*`) | Reown, WINR SDK, Azuro SDK, RPC reads, our `/api` |
+| Thin backend | ✅ minimal (affiliate config, RPC/API keys) | RPC, indexers, subgraph |
+| Build/test scripts | ✅ from `.env.bootstrap` | Vercel provisioning, testnet faucets |
 
-## Frontend + games → Vercel static hosting / CDN
+No settlement signer, HMAC-callback secret, or session-JWT-for-custody exists anymore.
 
-| Asset | Provider |
-|---|---|
-| `apps/web` (React SPA) | Vercel |
-| `packages/games/*` (slot/dice/crash iframes) | Vercel |
-
-## Third-party APIs we call OUT to
-
-| Call | From | Provider / where |
-|---|---|---|
-| Chain reads/writes (deposit, settle, balances) | backend | Alchemy RPC (or thirdweb) → Base |
-| Bundler + paymaster + session keys | frontend + backend | thirdweb |
-| Wallet-connect relay | frontend | Reown / WalletConnect |
-| Custody + settlement (Vault contract) | on-chain | Base Sepolia → Base mainnet |
-| Sports/predictions markets | frontend (SDK) | Azuro contracts (via RPC) + subgraph |
-| Testnet funding (`requestFaucet`) | build/test scripts only | Coinbase CDP (not a prod runtime dep) |
-| Chainlink VRF *(optional)* | on-chain | Chainlink on Base |
-
-## Calls INTO our backend (inbound)
-
-| Caller | Hits | Auth |
-|---|---|---|
-| Our own game iframes | `/wallet/*` | session token |
-| Third-party provider RGS *(later)* | `/wallet/*` | HMAC secret |
-| Chain event / cron | `/vault/deposit-watch`, settle-idle | internal |
-
-## Where secrets live vs where calls originate
-
-| Origin | Can hold secrets? | Talks to |
-|---|---|---|
-| **Frontend** (`apps/web`, games) | ❌ public values only (`VITE_*`) | Reown, thirdweb client, Azuro SDK, our `/session` + reads |
-| **Backend** (Vercel functions) | ✅ server env only | RPC, thirdweb secret, Postgres, KV, chain signing |
-| **Build/test scripts** | ✅ from `.env.bootstrap` | Vercel/Alchemy/CDP provisioning APIs (`17`) |
-
-## The one caveat: no persistent listener
-
-Serverless functions don't run continuously, so anything needing a persistent watch uses **Vercel
-Cron** or an **RPC-provider webhook** instead of an always-on process:
-- **Deposit-watcher** — Vercel Cron polling, or Alchemy Notify / thirdweb Insight webhook → `/vault/deposit-watch`.
-- **Auto-settle idle/expired sessions** — Vercel Cron.
-
-If we ever needed a true always-on listener, only that single component would move to a small worker
-(e.g. a Railway/Fly/Render process); everything else stays serverless on Vercel.
-
-## The map by provider (one line each)
-- **Vercel** — all our compute (functions), data (Postgres + KV), frontend, game iframes, cron. *This is where our services and database run.*
-- **Base** — custody + settlement (Vault), Azuro, optional VRF.
-- **thirdweb** — account abstraction: bundler, paymaster, session keys.
-- **Alchemy** (or thirdweb) — RPC.
-- **Reown** — wallet-connect.
-- **Coinbase CDP** — testnet funding at build time only.
+## By provider (one line each)
+- **Vercel** — frontend + thin backend + optional cache. *All we run.*
+- **WINR** — casino (bankroll/VRF/settlement/games) on WINR L3.
+- **Azuro** — sports/predictions (liquidity/odds/settlement/markets).
+- **Reown** — wallet connect.
+- **RPC/indexers** (Alchemy/public + WINR indexer + Azuro subgraph) — reads.
+- **LI.FI** — cross-chain bridging for unified balance.
 
 _Last updated: 2026-07-01_

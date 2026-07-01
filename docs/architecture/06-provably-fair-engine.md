@@ -1,4 +1,13 @@
-# 06 — Provably-Fair Engine
+# 06 — Fairness & Randomness (SUPERSEDED — now protocol-provided)
+
+> **SUPERSEDED.** We no longer build our own commit-reveal RNG. Fairness/randomness is provided by the
+> protocols: **WINR VRF** (casino — on-chain verifiable randomness, <300ms) and **Azuro** (sports —
+> on-chain settlement against real outcomes). Players verify casino outcomes via WINR's on-chain proofs
+> and sports via the Azuro subgraph / block explorer (`15`). The commit-reveal design below is kept for
+> historical context only and is **not built**.
+
+---
+
 
 Lets players verify the house didn't manipulate outcomes — at web speed, off-chain. Lives in
 `packages/shared/provablyFair.ts`, used by the backend RGS.

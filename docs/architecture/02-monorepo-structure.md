@@ -1,5 +1,20 @@
 # 02 — Mono-repo Structure
 
+> **Updated for the WINR + Azuro pivot — much lighter.** No `packages/contracts` (no Vault) and no
+> `packages/games` (WINR provides games). The structure is now:
+> ```
+> polaris/
+> ├─ apps/web/        # frontend (existing app) + WINR SDK + Azuro SDK + wallet connect
+> ├─ apps/api/        # THIN backend: reads (balance/history), affiliate inject, session tokens
+> ├─ packages/shared/ # types, chain config (WINR + Azuro chains), affiliate helpers
+> ├─ vercel.json · turbo.json · package.json (workspaces) · .github/workflows/
+> ```
+> Deployment/IaC still all live in-repo (`20`). The detailed layout below is historical (it referenced
+> contracts/games packages that are no longer built).
+
+---
+
+
 Everything lives in one repo. Frontend, backend, contracts, shared logic, and games are workspaces —
 **and so is all deployment/IaC/config** (`vercel.json`, `turbo.json`, CI/CD, provisioning + contract
 deploy scripts). See `20-infrastructure-and-deployment.md` for the enforced "everything in-repo"

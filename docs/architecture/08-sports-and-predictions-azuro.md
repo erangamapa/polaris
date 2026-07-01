@@ -39,15 +39,15 @@ LP pool is the counterparty.
 - Show each bet with a **block-explorer link** ("fully on-chain — verify"). Optionally cache per address
   for a fast merged "My Bets" view. Full page spec + the casino/sports trust-model contrast is in `15`.
 
-## The two-model reconciliation (important)
-Polaris runs two settlement models:
-- **Casino:** session-key fast loop, off-chain rounds, net settle (see `04`–`07`).
-- **Sports/Predictions:** Azuro per-bet on-chain.
+## Both verticals are on-chain (WINR + Azuro)
+Under the WINR + Azuro pivot, **both** verticals settle on-chain and are non-custodial:
+- **Casino:** WINR Protocol (on-chain, WINR VRF, shared bankroll) — see `07`.
+- **Sports/Predictions:** Azuro (on-chain, shared liquidity) — this doc.
 
-**Unify at the display layer only.** The frontend shows one balance = vault-backed ledger balance
-(casino) + wallet/Azuro-available USDC (sports/predictions). Document clearly in the UI which actions
-are instant (casino) vs require a wallet confirmation (Azuro bet). Do **not** try to route Azuro bets
-through the casino ledger — keep them native to Azuro.
+**Unify at the display layer only.** The frontend shows one USD balance = WINR (casino) balance +
+Azuro-chain wallet balance. Casino and sports may be on **different chains** (WINR L3 vs Azuro chain), so
+reconcile via bridging (LI.FI) and a switch/bridge CTA when entering a vertical (`03`, `10`). Keep each
+vertical native to its protocol — do not route one through the other.
 
 ## Revenue & securing the affiliate address (build detail)
 - Azuro apps/frontends earn an **affiliate GGR share** on volume they source (see `19` for the

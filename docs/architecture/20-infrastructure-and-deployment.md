@@ -1,5 +1,15 @@
 # 20 — Infrastructure as Code & Deployment (single repo)
 
+> **Updated for the WINR + Azuro pivot — simpler.** No `packages/contracts`, no `Deploy.s.sol`, no
+> signer, no deposit-watch/settle crons. `vercel.json` ships `apps/web` + the thin `apps/api`; the only
+> cron is an optional cache refresh. IaC = light provisioning (Reown/affiliate/optional cache), no
+> contract deploy. Env is minimal (see `16`): public `VITE_*` + a few server-side keys; **no**
+> signer/HMAC/JWT. The "everything in one repo" principle stands. Below, ignore contract-deploy and
+> signer-funding references.
+
+---
+
+
 ## Principle (enforced)
 
 **Everything lives in this one mono-repo.** Frontend, backend, smart contracts, shared logic, games,
@@ -84,8 +94,9 @@ Provider resources are provisioned by committed scripts, not manual setup (`17`)
 |---|---|---|---|
 | `local` | Base Sepolia | test USDC | `turbo run dev` |
 | `preview` | Base Sepolia | test USDC | Vercel preview per PR |
-| `staging` | Base Sepolia | test USDC | Vercel (staging branch) |
-| `production` | Base mainnet (+ EVM chains) | USDC | Vercel prod on `main` |
+| `staging` | WINR + Azuro testnet | testnet funds | Vercel (staging branch) |
+
+(Testnet-only build — no mainnet environment.)
 
 - Per-chain config → `packages/shared/chains.ts` (committed).
 - Deployed addresses → `packages/contracts/deployments.json` (committed).

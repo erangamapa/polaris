@@ -1,95 +1,101 @@
 # 01 — System Architecture
 
+> **WINR + Azuro integrator model.** No custody, no bankroll, no own settlement/RNG. This supersedes the
+> earlier custom-stack architecture.
+
 ## High-level diagram
 
 ```
-                         ┌───────────────────────────────────────────────┐
-                         │                  FRONTEND (apps/web)           │
-                         │  React + Vite · wagmi/viem · Reown AppKit      │
-                         │  Unified balance · Deposit UI · Game lobby     │
-                         └───────┬───────────────┬───────────────┬────────┘
-                                 │               │               │
-                (connect/deposit)│    (launch)   │   (bets)      │ (sports/pred)
-                                 │               │               │
-                    ┌────────────▼───┐   ┌───────▼────────┐  ┌───▼─────────────┐
-                    │ Wallet / AA    │   │  BACKEND       │  │  Azuro SDK      │
-                    │ thirdweb       │   │  (apps/api)    │  │  (on-chain      │
-                    │ session keys   │   │  Vercel funcs  │  │  sports + pred) │
-                    └────────┬───────┘   │                │  └───┬─────────────┘
-                             │           │  /session/*    │      │
-                             │           │  /wallet/*     │      │
-                             │           │  /vault/*      │      │
-                             │           └───┬────────┬───┘      │
-                             │               │        │          │
-                    ┌────────▼───────────────▼──┐  ┌──▼──────────▼──────────────┐
-                    │      BLOCKCHAIN            │  │   DATA / STATE             │
-                    │  Base Sepolia → mainnet    │  │  Vercel Postgres (ledger)  │
-                    │  Vault.sol (non-custodial) │  │  Vercel KV (sessions/nonce)│
-                    │  USDC · Chainlink VRF(opt) │  │  Provably-fair seeds       │
-                    └────────────────────────────┘  └────────────────────────────┘
-                             ▲                                    ▲
-                             │  deposit / settle / withdraw       │  per-round debit/credit
-                             └────────────────────────────────────┘
+                    ┌───────────────────────────────────────────────────────┐
+                    │              FRONTEND (apps/web)                        │
+                    │  React + Vite · Reown/wagmi/viem wallet connect         │
+                    │  Lobby · unified balance · bet history · 3 verticals    │
+                    └───────┬───────────────┬───────────────────┬────────────┘
+                            │               │                   │
+                (wallet UX) │   (casino)    │   (sports/pred)    │ (reads: balance/history)
+                            │               │                   │
+                    ┌───────▼──────┐  ┌─────▼───────────┐  ┌────▼──────────────────┐
+                    │ WINR SDK     │  │ Azuro SDK       │  │ THIN BACKEND (apps/api)│
+                    │ casino games │  │ sports markets  │  │ Vercel functions       │
+                    │ on WINR L3   │  │ on Azuro chain  │  │ read-only aggregation, │
+                    └───────┬──────┘  └─────┬───────────┘  │ affiliate inject,      │
+                            │               │              │ session tokens (UX)    │
+                            │               │              └────┬───────────────────┘
+                    ┌───────▼──────┐  ┌─────▼───────────┐       │ (reads)
+                    │ WINR Protocol│  │ Azuro Protocol  │       │
+                    │ bankroll·VRF │  │ liquidity·odds  │◄──────┘
+                    │ settlement   │  │ settlement      │
+                    │ (on-chain)   │  │ (on-chain)      │
+                    └──────────────┘  └─────────────────┘
+                            ▲                   ▲
+                            └──── player wallet (non-custodial) ────┘
+                                   bridging via LI.FI if cross-chain
 ```
 
 ## Component responsibilities
 
-| Component | Owns | Talks to |
+| Component | Owns | Notes |
 |---|---|---|
-| **Frontend** (`apps/web`) | Wallet connect, deposit/withdraw UI, lobby, unified balance display, iframe host | Wallet/AA, backend `/session`, Azuro SDK |
-| **Wallet / AA** (thirdweb) | Smart account, session-key grant, bet signing | Chain (bundler/paymaster) |
-| **Backend** (`apps/api`) | Seamless-wallet ledger, provably-fair engine, session tokens, settlement | Chain (RPC + signer), DB, games, providers |
-| **Games** (`packages/games`) | Casino game clients (slot/dice/crash) as iframes | Backend `/wallet/*` |
-| **Azuro SDK** | Sports + prediction markets, odds, liquidity, settlement | Chain directly (per-bet) |
-| **Chain** | Custody (vault), USDC, optional VRF | — |
-| **DB** | Ledger (balances), sessions, nonces, seeds, txns | Backend only |
+| **Frontend** (`apps/web`) | UX, wallet connect, lobby, unified balance, bet history, bet placement via SDKs | the bulk of what we build |
+| **WINR SDK/contracts** | casino games, randomness, bankroll, settlement | on WINR L3; permissionless |
+| **Azuro SDK/contracts** | sports/prediction markets, odds, liquidity, settlement | on Azuro chain; permissionless |
+| **Thin backend** (`apps/api`) | read-only aggregation, affiliate injection, session tokens | **no custody, no ledger, no settlement, no RNG** |
+| **Player wallet** | custody of funds | non-custodial throughout |
 
-## Two settlement models under one roof (important)
+## What we do NOT build anymore (removed vs the old custom stack)
 
-Polaris deliberately runs **two** models, unified only at the balance-display layer:
+- ❌ `Vault.sol` custody contract — protocols are non-custodial.
+- ❌ Session keys / account abstraction relayer — WINR/Azuro handle bet UX on-chain.
+- ❌ Seamless-wallet backend + off-chain ledger — no custody, protocols are source of truth.
+- ❌ Own provably-fair RNG engine — WINR VRF + Azuro provide it.
+- ❌ Own casino games — WINR catalog.
+- ❌ Deposit-watcher, settlement relayer, signer key.
 
-1. **Casino (fast loop)** — session key + off-chain rounds + net on-chain settle. See `04`–`07`.
-2. **Sports/Predictions (Azuro)** — per-bet on-chain via Azuro SDK. See `08`.
+The backend shrinks from "the core money engine" to a **thin, read-only aggregation + gating layer.**
 
-The frontend shows **one unified balance** by summing: vault-backed ledger balance (casino) +
-Azuro on-chain position/wallet balance. UX reconciliation is specified in `08` and `10`.
+## End-to-end flows
 
-## End-to-end data flow (casino round — the fast path)
-
+### Casino round (via WINR)
 ```
-1. Player deposits USDC → Vault.deposit()           [on-chain, once]
-2. deposit-watcher observes Deposited event → ledger.credit(player)   [backend]
-3. Player grants session key (one signature)         [wallet/AA]
-4. Player opens a game → frontend POST /session/launch → {token, gameUrl}
-5. Frontend embeds <iframe src=gameUrl?token=...>
-6. Game boots → GET /wallet/balance?token → ledger balance
-7. Each round:
-   a. game POST /wallet/bet {token, roundId, amount, txId}  → debit, return balance
-   b. provably-fair engine resolves round (commit-reveal)
-   c. game POST /wallet/win {token, roundId, amount, txId}  → credit, return balance
-8. Player cashes out → POST /vault/settle → server signs net result → Vault settle  [on-chain]
-9. Player withdraws → Vault.withdraw()               [on-chain]
+1. Player connects wallet (Reown/wagmi).
+2. (First time) player funds play per WINR's flow — USDC deposit auto-swapped to WINR chip on WINR L3.
+3. Player opens a WINR catalog game → plays.
+4. Each bet settles on-chain via WINR contracts; WINR VRF resolves the outcome; shared bankroll pays.
+5. Our affiliate address is attached to route commission to us.
+6. Balance/history reflect on-chain state (read via WINR indexer).
 ```
 
-**Chain touched at steps 1, 8, 9 only. Every bet (step 7) is off-chain.**
+### Sports bet (via Azuro)
+```
+1. Player connects wallet; ensures they're on an Azuro-supported chain/currency (switch CTA if not).
+2. Player places a bet → EIP-712 ClientBetData signed (affiliate = our address, enforced server-side).
+3. Azuro oracle + relayer submit on-chain; shared liquidity is the counterparty; settles on-chain.
+4. Balance/history reflect on-chain state (read via Azuro subgraph).
+```
+
+## Data & reads
+
+- **No source-of-truth database.** Balances and bet history are **on-chain**, read via WINR indexer +
+  Azuro subgraph. The thin backend may **cache** these for a fast unified view (see `15`).
+- **Unified balance** = WINR (casino) balance + Azuro-chain wallet balance, shown in USD; cross-chain
+  reconciled at the display layer (bridging via LI.FI where needed).
 
 ## Non-functional requirements
 
-- **Latency:** a casino round (bet→resolve→win) must complete < 400 ms server-side.
-- **Idempotency:** all `/wallet/*` calls are idempotent by `txId` (providers retry).
-- **Atomicity:** ledger debits/credits are row-locked DB transactions.
-- **Auth:** provider→backend callbacks are HMAC-signed; frontend→backend uses session tokens.
-- **Secrets:** never in the repo or frontend; Vercel env only (see `13`).
-- **Non-custodial invariant:** the operator must never be able to move a player's funds except via
-  a session-key-authorized settle bounded by the player's own signed permission.
+- **Non-custodial invariant:** WildStakes must never be able to move player funds. Guaranteed by using
+  non-custodial protocols and holding no custody contract or signer over player funds.
+- **Affiliate integrity:** our affiliate address is injected/enforced **server-side** so it can't be
+  swapped by the client (see `19`, `14`).
+- **Testnet scope:** mainnet, licensing, KYC, and geoblocking are out of scope for this build.
+- **Secrets:** none of the old signer/HMAC/JWT-for-settlement; only public config + a few API keys, all
+  server-side where private (`16`).
 
-## Environments
+## Environments (testnet only)
 
-| Env | Chain | Currency | Purpose |
+| Env | Casino (WINR) | Sports (Azuro) | Purpose |
 |---|---|---|---|
-| `local` | Base Sepolia | testnet USDC | dev |
-| `preview` | Base Sepolia | testnet USDC | PR previews (Vercel) |
-| `staging` | Base Sepolia | testnet USDC | pre-prod |
-| `production` | Base mainnet | USDC | live (post-license) |
+| `local` / `preview` / `staging` | WINR testnet | Azuro testnet | dev / demo with testnet funds |
+
+Mainnet/production is out of scope for this build.
 
 _Last updated: 2026-07-01_

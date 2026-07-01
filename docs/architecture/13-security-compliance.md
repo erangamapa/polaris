@@ -1,68 +1,43 @@
-# 13 — Security, Secrets & Compliance
+# 13 — Security (testnet build)
 
-Non-negotiable rules for every phase. Security here is not optional polish — it's the definition of
-"non-custodial" and the thing that keeps player funds safe.
-
-## Secrets handling
-- **Single store:** all secrets live in **Vercel env vars** (server scope) and a local **untracked
-  `.env`** for dev. Never in the repo, staged files, commits, docs, or the frontend bundle.
-- **Reference by name only.** Code reads `process.env.X` / `import.meta.env.VITE_X`. Docs and examples
-  use placeholders (`<SETTLEMENT_SIGNER_PRIVATE_KEY>`).
-- **Public vs server split:** only `VITE_`-prefixed values reach the browser and they must be safe to
-  expose (project IDs, client IDs, contract addresses, public RPC). Everything else is server-only.
-- Add `.env*` to `.gitignore` (verify). Scan diffs for secret-like strings before every commit.
+> **Testnet-only scope.** Mainnet compliance — gaming licence, KYC/AML, geoblocking — is **out of scope
+> for this build** and intentionally not covered here. This doc is the security baseline for a testnet,
+> non-custodial integrator.
 
 ## The non-custodial invariant (the core guarantee)
-1. The operator can **never** move a player's funds except a `settle` bounded by that player's own
-   signed session permission (`maxSpend`, `validUntil`, one-time `sessionId`).
-2. Players can **always** withdraw unilaterally, including with the operator offline (exit timeout).
-3. `settle` beyond permission, after expiry, or replaying a `sessionId` **must revert** (contract
-   tests enforce this — Phase 3 DoD).
-4. The settlement signer key is powerless beyond the permission — leaking it cannot drain vaults
-   beyond authorized session limits.
+- WildStakes holds **no custody**: no Vault, no signer, no key or contract with authority over player
+  funds. Players interact directly with WINR/Azuro from their own wallet.
+- Audit check: the frontend and thin backend have **no capability to move a player's funds** (`14` T2).
 
-## Session-key safety
-- Tight scopes: only the Vault settle path, only up to `maxSpend`, only until `validUntil`.
-- Auto-expiry + user-facing revoke.
-- Blast radius on leak = the session cap. Never grant a session key broad or unlimited scope.
+## Affiliate / revenue integrity
+- Our affiliate identifiers (WINR referrer, Azuro affiliate) are **public, not secret**; the risk is
+  substitution. The thin backend **injects/enforces** our identifier on prepared orders and **rejects
+  mismatches** before submission (`14` T1, `19`). Never trust a client-supplied affiliate value.
 
-## Backend safety
-- **HMAC** on all provider `/wallet/*` callbacks; **session tokens** on own-game calls. Reject
-  unsigned/expired.
-- **Idempotency** by `txId`; **atomic** row-locked debits; **no negative balances**.
-- Rate-limit `/session/launch` and `/wallet/*` per player/IP.
-- Confirm on-chain events (deposit) before crediting the ledger; wait for sufficient confirmations.
+## Secrets handling
+- **Minimal secrets:** affiliate config + RPC/API keys. In **Vercel env** (server scope) and a local
+  untracked `.env`; referenced by name only; placeholders in committed docs/examples.
+- Only `VITE_`-prefixed values reach the browser and must be safe to expose.
+- `.env*` and `.secrets/` gitignored (verified). Scan diffs for secret-like strings before every commit.
+- **Test-wallet secret:** the MetaMask test wallet's seed/key (`21`) lives only in gitignored
+  `.secrets/test-wallet.json` + the handoff message to you; testnet-only, disposable, never committed.
+- **Removed:** settlement signer key, HMAC callback secret, session-JWT-for-custody — none exist in this
+  model.
 
-## Contract safety
-- OpenZeppelin `SafeERC20`, `ReentrancyGuard`; EIP-712 typed permissions.
-- Reentrancy, integer, and access-control tests. Consider an external audit before mainnet.
-- No admin backdoor to move user funds. Any upgradeability (if used) must not violate invariant #1.
+## Frontend / order integrity
+- On-chain contracts validate all bet parameters and outcomes; the player signs what they submit; client
+  tampering cannot change protocol settlement. `/bet/prepare` only sets the affiliate.
 
-## Randomness integrity
-- Server seed committed (hash published) before play; revealed for verification; never reused before
-  reveal (`06`). House edge transparent in outcome mapping.
+## Protocol dependency
+- We inherit WINR/Azuro security. Use their audited, live contracts; monitor status; degrade gracefully
+  (disable a vertical if its protocol/chain is down). See `14` T3.
 
-## Compliance flags (CHECKLIST, not legal advice)
-> Non-custodial does **not** exempt Polaris from regulation. Treat these as items to resolve with a
-> qualified gaming/legal advisor before real-money launch. The agents build the technical gates; the
-> owner owns the legal posture.
+## Responsible gambling (UI)
+- Keep the existing responsible-gambling layer (limits, self-exclusion reminders, reality checks) as a
+  product feature. (This is UI, independent of mainnet licensing.)
 
-- **Licensing:** most jurisdictions require a gaming license to operate real-money games and to
-  onboard studio content (Curaçao is common entry-level). Testnet/demo play mitigates during dev.
-- **KYC/AML:** keep the existing `KycModal` and gate **deposits/withdrawals** (and thresholds) where
-  required. Wallet-connect is identity-light by default — plan KYC for fiat/large flows.
-- **Geo-restrictions:** block prohibited jurisdictions (IP + wallet-level where feasible).
-- **Responsible gambling:** keep the existing responsible-gambling layer; add deposit/loss limits,
-  self-exclusion, reality checks.
-- **Provider terms:** studio contracts (`09`) impose their own compliance/reporting obligations.
-- **Tax/reporting:** jurisdiction-dependent; out of scope for these docs but must be tracked.
-
-## Data & privacy
-- Store minimal PII. Wallet address is pseudonymous; treat any KYC data as sensitive (encrypt at rest,
-  restrict access). Don't log secrets or full PII.
-
-## Pre-mainnet gate (must all be true)
-- Contract audited; invariant tests green; secrets audited out of the repo; exit-timeout proven;
-  monitoring live; licensing + KYC/geo posture confirmed by the owner's legal advisor.
+## Data & privacy (testnet)
+- Store almost nothing (on-chain is source of truth; `15`). No KYC/PII collected in the testnet build.
+- Don't log secrets. Any optional cache holds only public on-chain-derived data.
 
 _Last updated: 2026-07-01_

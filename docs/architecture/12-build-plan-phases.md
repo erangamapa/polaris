@@ -1,112 +1,86 @@
 # 12 — Build Plan (Phased, for Agents)
 
-Dependency-ordered. Each phase has a Definition of Done (DoD). **Do not start a phase until its
-dependencies are green.** Every phase keeps the repo building, linting, and (from Phase 2 on) testing
-green. No secrets in the repo (see `13`).
+> **Rephased for the WINR + Azuro integrator model.** No Vault, no session keys, no seamless-wallet
+> backend, no own games, no provably-fair engine. The build is: wallet connect → integrate two on-chain
+> protocols → thin read backend → unified UX. Each phase has a Definition of Done (DoD).
 
-## Phase 0 — Prep & credentials [owner + agent]
-- Human does the **bootstrap drop**: the ~5 `HUMAN_BOOTSTRAP` tokens into `.env.bootstrap` (`16`, `17`).
-- Agent authors + runs **preflight** (readiness gate) and **provision** scripts: verifies bootstrap
-  tokens; provisions Postgres/KV/RPC; generates signer + HMAC + JWT secrets; funds the signer via the
-  **CDP Faucets API**; writes derived values to Vercel env + local `.env` (all gitignored).
-- Agent verifies the current app still runs (`apps/web` baseline).
-- **DoD:** preflight green for every `16` credential; all AGENT_PROVISIONED resources created; signer
-  funded (testnet ETH+USDC); baseline app runs. (See `16`, `17`.)
+## Phase 0 — Prep & credentials
+- Human: provide `VITE_REOWN_PROJECT_ID`; grant run permission. (GitHub + Vercel already authed.)
+- Agent: confirm WINR + Azuro SDKs, current testnet chains, faucets, RPC (from docs.winr.games /
+  gem.azuro.org). Generate testnet affiliate addresses.
+- **DoD:** Reown id present; SDK/versions + testnet endpoints identified; app still runs.
 
-## Phase 1 — Mono-repo restructure [agent]
-- Move current app → `apps/web`; add workspaces + Turborepo; scaffold `apps/api`,
-  `packages/{contracts,shared,games}`; update `vercel.json`.
-- **DoD:** `turbo run build` green; existing app runs identically from `apps/web`; empty packages
-  typecheck. (See `02`.)
+## Phase 1 — Light restructure
+- Keep the existing app as `apps/web`; add a thin `apps/api` (Vercel functions) + `packages/shared`
+  (types, chain config, affiliate helpers). npm workspaces. (Much lighter than the old monorepo — no
+  contracts/games packages.)
+- **DoD:** `npm run build` green; app runs identically; thin api scaffold deploys.
 
-## Phase 2 — Shared foundations [agent]
-- `packages/shared`: `chains.ts`, `types.ts`, `money.ts`, `hmac.ts`, `provablyFair.ts` (+ tests).
-- Add Vitest to the repo.
-- **DoD:** provably-fair + HMAC + money unit tests pass; verification reproducibility test passes.
-  (See `06`.)
+## Phase 2 — Wallet connection
+- Reown AppKit + wagmi + viem; connect EVM wallets. Chain awareness + switch/bridge CTA (WINR Chain for
+  casino, Azuro chain for sports).
+- **DoD:** connect/disconnect works; correct-chain detection + switch CTA works.
 
-## Phase 3 — Vault contract [agent]
-- `packages/contracts`: `Vault.sol` + full test suite + deploy script. Deploy to Base Sepolia.
-- Must implement **locked at-risk funds** (`openSession`), **exit/dispute window** (`requestExit`),
-  and one-time `sessionId` settle — the T1 anti-drain mechanism (`14`).
-- Write deployed address into `chains.ts` / `deployments.json`.
-- **DoD:** all invariant tests pass, incl. #6 (locked funds not withdrawable) and #7 (exit window)
-  from `03`; withdraw-before-settle is proven impossible; deployed + verified on explorer; manual
-  deposit/withdraw via `cast` works. (See `03`, `14` T1/T6.)
+## Phase 3 — Sports & Predictions via Azuro
+- Integrate Azuro SDK into the existing sports + predictions verticals (replace mock data). Enforce our
+  affiliate address server-side (`08`, `19`, `14` T9).
+- **DoD (testnet):** place a non-custodial sports bet + a prediction bet end-to-end; both settle on-chain
+  via Azuro; affiliate attributed; history readable from the subgraph.
 
-## Phase 4 — Backend seamless-wallet [agent]
-- `apps/api`: `/session/launch`, `/wallet/{balance,bet,win,rollback}`, `/vault/{deposit-watch,settle}`.
-- Ledger + `txns` + `rounds` + `pf_seeds` + `sessions` schema in Postgres; sessions/nonces in KV;
-  HMAC + idempotency + atomic debits.
-- **Server-authoritative outcomes** (T3): backend computes payout and writes the `rounds` row
-  atomically with debit/credit; never trusts a client-reported win.
-- Persist per-round history (`rounds`) + mirror on-chain deposits/settles into `txns` (see `15`).
-- **DoD:** integration tests: 50 rapid bet/win cycles correct; duplicate `txId` no-op; **forged
-  `/wallet/win` rejected (T3)**; deposit-watch credits ledger from a real on-chain deposit; settle
-  reconciles to chain; every round persisted + reproducible from its seed. (See `05`, `14` T3/T5, `15`.)
+## Phase 4 — Casino via WINR
+- Integrate WINR SDK; list catalog games in the existing lobby; on-chain play with WINR bankroll + VRF;
+  attach our WINR affiliate identifier. Confirm autoplay/session UX (`07`).
+- **DoD (testnet):** connect wallet → be on WINR Chain → play a WINR catalog game end-to-end from the
+  player's own wallet; settles on-chain; provably fair; affiliate attributed; no bankroll from us.
 
-## Phase 5 — Session keys + settlement wiring [agent]
-- thirdweb smart account + session-key grant; backend relayer settles within the on-chain permission.
-- **DoD:** ≥ 50 consecutive bets with zero popups after one grant; session cannot exceed
-  `maxSpend`/`validUntil`; net settle lands on-chain. (See `04`.)
+## Phase 5 — Thin backend (reads + gating)
+- `apps/api`: `GET /balance`, `GET /history` (aggregate WINR indexer + Azuro subgraph; optional cache),
+  `POST /bet/prepare` (inject/enforce affiliate for Azuro orders), `GET /geo` gate, `GET /session`.
+- **DoD:** unified balance + merged history correct from on-chain reads; affiliate enforced server-side
+  (forged affiliate rejected); geo gate blocks disallowed regions; backend holds no custody/signer.
 
-## Phase 6 — First casino game (slot) [agent]
-- `packages/games/slot`: iframe client using the seamless-wallet protocol; provably-fair outcomes
-  from backend; host launcher in `apps/web` embeds it.
-- **DoD:** a spin debits/credits the vault-backed ledger < 400 ms, visible in-game + host pill;
-  outcomes reproducible from revealed seed. (See `07`.)
+## Phase 6 — Bet history page
+- One "My Bets" screen, Casino + Sports tabs, **both on-chain** with explorer links; WINR VRF proof on
+  casino rows; reconnect restores from chain (`15`).
+- **DoD:** every bet links to a verifiable on-chain tx; clearing browser + reconnecting the same wallet
+  restores balance + history from chain.
 
-## Phase 7 — Frontend wallet integration [agent]
-- Reown/wagmi connect; real deposit/withdraw via Vault; "enable fast play"; unified balance display.
-- **DoD:** connect → deposit test USDC → play slot (instant) → withdraw, all from the existing UI;
-  no secret in the bundle. (See `10`.)
+## Phase 7 — Unified balance + cross-chain
+- Unified USD balance (WINR casino + Azuro-chain wallet); LI.FI bridging when verticals are on different
+  chains; clear UX for switching/bridging.
+- **DoD:** unified balance correct across chains; a player can move funds between the casino and sports
+  chains via the in-app bridge flow.
 
-## Phase 8 — More casino games [agent]
-- `dice`, then `crash`, on the same protocol.
-- **DoD:** both playable end-to-end, provably fair, reusing the same backend + host launcher.
+## Phase 8 — Responsible gambling (UI)
+- Keep the existing responsible-gambling layer (limits, self-exclusion reminders, reality checks) as UI.
+- **DoD:** responsible-gambling controls functional. (Mainnet compliance — licence / geoblock / KYC — is
+  out of scope for this testnet build.)
 
-## Phase 9 — Sports & Predictions via Azuro [agent]
-- Integrate Azuro SDK into the sports + predictions verticals (replace mock data). Unify balance.
-- **DoD:** a non-custodial sports bet + a prediction bet settle on-chain via Azuro; unified balance
-  correct across both models. (See `08`.)
-
-## Phase 9b — Bet history page & recovery [agent]
-- Build the **Bet History page** per the full spec in `15`, keyed by wallet address:
-  - **Casino**: sessions (from `sessions`) expandable to off-chain `rounds`; each round has a
-    provably-fair **verify** action; each session + deposit/withdraw links to its **on-chain tx**;
-    copy explains rounds are off-chain for speed and settle to the chain as one net transaction.
-  - **Sports**: read from the **Azuro subgraph**; each bet is **fully on-chain** with a block-explorer
-    link. Optional per-address cache.
-  - Every row tagged 🔗 on-chain vs ⚡ off-chain+provably-fair.
-- Wallet reconnect restores balance + history.
-- **DoD:** casino rounds shown grouped by session, each linking to its on-chain settlement tx and
-  verifiable from its seed; sports bets shown from the subgraph with explorer links; clearing the
-  browser and reconnecting the same wallet restores playable balance + full history. (See `15`, `08`, `06`.)
-
-## Phase 10 — Hardening & observability [agent]
-- Rollback paths, error monitoring (Sentry), rate-limiting, session-key revoke UI, exit-timeout tested.
-- Full threat-model pass: verify T1–T7 defenses hold end-to-end.
-- **DoD:** rollback works; monitoring live; the non-custodial exit invariant proven with operator
-  offline; T1 (withdraw-before-settle), T2 (offline-loss settle), T3 (forged win), T5 (race/replay)
-  all proven closed by tests. (See `13`, `14`.)
-
-## Phase 11 — Multi-chain enablement [agent, optional]
-- Add a second EVM chain via `chains.ts` + redeploy Vault + deposit-watcher.
-- **DoD:** same flows work on a second EVM chain; unified cross-chain balance. (See `03`.)
+## Phase 9 — Hardening, observability, autonomous E2E
+- Error monitoring (Sentry), rate-limiting, threat-model pass (`14`, esp. affiliate integrity + no
+  custody), and a final **API-level E2E** using the test wallet key (viem/SDK) — the culmination of the
+  per-phase `22` connectivity checks, **not** a browser test.
+- **DoD:** the headless E2E (bet on WINR + Azuro → settle on-chain → read history) passes with no human;
+  no secret in the frontend bundle; non-custodial verified. Browser play is the user's handoff (`21`).
 
 ## Later / gated (not blocking MVP)
-- **Third-party studio games** (`09`) — needs owner's provider contract + sandbox creds.
-- **Chainlink VRF mode** (`06`), **fiat on-ramp**, **Solana/BTC tracks** (`03`), **mainnet + license**.
+- **Own WINR games** (WINR engine/SDK; possible DAO proposal) for more control (`07`).
+- **Branded studio games** (needs contracts) — only if desired (`09`).
+- **Read cache** (Vercel Postgres/KV) if indexer latency needs it (`05`).
 
-## Suggested agent division (when parallelizing)
-- **Contracts agent** → Phase 3 (+ VRF later).
-- **Backend agent** → Phases 2, 4, 5 (+ provider bridge later).
-- **Games agent** → Phases 6, 8.
-- **Frontend agent** → Phases 7, 9, 10.
-- Coordinate on `packages/shared/types.ts` as the shared contract.
+## Suggested agent split (parallel)
+- **Sports agent** → Phase 3. **Casino agent** → Phase 4. **Backend agent** → Phase 5.
+  **Frontend agent** → Phases 2, 6, 7, 8. Coordinate on `packages/shared` types + affiliate config.
+
+## Verify as you build (not at the end)
+Every integration phase ends with an **API-level connectivity check** (viem/SDK/curl using the test
+wallet key) — see `22`. If a check fails, **STOP and report then**; never proceed on a broken layer or
+defer verification to a big end-of-build test. Browser/MetaMask confirmation is the user's handoff step
+(`21`), not the agent's.
 
 ## Global Definition of Done (every phase)
-`turbo run build` + `turbo run lint` + `turbo run test` green · no secrets committed · non-custodial
-invariant intact · no behaviour regression in unrelated areas.
+`npm run build` + lint green · no secrets committed · **non-custodial invariant intact** (no capability
+to move player funds) · affiliate attribution enforced server-side · **the phase's `22` connectivity
+check is green** · no regression.
 
 _Last updated: 2026-07-01_

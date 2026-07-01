@@ -1,93 +1,81 @@
-# 07 — Casino Games (in-house)
+# 07 — Casino via WINR Protocol
 
-Our own provably-fair games are what make the **full crypto loop work today with zero third-party
-gatekeeping**. They are the reference clients for the seamless-wallet API. Third-party studio content
-plugs into the same API later (see `09`).
+> **This replaces the earlier in-house casino** (own provably-fair games + seamless-wallet + Vault +
+> session keys). The casino now runs on **WINR Protocol** — on-chain, shared bankroll, no contracts.
 
-## Games (build order)
-1. **Slot** — reels, paylines; every spin = one bet + one win callback. First game (most illustrative).
-2. **Dice** — roll-under target; simplest to verify.
-3. **Crash** — rising multiplier, cash-out before crash.
+## What WINR gives us
 
-Each lives in `packages/games/<game>/` as a standalone iframe app (its own tiny build).
+- **Bankroll-as-a-Service** — a shared, LP-funded on-chain bankroll pays all winners. **We fund nothing.**
+- **WINR VRF** — on-chain verifiable randomness (provably fair, resolves <300ms, ~1s finality).
+- **Game catalog** — ready on-chain games we can list, plus a growing creator catalog.
+- **Permissionless integration** — SDK; no B2B contract, no whitelist, no fixed cost. Operators never
+  custody player funds.
+- Runs on **WINR Chain** (L3 on Arbitrum, Orbit). Bets settle in the **WINR** chip; player **USDC is
+  auto-swapped to WINR**; UI shows USD.
 
-## Why iframe
+Docs: https://docs.winr.games · Operators: https://docs.winr.games/for-operators · JustBet (reference
+casino built on WINR): https://www.just.bet · SDK/repos: https://github.com/winrprotocol
 
-The game runs as an iframe so the exact same integration contract works for **our games and real
-third-party games** — the host app (`apps/web`) embeds a URL and the game talks to the backend. Swap
-in Pragmatic/BGaming later with no host changes.
+## Games available (WINR / JustBet catalog)
 
-## Game ↔ backend protocol (the seamless-wallet contract)
+Crypto-native "originals" (Stake-style), all on-chain:
+**Dice · Roulette · Blackjack · Baccarat · Slots (incl. AI-built slots) · Plinko · Crash · Wheel · Keno ·
+Coin Flip · Limbo · Mines · Roll** — plus a growing **creator catalog**.
 
-```
-On load:
-  GET  /wallet/balance?token=...           → { balance }
-Per round:
-  POST /wallet/bet   { token, roundId, amount, txId }   → { balance }   (debit)
-  ...game resolves outcome via provably-fair result returned with the bet response...
-  POST /wallet/win   { token, roundId, amount, txId }   → { balance }   (credit; amount 0 if loss)
-On error:
-  POST /wallet/rollback { token, roundId, txId }        → { balance }
-```
+⚠️ These are originals, **not** branded studio slots (Pragmatic/Evolution). Branded content needs
+contracts and is out of scope — see `09`.
 
-- The **backend** computes the provably-fair outcome (it holds the serverSeed) and returns it in the
-  `/wallet/bet` response, so the client can't fake results. Client animates to the given outcome.
-- Balance shown in-game is always the value returned by the backend, never client-computed.
+## Two integration modes
 
-### ⚠️ HARD RULE: server-authoritative outcomes (never trust the client)
+1. **List existing catalog games** (default, fastest) — surface WINR/creator games in our lobby; bets
+   route to WINR contracts; bankroll + VRF + settlement handled by the protocol.
+2. **Build our own games on the WINR engine/SDK** (optional, later) — more control, still uses WINR's
+   bankroll + VRF. New custom games may require a WINR DAO proposal to plug into the shared pool.
 
-For **our own games**, the client MUST NOT be able to decide or report its own winnings. If a client
-could call `/wallet/win` with an arbitrary amount, a player would credit themselves infinite money via
-dev tools — a direct drain. Therefore:
+MVP uses mode 1.
 
-- The backend **resolves the round and computes the win amount itself** (from the provably-fair
-  result), and applies bet-debit + win-credit **atomically server-side** keyed to `roundId`.
-- Any `/wallet/win` accepted from an own-game client is **validated against the backend's own computed
-  result for that `roundId`** and rejected/ignored if it doesn't match. Preferred: don't accept a
-  client win amount at all — the win is applied by the backend as part of resolving `/wallet/bet`.
-- The client only receives the outcome to *animate* it; it never influences the ledger.
-- For **third-party providers** (who compute outcomes on their RGS), trust is established by
-  **HMAC-signed callbacks + reconciliation**, never by an unauthenticated client call.
+## Integration surface (to implement in `apps/web`)
 
-See `14-security-threat-model.md` (vector T3) — this is a tested, non-negotiable invariant.
+- Add the **WINR SDK** (confirm exact package + version at build time from docs.winr.games).
+- Wallet connect via Reown/wagmi/viem; ensure the player is on **WINR Chain** (show a switch/bridge CTA
+  if not — see `03`, `10`).
+- Render the WINR game catalog in the existing lobby UI (reuse `GameLauncher`/lobby components).
+- Attach our **WINR affiliate/referrer identifier** to sourced bets so commission routes to us
+  (see `19`; enforce server-side per `14`).
+- Reflect on-chain balance + results in the UI (reads via WINR indexer; see `15`).
 
-## "How is a game launched with a specific balance?"
+## Player funding & UX
 
-Two supported paths (see also `05`):
-- **Seamless (default):** the game boots with only a `token`, then calls `GET /wallet/balance`. The
-  backend resolves `token → player → ledger balance`. The number appears in-game.
-- **Demo/transfer:** for pure fun-play, bake `balance` + `mode:"demo"` into the launch token; the game
-  reads it on load, no vault behind it.
+- Player deposits USDC (auto-swapped to WINR chip) per WINR's flow; funds stay non-custodial.
+- **Autoplay / rapid rounds:** WINR advertises <300ms VRF + ~1s finality on its L3. **Verify at build
+  time** whether rapid autoplay needs a signature per bet or uses a session/gasless UX — this is the one
+  UX property to confirm (the old off-chain session-key loop is gone). Document findings here.
 
-## Launch flow (host → game)
+## Reuse of existing UI
 
-```
-1. Player clicks a game tile in apps/web
-2. web → POST /session/launch { player, gameId, mode }
-3. backend → { token, gameUrl }
-4. web renders <iframe src="{gameUrl}?token={token}">
-5. game runs the protocol above
-```
+The current casino lobby (`src/components/casino/*`, `GameLauncher.jsx`) becomes the host UI for WINR
+games instead of mock/own games. Keep the look; swap the data/bet layer for the WINR SDK.
 
-## postMessage bridge (host ↔ iframe)
-- Game emits `balanceChanged`, `roundComplete`, `exit` to the host via `postMessage` so the host's
-  unified balance pill updates live and can close the launcher.
-- Host validates `event.origin` against the known game origin.
+## What is NOT needed anymore (removed)
 
-## Provably-fair UX
-- Show a "Provably fair ✓" badge; expose the current `serverSeedHash`, `clientSeed`, `nonce`, and a
-  "verify" panel where the player can change `clientSeed` and, after reveal, reproduce outcomes.
-
-## Reusing the existing prototype UI
-- The current `src/components/casino/GameLauncher.jsx` already models a launch → bet → balance loop
-  with mock data. Repurpose it as the **host-side launcher** that now embeds real game iframes and
-  reflects backend balances instead of local state.
+- ❌ Own provably-fair engine (`06`) — WINR VRF replaces it.
+- ❌ Seamless-wallet `/wallet/*` backend + ledger (`05`) — no custody; WINR settles on-chain.
+- ❌ Vault + session keys (`03`/`04`) — WINR is non-custodial and handles bet UX.
+- ❌ Our own games + iframe seamless protocol.
 
 ## Acceptance criteria
-- Playing a slot spin debits the vault-backed ledger and credits winnings, visible in-game and in the
-  host balance pill, in < 400 ms.
-- A losing spin closes the round correctly (win amount 0).
-- Every outcome is reproducible from the revealed seed pair.
-- The same iframe protocol is provably reusable by a mock "third-party" game (proves `09` drop-in).
+
+- A player can connect a wallet, be on WINR Chain, and play a WINR catalog game end-to-end on **testnet**
+  with funds from their own wallet — no WildStakes custody, no bankroll from us.
+- Bets settle on-chain via WINR; outcomes are provably fair (WINR VRF).
+- Our affiliate identifier is attached to sourced bets (commission attribution verified).
+- Balance + history reflect on-chain state.
+
+## Open items to confirm at build time
+
+- Exact WINR SDK package/version + integration API.
+- WINR affiliate/referrer mechanism + identifier format (how commission attribution is set).
+- Autoplay/session UX (signature-per-bet vs session/gasless).
+- Current WINR testnet + faucet details; WINR Chain RPC.
 
 _Last updated: 2026-07-01_

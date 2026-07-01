@@ -27,3 +27,7 @@ dist-ssr
 .env
 .env.*
 .env.bootstrap
+.vercel
+
+# Agent-provisioned test wallet secrets (testnet, never commit)
+.secrets/

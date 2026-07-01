@@ -1,57 +1,58 @@
-# Polaris — Architecture & Build Specification
+# WildStakes (polaris) — Architecture & Build Specification
 
-This directory is the **build blueprint** for turning Polaris from a mock-data prototype into a
-**non-custodial, on-chain, connect-wallet-and-play** real-money entertainment platform
-(Casino + Predictions + Sportsbook), starting on testnet.
+This directory is the **build blueprint** for WildStakes (repo codename **polaris**): a three-in-one,
+**fully on-chain, non-custodial** platform (**testnet build**) — Casino + Predictions + Sportsbook — built as an
+**integrator** on two on-chain protocols. We provide **no bankroll** and sign **no game-provider
+contracts**.
 
-It is written to be executed by **Claude Code and its agents**. Each file is a self-contained
-section with concrete interfaces, schemas, env var names, and acceptance criteria.
-
-> **Status: SPECIFICATION — build not yet started.** These are the instructions to build from.
+> **Status: SPECIFICATION — build not yet started.**
+>
+> **ARCHITECTURE = WINR + Azuro integrator (current).** Casino runs on **WINR Protocol**; sports &
+> predictions on **Azuro Protocol**. Both are on-chain, non-custodial, shared-liquidity. The earlier
+> **custom-stack** design (Vault + session keys + seamless-wallet backend + own provably-fair games) is
+> **SUPERSEDED** and retained only for historical context in the files marked below.
 
 ## How to use these docs (for agents)
 
-1. Read `00-overview.md` first — it defines the vision, the market gap, and the core model.
-2. Read `11-credentials-and-signups.md` — the human owner must fetch the listed keys before the
-   build can run end-to-end. Nothing that needs a key gets built blind; stub + flag instead.
-3. Follow `12-build-plan-phases.md` — the phased, dependency-ordered build sequence. Each phase has
-   a Definition of Done. Do not start a phase until its dependencies are green.
-4. Consult the layer docs (`03`–`10`) for the detailed spec of whatever you're building.
-5. Respect `13-security-compliance.md` on every phase — secrets, session-key scoping, non-custodial
-   guarantees are non-negotiable.
+1. Read `00-overview.md` and `01-system-architecture.md` — the integrator model.
+2. Read `16-credential-manifest.md` — the (now small) credential set. `11` is superseded by it.
+3. Follow `12-build-plan-phases.md` — the phased build (wallet → Azuro → WINR → thin backend → UX).
+4. Casino spec = `07` (WINR); sports spec = `08` (Azuro); backend = `05` (thin); data/history = `15`.
+5. Respect `13` (compliance) and `14` (threat model) on every phase.
 
 ## File index
 
-| File | Section |
-|---|---|
-| `00-overview.md` | Vision, the gap we bridge, model comparison, glossary |
-| `01-system-architecture.md` | Full system diagram, components, end-to-end data flow |
-| `02-monorepo-structure.md` | Repo layout, workspaces, tooling, conventions |
-| `03-blockchain-layer.md` | Chains (multi-chain strategy), Vault contract spec, USDC, chain config |
-| `04-wallet-and-session-keys.md` | Account abstraction, session keys, the fast-play loop |
-| `05-backend-seamless-wallet.md` | Vercel functions, endpoints, ledger schema, HMAC, settlement |
-| `06-provably-fair-engine.md` | Commit-reveal RNG, verification, Chainlink VRF option |
-| `07-casino-games.md` | In-house games, iframe protocol, launch flow, balance loading |
-| `08-sports-and-predictions-azuro.md` | Azuro integration, unified balance, UX reconciliation |
-| `09-third-party-game-providers.md` | Seamless-wallet bridge for studio content (contract-gated) |
-| `10-frontend-integration.md` | Existing app wiring, wallet connect, deposit UI |
-| `11-credentials-and-signups.md` | **All keys/tokens/registrations + sign-up URLs** |
-| `12-build-plan-phases.md` | Phased build sequence for agents, milestones, DoD |
-| `13-security-compliance.md` | Secrets, session-key scope, non-custodial guarantees, compliance flags |
-| `14-security-threat-model.md` | Anti-exploit: drain vectors (withdraw-before-settle, client-reported wins…) + tested defenses |
-| `15-data-persistence.md` | What's stored vs on-chain, bet history, retention, wallet reconnect/recovery |
-| `16-credential-manifest.md` | **Authoritative** machine-checkable credential list + acquisition class (agent vs human) |
-| `17-build-autonomy-protocol.md` | How the agent builds end-to-end from one human bootstrap drop (preflight → provision → build → E2E) |
-| `18-runtime-topology.md` | Where everything runs — our services/DB on Vercel, custody on Base, SaaS APIs we call |
-| `19-monetization.md` | Revenue stack — casino house edge (owned) + Azuro affiliate GGR share + minor streams |
-| `20-infrastructure-and-deployment.md` | IaC & deployment — everything (config, crons, CI/CD, provisioning) lives in the one repo |
+| File | Section | Status |
+|---|---|---|
+| `00-overview.md` | Vision, integrator model, WINR + Azuro | ✅ current |
+| `01-system-architecture.md` | System diagram, components, flows | ✅ current |
+| `02-monorepo-structure.md` | Repo layout (lighter: web + thin api + shared) | ✅ current (banner) |
+| `03-blockchain-layer.md` | Chains (WINR L3 + Azuro chain, bridging) | ⚠️ custody parts SUPERSEDED |
+| `04-wallet-and-session-keys.md` | Wallet connect (Reown/wagmi) | ⚠️ session keys SUPERSEDED |
+| `05-backend-seamless-wallet.md` | **Thin backend** (reads, affiliate, gating) | ✅ current (rewritten) |
+| `06-provably-fair-engine.md` | Fairness via WINR VRF / Azuro | ⚠️ own-RNG SUPERSEDED |
+| `07-casino-games.md` | **Casino via WINR** | ✅ current (rewritten) |
+| `08-sports-and-predictions-azuro.md` | **Sports/Predictions via Azuro** | ✅ current |
+| `09-third-party-game-providers.md` | Branded studio games (optional/future) | ⚠️ optional, contract-gated |
+| `10-frontend-integration.md` | Frontend wiring to WINR + Azuro SDKs | ✅ current (banner) |
+| `11-credentials-and-signups.md` | Old credential list | ⚠️ SUPERSEDED by `16` |
+| `12-build-plan-phases.md` | Phased build for agents | ✅ current (rewritten) |
+| `13-security-compliance.md` | Security (testnet) — non-custody, affiliate, secrets | ✅ current |
+| `14-security-threat-model.md` | Threat model (affiliate, non-custody, dependency) | ✅ current (rewritten) |
+| `15-data-persistence.md` | Everything on-chain; history from indexers | ✅ current (rewritten) |
+| `16-credential-manifest.md` | **Authoritative** credential list | ✅ current (rewritten) |
+| `17-build-autonomy-protocol.md` | Autonomous build from one bootstrap drop | ✅ current (banner) |
+| `18-runtime-topology.md` | Where everything runs (Vercel + WINR + Azuro) | ✅ current (rewritten) |
+| `19-monetization.md` | Revenue: WINR commission + Azuro affiliate | ✅ current (rewritten) |
+| `20-infrastructure-and-deployment.md` | IaC & deploy (single repo, simpler) | ✅ current (banner) |
+| `21-test-wallet-and-handoff.md` | Agent creates + funds a MetaMask test wallet across chains, hands you the seed | ✅ current |
+| `22-verification-strategy.md` | Incremental API-level connectivity checks as you build (not browser, not end-only) | ✅ current |
 
 ## The one-sentence summary
 
-Player connects their own wallet → deposits USDC once into a **non-custodial vault contract** →
-grants a **scoped session key** → plays casino rounds resolved **off-chain at web speed** by a
-**provably-fair seamless-wallet backend** → net result **settles on-chain** → withdraws anytime.
-Sports & Predictions are powered by the **Azuro** on-chain protocol. Deposits and withdrawals touch
-the chain; individual bets do not.
+Player connects their own wallet → plays **casino on WINR** (shared bankroll, WINR VRF, on-chain) and
+**sports/predictions on Azuro** (shared liquidity, on-chain) → **everything settles on-chain and stays
+in their wallet** → WildStakes earns a **commission/affiliate share** on the volume it sources, with
+**no bankroll and no provider contracts**. This is a **testnet-only** build (mainnet + licensing out of scope).
 
 _Last updated: 2026-07-01_

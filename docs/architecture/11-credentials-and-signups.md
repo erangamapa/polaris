@@ -1,4 +1,12 @@
-# 11 — Credentials, Sign-ups & Keys (OWNER ACTION REQUIRED)
+# 11 — Credentials, Sign-ups & Keys (SUPERSEDED — see `16`)
+
+> **SUPERSEDED by `16-credential-manifest.md`.** The WINR + Azuro pivot removed most credentials
+> (settlement signer, HMAC, JWT, Vault, thirdweb AA, required DB/KV). **Use `16` as the authoritative
+> list.** In short, to start the testnet build you now only need: `VITE_REOWN_PROJECT_ID` (+ optional
+> CDP keys or protocol faucets for test funds); GitHub + Vercel are already authed; affiliate addresses
+> are agent-generated on testnet. The detailed (old) list below is retained for historical context.
+
+---
 
 This is the list of everything a human must fetch before the build can run **end-to-end**. Agents
 build everything else. Each key is stored in **Vercel env vars** (and a local untracked `.env` for

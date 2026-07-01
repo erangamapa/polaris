@@ -1,76 +1,88 @@
-# 00 — Overview, Vision & The Gap We Bridge
+# 00 — Overview, Vision & Model
+
+> **ARCHITECTURE: WINR + Azuro integrator (full on-chain).** WildStakes is a frontend + thin backend
+> that integrates two proven on-chain protocols. We provide **no bankroll** and sign **no game-provider
+> contracts**. This supersedes the earlier custom-stack design (Vault + session keys + seamless-wallet +
+> own provably-fair games), which is retained only as historical context in `03`/`04`/`05`/`06`/`07`
+> (marked SUPERSEDED).
 
 ## Vision
 
-Polaris is a **three-in-one, non-custodial, on-chain** real-money entertainment platform:
-**Casino**, **Prediction Market**, **Sportsbook** under one wallet and one unified balance.
+WildStakes (repo codename **polaris**) is a **three-in-one, fully on-chain, non-custodial**
+entertainment platform (testnet build) — **Casino**, **Prediction Market**, **Sportsbook** — under one wallet and one
+unified balance. Players connect their own wallet and play; funds never touch a WildStakes-controlled
+wallet.
 
-Core principle: **the player owns their funds at all times.** We never take custody. Funds live in
-the player's wallet or in a smart-contract vault only the player can withdraw from. We provide the
-game logic, the speed, and the UX — not the custody.
+## The core principle: we are an integrator, not the house
 
-## The three models (why ours is different)
+We do **not** build custody, bankroll, randomness, settlement, or game content. Two on-chain protocols
+provide all of that; we build the product experience on top and earn a commission on volume.
 
-| Model | Custody | Speed (casino) | Example | Verdict |
-|---|---|---|---|---|
-| **Custodial crypto casino** | ❌ House holds funds, signup required | ✅ Fast | Stake, BC.Game, Rollbit | Not what we're building |
-| **Pure on-chain casino** | ✅ Non-custodial | ⚠️ Slow — every bet is an on-chain tx (+ VRF) | **BetSwirl**, Azuro, SX Bet | Trustless but sluggish for rapid spins |
-| **Polaris (target)** | ✅ Non-custodial | ✅ Fast — session keys + off-chain rounds + net on-chain settle | *(underserved gap)* | Our differentiator |
+| Vertical | Protocol | Provides |
+|---|---|---|
+| **Casino** | **WINR Protocol** (JustBet infra) | shared bankroll, WINR VRF randomness, on-chain settlement, catalog of games |
+| **Sports / Predictions** | **Azuro Protocol** | shared liquidity, odds/data feeds, on-chain settlement, markets |
 
-## The gap we bridge (what BetSwirl et al. do NOT do)
+Both are **non-custodial, on-chain, shared-liquidity, provably fair**. Result: a fully on-chain
+platform with **zero bankroll** from us and **zero provider contracts**.
 
-**BetSwirl** proved a non-custodial, provably-fair, connect-wallet casino works — but it puts
-**every bet on-chain** with a Chainlink VRF callback per wager. That is maximally trustless but:
-- Slow (block time + VRF latency per spin)
-- Gas-costly per round
-- Poor UX for high-frequency casino play (slots, turbo autoplay)
+## Why this model (the two hard requirements it satisfies)
 
-**The gap:** almost nobody combines **non-custodial + casino-fast**. The enabling technology
-(**account-abstraction session keys** — ERC-4337 and ERC-7702) only matured in **2024–2025**, so
-the market hasn't caught up.
+1. **No liquidity / bankroll from us.** WINR's shared pool (LP-funded) and Azuro's shared pool cover all
+   player payouts. We route bets; the protocols carry the risk. WINR: *"no fixed costs or capital
+   requirements to get started."*
+2. **No contracts with game providers.** WINR integration is permissionless (SDK, no B2B agreement, no
+   whitelist). Azuro is likewise permissionless. Contrast: branded studio slots (Pragmatic/Evolution)
+   would need contracts — deliberately **out of scope** (`09`).
 
-**How Polaris bridges it (with 2025/26 tech):**
-- **Session keys** (thirdweb / ERC-4337 / ERC-7702, or Coinbase Spend Permissions) → one approval,
-  then bets are signed automatically within a capped, time-boxed scope. No popup per round.
-- **Off-chain provably-fair rounds** (commit-reveal) → web-speed resolution, verifiable fairness.
-- **Net on-chain settlement** → 40 spins collapse into ~1 on-chain transaction.
-- **Non-custodial vault** → funds governed by code, player-withdrawable unilaterally.
+## What we build vs what we consume
 
-Result: **the trustlessness of BetSwirl with the speed of Stake.**
+**🏗️ In-house (thin):**
+- Frontend (the existing React app) — lobby, wallet connect, unified balance, bet history, 3 verticals.
+- **Thin backend** (Vercel functions) — read-only aggregation (unified balance + bet history from
+  on-chain indexers), affiliate-address injection, and session tokens for UX.
+  **No custody, no ledger-of-record, no settlement, no RNG.**
+- Protocol integrations (WINR SDK, Azuro SDK) + wallet connect (Reown/wagmi/viem).
 
-## Not only crypto — and not only one chain
+**🔌 Consumed (protocols + infra):** WINR (casino: bankroll/VRF/settlement/games) · Azuro (sports:
+liquidity/odds/settlement/markets) · Reown (wallet UI) · Vercel (hosting + thin backend) · RPC
+(Arbitrum/WINR) · LI.FI (cross-chain bridging for unified balance).
 
-- **Currency-agnostic backend.** The seamless-wallet ledger doesn't care what backs a balance:
-  real USDC, testnet USDC, or pure demo credits. Same code, different backing (see `05`).
-- **Multi-chain by design.** EVM chains (Base first; Ethereum/Arbitrum/Optimism/Polygon/BNB/Avalanche
-  via config + redeploy) are first-class. Solana and Bitcoin are documented as separate future
-  tracks (see `03`). One unified ledger balance across all chains.
-- **Fiat on-ramp** is a later add (buy USDC with card via a provider) — out of MVP scope, noted in `11`.
+## Everything is on-chain now (important consequence)
 
-## Division of labour (build vs buy)
+Because **both** verticals settle on-chain, **bet history for both is on-chain** and read from indexers
+(WINR indexer + Azuro subgraph). This flips the earlier design where casino rounds were off-chain and
+had to be stored by us. We now store almost nothing of record (see `15`).
 
-**🏗️ In-house (our IP / moat):** Vault contract · seamless-wallet backend · provably-fair engine ·
-ledger · deposit-watcher & settlement · own casino games · frontend integration.
+## Chains & currency (multi-chain)
 
-**🔌 Third-party (rented commodity):** chain (Base) · USDC (Circle) · session keys/AA (thirdweb) ·
-bundler/paymaster · RPC · wallet-connect UI (Reown) · hosting/DB (Vercel) · Foundry ·
-Chainlink VRF (optional) · Azuro (sports/predictions engine) · studio game content (optional).
+- **Casino → WINR Chain** (an L3 on Arbitrum, Orbit stack). Bets settle in the **WINR** chip; player
+  **USDC deposits are auto-swapped to WINR**, UI shows USD.
+- **Sports → Azuro** on a supported chain (Arbitrum / Polygon / Gnosis / Base etc.); bets settle in that
+  chain's pool token (USDT/USDC/WXDAI…).
+- Casino and sports may live on **different chains** → unified balance via bridging (LI.FI). See `03`.
 
-Rule: **own everything that touches money-logic and game-logic; rent undifferentiated infra.**
+## Revenue (see `19`)
+
+- **Casino:** WINR **commission** on sourced volume + **vWINR** emissions. No bankroll, no full edge.
+- **Sports:** Azuro **affiliate GGR share** (~70% of attributable app revenue, capped).
+- We earn a share of player volume; the protocols' LPs are the house.
+
+## Scope: testnet only
+
+- This is a **testnet end-to-end** build — connect a wallet, play with **testnet funds**, no real money.
+- **Tech/infra:** effectively **free** (Vercel free tier, permissionless protocols, free testnet faucets).
+- **Out of scope (deferred, not part of this build):** mainnet, real-money operation, gaming licence,
+  KYC, and geoblocking.
 
 ## Glossary
 
-- **Non-custodial** — the operator never holds the private keys to player funds.
-- **Vault** — smart contract holding deposited funds; player can always withdraw.
-- **Session key** — a temporary, scoped signing key that can place bets within limits without a
-  per-action wallet popup.
-- **Seamless wallet** — the industry-standard callback API where a game asks the backend for balance
-  and reports bet/win; backend is the single source of truth.
-- **RGS** — Remote Game Server; runs game rounds and calls the seamless-wallet API.
-- **Ledger** — off-chain balance store (source of truth for live play), backed by on-chain vault.
-- **Provably fair** — commit-reveal scheme letting players verify the house didn't cheat.
-- **Net settlement** — reconciling a whole session's result to the chain in one transaction.
-- **AA** — Account Abstraction (ERC-4337 / ERC-7702).
-- **Azuro** — decentralized on-chain betting protocol used for our Sports & Predictions verticals.
+- **Integrator/operator** — us: the frontend that sources players and earns commission.
+- **WINR Protocol** — on-chain casino infra (bankroll + VRF + settlement + game catalog); powers JustBet.
+- **Azuro Protocol** — on-chain betting infra (liquidity + odds + settlement) for sports/predictions.
+- **Shared bankroll** — protocol-level LP-funded pool that pays winners; not funded by us.
+- **WINR VRF** — WINR's on-chain verifiable randomness (provably fair, <300ms).
+- **Non-custodial** — players hold their own funds in their own wallet; we never take custody.
+- **Affiliate address** — a wallet we control that on-chain volume is attributed to for revenue.
 
 _Last updated: 2026-07-01_
