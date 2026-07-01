@@ -42,7 +42,10 @@ protocol pivot.
    uninterrupted funding).** Without it, funding the test/house wallets falls back to protocol/Circle
    faucets which may be **CAPTCHA-gated** → the one place I could get blocked and need a manual faucet
    step from you. Providing CDP keys makes funding fully programmatic (no interruption).
-3. Grant permission to run CLIs/installs/deploys without per-command prompts.
+3. Grant permission to run CLIs/installs/deploys without per-command prompts (**autonomous mode**).
+4. *(recommended)* A **notify target** so you're pinged on completion/blocker instead of watching: a
+   **Slack channel** (uses `$SLACK_BOT_TOKEN`) or opt for push notifications. See unattended-execution
+   policy in `17`.
 
 > That's the full list. The **only** thing no credential can pre-guarantee is whether the BetSwirl/Azuro
 > **testnets are fully functional on the chosen chain** (bankroll funded, betting-token faucet exists) —

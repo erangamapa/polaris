@@ -89,6 +89,30 @@ Both already passed the agent's own E2E, so they work on import.
 `vercel` (✅), `gh` (✅), `node`/`npm` (✅). BetSwirl SDK, Azuro SDK, wagmi/viem = project deps run as
 scripts. No Foundry/signer (no contracts to deploy for the MVP). Playwright only if you ask.
 
+## Unattended execution & escalation (run without babysitting)
+
+The build is designed to run **hands-off** after kickoff. The agent must:
+1. **Run in an autonomous permission mode** (no per-command prompts) — granted once at kickoff.
+2. **Checkpoint every phase:** commit + update `STATUS.md` so progress is durable and **resumable** from
+   the last green phase. A restart (even a fresh/cleared session) reads `STATUS.md` + `README.md` and
+   continues — no lost work.
+3. **Auto-route-around known blockers before ever stopping:**
+   - testnet unhealthy / bankroll empty → switch to another supported testnet (Base Sepolia ↔ Polygon Amoy);
+   - faucet CAPTCHA-gated → use CDP faucet API / alternate faucet;
+   - RPC flaky → fallback RPC;
+   - transient errors → retry with backoff.
+4. **Notify, don't wait.** On **completion** OR a **genuine blocker** (only after auto-routing fails),
+   send a message (Slack via `$SLACK_BOT_TOKEN` to a channel given at kickoff, or a push notification)
+   with: current phase, what's blocked, and the **one exact thing needed**. Never sit silently on a screen
+   the human must watch.
+5. **Honest boundary:** one human kickoff (inputs + run permission + notify channel) is required; and a
+   rare genuine external failure may need a one-line reply from the human — which arrives as a
+   notification, not by observation.
+
+**Do NOT `/clear` before building** to "increase autonomy" — clearing only adds a re-kickoff step. Prefer
+running in a context-full session (auto-summarization handles length). If a clear does happen, resume via
+`STATUS.md`.
+
 ## Scope
 This is a **testnet-only** build. Mainnet, gaming licence, geoblocking, and KYC are out of scope. No
 game-provider contracts and no bankroll are ever required.
