@@ -9,18 +9,19 @@ const PRODUCTS = [
 ];
 
 // Subtle per-product accents (no left bar) — tint + tinted text only.
+// Each product keeps its OWN colour even when another product is active.
 const ACCENTS = {
   casino: {
-    tab: { background: "rgba(16,185,129,0.12)", color: "#5eead4" },
-    item: { background: "rgba(16,185,129,0.10)", color: "#d7fbf0" },
+    tab: { background: "rgba(184,92,142,0.12)", color: "#D99AB9", border: "1px solid rgba(184,92,142,0.42)" },
+    item: { background: "rgba(184,92,142,0.16)", color: "#D99AB9" },
   },
   predictions: {
-    tab: { background: "rgba(139,124,246,0.14)", color: "#c4b5fd" },
-    item: { background: "rgba(139,124,246,0.12)", color: "#e7e0ff" },
+    tab: { background: "rgba(79,167,184,0.12)", color: "#92D4DF", border: "1px solid rgba(79,167,184,0.42)" },
+    item: { background: "rgba(79,167,184,0.16)", color: "#92D4DF" },
   },
   sports: {
-    tab: { background: "rgba(245,158,11,0.13)", color: "#fcd34d" },
-    item: { background: "rgba(245,158,11,0.11)", color: "#fde9c8" },
+    tab: { background: "rgba(175,195,74,0.12)", color: "#D7E78A", border: "1px solid rgba(175,195,74,0.42)" },
+    item: { background: "rgba(175,195,74,0.16)", color: "#D7E78A" },
   },
 };
 
@@ -47,7 +48,7 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
               style={active ? ACCENTS[p.id].tab : undefined}
               className={cn(
                 // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
-                "flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1 text-[11px] transition-[color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
@@ -80,8 +81,8 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
               <ItemIcon icon={it.icon} />
               <span className="truncate">{it.label}</span>
               {it.live > 0 && (
-                <Badge variant="outline" className="ml-auto gap-1 border-rose-500/40 px-1.5 text-rose-400">
-                  <span className="size-1.5 rounded-full bg-rose-500" />{it.live}
+                <Badge variant="outline" className="ml-auto gap-1 border-[rgba(214,90,112,0.42)] px-1.5 text-[#E8758B]">
+                  <span className="size-1.5 rounded-full bg-[#D65A70]" />{it.live}
                 </Badge>
               )}
             </button>
@@ -104,7 +105,7 @@ export function Sidebar({ open, onClose, product, setProduct, items, selected, o
       {/* desktop inline rail */}
       <aside
         className={cn(
-          "hidden shrink-0 border-r bg-sidebar transition-all lg:block",
+          "hidden shrink-0 border-r bg-sidebar transition-all lg:block lg:overflow-y-auto",
           open ? "lg:w-60" : "lg:w-0 lg:overflow-hidden lg:border-r-0"
         )}
       >

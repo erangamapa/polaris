@@ -20,7 +20,7 @@ export function SupportDialog({ open, onClose }) {
     <Dialog open={open} onOpenChange={(o) => !o && (onClose(), setCaseId(null))}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><LifeBuoy className="size-4 text-emerald-400" /> Help &amp; support</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><LifeBuoy className="size-4 text-[var(--global-cta)]" /> Help &amp; support</DialogTitle>
           <DialogDescription>Find an answer or contact our team. Demo — no live agents.</DialogDescription>
         </DialogHeader>
 
@@ -35,12 +35,12 @@ export function SupportDialog({ open, onClose }) {
         </div>
 
         {caseId ? (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
-            <Check className="size-4 text-emerald-400" />
-            <span>Case <span className="font-mono font-medium text-emerald-400">{caseId}</span> opened — we'll reply by email.</span>
+          <div className="flex items-center gap-2 rounded-lg border border-[var(--success)]/40 bg-[var(--success-bg)] p-3 text-sm">
+            <Check className="size-4 text-[var(--success)]" />
+            <span>Case <span className="font-mono font-medium text-[var(--success)]">{caseId}</span> opened — we'll reply by email.</span>
           </div>
         ) : (
-          <Button className="w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400" onClick={contact}>
+          <Button className="w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={contact}>
             Contact support
           </Button>
         )}

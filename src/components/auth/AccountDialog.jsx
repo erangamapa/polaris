@@ -14,7 +14,7 @@ export function AccountDialog({ open, onClose, user, onVerify, onResponsibleGamb
         </DialogHeader>
 
         <div className="flex items-center gap-3 rounded-xl border bg-card p-3">
-          <div className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 font-bold text-zinc-950">
+          <div className="grid size-10 place-items-center rounded-full bg-[var(--brand-logo)] font-bold text-[var(--brand-logo-text)]">
             {user.label?.[0]?.toUpperCase() ?? "U"}
           </div>
           <div className="min-w-0">
@@ -26,15 +26,15 @@ export function AccountDialog({ open, onClose, user, onVerify, onResponsibleGamb
         <div className="flex items-center justify-between rounded-lg border bg-card p-3">
           <div className="flex items-center gap-2 text-sm">
             {verified ? (
-              <><ShieldCheck className="size-4 text-emerald-400" /> Verified</>
+              <><ShieldCheck className="size-4 text-[var(--success)]" /> Verified</>
             ) : (
-              <><ShieldAlert className="size-4 text-amber-400" /> Not verified</>
+              <><ShieldAlert className="size-4 text-[var(--warning)]" /> Not verified</>
             )}
           </div>
           {verified ? (
-            <Badge variant="outline" className="border-emerald-500/40 text-emerald-400">KYC complete</Badge>
+            <Badge variant="outline" className="border-[var(--success)]/40 text-[var(--success)]">KYC complete</Badge>
           ) : (
-            <Button size="sm" className="bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400" onClick={onVerify}>Verify now</Button>
+            <Button size="sm" className="bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={onVerify}>Verify now</Button>
           )}
         </div>
 

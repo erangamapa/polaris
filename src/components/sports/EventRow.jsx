@@ -14,7 +14,7 @@ export function EventRow({ event, selection, onPick, onOpen }) {
       <CardContent className="p-3">
         <button onClick={() => onOpen(event)} className="mb-2 flex w-full items-center gap-2 text-left text-xs text-muted-foreground">
           {event.live ? (
-            <Badge variant="outline" className="gap-1 border-rose-500/40 text-rose-400">
+            <Badge variant="outline" className="gap-1 border-[rgba(214,90,112,0.42)] bg-[rgba(214,90,112,0.12)] text-[#E8758B]">
               <Radio className="size-3" /> Live · {event.clock}
             </Badge>
           ) : (
@@ -60,7 +60,7 @@ function Team({ name, score, live }) {
     <div className="flex items-center justify-between">
       <span className="text-sm font-medium">{name}</span>
       {live && score != null && (
-        <span className="font-mono text-sm font-bold tabular-nums text-emerald-400">{score}</span>
+        <span className="font-mono text-sm font-bold tabular-nums text-foreground">{score}</span>
       )}
     </div>
   );

@@ -36,6 +36,128 @@ body {
   animation: fade-in-up 220ms var(--ease-out) both;
 }
 
+/* Toast auto-dismiss progress (visual only; JS timer handles actual dismissal). */
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+.toast-progress {
+  height: 2px;
+  width: 100%;
+  transform-origin: left;
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* ── WildStakes design tokens ────────────────────────────────────────────────
+   Brand + global-CTA + semantic tokens are fixed (never change per mode).
+   Product accents switch via [data-product] on the app root. Section colour
+   is an accent signal only — ~85% of the UI stays neutral dark. */
+:root {
+  --brand-logo: #19C7C5;
+  --brand-logo-hover: #31D6D4;
+  --brand-logo-dark: #0E8F90;
+  --brand-logo-text: #071012;
+
+  --global-cta: #19C7A5;
+  --global-cta-hover: #28D8B4;
+  --global-cta-active: #13A98B;
+  --global-cta-text: #06110E;
+  --global-cta-soft-bg: rgba(25, 199, 165, 0.14);
+  --global-cta-soft-border: rgba(25, 199, 165, 0.28);
+
+  --success: #49B889;
+  --success-bg: rgba(73, 184, 137, 0.14);
+  --warning: #D6A84A;
+  --warning-bg: rgba(214, 168, 74, 0.14);
+  --danger: #D65A70;
+  --danger-bg: rgba(214, 90, 112, 0.14);
+
+  /* casino — muted berry / rose-magenta */
+  --casino-primary: #B85C8E;
+  --casino-primary-hover: #C96B9F;
+  --casino-primary-active: #99466F;
+  --casino-primary-soft: rgba(184, 92, 142, 0.14);
+  --casino-primary-subtle: rgba(184, 92, 142, 0.08);
+  --casino-primary-border: rgba(184, 92, 142, 0.30);
+  --casino-text-accent: #D99AB9;
+  --casino-cta-text: #FFFFFF;
+
+  /* predictions — steel-cyan / petrol-blue */
+  --predictions-primary: #4FA7B8;
+  --predictions-primary-hover: #63BACB;
+  --predictions-primary-active: #3A8595;
+  --predictions-primary-soft: rgba(79, 167, 184, 0.14);
+  --predictions-primary-subtle: rgba(79, 167, 184, 0.08);
+  --predictions-primary-border: rgba(79, 167, 184, 0.30);
+  --predictions-text-accent: #92D4DF;
+  --predictions-cta-text: #081214;
+
+  /* sports — chartreuse / olive-lime */
+  --sports-primary: #AFC34A;
+  --sports-primary-hover: #C2D75D;
+  --sports-primary-active: #8FA334;
+  --sports-primary-soft: rgba(175, 195, 74, 0.14);
+  --sports-primary-subtle: rgba(175, 195, 74, 0.08);
+  --sports-primary-border: rgba(175, 195, 74, 0.30);
+  --sports-text-accent: #D7E78A;
+  --sports-cta-text: #111509;
+
+  /* default product tokens (overridden by [data-product]) */
+  --product-primary: var(--global-cta);
+  --product-primary-hover: var(--global-cta-hover);
+  --product-primary-active: var(--global-cta-active);
+  --product-soft: var(--global-cta-soft-bg);
+  --product-subtle: var(--global-cta-soft-bg);
+  --product-border: var(--global-cta-soft-border);
+  --product-accent-text: var(--global-cta);
+  --product-cta-text: var(--global-cta-text);
+  --product-ambient: none;
+}
+
+[data-product="casino"] {
+  --product-primary: var(--casino-primary);
+  --product-primary-hover: var(--casino-primary-hover);
+  --product-primary-active: var(--casino-primary-active);
+  --product-soft: var(--casino-primary-soft);
+  --product-subtle: var(--casino-primary-subtle);
+  --product-border: var(--casino-primary-border);
+  --product-accent-text: var(--casino-text-accent);
+  --product-cta-text: var(--casino-cta-text);
+  --product-ambient: radial-gradient(circle at 20% 20%, rgba(184, 92, 142, 0.10), transparent 34%);
+}
+[data-product="predictions"] {
+  --product-primary: var(--predictions-primary);
+  --product-primary-hover: var(--predictions-primary-hover);
+  --product-primary-active: var(--predictions-primary-active);
+  --product-soft: var(--predictions-primary-soft);
+  --product-subtle: var(--predictions-primary-subtle);
+  --product-border: var(--predictions-primary-border);
+  --product-accent-text: var(--predictions-text-accent);
+  --product-cta-text: var(--predictions-cta-text);
+  --product-ambient: radial-gradient(circle at 10% 75%, rgba(79, 167, 184, 0.10), transparent 36%);
+}
+[data-product="sports"] {
+  --product-primary: var(--sports-primary);
+  --product-primary-hover: var(--sports-primary-hover);
+  --product-primary-active: var(--sports-primary-active);
+  --product-soft: var(--sports-primary-soft);
+  --product-subtle: var(--sports-primary-subtle);
+  --product-border: var(--sports-primary-border);
+  --product-accent-text: var(--sports-text-accent);
+  --product-cta-text: var(--sports-cta-text);
+  --product-ambient: radial-gradient(circle at 75% 40%, rgba(175, 195, 74, 0.10), transparent 36%);
+}
+
+/* Ambient section glow — subtle, only behind the app frame, never per-card. */
+[data-product] {
+  background-image: var(--product-ambient);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transition: background-image 220ms var(--ease-out);
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -72,37 +194,38 @@ body {
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --background: #090A0B;
+  --foreground: #F2F3F5;
+  --card: #15171C;
+  --card-foreground: #F2F3F5;
+  --popover: #1A1C22;
+  --popover-foreground: #F2F3F5;
+  /* primary = global teal CTA (Deposit / Register / Confirm) */
+  --primary: #19C7A5;
+  --primary-foreground: #06110E;
+  --secondary: #1A1C22;
+  --secondary-foreground: #E5E7EB;
+  --muted: #1A1C22;
+  --muted-foreground: #A9ADB7;
+  --accent: #20232A;
+  --accent-foreground: #F2F3F5;
+  --destructive: #D65A70;
+  --border: rgba(255, 255, 255, 0.10);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: rgba(255, 255, 255, 0.26);
+  --chart-1: #4FA7B8;
+  --chart-2: #49B889;
+  --chart-3: #AFC34A;
+  --chart-4: #B85C8E;
+  --chart-5: #D6A84A;
+  --sidebar: #121318;
+  --sidebar-foreground: #F2F3F5;
+  --sidebar-primary: #19C7A5;
+  --sidebar-primary-foreground: #06110E;
+  --sidebar-accent: #1A1D22;
+  --sidebar-accent-foreground: #F2F3F5;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: rgba(255, 255, 255, 0.26);
 }
 
 @theme inline {

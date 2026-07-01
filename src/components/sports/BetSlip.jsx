@@ -37,7 +37,7 @@ export function BetSlip({
       <div className="flex items-center gap-2 border-b p-3">
         <span className="text-sm font-bold">Bet slip</span>
         {!empty && (
-          <span className="grid size-5 place-items-center rounded-full bg-emerald-500 text-xs font-medium text-zinc-950">
+          <span className="grid size-5 place-items-center rounded-full bg-[var(--product-primary)] text-xs font-medium text-[var(--product-cta-text)]">
             {selections.length}
           </span>
         )}
@@ -67,7 +67,7 @@ export function BetSlip({
                 type="checkbox"
                 checked={!!acceptChanges}
                 onChange={(e) => setAcceptChanges?.(e.target.checked)}
-                className="size-3.5 accent-emerald-500"
+                className="size-3.5 accent-[var(--product-primary)]"
               />
               Accept odds changes automatically
             </label>
@@ -82,7 +82,7 @@ export function BetSlip({
                     {fmtOdds(s.odds)}
                   </span>
                   {s.pendingOdds != null && (
-                    <span className="rounded-md bg-amber-500/15 px-1.5 py-0.5 font-mono text-[11px] font-medium tabular-nums text-amber-400">
+                    <span className="rounded-md bg-[var(--warning-bg)] px-1.5 py-0.5 font-mono text-[11px] font-medium tabular-nums text-[var(--warning)]">
                       → {fmtOdds(s.pendingOdds)}
                     </span>
                   )}
@@ -109,7 +109,7 @@ export function BetSlip({
                       />
                     </div>
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      Returns <span className="font-medium text-emerald-400">${fmt((s.stake || 0) * s.odds)}</span>
+                      Returns <span className="font-medium text-[var(--success)]">${fmt((s.stake || 0) * s.odds)}</span>
                     </span>
                   </div>
                 )}
@@ -120,7 +120,7 @@ export function BetSlip({
               <div className="space-y-2 rounded-lg border bg-card p-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{selections.length} legs · combined odds</span>
-                  <span className="font-mono text-lg font-semibold tabular-nums text-amber-400">{fmtOdds(combinedOdds)}</span>
+                  <span className="font-mono text-lg font-semibold tabular-nums text-[#D7E78A]">{fmtOdds(combinedOdds)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex w-28 items-center rounded-md border bg-background px-2">
@@ -134,7 +134,7 @@ export function BetSlip({
                     />
                   </div>
                   <span className="whitespace-nowrap text-xs text-muted-foreground">
-                    Returns <span className="font-medium text-emerald-400">${fmt((multiStake || 0) * combinedOdds)}</span>
+                    Returns <span className="font-medium text-[var(--success)]">${fmt((multiStake || 0) * combinedOdds)}</span>
                   </span>
                 </div>
                 <div className="flex gap-1.5">
@@ -165,19 +165,19 @@ export function BetSlip({
             </div>
             <div className="mb-2.5 mt-0.5 flex items-baseline justify-between">
               <span className="text-sm text-muted-foreground">Potential payout</span>
-              <span className="font-mono text-xl font-semibold tabular-nums text-emerald-400">${fmt(totalPayout)}</span>
+              <span className="font-mono text-xl font-semibold tabular-nums text-[var(--success)]">${fmt(totalPayout)}</span>
             </div>
 
             {hasPending && !acceptChanges ? (
               <Button
-                className="w-full bg-amber-500 font-bold text-zinc-950 hover:bg-amber-400"
+                className="w-full bg-[var(--warning)] font-bold text-[#241a05] hover:brightness-110"
                 onClick={() => { onAcceptChanges?.(); setConfirming(false); }}
               >
                 Odds changed — accept
               </Button>
             ) : !confirming ? (
               <Button
-                className="w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400"
+                className="w-full bg-[var(--product-primary)] font-bold text-[var(--product-cta-text)] hover:bg-[var(--product-primary-hover)] disabled:bg-zinc-700 disabled:text-zinc-400"
                 disabled={totalStake <= 0 || insufficient}
                 onClick={() => setConfirming(true)}
               >
@@ -187,12 +187,12 @@ export function BetSlip({
               <div className="space-y-2">
                 <div className="rounded-md border bg-card p-2 text-xs text-muted-foreground">
                   Price accepted{mode === "multi" ? ` at ${fmtOdds(combinedOdds)}` : ""}. You’ll receive
-                  <span className="font-medium text-emerald-400"> ${fmt(totalPayout)}</span> if it wins.
+                  <span className="font-medium text-[var(--success)]"> ${fmt(totalPayout)}</span> if it wins.
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => setConfirming(false)}>Back</Button>
                   <Button
-                    className="flex-1 bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400"
+                    className="flex-1 bg-[var(--product-primary)] font-bold text-[var(--product-cta-text)] hover:bg-[var(--product-primary-hover)]"
                     onClick={() => { onPlace(); setConfirming(false); }}
                   >
                     Confirm bet

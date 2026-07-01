@@ -13,16 +13,21 @@ export function PromoHero() {
   const promo = PROMOS[i];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      <div className={`relative bg-gradient-to-br ${promo.hue} p-6 sm:p-8`}>
-        <div className="absolute inset-0 bg-black/10" />
+    <div className="relative overflow-hidden rounded-2xl border border-[var(--casino-primary-border)]">
+      <div
+        className="relative p-6 sm:p-8"
+        style={{
+          background:
+            "radial-gradient(120% 150% at 16% 18%, rgba(184,92,142,0.24), transparent 55%), linear-gradient(135deg, #1B1017 0%, #120D12 100%)",
+        }}
+      >
         <div className="relative max-w-md">
-          <span className="inline-block rounded-full bg-black/25 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
+          <span className="inline-block rounded-full bg-[var(--casino-primary-soft)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--casino-text-accent)]">
             {promo.eyebrow}
           </span>
           <h2 className="mt-3 text-2xl font-black leading-tight text-white sm:text-3xl">{promo.title}</h2>
           <p className="mt-1.5 text-sm text-white/85">{promo.body}</p>
-          <button className="mt-4 rounded-lg bg-white px-5 py-2 text-sm font-bold text-zinc-950 transition hover:bg-white/90">
+          <button className="mt-4 rounded-lg bg-[var(--casino-primary)] px-5 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)]">
             {promo.cta}
           </button>
         </div>

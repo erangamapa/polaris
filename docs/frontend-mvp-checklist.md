@@ -59,7 +59,7 @@ _Last updated: 2026-06-30_
 ## Foundation (front-end architecture)
 
 - [~] 🔴 **Routing / shareable URLs** — top-level nav in the URL (`/casino/:cat`, `/predictions/:section`, `/sports/:sport`), deep links + back/forward + SPA fallback (History API, no router dep). _Event-detail URLs (`/sports/:sport/:eventId`) still pending._
-- [ ] 🟡 Proper toast/notification system + bell (replace inline banners)
+- [x] 🟡 Toast system — top-center/top, raised+shadow, 4 categories, action link, pause-on-hover, progress; migrated bet-placed / limits-saved / deposit+withdrawal-complete _(notifications bell pending)_
 - [ ] ⚪ i18n scaffolding — defer
 - [x] Motion polish (top-anchored modals, subtle fades), reduced-motion, a11y focus rings, error boundary
 

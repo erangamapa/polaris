@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Check, Copy, Loader2, ShieldCheck } from "lucide-react";
 import { fmt } from "@/lib/format";
 import { useCurrency } from "@/lib/currency";
+import { toast } from "@/lib/toast";
 import {
   ASSETS, DEPOSIT_STAGES, WITHDRAW_STAGES, WITHDRAW_FEE, MIN_WITHDRAW, txHash, nowLabel,
 } from "@/lib/walletData";
@@ -19,7 +20,7 @@ function StageTracker({ stages, current }) {
         const active = i === current;
         return (
           <div key={s} className="flex items-center gap-2 text-sm">
-            <span className={`grid size-5 place-items-center rounded-full ${done ? "bg-emerald-500 text-zinc-950" : active ? "bg-emerald-500/20 text-emerald-400" : "bg-secondary text-muted-foreground"}`}>
+            <span className={`grid size-5 place-items-center rounded-full ${done ? "bg-[var(--success)] text-[#06110E]" : active ? "bg-[var(--success-bg)] text-[var(--success)]" : "bg-secondary text-muted-foreground"}`}>
               {done ? <Check className="size-3" /> : active ? <Loader2 className="size-3 animate-spin" /> : <span className="size-1.5 rounded-full bg-current" />}
             </span>
             <span className={`capitalize ${active ? "font-medium" : done ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{s}</span>
@@ -34,7 +35,7 @@ function StatRow({ label, value, accent }) {
   return (
     <div className="flex items-center justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className={`font-mono tabular-nums ${accent ? "font-semibold text-emerald-400" : ""}`}>{value}</span>
+      <span className={`font-mono tabular-nums ${accent ? "font-semibold text-[var(--success)]" : ""}`}>{value}</span>
     </div>
   );
 }
@@ -86,6 +87,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
     runStages(setDepStage, DEPOSIT_STAGES.length, () => {
       setBalance((b) => b + depAmt);
       pushTxn({ id: `t${Date.now()}`, type: "Deposit", amount: depAmt, status: "Completed", hash: txHash(), time: nowLabel(), network: asset.network });
+      toast.success("Deposit credited", { message: `+$${fmt(depAmt)} ${asset.label}` });
       setTimeout(() => setDepStage(null), 1800);
     });
   };
@@ -99,6 +101,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
     runStages(setWStage, WITHDRAW_STAGES.length, () => {
       setPending((p) => p - amount);
       pushTxn({ id: `t${Date.now()}`, type: "Withdrawal", amount, status: "Completed", hash: txHash(), time: nowLabel(), network: asset.network });
+      toast.success("Withdrawal sent", { message: `$${fmt(amount)} to ${asset.network}` });
       setTimeout(() => { setWStage(null); setWHash(""); }, 1800);
     });
     setTimeout(() => setWHash(txHash()), 1100 * 3);
@@ -139,7 +142,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                 <button
                   key={a.id}
                   onClick={() => setAssetId(a.id)}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-medium ${a.id === assetId ? "bg-emerald-500 text-zinc-950" : "bg-secondary text-muted-foreground"}`}
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-medium ${a.id === assetId ? "bg-[var(--global-cta)] text-[var(--global-cta-text)]" : "bg-secondary text-muted-foreground"}`}
                 >
                   {a.network}
                 </button>
@@ -153,7 +156,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
               </div>
             ) : (
               <>
-                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-center text-[11px] text-amber-400">
+                <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning-bg)] p-2 text-center text-[11px] text-[var(--warning)]">
                   Send only <span className="font-semibold">{asset.label} · {asset.network}</span> to this address
                 </div>
                 <div className="grid place-items-center rounded-xl bg-zinc-950 p-5">
@@ -161,7 +164,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                 </div>
                 <div className="flex items-center gap-2 rounded-lg border bg-background p-2 text-xs">
                   <span className="truncate font-mono">{ADDRESS}</span>
-                  <button onClick={copy} className={`ml-auto flex items-center gap-1 rounded px-2 py-1 ${copied ? "bg-emerald-500/20 text-emerald-400" : "bg-secondary"}`}>
+                  <button onClick={copy} className={`ml-auto flex items-center gap-1 rounded px-2 py-1 ${copied ? "bg-[var(--success-bg)] text-[var(--success)]" : "bg-secondary"}`}>
                     {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}{copied ? "Copied" : "Copy"}
                   </button>
                 </div>
@@ -174,7 +177,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                     <span className="text-xs text-muted-foreground">$</span>
                     <Input type="number" min={0} value={depAmt} onFocus={(e) => e.target.select()} onChange={(e) => setDepAmt(Math.max(0, +e.target.value))} className="h-8 border-0 bg-transparent px-1.5 font-mono tabular-nums shadow-none focus-visible:ring-0" />
                   </div>
-                  <Button className="flex-1 bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400" onClick={startDeposit}>
+                  <Button className="flex-1 bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={startDeposit}>
                     Simulate incoming deposit
                   </Button>
                 </div>
@@ -194,7 +197,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
               <div className="space-y-3">
                 <button onClick={() => { setWithdrawView("form"); setCode(""); }} className="text-xs text-muted-foreground hover:text-foreground">← Back</button>
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-medium"><ShieldCheck className="size-4 text-emerald-400" /> Confirm withdrawal</div>
+                  <div className="flex items-center gap-2 text-sm font-medium"><ShieldCheck className="size-4 text-[var(--success)]" /> Confirm withdrawal</div>
                   <p className="mt-1 text-xs text-muted-foreground">Enter the 6-digit code from your authenticator to send ${fmt(net)} to {asset.network}.</p>
                 </div>
                 <Input
@@ -205,7 +208,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                   className="text-center font-mono text-lg tracking-[0.5em]"
                 />
                 <Button
-                  className="w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400"
+                  className="w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] disabled:bg-zinc-700 disabled:text-zinc-400"
                   disabled={code.length !== 6}
                   onClick={() => { startWithdraw(); setWithdrawView("form"); setCode(""); }}
                 >
@@ -217,7 +220,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
               <>
                 <div className="flex gap-2">
                   {ASSETS.map((a) => (
-                    <button key={a.id} onClick={() => setAssetId(a.id)} className={`flex-1 rounded-lg py-1.5 text-xs font-medium ${a.id === assetId ? "bg-emerald-500 text-zinc-950" : "bg-secondary text-muted-foreground"}`}>
+                    <button key={a.id} onClick={() => setAssetId(a.id)} className={`flex-1 rounded-lg py-1.5 text-xs font-medium ${a.id === assetId ? "bg-[var(--global-cta)] text-[var(--global-cta-text)]" : "bg-secondary text-muted-foreground"}`}>
                       {a.network}
                     </button>
                   ))}
@@ -229,7 +232,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs text-muted-foreground">Amount</label>
-                    <button onClick={() => setWAmt(+balance.toFixed(2))} className="text-xs text-emerald-400">Max ${fmt(balance)}</button>
+                    <button onClick={() => setWAmt(+balance.toFixed(2))} className="text-xs text-[var(--success)]">Max ${fmt(balance)}</button>
                   </div>
                   <div className="flex items-center rounded-md border bg-background px-2">
                     <span className="text-xs text-muted-foreground">$</span>
@@ -240,9 +243,9 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                   <StatRow label="Network fee" value={`$${fmt(WITHDRAW_FEE)}`} />
                   <StatRow label="You receive" value={`$${fmt(net)}`} accent />
                 </div>
-                {wAmt > 0 && wAmt < MIN_WITHDRAW && <p className="text-[11px] text-rose-400">Minimum withdrawal is ${fmt(MIN_WITHDRAW)}.</p>}
-                {wAmt > balance && <p className="text-[11px] text-rose-400">Amount exceeds your available balance.</p>}
-                <Button className="w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400" disabled={!wValid} onClick={() => setWithdrawView("2fa")}>
+                {wAmt > 0 && wAmt < MIN_WITHDRAW && <p className="text-[11px] text-[var(--danger)]">Minimum withdrawal is ${fmt(MIN_WITHDRAW)}.</p>}
+                {wAmt > balance && <p className="text-[11px] text-[var(--danger)]">Amount exceeds your available balance.</p>}
+                <Button className="w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] disabled:bg-zinc-700 disabled:text-zinc-400" disabled={!wValid} onClick={() => setWithdrawView("2fa")}>
                   Withdraw ${fmt(net)}
                 </Button>
                 <p className="text-[11px] text-muted-foreground">Confirm the address and network — on-chain withdrawals can’t be reversed. You’ll enter a 2FA code next.</p>
@@ -263,7 +266,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                       <div className="truncate text-[11px] text-muted-foreground">{t.network} · tx {t.hash} · {t.time}</div>
                     </div>
                     <div className="ml-auto text-right">
-                      <div className={`font-mono text-sm tabular-nums ${t.type === "Deposit" ? "text-emerald-400" : ""}`}>
+                      <div className={`font-mono text-sm tabular-nums ${t.type === "Deposit" ? "text-[var(--success)]" : ""}`}>
                         {t.type === "Deposit" ? "+" : "−"}{fmtMoney(t.amount)}
                       </div>
                       <div className="text-[11px] text-muted-foreground">{t.status}</div>

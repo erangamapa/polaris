@@ -79,7 +79,7 @@ export function GameLauncher({ game, balance, setBalance, onRound, ensureAuth, o
           <button
             onClick={play}
             disabled={insufficient || rolling}
-            className="h-[44px] rounded-lg bg-emerald-500 px-8 font-bold text-zinc-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
+            className="h-[44px] rounded-lg bg-[var(--casino-primary)] px-8 font-bold text-white transition hover:bg-[var(--casino-primary-hover)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
           >
             {rolling ? "…" : insufficient ? "Low balance" : "Bet"}
           </button>

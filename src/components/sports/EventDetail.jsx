@@ -20,7 +20,7 @@ export function EventDetail({ event, selection, onBack, onPick }) {
         <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="secondary">{event.league}</Badge>
           {event.live ? (
-            <span className="flex items-center gap-1 text-rose-400"><Radio className="size-3.5" /> Live · {event.clock}</span>
+            <span className="flex items-center gap-1 text-[#E8758B]"><Radio className="size-3.5" /> Live · {event.clock}</span>
           ) : (
             <span className="flex items-center gap-1"><Clock className="size-3.5" /> {event.time}</span>
           )}
@@ -28,7 +28,7 @@ export function EventDetail({ event, selection, onBack, onPick }) {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold">{event.home} v {event.away}</h1>
           {event.live && event.score && (
-            <span className="font-mono text-lg font-bold tabular-nums text-emerald-400">
+            <span className="font-mono text-lg font-bold tabular-nums text-foreground">
               {event.score[0]}–{event.score[1]}
             </span>
           )}

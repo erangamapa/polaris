@@ -6,10 +6,10 @@ function Row({ price, size, max, side }) {
   return (
     <div className="relative grid grid-cols-2 px-3 py-1 text-xs tabular-nums">
       <div
-        className={`absolute inset-y-0 right-0 ${isAsk ? "bg-rose-500/10" : "bg-emerald-500/10"}`}
+        className={`absolute inset-y-0 right-0 ${isAsk ? "bg-[rgba(214,90,112,0.10)]" : "bg-[rgba(79,167,184,0.12)]"}`}
         style={{ width: `${pct}%` }}
       />
-      <span className={`relative font-medium ${isAsk ? "text-rose-400" : "text-emerald-400"}`}>
+      <span className={`relative font-medium ${isAsk ? "text-[#E17B8D]" : "text-[#78CAD7]"}`}>
         {fmtCents(price)}
       </span>
       <span className="relative text-right text-muted-foreground">{size.toLocaleString()}</span>

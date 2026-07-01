@@ -12,16 +12,16 @@ export function OddsButton({ label, odds, selected, onClick, dir, disabled }) {
         disabled
           ? "cursor-not-allowed border-border bg-muted/20 opacity-50"
           : selected
-            ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
-            : "border-border bg-muted/30 hover:border-ring/50 hover:bg-muted/60"
+            ? "border-[rgba(175,195,74,0.52)] bg-[rgba(175,195,74,0.12)] text-[#D7E78A]"
+            : "border-border bg-[#1A1C20] hover:border-[rgba(175,195,74,0.34)] hover:bg-[#20241C]"
       )}
     >
       <span className="line-clamp-1 text-[11px] text-muted-foreground">{label}</span>
       <span
         className={cn(
           "flex items-center gap-0.5 font-mono text-sm font-semibold tabular-nums transition-colors",
-          dir === "up" && "text-emerald-400",
-          dir === "down" && "text-rose-400"
+          dir === "up" && "text-[#D7E78A]",
+          dir === "down" && "text-[#E17B8D]"
         )}
       >
         {dir === "up" && <span className="text-[9px] leading-none">▲</span>}

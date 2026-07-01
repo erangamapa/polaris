@@ -1,10 +1,16 @@
+import { useRef } from "react";
 import { Menu, ReceiptText } from "lucide-react";
 import { BalancePill } from "./BalancePill";
 import { BRAND_NAME } from "@/lib/brand";
 
 export function TopBar({ onBurger, balance, user, onLogin, onRegister, onAccount, onDeposit, onActivity }) {
+  // Long-press the logo (~700ms) opens the dev panel on touch devices.
+  const pressTimer = useRef(null);
+  const startPress = () => { pressTimer.current = setTimeout(() => window.dispatchEvent(new Event("polaris:dev")), 700); };
+  const cancelPress = () => clearTimeout(pressTimer.current);
+
   return (
-    <header className="sticky top-0 z-40 flex items-center gap-3 border-b bg-background px-3 py-2.5 relative">
+    <header className="relative z-40 flex shrink-0 items-center gap-3 border-b bg-background px-3 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))]">
       <button
         onClick={onBurger}
         aria-label="Toggle menu"
@@ -13,8 +19,15 @@ export function TopBar({ onBurger, balance, user, onLogin, onRegister, onAccount
         <Menu className="size-5" />
       </button>
 
-      <div className="flex items-center gap-2">
-        <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 font-black text-zinc-950">{BRAND_NAME[0]}</div>
+      <div
+        className="flex select-none items-center gap-2"
+        onPointerDown={startPress}
+        onPointerUp={cancelPress}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <div className="grid size-8 place-items-center rounded-lg bg-[var(--brand-logo)] font-black text-[var(--brand-logo-text)]">{BRAND_NAME[0]}</div>
         <span className="text-sm font-bold tracking-tight">{BRAND_NAME}</span>
       </div>
 
@@ -25,6 +38,10 @@ export function TopBar({ onBurger, balance, user, onLogin, onRegister, onAccount
             <BalancePill balance={balance} onDeposit={onDeposit} />
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {/* Balance + deposit inline on mobile (desktop shows it centered instead) */}
+            <div className="sm:hidden">
+              <BalancePill balance={balance} onDeposit={onDeposit} />
+            </div>
             <button
               onClick={onActivity}
               aria-label="My activity"
@@ -32,17 +49,13 @@ export function TopBar({ onBurger, balance, user, onLogin, onRegister, onAccount
             >
               <ReceiptText className="size-5" />
             </button>
-            {/* Balance stays inline on mobile (no room to center) */}
-            <div className="sm:hidden">
-              <BalancePill balance={balance} onDeposit={onDeposit} />
-            </div>
             <button
               onClick={onAccount}
               aria-label="Account"
-              className="relative grid size-9 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 text-sm font-bold text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="relative grid size-9 place-items-center rounded-full bg-[var(--brand-logo)] text-sm font-bold text-[var(--brand-logo-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {user.label?.[0]?.toUpperCase() ?? "U"}
-              {!user.verified && <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-amber-400 ring-2 ring-background" />}
+              {!user.verified && <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-[var(--warning)] ring-2 ring-background" />}
             </button>
           </div>
         </>
@@ -56,7 +69,7 @@ export function TopBar({ onBurger, balance, user, onLogin, onRegister, onAccount
           </button>
           <button
             onClick={onRegister}
-            className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-lg bg-[var(--global-cta)] px-4 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Register
           </button>

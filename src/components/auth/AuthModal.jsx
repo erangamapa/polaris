@@ -23,7 +23,7 @@ export function AuthModal({ open, initialTab = "login", onClose, onAuthed }) {
   };
 
   const inputCls =
-    "w-full rounded-full border border-[#262626] bg-[#1a1a1a] px-4 py-3 text-[13px] text-white outline-none transition placeholder:text-[#8a8a8a] focus:border-[#4ade80]/40";
+    "w-full rounded-full border border-[#262626] bg-[#1a1a1a] px-4 py-3 text-[13px] text-white outline-none transition placeholder:text-[#8a8a8a] focus:border-[#19C7A5]/40";
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -38,7 +38,7 @@ export function AuthModal({ open, initialTab = "login", onClose, onAuthed }) {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex-1 rounded-full py-2 text-[13px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4ade80]/40 ${
+              className={`flex-1 rounded-full py-2 text-[13px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#19C7A5]/40 ${
                 tab === id ? "bg-[#2e2e2e] font-medium text-white" : "text-[#8a8a8a]"
               }`}
             >
@@ -54,7 +54,7 @@ export function AuthModal({ open, initialTab = "login", onClose, onAuthed }) {
             <button
               key={w.id}
               onClick={() => connectWallet(w)}
-              className="flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-[14px] border border-[#262626] bg-[#1a1a1a] px-1 py-2.5 transition hover:border-[#333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4ade80]/40"
+              className="flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-[14px] border border-[#262626] bg-[#1a1a1a] px-1 py-2.5 transition hover:border-[#333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#19C7A5]/40"
             >
               <span
                 className="grid size-8 place-items-center rounded-full text-[13px] font-bold"
@@ -78,13 +78,13 @@ export function AuthModal({ open, initialTab = "login", onClose, onAuthed }) {
             onChange={(e) => { setEmail(e.target.value); setError(""); }} />
           <input type="password" value={password} placeholder="Password" className={inputCls}
             onChange={(e) => { setPassword(e.target.value); setError(""); }} />
-          {error && <p className="px-1 text-[11px] text-rose-400">{error}</p>}
+          {error && <p className="px-1 text-[11px] text-[var(--danger)]">{error}</p>}
         </div>
 
         {/* CTA */}
         <button
           onClick={submitEmail}
-          className="mt-3 w-full rounded-full bg-[#4ade80] py-3 text-[14px] font-bold text-black transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4ade80]/50"
+          className="mt-3 w-full rounded-full bg-[#19C7A5] py-3 text-[14px] font-bold text-black transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#19C7A5]/50"
         >
           {isRegister ? "Create account" : "Log in"}
         </button>
@@ -94,7 +94,7 @@ export function AuthModal({ open, initialTab = "login", onClose, onAuthed }) {
         </p>
         <button
           onClick={() => onAuthed({ method: "demo", label: "demo@wildstakes.gg", verified: false })}
-          className="mt-2 text-center text-[12px] text-[#4ade80] hover:underline focus-visible:outline-none"
+          className="mt-2 text-center text-[12px] text-[#19C7A5] hover:underline focus-visible:outline-none"
         >
           Continue as demo →
         </button>

@@ -11,6 +11,7 @@ import {
 } from "@/lib/sportsData";
 import { fmt } from "@/lib/format";
 import { OddsFormatToggle } from "@/lib/odds";
+import { toast } from "@/lib/toast";
 import { EventRow } from "./EventRow";
 import { EventDetail } from "./EventDetail";
 import { BetSlip } from "./BetSlip";
@@ -24,16 +25,10 @@ export function SportsApp({ sport, balance, setBalance, onBet, ensureAuth, onVie
   const [mode, setMode] = useState("single");
   const [multiStake, setMultiStake] = useState(0);
   const [slipOpen, setSlipOpen] = useState(false);
-  const [receipt, setReceipt] = useState(null); // { ref, count, stake, ret }
   const [live, setLive] = useState({}); // eventId -> { clock, min, suspended, odds:{marketKey:{pick:{odds,dir}}} }
   const [acceptChanges, setAcceptChanges] = useState(false);
 
   useEffect(() => { setDetailId(null); }, [sport, view]);
-  useEffect(() => {
-    if (!receipt) return;
-    const t = setTimeout(() => setReceipt(null), 5000);
-    return () => clearTimeout(t);
-  }, [receipt]);
 
   // Live engine: drift odds, tick clock, occasionally suspend — for this sport's live events.
   useEffect(() => {
@@ -175,7 +170,11 @@ export function SportsApp({ sport, balance, setBalance, onBet, ensureAuth, onVie
         }
       });
     }
-    setReceipt({ ref: "#" + Math.random().toString(36).slice(2, 7).toUpperCase(), count, stake: totalStake, ret: +ret.toFixed(2) });
+    const ref = "#" + Math.random().toString(36).slice(2, 7).toUpperCase();
+    toast.success("Bet placed", {
+      message: `${ref} · $${fmt(totalStake)} → $${fmt(+ret.toFixed(2))}`,
+      action: onViewBets ? { label: "View my bets", onClick: onViewBets } : undefined,
+    });
     clear(); setSlipOpen(false);
   };
 
@@ -196,21 +195,6 @@ export function SportsApp({ sport, balance, setBalance, onBet, ensureAuth, onVie
         <p className="text-sm text-muted-foreground">Live and upcoming matches.</p>
       </div>
 
-      {receipt && (
-        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
-          <span className="font-medium text-emerald-400">Bet placed ✓</span>
-          <span className="font-mono text-xs text-muted-foreground">{receipt.ref}</span>
-          <span className="text-xs text-muted-foreground">
-            {receipt.count} bet{receipt.count !== 1 ? "s" : ""} · ${fmt(receipt.stake)} → ${fmt(receipt.ret)}
-          </span>
-          {onViewBets && (
-            <button onClick={onViewBets} className="ml-auto text-xs font-medium text-emerald-400 hover:underline">
-              View my bets →
-            </button>
-          )}
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-4">
           {detailEvent ? (
@@ -220,10 +204,10 @@ export function SportsApp({ sport, balance, setBalance, onBet, ensureAuth, onVie
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Tabs value={view} onValueChange={setView}>
                   <TabsList>
-                    <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                    <TabsTrigger value="live">
+                    <TabsTrigger value="upcoming" className="data-[state=active]:text-[var(--product-primary)]">Upcoming</TabsTrigger>
+                    <TabsTrigger value="live" className="data-[state=active]:text-[var(--product-primary)]">
                       Live
-                      {liveCountBySport(sport) > 0 && <span className="ml-1.5 size-1.5 rounded-full bg-rose-500" />}
+                      {liveCountBySport(sport) > 0 && <span className="ml-1.5 size-1.5 rounded-full bg-[#D65A70]" />}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -269,8 +253,8 @@ export function SportsApp({ sport, balance, setBalance, onBet, ensureAuth, onVie
 
       {selections.length > 0 && (
         <div className="fixed inset-x-0 z-40 px-4 lg:hidden bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))]">
-          <Button className="w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400" onClick={() => setSlipOpen(true)}>
-            <span className="mr-2 grid size-5 place-items-center rounded-full bg-zinc-950/20 text-xs">{selections.length}</span>
+          <Button className="w-full bg-[var(--product-primary)] font-bold text-[var(--product-cta-text)] hover:bg-[var(--product-primary-hover)]" onClick={() => setSlipOpen(true)}>
+            <span className="mr-2 grid size-5 place-items-center rounded-full bg-black/20 text-xs">{selections.length}</span>
             Bet Slip · ${fmt(totalStake)}
           </Button>
         </div>

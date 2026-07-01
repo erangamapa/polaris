@@ -5,7 +5,7 @@ export function GameTile({ game, onLaunch, faved, onFav }) {
     <button
       onClick={() => onLaunch(game)}
       aria-label={`Play ${game.title}`}
-      className="group relative w-[136px] shrink-0 overflow-hidden rounded-xl ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+      className="group relative w-[136px] shrink-0 overflow-hidden rounded-xl ring-1 ring-white/5 transition hover:-translate-y-1 hover:ring-[var(--casino-primary-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--casino-primary)]"
     >
       <div className={`relative h-[180px] w-full bg-gradient-to-br ${game.hue}`}>
         <div className="absolute inset-0 bg-black/10" />
@@ -29,18 +29,18 @@ export function GameTile({ game, onLaunch, faved, onFav }) {
         <div className="absolute inset-x-0 bottom-0 p-2 text-left">
           <div className="flex items-center gap-1">
             {game.new && (
-              <span className="rounded bg-emerald-500 px-1 text-[9px] font-bold uppercase leading-tight text-zinc-950">New</span>
+              <span className="rounded bg-[var(--casino-primary)] px-1 text-[9px] font-bold uppercase leading-tight text-white">New</span>
             )}
             <div className="truncate text-sm font-bold leading-tight text-white drop-shadow">{game.title}</div>
           </div>
           <div className="mt-0.5 flex items-center gap-1 text-[10px] text-white/80">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--casino-text-accent)]" />
             {game.players.toLocaleString()} playing
           </div>
         </div>
 
         <div className="absolute inset-0 grid place-items-center bg-black/40 opacity-0 transition group-hover:opacity-100">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-500 text-zinc-950">▶</span>
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--casino-primary)] text-white">▶</span>
         </div>
       </div>
     </button>

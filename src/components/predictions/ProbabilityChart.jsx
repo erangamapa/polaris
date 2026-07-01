@@ -7,8 +7,8 @@ export function ProbabilityChart({ data }) {
         <AreaChart data={data} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="yesFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-emerald-500, #10b981)" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="var(--color-emerald-500, #10b981)" stopOpacity={0} />
+              <stop offset="0%" stopColor="#4FA7B8" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#4FA7B8" stopOpacity={0} />
             </linearGradient>
           </defs>
           <YAxis domain={[0, 100]} hide />
@@ -27,7 +27,7 @@ export function ProbabilityChart({ data }) {
           <Area
             type="monotone"
             dataKey="yes"
-            stroke="#10b981"
+            stroke="#4FA7B8"
             strokeWidth={2}
             fill="url(#yesFill)"
             isAnimationActive={false}

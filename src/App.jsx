@@ -7,6 +7,8 @@ import { TopBar } from "./components/shell/TopBar";
 import { Sidebar } from "./components/shell/Sidebar";
 import { MobileProductBar } from "./components/shell/MobileProductBar";
 import { Footer } from "./components/shell/Footer";
+import { Toaster } from "./components/shell/Toaster";
+import { DevPanel } from "./components/dev/DevPanel";
 import { PromoHero } from "./components/casino/PromoHero";
 import { GameRail } from "./components/casino/GameRail";
 import { GameTile } from "./components/casino/GameTile";
@@ -215,7 +217,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div data-product={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <TopBar
         onBurger={() => setSidebarOpen((o) => !o)}
         balance={balance}
@@ -227,7 +229,7 @@ export default function App() {
         onActivity={openActivity}
       />
 
-      <div className="flex">
+      <div className="flex min-h-0 flex-1">
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -238,7 +240,7 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main className="min-w-0 flex-1 px-4 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:pb-4">
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4">
           <div key={product} className="animate-fade-in-up">
             {product === "casino" && (
               <CasinoLobby
@@ -262,6 +264,8 @@ export default function App() {
       </div>
 
       <MobileProductBar product={product} setProduct={setProduct} />
+      <Toaster />
+      <DevPanel />
 
       {launched && (
         <GameLauncher game={launched} balance={balance} setBalance={setBalance} onRound={logRound} ensureAuth={ensureAuth} onClose={() => setLaunched(null)} />

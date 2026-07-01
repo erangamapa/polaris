@@ -48,11 +48,11 @@ function Row({ a, cashing, onCash, cashoutValue }) {
               </div>
             )
           ) : cashed ? (
-            <div className="text-[11px] font-medium text-amber-400">Cashed out {fmtMoney(a.cashout)}</div>
+            <div className="text-[11px] font-medium text-[var(--warning)]">Cashed out {fmtMoney(a.cashout)}</div>
           ) : voided ? (
             <div className="text-[11px] font-medium text-muted-foreground">Void · stake returned</div>
           ) : (
-            <div className={`text-[11px] font-medium ${won ? "text-emerald-400" : "text-rose-400"}`}>
+            <div className={`text-[11px] font-medium ${won ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
               {won ? `Won ${fmtMoney(a.potential)}` : "Lost"}
             </div>
           )}
@@ -76,7 +76,7 @@ function Row({ a, cashing, onCash, cashoutValue }) {
               </button>
               <button
                 onClick={() => onCash(a.id, 1)}
-                className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/25"
+                className="rounded-md bg-[var(--success-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--success)] hover:bg-[rgba(73,184,137,0.24)]"
               >
                 Cash out {fmtMoney(cashoutValue(a))}
               </button>

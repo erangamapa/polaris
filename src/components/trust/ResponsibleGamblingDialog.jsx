@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Check } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 const KEY = "polaris_rg";
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
@@ -21,8 +22,8 @@ export function ResponsibleGamblingDialog({ open, onClose }) {
 
   const set = (k, v) => setRg((r) => ({ ...r, [k]: v }));
   const persist = (next) => { save(next); setRg(next); setSaved(true); setTimeout(() => setSaved(false), 1800); };
-  const onSaveLimits = () => persist({ ...rg });
-  const takeBreak = (h) => persist({ ...rg, breakUntil: Date.now() + h * 3600e3 });
+  const onSaveLimits = () => { persist({ ...rg }); toast.success("Limits saved"); };
+  const takeBreak = (h) => { persist({ ...rg, breakUntil: Date.now() + h * 3600e3 }); toast.info("Break scheduled"); };
 
   const breakActive = rg.breakUntil && rg.breakUntil > Date.now();
 
@@ -30,7 +31,7 @@ export function ResponsibleGamblingDialog({ open, onClose }) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-emerald-400" /> Responsible gambling</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-[var(--success)]" /> Responsible gambling</DialogTitle>
           <DialogDescription>Set limits to stay in control. Demo — not enforced.</DialogDescription>
         </DialogHeader>
 
@@ -39,7 +40,7 @@ export function ResponsibleGamblingDialog({ open, onClose }) {
           <Field label="Daily deposit limit" value={rg.deposit} onChange={(v) => set("deposit", v)} />
           <Field label="Daily loss limit" value={rg.loss} onChange={(v) => set("loss", v)} />
           <Field label="Session time limit (min)" value={rg.session} onChange={(v) => set("session", v)} prefix="" />
-          <Button size="sm" className="mt-1 w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400" onClick={onSaveLimits}>
+          <Button size="sm" className="mt-1 w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={onSaveLimits}>
             {saved ? <><Check className="size-4" /> Saved</> : "Save limits"}
           </Button>
         </div>
@@ -53,7 +54,7 @@ export function ResponsibleGamblingDialog({ open, onClose }) {
               <button
                 key={m}
                 onClick={() => persist({ ...rg, reality: m })}
-                className={`flex-1 rounded-lg border py-1.5 text-xs font-medium transition ${rg.reality === m ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-border bg-muted/30 text-muted-foreground hover:text-foreground"}`}
+                className={`flex-1 rounded-lg border py-1.5 text-xs font-medium transition ${rg.reality === m ? "border-[var(--global-cta-soft-border)] bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]" : "border-border bg-muted/30 text-muted-foreground hover:text-foreground"}`}
               >
                 {m} min
               </button>
@@ -66,7 +67,7 @@ export function ResponsibleGamblingDialog({ open, onClose }) {
         <div className="space-y-2">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Take a break</div>
           {breakActive ? (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-sm text-amber-400">
+            <div className="rounded-lg border border-[var(--warning)]/40 bg-[var(--warning-bg)] p-2.5 text-sm text-[var(--warning)]">
               Break active until {new Date(rg.breakUntil).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </div>
           ) : (
@@ -87,10 +88,10 @@ export function ResponsibleGamblingDialog({ open, onClose }) {
 
         {(rg.deposit || rg.loss || rg.session || rg.reality) && (
           <div className="flex flex-wrap gap-1.5">
-            {rg.deposit ? <Badge variant="outline" className="text-emerald-400">Deposit ${rg.deposit}/day</Badge> : null}
-            {rg.loss ? <Badge variant="outline" className="text-emerald-400">Loss ${rg.loss}/day</Badge> : null}
-            {rg.session ? <Badge variant="outline" className="text-emerald-400">{rg.session}m session</Badge> : null}
-            {rg.reality ? <Badge variant="outline" className="text-emerald-400">Check every {rg.reality}m</Badge> : null}
+            {rg.deposit ? <Badge variant="outline" className="text-[var(--success)]">Deposit ${rg.deposit}/day</Badge> : null}
+            {rg.loss ? <Badge variant="outline" className="text-[var(--success)]">Loss ${rg.loss}/day</Badge> : null}
+            {rg.session ? <Badge variant="outline" className="text-[var(--success)]">{rg.session}m session</Badge> : null}
+            {rg.reality ? <Badge variant="outline" className="text-[var(--success)]">Check every {rg.reality}m</Badge> : null}
           </div>
         )}
       </DialogContent>

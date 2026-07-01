@@ -28,14 +28,14 @@ export function MarketCard({ market, onOpen, onQuickBuy }) {
       <CardFooter className="grid grid-cols-2 gap-2 border-t bg-muted/30 p-3">
         <Button
           variant="ghost"
-          className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 hover:text-emerald-400"
+          className="bg-[rgba(79,167,184,0.16)] text-[#78CAD7] hover:bg-[rgba(79,167,184,0.24)] hover:text-[#92D4DF]"
           onClick={(e) => { e.stopPropagation(); onQuickBuy(market, "Yes"); }}
         >
           Yes {fmtCents(market.yes)}
         </Button>
         <Button
           variant="ghost"
-          className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 hover:text-rose-400"
+          className="bg-[rgba(214,90,112,0.14)] text-[#E17B8D] hover:bg-[rgba(214,90,112,0.22)] hover:text-[#eb93a3]"
           onClick={(e) => { e.stopPropagation(); onQuickBuy(market, "No"); }}
         >
           No {fmtCents(market.no)}

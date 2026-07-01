@@ -26,7 +26,7 @@ export function KycModal({ open, onClose, onVerified }) {
     <Dialog open={open} onOpenChange={(o) => !o && (onClose(), reset())}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-emerald-400" /> Verify your identity</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-[var(--success)]" /> Verify your identity</DialogTitle>
           <DialogDescription>Required to use the wallet — deposits and withdrawals.</DialogDescription>
         </DialogHeader>
 
@@ -54,8 +54,8 @@ export function KycModal({ open, onClose, onVerified }) {
             <div className="flex items-center gap-2 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
               <Upload className="size-4" /> Upload ID document (demo — no file needed)
             </div>
-            {error && <p className="text-[11px] text-rose-400">{error}</p>}
-            <Button className="w-full bg-emerald-500 font-bold text-zinc-950 hover:bg-emerald-400" onClick={submit}>
+            {error && <p className="text-[11px] text-[var(--danger)]">{error}</p>}
+            <Button className="w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={submit}>
               Submit for verification
             </Button>
             <p className="text-[10px] text-muted-foreground">Demo — no documents are stored or checked.</p>
@@ -64,14 +64,14 @@ export function KycModal({ open, onClose, onVerified }) {
 
         {step === "verifying" && (
           <div className="grid place-items-center gap-3 py-8 text-center">
-            <Loader2 className="size-8 animate-spin text-emerald-400" />
+            <Loader2 className="size-8 animate-spin text-[var(--success)]" />
             <p className="text-sm text-muted-foreground">Verifying your details…</p>
           </div>
         )}
 
         {step === "done" && (
           <div className="grid place-items-center gap-3 py-8 text-center">
-            <span className="grid size-12 place-items-center rounded-full bg-emerald-500 text-zinc-950"><Check className="size-6" /></span>
+            <span className="grid size-12 place-items-center rounded-full bg-[var(--success)] text-[#06110E]"><Check className="size-6" /></span>
             <p className="text-sm font-medium">You're verified</p>
             <p className="text-xs text-muted-foreground">Opening your wallet…</p>
           </div>

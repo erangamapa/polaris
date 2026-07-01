@@ -57,7 +57,7 @@ export function LiveFeed() {
           </button>
         ))}
         <span className="ml-auto mr-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-zinc-500">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Live
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--success)]" /> Live
         </span>
       </div>
 
@@ -86,7 +86,7 @@ export function LiveFeed() {
                   <td className="hidden px-4 py-2 text-right font-mono tabular-nums text-zinc-400 sm:table-cell">
                     {r.win ? `${r.mult.toFixed(2)}×` : "—"}
                   </td>
-                  <td className={`px-4 py-2 text-right font-mono tabular-nums ${r.win ? "text-emerald-400" : "text-zinc-500"}`}>
+                  <td className={`px-4 py-2 text-right font-mono tabular-nums ${r.win ? "text-[var(--success)]" : "text-zinc-500"}`}>
                     {r.win ? `+$${fmt(r.payout)}` : `−$${fmt(r.bet)}`}
                   </td>
                 </tr>

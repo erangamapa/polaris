@@ -27,7 +27,7 @@ export function MarketDetail({ market, onBack, onBuy }) {
           </div>
         </div>
         <div className="ml-auto text-right">
-          <div className="text-2xl font-black tabular-nums text-emerald-400">{fmtPct(market.yes)}</div>
+          <div className="text-2xl font-black tabular-nums text-[#92D4DF]">{fmtPct(market.yes)}</div>
           <div className="text-[11px] text-muted-foreground">Yes chance</div>
         </div>
       </div>
@@ -41,14 +41,14 @@ export function MarketDetail({ market, onBack, onBuy }) {
       <div className="grid grid-cols-2 gap-3">
         <Button
           size="lg"
-          className="h-12 bg-emerald-500 text-base font-bold text-zinc-950 hover:bg-emerald-400"
+          className="h-12 bg-[var(--predictions-primary)] text-base font-bold text-[#081214] hover:bg-[var(--predictions-primary-hover)]"
           onClick={() => onBuy(market, "Yes")}
         >
           Buy Yes · {fmtCents(market.yes)}
         </Button>
         <Button
           size="lg"
-          className="h-12 bg-rose-500 text-base font-bold text-zinc-950 hover:bg-rose-400"
+          className="h-12 bg-[var(--danger)] text-base font-bold text-[#2a0c11] hover:brightness-110"
           onClick={() => onBuy(market, "No")}
         >
           Buy No · {fmtCents(market.no)}
@@ -65,7 +65,7 @@ export function MarketDetail({ market, onBack, onBuy }) {
           <Separator />
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Resolution source</div>
-            <p className="mt-1 text-emerald-400">{market.resolutionSource}</p>
+            <p className="mt-1 text-[#92D4DF]">{market.resolutionSource}</p>
           </div>
           <Separator />
           <div className="flex items-center justify-between text-muted-foreground">

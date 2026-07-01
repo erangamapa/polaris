@@ -43,7 +43,7 @@ export function PositionsTable({ positions }) {
               <TableRow key={p.id}>
                 <TableCell className="max-w-[220px] truncate text-sm">{p.question}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={p.side === "Yes" ? "text-emerald-400" : "text-rose-400"}>
+                  <Badge variant="outline" className={p.side === "Yes" ? "text-[#78CAD7]" : "text-[#E17B8D]"}>
                     {p.side}
                   </Badge>
                 </TableCell>
@@ -51,7 +51,7 @@ export function PositionsTable({ positions }) {
                 <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{fmtCents(p.avgPrice)}</TableCell>
                 <TableCell className="text-right">
                   <div className="font-mono tabular-nums">{fmtMoney(value)}</div>
-                  <div className={`font-mono text-xs tabular-nums ${up ? "text-emerald-400" : "text-rose-400"}`}>
+                  <div className={`font-mono text-xs tabular-nums ${up ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
                     {up ? "+" : "−"}{fmtMoney(Math.abs(pnl))}
                     {p.status === "settled" && <span className="ml-1 text-muted-foreground">· settled</span>}
                   </div>
