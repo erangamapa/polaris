@@ -6,8 +6,9 @@
 
 ## Phase 0 — Prep & credentials
 - Human: provide `VITE_REOWN_PROJECT_ID`; grant run permission. (GitHub + Vercel already authed.)
-- Agent: generate testnet affiliate addresses; confirm tooling.
-- **DoD:** Reown id present; app still runs.
+- Agent: generate the **house/affiliate wallet** (set as BetSwirl + Azuro affiliate, gas-funded) and the
+  **player wallet**; confirm tooling. Both persisted to gitignored `.secrets/` for handoff (`21`).
+- **DoD:** Reown id present; both wallets generated; app still runs.
 
 ## Phase 0.5 — Discovery (RESOLVE ALL OPEN ITEMS FIRST) 🔒
 - Work through **`23-open-items-and-discovery.md`** end to end: BetSwirl SDK/chain/launch/affiliate/payout,
@@ -68,10 +69,13 @@
 
 ## Phase 9 — Hardening, observability, autonomous E2E
 - Error monitoring (Sentry), rate-limiting, threat-model pass (`14`, esp. affiliate integrity + no
-  custody), and a final **API-level E2E** using the test wallet key (viem/SDK) — the culmination of the
+  custody), and a final **API-level E2E** using the player wallet key (viem/SDK) — the culmination of the
   per-phase `22` connectivity checks, **not** a browser test.
+- **Verify revenue to the house wallet:** sourced bets attribute the affiliate share to the house wallet →
+  **claim** BetSwirl revenue → confirm balance rises (Azuro: confirm on-chain attribution). (`21`, `19`)
 - **DoD:** the headless E2E (bet on BetSwirl + Azuro → settle on-chain → read history) passes with no human;
-  no secret in the frontend bundle; non-custodial verified. Browser play is the user's handoff (`21`).
+  house wallet shows/claims affiliate revenue; no secret in the frontend bundle; non-custodial verified.
+  Both wallet seeds (player + house) are handed off (`21`). Browser play is the user's step.
 
 ## Later / gated (not blocking MVP)
 - **Own BetSwirl games** (BetSwirl engine/SDK; possible DAO proposal) for more control (`07`).

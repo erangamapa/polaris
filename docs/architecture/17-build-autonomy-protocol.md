@@ -39,7 +39,10 @@ VITE_REOWN_PROJECT_ID=
 ## Step 1 — Auto-provision (agent)
 
 `packages/shared/scripts/provision.ts`:
-1. **Generate testnet affiliate addresses** (BetSwirl affiliate + Azuro affiliate) — wallets we control.
+1. **Generate the house / affiliate wallet** (12-word, ours) and set its address as **both** the BetSwirl
+   affiliate (`BETSWIRL_AFFILIATE_ADDRESS`) and the Azuro affiliate (`AZURO_AFFILIATE_ADDRESS`). Fund it
+   with a little Base Sepolia gas so it can **claim** BetSwirl revenue. Persist to gitignored
+   `.secrets/house-wallet.json` (`21`).
 2. *(Optional)* provision a **read cache** (Vercel KV/Postgres) if indexer latency needs it.
 3. Write derived config to **Vercel env** + local `.env` (public `VITE_*` + minimal server keys).
    **No signer, no Vault, no HMAC/JWT** — none exist in this model.
@@ -57,20 +60,24 @@ Verification is **incremental and API-level** throughout the build — a cheap c
 each phase (`22`), so breakage surfaces immediately, not at the end. **No browser, no MetaMask driving,
 no iframe-load waiting.** This step is the final headless culmination:
 
-1. Provision the **MetaMask test wallet** per `21`: generate a 12-word wallet, **fund it across all
-   supported testnet chains** (BetSwirl casino + Azuro sports, multiple balances), and persist the seed to
-   gitignored `.secrets/test-wallet.json`.
-2. Script (using that exact wallet): connect → **play a BetSwirl casino game** → **place an Azuro sports
+1. Provision the **player test wallet** per `21`: 12-word wallet funded on Base Sepolia (gas + betting
+   token), seed persisted to gitignored `.secrets/test-wallet.json`.
+2. Script (using the player wallet): connect → **play a BetSwirl casino game** → **place an Azuro sports
    bet** → view unified balance + history.
-3. Assert: bets settle on-chain; **non-custodial** (no signer/contract of ours over user funds);
+3. **Verify revenue to the house wallet:** the sourced bets attribute the affiliate share to the house
+   wallet → agent **claims** BetSwirl revenue → confirms the house wallet balance rises (Azuro: confirm
+   on-chain attribution to the house address).
+4. Assert: bets settle on-chain; **non-custodial** (no signer/contract of ours over user funds);
    **affiliate enforced** server-side; history reads from indexers; no secret in the frontend bundle.
 
 ## Step 4 — Report & handoff
 
-Deployed URLs, testnet chains used, affiliate addresses, preflight + E2E results, **and the test-wallet
-handoff** (`21`): the **12-word seed phrase**, funded chains + balances, MetaMask network details, and the
-app URL — so you import the pre-funded wallet into MetaMask and play immediately (it already passed the
-agent's own E2E).
+Deployed URLs, testnet chain, preflight + E2E results, and the **two-wallet handoff** (`21`):
+- **Player wallet** seed — funded (gas + betting token) on Base Sepolia → import to MetaMask and play.
+- **House / affiliate wallet** seed + address — where BetSwirl/Azuro commissions are attributed; load it
+  to see the affiliate revenue the E2E already generated + claimed.
+- MetaMask network details (Base Sepolia) + the app URL.
+Both already passed the agent's own E2E, so they work on import.
 
 ## Tooling — CLIs only, no MCPs
 `vercel` (✅), `gh` (✅), `node`/`npm` (✅). BetSwirl SDK, Azuro SDK, wagmi/viem = project deps run as
@@ -83,10 +90,10 @@ game-provider contracts and no bankroll are ever required.
 ## TL;DR
 ```
 Human:  put VITE_REOWN_PROJECT_ID in .env.bootstrap (+ optional CDP) → grant run permission → "build"
-Agent:  preflight → provision (affiliate addrs, optional cache) → build (wallet→Azuro→BetSwirl→backend→UX)
-        → provision + fund MetaMask test wallet across chains → autonomous testnet E2E
-        → report + hand you the 12-word seed phrase
-Human:  import seed into MetaMask → connect to app → play on testnet (already verified working)
+Agent:  preflight → provision house/affiliate wallet (set in BetSwirl+Azuro) + player wallet, on Base Sepolia
+        → build (wallet→Azuro→BetSwirl→backend→UX) → autonomous E2E (play + verify revenue to house wallet)
+        → report + hand you BOTH seed phrases (player + house)
+Human:  import player seed → play; import house seed → see affiliate revenue (all already verified)
 ```
 
 _Last updated: 2026-07-01_

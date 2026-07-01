@@ -14,11 +14,10 @@ provider API) · **HUMAN_BOOTSTRAP** (human mints; account/CAPTCHA-gated) · **�
 | GitHub (`gh`) | GitHub | **✅ DONE** | authed as `erangamapa` (`repo`,`workflow`) | repo, CI, PRs |
 | Vercel (CLI) | Vercel | **✅ DONE** | CLI logged in; deploy works (`--scope erangamapas-projects`) | hosting, thin backend |
 | `VITE_REOWN_PROJECT_ID` | Reown | **HUMAN_BOOTSTRAP** | https://dashboard.reown.com → AppKit project | wallet connect |
-| `BETSWIRL_AFFILIATE_ADDRESS` | — (a wallet we control) | **AGENT_GENERATED** | address/identifier BetSwirl attributes commission to. Confirm exact format/registration from docs.betswirl.com at build time (integration is permissionless). | casino revenue attribution |
-| `AZURO_AFFILIATE_ADDRESS` | — (a wallet we control) | **AGENT_GENERATED** | address Azuro attributes affiliate GGR to. Public, not secret; enforced server-side (`14` T9). | sports revenue attribution |
+| **House / affiliate wallet** (seed + key + address) | — (a wallet we control) | **AGENT_GENERATED** | agent creates a 12-word wallet; sets its address as **both** `BETSWIRL_AFFILIATE_ADDRESS` and `AZURO_AFFILIATE_ADDRESS` (config only — no testnet registration); funds gas for BetSwirl claims; stores in gitignored `.secrets/house-wallet.json`; **hands you the seed** (`21`, `19`). | receive/verify casino + sports commissions |
 | `ARBITRUM_RPC_URL` (+ Base Sepolia RPC) | Alchemy / public | **AGENT_PROVISIONED / public** | reads (balance/history). Public RPC or Alchemy app. | chain reads |
-| Testnet funds | BetSwirl/Azuro faucets or Coinbase CDP | **AGENT** | fund the MetaMask test wallet across chains (`21`). BetSwirl/Azuro testnet faucets, or `CDP_API_KEY_*` if using CDP. | E2E + your handoff wallet |
-| **MetaMask test wallet** (seed + key) | — | **AGENT_GENERATED** | agent creates a 12-word wallet, funds it on all supported testnet chains, stores it in gitignored `.secrets/test-wallet.json`, and **hands you the seed phrase** at completion (`21`). Testnet-only, disposable. | you import into MetaMask → connect → play |
+| Testnet funds | BetSwirl/Azuro faucets or Coinbase CDP | **AGENT** | fund the player + house wallets on Base Sepolia (`21`). Faucets, or `CDP_API_KEY_*` if using CDP. | E2E + your handoff wallets |
+| **Player test wallet** (seed + key) | — | **AGENT_GENERATED** | agent creates a 12-word wallet, funds it on Base Sepolia, stores it in gitignored `.secrets/test-wallet.json`, and **hands you the seed** at completion (`21`). Testnet-only, disposable. | you import into MetaMask → connect → play |
 
 ### Optional
 | Key | Provider | Class | Notes |
@@ -42,10 +41,14 @@ protocol pivot.
 2. *(optional)* Coinbase CDP keys **or** rely on BetSwirl/Azuro testnet faucets for test funds.
 3. Grant permission to run CLIs/installs/deploys without per-command prompts.
 
-Everything else (affiliate addresses on testnet, RPC, cache if used, build, deploy, E2E) is
-**AGENT_GENERATED / AGENT_PROVISIONED**.
+Everything else is **AGENT_GENERATED / AGENT_PROVISIONED**, including both **testnet wallets**:
+- the **house / affiliate wallet** (set as BetSwirl + Azuro affiliate, gas-funded, revenue verified), and
+- the **player wallet** (funded to play).
+Both seeds are handed to you at the end to load and verify. **No wallet setup or registration is needed
+from you on testnet.**
 
-(Mainnet — gaming licence, secured wallets, geoblock — is out of scope for this testnet build.)
+(Mainnet-only, out of scope here: gaming licence, a secured production house wallet, **Azuro payout
+registration** (the form with Azuro's team), and geoblock.)
 
 ## Tooling (CLIs only, no MCPs)
 `vercel` (✅ authed), `gh` (✅ authed), `node`/`npm` (✅). BetSwirl SDK, Azuro SDK, wagmi/viem = project deps.

@@ -1,12 +1,34 @@
-# 21 — Test Wallet Provisioning & Handoff (MetaMask, testnet)
+# 21 — Test Wallets Provisioning & Handoff (MetaMask, testnet)
 
-> **Purpose.** During the build, the agent creates **one MetaMask-importable test wallet**, funds it
-> with **multiple balances across every supported testnet chain** (casino via BetSwirl + sports via Azuro),
-> verifies the full play loop itself, then **hands you the 12-word seed phrase**. You import it into the
-> MetaMask Chrome extension, connect to the app, and play on testnet — and it works.
+> **Purpose.** During the build the agent creates **TWO** MetaMask-importable testnet wallets, sets them
+> up, verifies them, and **hands you both 12-word seed phrases**:
+> 1. **Player wallet** — funded to play (casino + sports) on Base Sepolia.
+> 2. **House / affiliate wallet** — the address our BetSwirl + Azuro commissions are attributed/paid to.
 >
-> This is a **throwaway testnet wallet holding only test funds (no real value)** — safe to generate,
-> fund, store locally, and hand over.
+> Both are **throwaway testnet wallets holding only test funds (no real value)** — safe to generate, fund,
+> store locally, and hand over. You load either into MetaMask to verify (play with the player wallet;
+> check revenue on the house wallet). **No setup action is required from you on testnet** — the agent does
+> it all.
+
+---
+
+## House / affiliate wallet (agent-provisioned)
+
+1. **Generate** a fresh 12-word wallet (separate from the player wallet). Its address is our house wallet.
+2. **Wire it in** (no third-party registration needed on testnet):
+   - **BetSwirl:** set the address as the **affiliate** in the client config (`BETSWIRL_AFFILIATE_ADDRESS`)
+     — this is just config, no BetSwirl-side signup.
+   - **Azuro:** set the address as `AZURO_AFFILIATE_ADDRESS`, injected/enforced server-side on every bet
+     order (`05`, `19`). (Azuro's *payout* registration is mainnet-only — not needed on testnet.)
+3. **Fund it with a little native gas** (Base Sepolia) so it can **claim** BetSwirl affiliate revenue.
+4. **Prove revenue lands (testnet):** place a few bets from the *player* wallet → BetSwirl attributes the
+   affiliate share to the house wallet → agent calls the **claim** and shows the house wallet balance rise.
+   (Azuro testnet payout isn't distributed like mainnet, so for Azuro we verify **on-chain attribution**
+   to the house address, not a payout.)
+5. **Store + hand over:** secret in gitignored `.secrets/house-wallet.json`; the seed is given to you in
+   the handoff so you can load it and confirm the house revenue yourself.
+
+---
 
 ## What the agent does (during / at end of build)
 
