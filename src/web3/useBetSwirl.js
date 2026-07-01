@@ -3,15 +3,26 @@
 import { useCallback, useMemo } from 'react';
 import { usePublicClient, useWalletClient } from 'wagmi';
 import { parseEther } from 'viem';
-import { initViemBetSwirlClient, GAS_TOKEN_ADDRESS } from '@betswirl/sdk-core';
+import {
+  initViemBetSwirlClient, GAS_TOKEN_ADDRESS,
+  getKenoConfigurationFunctionData, parseRawKenoConfiguration,
+} from '@betswirl/sdk-core';
 import { CHAIN } from './config';
 
 const AFFILIATE = import.meta.env.VITE_AFFILIATE_ADDRESS;
+const ETH_TOKEN = { symbol: 'ETH', address: GAS_TOKEN_ADDRESS, decimals: 18 };
 
-// BetSwirl games we surface in the lobby. `play` maps to the sdk client method.
+// The full BetSwirl catalog on Base Sepolia. `image` = self-hosted BetSwirl card
+// art (public/img/games). `playable` games are wired + verified on-chain; the
+// weighted games (wheel/plinko) revert on this testnet deployment, so they show
+// in the catalog but aren't bettable here.
 export const BETSWIRL_GAMES = [
-  { key: 'dice', title: 'Dice', method: 'playDice', wait: 'waitDice', hue: 'from-violet-600 to-fuchsia-700' },
-  { key: 'coin-toss', title: 'Coin Toss', method: 'playCoinToss', wait: 'waitCoinToss', hue: 'from-amber-500 to-orange-600' },
+  { key: 'dice', title: 'Dice', image: '/img/games/dice.webp', playable: true, control: 'dice' },
+  { key: 'coin-toss', title: 'Coin Toss', image: '/img/games/coin-toss.webp', playable: true, control: 'coin' },
+  { key: 'roulette', title: 'Roulette', image: '/img/games/roulette.webp', playable: true, control: 'roulette' },
+  { key: 'keno', title: 'Keno', image: '/img/games/keno.webp', playable: true, control: 'keno' },
+  { key: 'wheel', title: 'Wheel', image: '/img/games/wheel.webp', playable: false, control: 'weighted' },
+  { key: 'plinko', title: 'Plinko', image: '/img/games/plinko.webp', playable: false, control: 'weighted' },
 ];
 
 export function useBetSwirl() {
@@ -26,37 +37,39 @@ export function useBetSwirl() {
     });
   }, [publicClient, walletClient]);
 
-  // Dice: cap 1-99, higher cap = higher win chance. Returns the rolled result.
-  const playDice = useCallback(
-    async ({ betEth, cap = 50, onBetPlaced }) => {
+  // Keno needs its multiplier config read from chain before betting.
+  const loadKenoConfig = useCallback(async () => {
+    const fd = getKenoConfigurationFunctionData(GAS_TOKEN_ADDRESS, CHAIN.id);
+    const raw = await publicClient.readContract({
+      address: fd.data.to, abi: fd.data.abi, functionName: fd.data.functionName, args: fd.data.args,
+    });
+    return parseRawKenoConfiguration(raw, ETH_TOKEN, CHAIN.id);
+  }, [publicClient]);
+
+  // Place a bet on any playable game, wait for the VRF roll, return the result.
+  // `selection` shape depends on the game: dice {cap}, coin {face},
+  // roulette {numbers}, keno {balls}.
+  const play = useCallback(
+    async ({ gameKey, betEth, selection, onBetPlaced }) => {
       if (!client) throw new Error('Connect your wallet first');
-      const betAmount = parseEther(String(betEth));
-      const { placedBet, receipt } = await client.playDice(
-        { betAmount, cap, tokenAddress: GAS_TOKEN_ADDRESS, affiliate: AFFILIATE },
-        { pollingInterval: 2500 },
-      );
-      onBetPlaced?.({ betTxnHash: receipt.transactionHash, id: placedBet.id });
-      const { rolledBet } = await client.waitRolledBet(placedBet, { pollingInterval: 2500, timeout: 120_000 });
-      return { placedBet, rolledBet };
+      const base = { betAmount: parseEther(String(betEth)), tokenAddress: GAS_TOKEN_ADDRESS, affiliate: AFFILIATE };
+      const opts = { pollingInterval: 2500 };
+
+      let placed;
+      if (gameKey === 'dice') placed = await client.playDice({ ...base, cap: selection.cap }, opts);
+      else if (gameKey === 'coin-toss') placed = await client.playCoinToss({ ...base, face: selection.face }, opts);
+      else if (gameKey === 'roulette') placed = await client.playRoulette({ ...base, numbers: selection.numbers }, opts);
+      else if (gameKey === 'keno') {
+        const kenoConfig = await loadKenoConfig();
+        placed = await client.playKeno({ ...base, balls: selection.balls, kenoConfig }, opts);
+      } else throw new Error(`${gameKey} is not available on this testnet`);
+
+      onBetPlaced?.({ betTxnHash: placed.receipt.transactionHash, id: placed.placedBet.id });
+      const { rolledBet } = await client.waitRolledBet(placed.placedBet, { pollingInterval: 2500, timeout: 120_000 });
+      return { placedBet: placed.placedBet, rolledBet };
     },
-    [client],
+    [client, loadKenoConfig],
   );
 
-  // Coin toss: choose 'HEADS' | 'TAILS'.
-  const playCoinToss = useCallback(
-    async ({ betEth, face = 'HEADS', onBetPlaced }) => {
-      if (!client) throw new Error('Connect your wallet first');
-      const betAmount = parseEther(String(betEth));
-      const { placedBet, receipt } = await client.playCoinToss(
-        { betAmount, face, tokenAddress: GAS_TOKEN_ADDRESS, affiliate: AFFILIATE },
-        { pollingInterval: 2500 },
-      );
-      onBetPlaced?.({ betTxnHash: receipt.transactionHash, id: placedBet.id });
-      const { rolledBet } = await client.waitRolledBet(placedBet, { pollingInterval: 2500, timeout: 120_000 });
-      return { placedBet, rolledBet };
-    },
-    [client],
-  );
-
-  return { ready: Boolean(client), playDice, playCoinToss };
+  return { ready: Boolean(client), play, loadKenoConfig };
 }

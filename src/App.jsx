@@ -10,15 +10,9 @@ import { Footer } from "./components/shell/Footer";
 import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
 import { PromoHero } from "./components/casino/PromoHero";
-import { GameRail } from "./components/casino/GameRail";
-import { GameTile } from "./components/casino/GameTile";
-import { CategoryGrid } from "./components/casino/CategoryGrid";
-import { LiveFeed } from "./components/casino/LiveFeed";
-import { GameLauncher } from "./components/casino/GameLauncher";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
-import { BETSWIRL_GAMES } from "./web3/useBetSwirl";
+import { CasinoCatalog } from "./components/casino/CasinoCatalog";
 import { FundsDialog } from "./components/wallet/FundsDialog";
-import { ActivityDialog } from "./components/activity/ActivityDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
 import { SupportDialog } from "./components/trust/SupportDialog";
@@ -26,11 +20,8 @@ import { useWallet } from "./web3/useWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
-import { SportsApp } from "./components/sports/SportsApp";
 import { AzuroMarkets } from "./components/sports/AzuroMarkets";
-import { Skeleton } from "./components/ui/skeleton";
-import { useBriefLoad } from "./lib/useBriefLoad";
-import { RAILS, ALL_GAMES, getGamesByCategory, CATEGORIES } from "./lib/mockData";
+import { CATEGORIES } from "./lib/mockData";
 import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { SPORTS, liveCountBySport } from "./lib/sportsData";
@@ -72,15 +63,11 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  const [query, setQuery] = useState("");
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
-  const [launched, setLaunched] = useState(null);
   const [onchainGame, setOnchainGame] = useState(null);
   const [fundsOpen, setFundsOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [favs, setFavs] = useState(() => new Set());
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
@@ -96,7 +83,6 @@ export default function App() {
   };
 
   const openFunds = () => { if (!ensureAuth()) return; setFundsOpen(true); };
-  const openActivity = () => { if (!ensureAuth()) return; setActivityOpen(true); };
   const openHistory = () => { if (!ensureAuth()) return; setHistoryOpen(true); };
 
   const activityRef = useRef([]);
@@ -123,36 +109,6 @@ export default function App() {
   // Casino rounds settle instantly — log as already-resolved history.
   const logRound = (e) =>
     setActivity((list) => [{ id: `a${Date.now()}${Math.random().toString(36).slice(2, 5)}`, ref: betRef(), time: nowLabel(), ...e }, ...list]);
-
-  // Mock cash-out value for an open bet: midway between stake and potential, minus a small margin.
-  const cashoutValue = (a) => +(((a.stake + a.potential) / 2) * 0.9).toFixed(2);
-
-  const cashOut = (id, fraction = 1) => {
-    const a = activityRef.current.find((x) => x.id === id);
-    if (!a || a.status !== "open" || a.product !== "sports") return;
-    const amount = +(cashoutValue(a) * fraction).toFixed(2);
-    setBalance((b) => +(b + amount).toFixed(2));
-    if (fraction >= 1) {
-      setActivity((list) => list.map((x) => (x.id === id ? { ...x, status: "cashedout", cashout: amount } : x)));
-    } else {
-      // Partial: bank the fraction, leave the rest of the bet live.
-      setActivity((list) =>
-        list.map((x) =>
-          x.id === id
-            ? { ...x, stake: +(x.stake * (1 - fraction)).toFixed(2), potential: +(x.potential * (1 - fraction)).toFixed(2) }
-            : x
-        )
-      );
-    }
-  };
-
-  const toggleFav = (g) =>
-    setFavs((s) => {
-      const n = new Set(s);
-      const k = `${g.title}-${g.provider}`;
-      n.has(k) ? n.delete(k) : n.add(k);
-      return n;
-    });
 
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
@@ -212,15 +168,7 @@ export default function App() {
         <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4">
           <div key={product} className="animate-fade-in-up">
             {product === "casino" && (
-              <CasinoLobby
-                category={casinoCategory}
-                query={query}
-                setQuery={setQuery}
-                onLaunch={setLaunched}
-                onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }}
-                favs={favs}
-                onFav={toggleFav}
-              />
+              <CasinoLobby onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }} />
             )}
             {product === "predictions" && (
               <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} />
@@ -228,7 +176,6 @@ export default function App() {
             {product === "sports" && (
               <div className="mx-auto max-w-6xl space-y-4">
                 <AzuroMarkets onBetPlaced={logRound} />
-                <SportsApp sport={sportId} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} onViewBets={openActivity} />
               </div>
             )}
           </div>
@@ -240,13 +187,9 @@ export default function App() {
       <Toaster />
       <DevPanel />
 
-      {launched && (
-        <GameLauncher game={launched} balance={balance} setBalance={setBalance} onRound={logRound} ensureAuth={ensureAuth} onClose={() => setLaunched(null)} />
-      )}
       {onchainGame && (
         <BetSwirlGame game={onchainGame} onRound={logRound} onClose={() => setOnchainGame(null)} />
       )}
-      <ActivityDialog open={activityOpen} onClose={() => setActivityOpen(false)} activity={activity} onCashOut={cashOut} cashoutValue={cashoutValue} />
       <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} casinoRounds={activity} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
@@ -255,100 +198,11 @@ export default function App() {
   );
 }
 
-function TileSkeletons({ count = 6 }) {
-  return (
-    <div className="flex gap-3 overflow-hidden">
-      {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className="h-[180px] w-[136px] shrink-0 rounded-xl" />
-      ))}
-    </div>
-  );
-}
-
-function OnchainRail({ onLaunch }) {
-  return (
-    <section>
-      <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-sm font-bold">On-chain games</h2>
-        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">BetSwirl · Base Sepolia · provably fair</span>
-      </div>
-      <div className="flex flex-wrap gap-3">
-        {BETSWIRL_GAMES.map((g) => (
-          <button
-            key={g.key}
-            onClick={() => onLaunch(g)}
-            data-test-id={`onchain-${g.key}`}
-            className={`grid h-[120px] w-[160px] place-items-center rounded-xl bg-gradient-to-br ${g.hue} text-lg font-bold text-white shadow transition hover:brightness-110`}
-          >
-            {g.title}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CasinoLobby({ category, query, setQuery, onLaunch, onLaunchOnchain, favs, onFav }) {
-  const ready = useBriefLoad();
-  const isFav = (g) => favs.has(`${g.title}-${g.provider}`);
-  const searching = query.trim().length > 0;
-  const results = ALL_GAMES.filter((g) => g.title.toLowerCase().includes(query.toLowerCase()));
-  const categoryGames =
-    category === "Favorites" ? ALL_GAMES.filter(isFav) : getGamesByCategory(category); // null === Lobby
-
+function CasinoLobby({ onLaunchOnchain }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      {category === "Lobby" && !searching && <PromoHero />}
-      {category === "Lobby" && !searching && <OnchainRail onLaunch={onLaunchOnchain} />}
-
-      <div className="relative">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">⌕</span>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search games"
-          aria-label="Search games"
-          className="w-full rounded-lg border bg-card py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-ring/50"
-        />
-      </div>
-
-      {searching ? (
-        <section>
-          <h2 className="mb-3 text-sm font-bold">
-            {results.length} result{results.length !== 1 ? "s" : ""} for “{query}”
-          </h2>
-          {results.length ? (
-            <div className="flex flex-wrap gap-3">
-              {results.map((g) => (
-                <GameTile key={`${g.title}-${g.provider}`} game={g} onLaunch={onLaunch} faved={isFav(g)} onFav={onFav} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-              No games match. Try another title.
-            </div>
-          )}
-        </section>
-      ) : !ready ? (
-        <div className="space-y-6">
-          <Skeleton className="h-5 w-40" />
-          <TileSkeletons />
-          <Skeleton className="h-5 w-32" />
-          <TileSkeletons />
-        </div>
-      ) : categoryGames === null ? (
-        <>
-          {RAILS.map((rail) => (
-            <GameRail key={rail.id} rail={rail} onLaunch={onLaunch} isFav={isFav} onFav={onFav} />
-          ))}
-          <LiveFeed />
-        </>
-      ) : (
-        <>
-          <CategoryGrid category={category} games={categoryGames} onLaunch={onLaunch} isFav={isFav} onFav={onFav} />
-          <LiveFeed />
-        </>
-      )}
+      <PromoHero />
+      <CasinoCatalog onLaunch={onLaunchOnchain} />
     </div>
   );
 }

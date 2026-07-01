@@ -40,9 +40,10 @@ export function useBettableGames() {
         for (const g of feed.slice(0, 20)) {
           const conds = await getConditionsByGameIds({ chainId: CHAIN.id, gameIds: [g.gameId], extended: true });
           const arr = Array.isArray(conds) ? conds : conds.conditions ?? [];
-          const active = arr.find((c) => c.state === 'Active' && c.isPrematchEnabled && c.outcomes?.length);
-          if (active) out.push({ ...g, condition: active });
-          if (out.length >= 8) break;
+          // All active markets for this game (each condition = one market).
+          const markets = arr.filter((c) => c.state === 'Active' && c.outcomes?.length);
+          if (markets.length) out.push({ ...g, markets });
+          if (out.length >= 12) break;
         }
         if (!cancelled) setGames(out);
       } finally {
