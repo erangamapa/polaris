@@ -45,16 +45,15 @@ export function AzuroMarkets({ onBetPlaced }) {
         <div className="space-y-3">
           {bettableCount === 0 && (
             <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-              No open games right now — the testnet feed only has games that already started, and Azuro rejects
-              bets on those ("Game is not active"). This list auto-refreshes; markets below are shown for
-              reference and can't be bet. Casino works fully in the meantime.
+              Heads up: the testnet feed only has games that already started, so Azuro will likely reject the
+              bet with "Game is not active" — but you can still run the full flow. This list auto-refreshes.
             </div>
           )}
           {games.map((g) => (
-            <div key={g.gameId} className={`rounded-lg border bg-background p-3 ${g.bettable ? "" : "opacity-70"}`}>
+            <div key={g.gameId} className="rounded-lg border bg-background p-3">
               <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{g.sport?.name}</span>·<span>{g.league?.name}</span>
-                {!g.bettable && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">Closed · started</span>}
+                {!g.bettable && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">Started</span>}
                 <span className="ml-auto">{new Date(g.startsAt * 1000).toLocaleString()}</span>
               </div>
               <div className="mb-2 text-sm font-semibold">{g.title}</div>
@@ -67,11 +66,9 @@ export function AzuroMarkets({ onBetPlaced }) {
                       {market.outcomes.map((o) => (
                         <button
                           key={o.outcomeId}
-                          onClick={() => g.bettable && setSlip({ game: g, market, outcome: o })}
-                          disabled={!g.bettable}
-                          title={g.bettable ? "" : "This game has already started — not bettable"}
+                          onClick={() => setSlip({ game: g, market, outcome: o })}
                           data-test-id={`azuro-outcome-${o.outcomeId}`}
-                          className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm transition enabled:hover:border-[var(--global-cta)] disabled:cursor-not-allowed disabled:opacity-60"
+                          className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm transition hover:border-[var(--global-cta)]"
                         >
                           <span>{o.title}</span>
                           <span className="font-mono font-semibold text-[var(--global-cta)]">{Number(o.odds).toFixed(2)}</span>
