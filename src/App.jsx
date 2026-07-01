@@ -15,21 +15,19 @@ import { GameTile } from "./components/casino/GameTile";
 import { CategoryGrid } from "./components/casino/CategoryGrid";
 import { LiveFeed } from "./components/casino/LiveFeed";
 import { GameLauncher } from "./components/casino/GameLauncher";
-import { WalletDialog } from "./components/wallet/WalletDialog";
+import { FundsDialog } from "./components/wallet/FundsDialog";
 import { ActivityDialog } from "./components/activity/ActivityDialog";
-import { AuthModal } from "./components/auth/AuthModal";
-import { KycModal } from "./components/auth/KycModal";
-import { AccountDialog } from "./components/auth/AccountDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
 import { SupportDialog } from "./components/trust/SupportDialog";
-import { loadSession, saveSession } from "./lib/session";
+import { useWallet } from "./web3/useWallet";
+import { toast } from "./lib/toast";
 import { parsePath, pathFor } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { SportsApp } from "./components/sports/SportsApp";
 import { Skeleton } from "./components/ui/skeleton";
 import { useBriefLoad } from "./lib/useBriefLoad";
 import { RAILS, ALL_GAMES, getGamesByCategory, CATEGORIES } from "./lib/mockData";
-import { INITIAL_TXNS, nowLabel } from "./lib/walletData";
+import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { SPORTS, liveCountBySport } from "./lib/sportsData";
 
@@ -72,58 +70,27 @@ export default function App() {
 
   const [query, setQuery] = useState("");
   const [balance, setBalance] = useState(250);
-  const [pending, setPending] = useState(0);
-  const [txns, setTxns] = useState(INITIAL_TXNS);
   const [activity, setActivity] = useState([]);
   const [launched, setLaunched] = useState(null);
-  const [walletOpen, setWalletOpen] = useState(false);
+  const [fundsOpen, setFundsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [favs, setFavs] = useState(() => new Set());
-
-  // Mock session: null | { method, label, verified }
-  const [user, setUser] = useState(() => loadSession());
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authTab, setAuthTab] = useState("login");
-  const [kycOpen, setKycOpen] = useState(false);
-  const [kycIntent, setKycIntent] = useState(null); // "wallet" | null
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [pendingWallet, setPendingWallet] = useState(false);
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
-  useEffect(() => { saveSession(user); }, [user]);
+  // Wallet connection replaces password login. Connecting (on the right network)
+  // is the gate for placing bets; the Reown modal handles the connect flow.
+  const wallet = useWallet();
 
-  const openAuth = (tab = "login") => { setAuthTab(tab); setAuthOpen(true); };
-  const ensureAuth = () => { if (user) return true; setPendingWallet(false); openAuth("login"); return false; };
-
-  const onAuthed = (u) => {
-    setUser(u);
-    setAuthOpen(false);
-    if (pendingWallet) {
-      setPendingWallet(false);
-      if (!u.verified) { setKycIntent("wallet"); setKycOpen(true); }
-      else setWalletOpen(true);
-    }
+  // Gate: require a connected wallet on Base Sepolia before betting.
+  const ensureAuth = () => {
+    if (!wallet.isConnected) { wallet.connect(); return false; }
+    if (wallet.wrongNetwork) { toast.warning("Switch to Base Sepolia to continue"); wallet.switchToBaseSepolia(); return false; }
+    return true;
   };
 
-  const openWallet = () => {
-    if (!user) { setPendingWallet(true); openAuth("login"); return; }
-    if (!user.verified) { setKycIntent("wallet"); setKycOpen(true); return; }
-    setWalletOpen(true);
-  };
-
-  const onVerified = () => {
-    setUser((u) => ({ ...u, verified: true }));
-    setKycOpen(false);
-    if (kycIntent === "wallet") setWalletOpen(true);
-    setKycIntent(null);
-  };
-
+  const openFunds = () => { if (!ensureAuth()) return; setFundsOpen(true); };
   const openActivity = () => { if (!ensureAuth()) return; setActivityOpen(true); };
-  const logout = () => { setUser(null); setAccountOpen(false); };
-
-  // In-play = sum of stakes on still-open bets/positions.
-  const inPlay = activity.reduce((s, a) => (a.status === "open" ? s + a.stake : s), 0);
 
   const activityRef = useRef([]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
@@ -172,7 +139,6 @@ export default function App() {
     }
   };
 
-  const pushTxn = (t) => setTxns((x) => [t, ...x]);
   const toggleFav = (g) =>
     setFavs((s) => {
       const n = new Set(s);
@@ -220,12 +186,8 @@ export default function App() {
     <div data-product={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <TopBar
         onBurger={() => setSidebarOpen((o) => !o)}
-        balance={balance}
-        user={user}
-        onLogin={() => openAuth("login")}
-        onRegister={() => openAuth("register")}
-        onAccount={() => setAccountOpen(true)}
-        onDeposit={openWallet}
+        onManageWallet={openFunds}
+        onFunds={openFunds}
         onActivity={openActivity}
       />
 
@@ -271,22 +233,9 @@ export default function App() {
         <GameLauncher game={launched} balance={balance} setBalance={setBalance} onRound={logRound} ensureAuth={ensureAuth} onClose={() => setLaunched(null)} />
       )}
       <ActivityDialog open={activityOpen} onClose={() => setActivityOpen(false)} activity={activity} onCashOut={cashOut} cashoutValue={cashoutValue} />
-      <AuthModal open={authOpen} initialTab={authTab} onClose={() => setAuthOpen(false)} onAuthed={onAuthed} />
-      <KycModal open={kycOpen} onClose={() => { setKycOpen(false); setKycIntent(null); }} onVerified={onVerified} />
-      <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} user={user} onVerify={() => { setAccountOpen(false); setKycIntent(null); setKycOpen(true); }} onResponsibleGambling={() => { setAccountOpen(false); setRgOpen(true); }} onLogout={logout} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
-      <WalletDialog
-        open={walletOpen}
-        onClose={() => setWalletOpen(false)}
-        balance={balance}
-        inPlay={inPlay}
-        pending={pending}
-        txns={txns}
-        setBalance={setBalance}
-        setPending={setPending}
-        pushTxn={pushTxn}
-      />
+      <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} />
     </div>
   );
 }
