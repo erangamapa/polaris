@@ -3,6 +3,24 @@
 > Single "where are we / how to continue" note so any fresh session (or a cleared context) can pick up
 > without loss. The full plan is in this directory; start with `README.md`.
 
+## ▶ Kickoff after a context clear (paste this)
+
+```
+Read docs/architecture/STATUS.md and docs/architecture/README.md, then execute the build per
+docs/architecture/12-build-plan-phases.md using the agent team in 24. Run preflight (17/23) FIRST and
+STOP if any required input is missing.
+
+Inputs:
+- VITE_REOWN_PROJECT_ID = <paste>
+- CDP_API_KEY_ID = <paste>        (recommended, for uninterrupted funding)
+- CDP_API_KEY_SECRET = <paste>
+- Run autonomously (no per-command prompts).
+- Notify me on Slack channel <#channel> (or say "push") on completion or a blocker.
+```
+
+The build **cannot start without the required input** — preflight (`17` Step 0) verifies it and **stops
+with the exact missing item** if absent. So you can't accidentally launch a blind run.
+
 ## Project
 - **Repo:** `erangamapa/polaris` (codename **polaris**; player-visible brand **WildStakes** via
   `src/lib/brand.js` `BRAND_NAME`). Local dir may still be `.../boyzcasino`.
