@@ -19,6 +19,6 @@ export default function middleware(request) {
   }
   return new Response("Authentication required.", {
     status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="WildStakes — private preview"' },
+    headers: { "WWW-Authenticate": 'Basic realm="WildStakes"' },
   });
 }
