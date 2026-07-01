@@ -48,10 +48,28 @@ token feasible. If a protocol's testnet is down → switch to Polygon Amoy (both
   env `SITE_PASSWORD`, `middleware.js`). Vercel project `wildstakes` (scope `erangamapas-projects`), CLI-deployed.
 
 ## Where we are
-- **Phase: PLANNING COMPLETE — build NOT started.** The existing app is the mock prototype + imported UI
-  (retheme, toasts, dev panel).
+- **Phase: BUILD IN PROGRESS.** Done + committed: **0.5 Discovery, 0/1 provision+restructure, 2 wallet
+  connect, 4 BetSwirl casino.** In progress: **3 Azuro sports.** Then 5–8 backend/history/RG, 9 E2E.
 - Architecture = **integrator**: **casino → BetSwirl**, **sports/predictions → Azuro**, both on-chain,
   non-custodial, **co-located on Base Sepolia**, testnet-only. No bankroll, no provider contracts.
+
+### Progress log (build)
+- ✅ **Discovery**: BetSwirl bets in **native ETH** (bank liquid), Azuro in **WETH**
+  (`0x9e09…935f`), both Base Sepolia. Config pinned in `packages/shared/chains.js`; endpoints/contracts
+  in `23`. BetSwirl studio subgraph returns "Not found" → history via chain/RPC (Phase 6 revisit).
+- ✅ **Structure decision**: kept web app at **repo root** (not apps/web) + added `packages/shared` (`@shared`
+  alias) + will add Vercel-native `api/`. Protects the working Vercel deploy; satisfies functional DoDs.
+- ✅ **Wallets**: house `0x584d4598EC9034744A275F405D12D86092B39c74`, player
+  `0x235Ac2e1Fee35f6A68C8F1715414fa6A94Bc1b65` in gitignored `.secrets/`. CDP faucet funding **works**.
+- ✅ **Dep resolution**: wagmi **v3** + @wagmi/core v3 (Reown adapter needs `./tempo`); dropped
+  `@betswirl/wagmi-provider` (use sdk-core + viem directly). Apollo **v4** (betswirl peer).
+- ✅ **Phase 2**: Reown AppKit + wagmi; Connect Wallet replaces Login/Register; Funds panel; switch-CTA.
+- ✅ **Phase 4 PROVEN on-chain**: `packages/shared/scripts/bet-casino.mjs` placed a real dice bet →
+  Chainlink VRF settle → **affiliate attributed to house** (bet `0xd5b4fd…`, roll `0xf7e743…`). UI:
+  `useBetSwirl` + `BetSwirlGame` modal + on-chain lobby rail.
+- Env: `.env.local` (gitignored) has VITE_REOWN_PROJECT_ID + VITE_AFFILIATE_ADDRESS; same set in Vercel prod.
+- Scripts: `provision.mjs` (wallets), `fund.mjs` (CDP faucet), `bet-casino.mjs` (casino E2E) in
+  `packages/shared/scripts/`. Not yet deployed to Vercel since Phase 0 (local build green).
 
 ## To start building (what the human provides — see `16`/`17`)
 1. `VITE_REOWN_PROJECT_ID` (required)

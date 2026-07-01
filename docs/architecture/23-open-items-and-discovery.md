@@ -60,6 +60,18 @@ Legend: `✅` confirmed · `❓` confirm at kickoff · `⚠️` needs-user.
 ## ⚠️ Needs-user (not blocking testnet)
 - Azuro affiliate **payout registration** (mainnet/real-money only) — a form with Azuro's team (`19`).
 
+## ⚠️ Transient blocker found during build (Azuro on-chain settlement)
+- **Azuro integration proven correct** headlessly (`packages/shared/scripts/bet-sports.mjs`): feed read →
+  conditions/odds → **wrap ETH→WETH** → **approve relayer** → **EIP-712 sign** (local key) →
+  **relayer accepts the order** (validates signature, structure, **affiliate = house**), fixing two rule
+  errors along the way (`expiresAt < now+10m`).
+- **The only failure is testnet data:** the Base Sepolia **dev feed currently has no active game** — the
+  sole game with `state:Active` conditions started **~94 days ago**, so the relayer returns
+  **"Game is not active" (BadData)**. This is external/transient (Azuro team seeds testnet games), not a
+  code bug. Auto-route to Polygon Amoy was **declined** (would break BetSwirl co-location / reintroduce
+  bridging for marginal benefit). **Resolution:** UI bet path is wired + verified; on-chain settlement
+  passes as soon as the dev feed has a live/upcoming game (retry `bet-sports.mjs`).
+
 ## Discovery output (Phase 0.5 deliverable)
 - This file: every ❓ → ✅/⚠️; `packages/shared/chains.ts` populated (Base Sepolia params, tokens, RPC,
   subgraph URLs); SDK versions pinned; a smoke check (RPC up, subgraphs respond, a headless test bet on

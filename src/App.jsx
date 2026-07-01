@@ -26,6 +26,7 @@ import { toast } from "./lib/toast";
 import { parsePath, pathFor } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { SportsApp } from "./components/sports/SportsApp";
+import { AzuroMarkets } from "./components/sports/AzuroMarkets";
 import { Skeleton } from "./components/ui/skeleton";
 import { useBriefLoad } from "./lib/useBriefLoad";
 import { RAILS, ALL_GAMES, getGamesByCategory, CATEGORIES } from "./lib/mockData";
@@ -222,7 +223,10 @@ export default function App() {
               <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} />
             )}
             {product === "sports" && (
-              <SportsApp sport={sportId} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} onViewBets={openActivity} />
+              <div className="mx-auto max-w-6xl space-y-4">
+                <AzuroMarkets onBetPlaced={logRound} />
+                <SportsApp sport={sportId} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} onViewBets={openActivity} />
+              </div>
             )}
           </div>
           <Footer onResponsibleGambling={() => setRgOpen(true)} onSupport={() => setSupportOpen(true)} />
