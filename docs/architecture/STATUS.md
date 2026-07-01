@@ -26,6 +26,21 @@ Inputs:
 The build **cannot start without the required input** — preflight (`17` Step 0) verifies it and **stops
 with the exact missing item** if absent. So you can't accidentally launch a blind run.
 
+## ✅ Readiness audit — PASSED (2026-07-01)
+Verified live, so a fresh session can proceed without re-checking these:
+- `.env.bootstrap` has all 3 keys (Reown + CDP id/secret), gitignored ✅
+- Tooling: node 22, npm, Vercel CLI (authed), gh (authed) ✅
+- Git clean + pushed ✅
+- **Base Sepolia RPC live** (`https://sepolia.base.org`) ✅
+- SDKs exist: `@betswirl/sdk-core@0.1.27`, `@azuro-org/sdk@7.4.1` ✅
+- **CDP funding WORKS on Base Sepolia** — test faucet sent **ETH + USDC** (real tx hashes). Autonomous
+  wallet funding is proven ✅
+- Vercel deploy works (site live at wildstakes.vercel.app) ✅
+
+**Confirm at kickoff Discovery (`23`), auto-route if needed:** BetSwirl testnet deployment live + betting
+token + bankroll funded on Base Sepolia; Azuro Base Sepolia subgraph/oracle/pool-token; single shared
+token feasible. If a protocol's testnet is down → switch to Polygon Amoy (both support it).
+
 ## Project
 - **Repo:** `erangamapa/polaris` (codename **polaris**; player-visible brand **WildStakes** via
   `src/lib/brand.js` `BRAND_NAME`). Local dir may still be `.../boyzcasino`.
