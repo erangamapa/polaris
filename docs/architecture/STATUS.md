@@ -3,6 +3,12 @@
 > Single "where are we / how to continue" note so any fresh session (or a cleared context) can pick up
 > without loss. The full plan is in this directory; start with `README.md`.
 
+## 🔑 Secrets location (NEVER commit these)
+Bootstrap secrets live in **`.env.bootstrap`** at the repo root — **gitignored, untracked**. Preflight
+(`17` Step 0) reads them. If it's already populated, **resume with just:**
+`Read docs/architecture/STATUS.md and build.` — no need to paste values again. (Never put secret values
+in this file or any tracked file.)
+
 ## ▶ Kickoff after a context clear (paste this)
 
 ```
