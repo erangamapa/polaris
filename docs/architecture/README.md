@@ -16,7 +16,10 @@ contracts**.
 
 1. Read `00-overview.md` and `01-system-architecture.md` — the integrator model.
 2. Read `16-credential-manifest.md` — the (now small) credential set. `11` is superseded by it.
-3. Follow `12-build-plan-phases.md` — the phased build (wallet → Azuro → WINR → thin backend → UX).
+3. **Resolve `23-open-items-and-discovery.md` FIRST (Discovery / Phase 0.5)** — the pre-build gate; don't
+   start building until every WINR/Azuro/chain/asset unknown is confirmed.
+4. Follow `12-build-plan-phases.md` — the phased build (wallet → Azuro → WINR → thin backend → UX),
+   verifying at API level as you go (`22`).
 4. Casino spec = `07` (WINR); sports spec = `08` (Azuro); backend = `05` (thin); data/history = `15`.
 5. Respect `13` (compliance) and `14` (threat model) on every phase.
 
@@ -47,6 +50,7 @@ contracts**.
 | `20-infrastructure-and-deployment.md` | IaC & deploy (single repo, simpler) | ✅ current (banner) |
 | `21-test-wallet-and-handoff.md` | Agent creates + funds a MetaMask test wallet across chains, hands you the seed | ✅ current |
 | `22-verification-strategy.md` | Incremental API-level connectivity checks as you build (not browser, not end-only) | ✅ current |
+| `23-open-items-and-discovery.md` | **Pre-build gate** — every unknown to confirm first (WINR + Azuro + chains + assets) | ✅ current |
 
 ## The one-sentence summary
 

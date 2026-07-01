@@ -6,9 +6,19 @@
 
 ## Phase 0 — Prep & credentials
 - Human: provide `VITE_REOWN_PROJECT_ID`; grant run permission. (GitHub + Vercel already authed.)
-- Agent: confirm WINR + Azuro SDKs, current testnet chains, faucets, RPC (from docs.winr.games /
-  gem.azuro.org). Generate testnet affiliate addresses.
-- **DoD:** Reown id present; SDK/versions + testnet endpoints identified; app still runs.
+- Agent: generate testnet affiliate addresses; confirm tooling.
+- **DoD:** Reown id present; app still runs.
+
+## Phase 0.5 — Discovery (RESOLVE ALL OPEN ITEMS FIRST) 🔒
+- Work through **`23-open-items-and-discovery.md`** end to end: WINR SDK/chain/launch/affiliate/payout,
+  Azuro SDK/chain/token/subgraph/order-API/redeem, RPC/faucets, assets/tiles, MetaMask network params.
+- Turn every `❓` into `✅ <answer>` (or `⚠️` with the blocker). Populate `packages/shared/chains.ts`;
+  pin SDK versions.
+- **This is a hard gate.** Do **not** start Phase 1+ until Discovery is resolved. If a blocking item is
+  `⚠️`, **report before building** — this is the step that prevents burning tokens then discovering
+  something missing halfway.
+- **DoD:** `23` fully resolved (or blockers surfaced); chain config + SDK versions pinned; a smoke
+  connectivity check per protocol (RPC up, subgraph responds, WINR catalog reads) passes.
 
 ## Phase 1 — Light restructure
 - Keep the existing app as `apps/web`; add a thin `apps/api` (Vercel functions) + `packages/shared`
