@@ -52,10 +52,19 @@ token feasible. If a protocol's testnet is down → switch to Polygon Amoy (both
   connect · 4 BetSwirl casino · 3 Azuro sports · 5–8 backend/history/unified-balance/RG · 9 hardening.**
 - **Deployed to production:** https://wildstakes.vercel.app (Basic-Auth gated; `/api/*` live —
   balance/history/geo + **forged-affiliate→403** verified in prod).
-- **Casino on-chain E2E: PASSED** (multiple dice bets settled via VRF, affiliate=house). **Sports:**
+- **Casino on-chain E2E: PASSED** (5+ dice bets settled via VRF, affiliate=house every time). **Sports:**
   integration proven to relayer acceptance; on-chain settlement waits on transient testnet game data (`23`).
+- **Revenue:** affiliate attribution on-chain + enforced server-side (forged→403); **accrual = 0 on this
+  testnet** because the bank's house-edge split (admin-only) allocates no affiliate share — a
+  mainnet/config matter, not a build defect (`23`, `19`). Claim path (`verify-revenue.mjs`) is wired.
 - **Handoff:** both seeds in gitignored `.secrets/` (house + player). See `21`. Player funded (ETH+WETH),
   house funded (gas to claim).
+
+### Verification scripts (run any time from repo root)
+- `node packages/shared/scripts/bet-casino.mjs` — casino on-chain bet E2E (PASSES).
+- `node packages/shared/scripts/bet-sports.mjs` — Azuro order E2E (relayer-accepted; needs a live game).
+- `node packages/shared/scripts/verify-revenue.mjs` — read/claim house affiliate revenue.
+- `node packages/shared/scripts/fund.mjs` — CDP faucet top-up (PLAYER_ETH_DRIPS=N).
 - Architecture = **integrator**: **casino → BetSwirl**, **sports/predictions → Azuro**, both on-chain,
   non-custodial, **co-located on Base Sepolia**, testnet-only. No bankroll, no provider contracts.
 

@@ -72,6 +72,18 @@ Legend: `✅` confirmed · `❓` confirm at kickoff · `⚠️` needs-user.
   bridging for marginal benefit). **Resolution:** UI bet path is wired + verified; on-chain settlement
   passes as soon as the dev feed has a live/upcoming game (retry `bet-sports.mjs`).
 
+## ⚠️ Finding: BetSwirl affiliate revenue accrual (testnet)
+- **Attribution is proven + enforced on-chain:** every casino bet carries `affiliate = house`
+  (`0x584d…9c74`), verified across 5+ settled dice bets, and the backend rejects a forged affiliate (403).
+- **But `bank.affiliateAmounts[house][ETH]` = 0** after that volume. Root cause (verified on-chain): the
+  house-edge **split** among {bank, dividend, affiliate, treasury, team} is set by the **bank owner**
+  (`setHouseEdgeSplit`, admin-only — an affiliate cannot self-serve it), and this Base Sepolia deployment
+  allocates **0 to the affiliate share**. `setAffiliateHouseEdge` from the house succeeds but the raw edge
+  stays 0 (the SDK's 400 is a display default), so nothing accrues to claim.
+- **Assessment:** not a build defect. Testnet verifies **attribution + server-side enforcement + a wired
+  claim path** (`withdrawAffiliateRevenues`); actual monetary accrual needs a deployment whose split
+  includes an affiliate share (mainnet / properly-configured env) — mirrors Azuro payout being mainnet-only.
+
 ## Discovery output (Phase 0.5 deliverable)
 - This file: every ❓ → ✅/⚠️; `packages/shared/chains.ts` populated (Base Sepolia params, tokens, RPC,
   subgraph URLs); SDK versions pinned; a smoke check (RPC up, subgraphs respond, a headless test bet on
