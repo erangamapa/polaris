@@ -1,13 +1,15 @@
-// BetSwirl casino integration bound to the connected wallet.
-// Places real on-chain bets (Chainlink VRF) with our affiliate attached.
-import { useCallback, useMemo } from 'react';
-import { usePublicClient, useWalletClient } from 'wagmi';
+// BetSwirl casino integration bound to the connected wallet (Base Sepolia).
+// Auto-switches the wallet to the casino chain at bet time, then places a real
+// on-chain bet (Chainlink VRF) with our affiliate attached.
+import { useCallback } from 'react';
+import { useAccount, useConfig } from 'wagmi';
+import { getWalletClient, getPublicClient, switchChain } from '@wagmi/core';
 import { parseEther } from 'viem';
 import {
   initViemBetSwirlClient, GAS_TOKEN_ADDRESS,
   getKenoConfigurationFunctionData, parseRawKenoConfiguration,
 } from '@betswirl/sdk-core';
-import { CHAIN } from './config';
+import { CASINO_CHAIN_ID } from '@shared/chains';
 
 const AFFILIATE = import.meta.env.VITE_AFFILIATE_ADDRESS;
 const ETH_TOKEN = { symbol: 'ETH', address: GAS_TOKEN_ADDRESS, decimals: 18 };
@@ -26,32 +28,30 @@ export const BETSWIRL_GAMES = [
 ];
 
 export function useBetSwirl() {
-  const publicClient = usePublicClient({ chainId: CHAIN.id });
-  const { data: walletClient } = useWalletClient({ chainId: CHAIN.id });
+  const { isConnected } = useAccount();
+  const config = useConfig();
 
-  const client = useMemo(() => {
-    if (!publicClient || !walletClient) return null;
-    return initViemBetSwirlClient(publicClient, walletClient, {
-      chainId: CHAIN.id,
-      affiliate: AFFILIATE,
-    });
-  }, [publicClient, walletClient]);
+  // Build a BetSwirl client bound to Base Sepolia, switching the wallet if needed.
+  const getClient = useCallback(async () => {
+    await switchChain(config, { chainId: CASINO_CHAIN_ID });
+    const walletClient = await getWalletClient(config, { chainId: CASINO_CHAIN_ID });
+    const publicClient = getPublicClient(config, { chainId: CASINO_CHAIN_ID });
+    return initViemBetSwirlClient(publicClient, walletClient, { chainId: CASINO_CHAIN_ID, affiliate: AFFILIATE });
+  }, [config]);
 
-  // Keno needs its multiplier config read from chain before betting.
   const loadKenoConfig = useCallback(async () => {
-    const fd = getKenoConfigurationFunctionData(GAS_TOKEN_ADDRESS, CHAIN.id);
+    const fd = getKenoConfigurationFunctionData(GAS_TOKEN_ADDRESS, CASINO_CHAIN_ID);
+    const publicClient = getPublicClient(config, { chainId: CASINO_CHAIN_ID });
     const raw = await publicClient.readContract({
       address: fd.data.to, abi: fd.data.abi, functionName: fd.data.functionName, args: fd.data.args,
     });
-    return parseRawKenoConfiguration(raw, ETH_TOKEN, CHAIN.id);
-  }, [publicClient]);
+    return parseRawKenoConfiguration(raw, ETH_TOKEN, CASINO_CHAIN_ID);
+  }, [config]);
 
   // Place a bet on any playable game, wait for the VRF roll, return the result.
-  // `selection` shape depends on the game: dice {cap}, coin {face},
-  // roulette {numbers}, keno {balls}.
   const play = useCallback(
     async ({ gameKey, betEth, selection, onBetPlaced }) => {
-      if (!client) throw new Error('Connect your wallet first');
+      const client = await getClient();
       const base = { betAmount: parseEther(String(betEth)), tokenAddress: GAS_TOKEN_ADDRESS, affiliate: AFFILIATE };
       const opts = { pollingInterval: 2500 };
 
@@ -68,8 +68,8 @@ export function useBetSwirl() {
       const { rolledBet } = await client.waitRolledBet(placed.placedBet, { pollingInterval: 2500, timeout: 120_000 });
       return { placedBet: placed.placedBet, rolledBet };
     },
-    [client, loadKenoConfig],
+    [getClient, loadKenoConfig],
   );
 
-  return { ready: Boolean(client), play, loadKenoConfig };
+  return { ready: isConnected, play };
 }

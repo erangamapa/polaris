@@ -60,6 +60,17 @@ Legend: `✅` confirmed · `❓` confirm at kickoff · `⚠️` needs-user.
 ## ⚠️ Needs-user (not blocking testnet)
 - Azuro affiliate **payout registration** (mainnet/real-money only) — a form with Azuro's team (`19`).
 
+## Update: sports moved to Polygon Amoy (more markets)
+- Sports (Azuro) now runs on **Polygon Amoy** (`PolygonAmoyUSDT`, chain 80002); casino stays on Base
+  Sepolia. Amoy exposes **more active markets** (≈17 across 3 games vs 7 on 1). The app **auto-switches**
+  the wallet to the chain a bet needs (wagmi core `switchChain` at bet time — one wallet tap).
+- Bet token = **USDT** (6 decimals) with a public `mint()` faucet → no wrapping. **POL gas on Amoy is NOT
+  CDP-faucetable** (CDP only funds Base/Ethereum Sepolia) → player gets POL from
+  https://faucet.polygon.technology, then mints USDT in-app.
+- Verified on Amoy (`bet-sports.mjs`): signature + affiliate + order format **accepted by the relayer**;
+  settlement still returns "Game is not active" because the current active markets are past fixtures —
+  same transient testnet-data condition as below, now with more markets to display.
+
 ## ⚠️ Transient blocker found during build (Azuro on-chain settlement)
 - **Azuro integration proven correct** headlessly (`packages/shared/scripts/bet-sports.mjs`): feed read →
   conditions/odds → **wrap ETH→WETH** → **approve relayer** → **EIP-712 sign** (local key) →

@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2, ExternalLink } from "lucide-react";
 import { useWallet } from "@/web3/useWallet";
-import { baseSepolia } from "@shared/chains";
+import { baseSepolia, polygonAmoy } from "@shared/chains";
 
-const txUrl = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
+const casinoTx = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
+const sportsTx = (hash) => `${polygonAmoy.blockExplorers.default.url}/tx/${hash}`;
 
 // On-chain "My Bets": casino rounds settle instantly with a VRF tx link; sports
 // bets are read from the Azuro subgraph via /api/history. Reconnecting the same
@@ -57,7 +58,7 @@ export function BetHistoryDialog({ open, onClose, casinoRounds = [] }) {
                   <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
                     <span className="font-mono">stake {r.stake} ETH</span>
                     {r.txnHash && (
-                      <a href={txUrl(r.txnHash)} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[var(--global-cta)] hover:underline">
+                      <a href={casinoTx(r.txnHash)} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[var(--global-cta)] hover:underline">
                         <ExternalLink className="size-3" /> VRF proof
                       </a>
                     )}
@@ -82,7 +83,7 @@ export function BetHistoryDialog({ open, onClose, casinoRounds = [] }) {
                   <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
                     <span className="font-mono">stake {Number(b.stake).toFixed(5)} @ {Number(b.odds).toFixed(2)}</span>
                     {b.txHash && (
-                      <a href={txUrl(b.txHash)} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[var(--global-cta)] hover:underline">
+                      <a href={sportsTx(b.txHash)} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[var(--global-cta)] hover:underline">
                         <ExternalLink className="size-3" /> on-chain
                       </a>
                     )}

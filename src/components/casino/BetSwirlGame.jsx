@@ -11,7 +11,7 @@ const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
 // A real, on-chain BetSwirl game. Every play is a wallet transaction settled by
 // Chainlink VRF; winnings pay straight to the player.
 export function BetSwirlGame({ game, onClose, onRound }) {
-  const { nativeBalance } = useWallet();
+  const { casinoBalance } = useWallet();
   const { ready, play } = useBetSwirl();
 
   const [betEth, setBetEth] = useState(0.00001);
@@ -24,7 +24,7 @@ export function BetSwirlGame({ game, onClose, onRound }) {
   const [betTx, setBetTx] = useState(null);
 
   const busy = phase === "confirming" || phase === "rolling";
-  const insufficient = betEth > nativeBalance;
+  const insufficient = betEth > casinoBalance;
 
   const selectionFor = () => {
     if (game.control === "dice") return { cap };
@@ -70,7 +70,7 @@ export function BetSwirlGame({ game, onClose, onRound }) {
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · BetSwirl</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{nativeBalance.toFixed(5)} ETH</div>
+          <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{casinoBalance.toFixed(5)} ETH</div>
           <button onClick={onClose} disabled={busy} aria-label="Close game" className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-white disabled:opacity-40">✕</button>
         </div>
       </div>

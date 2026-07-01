@@ -8,6 +8,13 @@
 // Both are ETH-denominated on one chain, so funding = ETH (+ wrap some to WETH).
 
 export const BASE_SEPOLIA_ID = 84532;
+export const POLYGON_AMOY_ID = 80002;
+
+// Two-chain split: casino (BetSwirl) on Base Sepolia, sports (Azuro) on Polygon
+// Amoy — Amoy's Azuro dev feed carries more live markets. The app auto-switches
+// the wallet to the chain a given bet needs.
+export const CASINO_CHAIN_ID = BASE_SEPOLIA_ID;
+export const SPORTS_CHAIN_ID = POLYGON_AMOY_ID;
 
 export const baseSepolia = {
   id: BASE_SEPOLIA_ID,
@@ -26,6 +33,24 @@ export const baseSepolia = {
     },
   },
   testnet: true,
+};
+
+export const polygonAmoy = {
+  id: POLYGON_AMOY_ID,
+  name: 'Polygon Amoy',
+  network: 'polygon-amoy',
+  nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
+  rpcUrls: { default: { http: ['https://rpc-amoy.polygon.technology'] } },
+  blockExplorers: {
+    default: { name: 'PolygonScan', url: 'https://amoy.polygonscan.com', apiUrl: 'https://api-amoy.polygonscan.com/api' },
+  },
+  testnet: true,
+};
+
+// Explorer lookup by chain id (bet/tx links are chain-aware now).
+export const EXPLORERS = {
+  [BASE_SEPOLIA_ID]: baseSepolia.blockExplorers.default.url,
+  [POLYGON_AMOY_ID]: polygonAmoy.blockExplorers.default.url,
 };
 
 // Native gas token sentinel used by BetSwirl for ETH bets.
@@ -53,23 +78,25 @@ export const betswirl = {
   sdkDefaultAffiliate: '0x057BcBF736DADD774A8A45A185c1697F4cF7517D',
 };
 
-// --- Azuro (sports/predictions) — @azuro-org/sdk@7.4.1 / toolkit@6.3.1 -----
+// --- Azuro (sports/predictions) — @azuro-org/sdk@7.4.1 / toolkit@6.3.1 -------
+// On Polygon Amoy (PolygonAmoyUSDT env) — more live markets than Base Sepolia.
+// USDT is a plain ERC-20 with a public mint() faucet (6 decimals), so no wrapping.
 export const azuro = {
-  chainId: BASE_SEPOLIA_ID,
-  environment: 'BaseSepoliaWETH',
+  chainId: POLYGON_AMOY_ID,
+  environment: 'PolygonAmoyUSDT',
   contracts: {
-    lp: '0x4fE86EddCC22dc992b7994878169201Ec7ea50AB',
-    core: '0x679CC42F69F98631668348d088086359D4217Ffa',
-    relayer: '0x2De54cABa6A8198D9Dc51931485Bfdc8017aB0c5',
-    azuroBet: '0xD031C4BDd4b7c30e3725132109786B8E158A4c07',
-    vault: '0x6910dE58f350CE0A8b42D27004313346A31b3540',
-    paymaster: '0xC2577cdcF684C9756f2C81efdA001CbEFEf3Dd92',
-    cashout: '0xf52Eb6ec19d81Ea623A7d7Ad397287C0C40f2F37',
+    lp: '0x0a75395Ff15d9557424b632cEBCac448D66F9779',
+    core: '0xCD0Db5ef28C3Bd3a69283372dE923Eb4DA0585F6',
+    relayer: '0x48c9bE88706F22838070eE7C4bC74Ad7A8eeF114',
+    azuroBet: '0x4B75c071dFA5d537979E8b0615Bb97B6337dbFef',
+    vault: '0x1Ed6CEEDf7033461a189FD7c3381C34846D7b25a',
+    paymaster: '0x2d155962b708c931Fc695F674B415065E78D9F04',
+    cashout: '0x7dF132Ad2334a667A004049a75a4a8a530dc24F2',
   },
-  betToken: { symbol: 'WETH', address: '0x9e09f213Ff75e53D52e9e777A6567A68683E935f', decimals: 18 },
+  betToken: { symbol: 'USDT', address: '0xCf1b86ceD971b88C042C64A9c099377e2738073C', decimals: 6 },
   graphql: {
-    bets: 'https://thegraph.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-api-base-sepolia-dev-v3',
-    feed: 'https://thegraph-1.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-data-feed-base-sepolia-dev',
+    bets: 'https://thegraph.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-api-polygon-amoy-dev-v3',
+    feed: 'https://thegraph-1.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-data-feed-polygon-amoy-dev',
   },
   api: 'https://dev-api.onchainfeed.org/api/v1/public',
   socket: 'wss://dev-streams.onchainfeed.org/v1/streams',

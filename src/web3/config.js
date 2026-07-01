@@ -2,7 +2,8 @@
 // Testnet-only: Base Sepolia (both BetSwirl casino + Azuro sports live there).
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { baseSepolia } from '@reown/appkit/networks';
+import { baseSepolia, polygonAmoy } from '@reown/appkit/networks';
+import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from '@shared/chains';
 import { BRAND_NAME } from '@/lib/brand';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
@@ -12,8 +13,13 @@ if (!projectId) {
   console.error('VITE_REOWN_PROJECT_ID is not set — wallet connect will not work.');
 }
 
+// Casino (BetSwirl) lives on Base Sepolia, sports (Azuro) on Polygon Amoy.
+export const CASINO_CHAIN = baseSepolia;
+export const SPORTS_CHAIN = polygonAmoy;
+// Back-compat default used where a single "home" chain is assumed (casino).
 export const CHAIN = baseSepolia;
-export const networks = [baseSepolia];
+export const networks = [baseSepolia, polygonAmoy];
+export { CASINO_CHAIN_ID, SPORTS_CHAIN_ID };
 
 const wagmiAdapter = new WagmiAdapter({
   networks,

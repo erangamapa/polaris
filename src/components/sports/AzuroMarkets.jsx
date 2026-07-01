@@ -5,7 +5,8 @@ import { useWallet } from "@/web3/useWallet";
 import { toast } from "@/lib/toast";
 
 const STEP_LABEL = {
-  funding: "Wrapping WETH…",
+  switching: "Switching to Polygon Amoy…",
+  funding: "Getting test USDT…",
   approving: "Approving relayer…",
   signing: "Sign the order in your wallet…",
   submitting: "Submitting to Azuro…",
@@ -16,11 +17,20 @@ const STEP_LABEL = {
 // outcome sends a gasless, affiliate-attributed order.
 export function AzuroMarkets({ onBetPlaced }) {
   const { games, loading } = useBettableGames();
-  const { ready, placeBet } = useAzuroBet();
-  const { wethBalance } = useWallet();
-  const [stake, setStake] = useState(0.0002);
+  const { ready, placeBet, mintUsdt } = useAzuroBet();
+  const { sportsBalance, sportsGas } = useWallet();
+  const [stake, setStake] = useState(1);
   const [busy, setBusy] = useState(null); // `${conditionId}-${outcomeId}`
   const [step, setStep] = useState(null);
+  const [minting, setMinting] = useState(false);
+
+  const getUsdt = async () => {
+    if (!ready) { toast.error("Connect your wallet first"); return; }
+    setMinting(true);
+    try { await mintUsdt(100); toast.success("Minted 100 test USDT"); }
+    catch (e) { toast.error(e.shortMessage || e.message || "Mint failed"); }
+    finally { setMinting(false); }
+  };
 
   const bet = async (game, market, outcome) => {
     if (!ready) { toast.error("Connect your wallet first"); return; }
@@ -31,7 +41,7 @@ export function AzuroMarkets({ onBetPlaced }) {
         conditionId: market.conditionId,
         outcomeId: outcome.outcomeId,
         odds: outcome.odds,
-        amountEth: stake,
+        amountUsdt: stake,
         onStep: setStep,
       });
       toast.success(`Bet accepted (order ${String(res.id).slice(0, 8)}…)`);
@@ -54,22 +64,32 @@ export function AzuroMarkets({ onBetPlaced }) {
         <div className="flex items-center gap-2">
           <Trophy className="size-4 text-[var(--global-cta)]" />
           <h2 className="text-sm font-bold">On-chain sports</h2>
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">Azuro · Base Sepolia</span>
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">Azuro · Polygon Amoy</span>
           {totalMarkets > 0 && <span className="text-[11px] text-muted-foreground">{totalMarkets} markets · {games.length} games</span>}
         </div>
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          Stake (WETH)
+          Stake (USDT)
           <input
-            type="number" min={0} step={0.0001} value={stake}
+            type="number" min={0} step={0.5} value={stake}
             onChange={(e) => setStake(Math.max(0, +e.target.value))}
             className="w-24 rounded-md border bg-background px-2 py-1 font-mono tabular-nums outline-none"
           />
         </label>
       </div>
 
-      <p className="mb-3 text-xs text-muted-foreground">
-        WETH balance: <span className="font-mono">{wethBalance.toFixed(5)}</span> · gasless bet (you sign; a relayer submits). Winnings settle to your wallet.
-      </p>
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span>USDT: <span className="font-mono">{sportsBalance.toFixed(2)}</span></span>
+        <span>· POL gas: <span className="font-mono">{sportsGas.toFixed(4)}</span></span>
+        <button
+          onClick={getUsdt}
+          disabled={minting}
+          data-test-id="mint-usdt"
+          className="ml-1 rounded-md border px-2 py-0.5 font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+        >
+          {minting ? "Minting…" : "Get test USDT"}
+        </button>
+        <span className="w-full text-[11px]">Gasless bet on Polygon Amoy — you sign; a relayer submits. Winnings settle to your wallet.</span>
+      </div>
 
       {loading ? (
         <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">

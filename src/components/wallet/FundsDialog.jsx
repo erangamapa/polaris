@@ -6,10 +6,13 @@ import { useWallet, shortAddress } from "@/web3/useWallet";
 import { baseSepolia } from "@shared/chains";
 import { toast } from "@/lib/toast";
 
-// Non-custodial Funds panel: shows the player's own on-chain balances and
-// links to testnet faucets. WildStakes never holds funds — no deposit-to-us.
+// Non-custodial Funds panel: shows the player's own on-chain balances across the
+// two chains (casino = Base Sepolia, sports = Polygon Amoy) and links to faucets.
+// WildStakes never holds funds — no deposit-to-us.
 export function FundsDialog({ open, onClose }) {
-  const { address, nativeBalance, nativeSymbol, wethBalance, disconnect } = useWallet();
+  const {
+    address, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
+  } = useWallet();
 
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
 
@@ -45,8 +48,9 @@ export function FundsDialog({ open, onClose }) {
         </div>
 
         <div className="space-y-2">
-          <BalanceRow label="Casino (BetSwirl)" symbol={nativeSymbol} amount={nativeBalance} note="native — bets + gas" />
-          <BalanceRow label="Sports (Azuro)" symbol="WETH" amount={wethBalance} note="wrapped ETH" />
+          <BalanceRow label="Casino (BetSwirl · Base Sepolia)" symbol={casinoSymbol} amount={casinoBalance} decimals={5} note="native — bets + gas" />
+          <BalanceRow label="Sports (Azuro · Polygon Amoy)" symbol={sportsSymbol} amount={sportsBalance} decimals={2} note="bet token — mint from Sports tab" />
+          <BalanceRow label="Sports gas" symbol={sportsGasSymbol} amount={sportsGas} decimals={4} note="Polygon Amoy native" />
         </div>
 
         <div className="rounded-lg border border-dashed p-3 text-sm">
@@ -54,11 +58,11 @@ export function FundsDialog({ open, onClose }) {
             <Droplets className="size-4 text-[var(--global-cta)]" /> Get testnet funds
           </div>
           <div className="flex flex-col gap-1.5">
-            <FaucetLink href="https://portal.cdp.coinbase.com/products/faucet" label="Coinbase Base Sepolia faucet (ETH)" />
-            <FaucetLink href="https://www.alchemy.com/faucets/base-sepolia" label="Alchemy Base Sepolia faucet (ETH)" />
+            <FaucetLink href="https://portal.cdp.coinbase.com/products/faucet" label="Casino: Base Sepolia ETH faucet (Coinbase)" />
+            <FaucetLink href="https://faucet.polygon.technology/" label="Sports: Polygon Amoy POL faucet (gas)" />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Wrap ETH → WETH to bet on sports. Base Sepolia is a testnet — funds have no real value.
+            Get POL for gas on Amoy, then mint test USDT from the Sports tab. Both are testnets — funds have no real value.
           </p>
         </div>
 
@@ -74,7 +78,7 @@ export function FundsDialog({ open, onClose }) {
   );
 }
 
-function BalanceRow({ label, symbol, amount, note }) {
+function BalanceRow({ label, symbol, amount, note, decimals = 5 }) {
   return (
     <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5">
       <div>
@@ -82,7 +86,7 @@ function BalanceRow({ label, symbol, amount, note }) {
         <div className="text-xs text-muted-foreground">{note}</div>
       </div>
       <div className="font-mono text-sm font-semibold tabular-nums">
-        {amount.toFixed(5)} {symbol}
+        {amount.toFixed(decimals)} {symbol}
       </div>
     </div>
   );

@@ -1,18 +1,22 @@
-import { Wallet, AlertTriangle, Loader2 } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { useWallet, shortAddress } from "@/web3/useWallet";
+import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 
-// Replaces Login/Register. Three states: disconnected -> Connect Wallet;
-// wrong network -> Switch CTA; connected -> address + ETH balance pill.
+const NETWORK = {
+  [CASINO_CHAIN_ID]: { label: "Base Sepolia", dot: "#0052ff" },
+  [SPORTS_CHAIN_ID]: { label: "Polygon Amoy", dot: "#8247e5" },
+};
+
+// Replaces Login/Register. Disconnected -> Connect Wallet; connected -> a pill
+// showing the active network (casino=Base Sepolia, sports=Amoy) + address.
+// The correct chain is selected automatically at bet time, so no forced CTA here.
 export function WalletButton({ onManage }) {
-  const {
-    address, isConnected, wrongNetwork, isSwitching,
-    nativeBalance, nativeSymbol, connect, switchToBaseSepolia,
-  } = useWallet();
+  const { address, isConnected, chainId } = useWallet();
 
   if (!isConnected) {
     return (
       <button
-        onClick={connect}
+        onClick={onManage}
         data-test-id="connect-wallet"
         className="flex items-center gap-2 rounded-lg bg-[var(--global-cta)] px-4 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
@@ -22,19 +26,7 @@ export function WalletButton({ onManage }) {
     );
   }
 
-  if (wrongNetwork) {
-    return (
-      <button
-        onClick={switchToBaseSepolia}
-        disabled={isSwitching}
-        data-test-id="switch-network"
-        className="flex items-center gap-2 rounded-lg bg-[var(--warning,#b45309)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-      >
-        {isSwitching ? <Loader2 className="size-4 animate-spin" /> : <AlertTriangle className="size-4" />}
-        Switch to Base Sepolia
-      </button>
-    );
-  }
+  const net = NETWORK[chainId] ?? { label: "Unknown", dot: "#a1a1aa" };
 
   return (
     <button
@@ -42,13 +34,9 @@ export function WalletButton({ onManage }) {
       data-test-id="wallet-pill"
       className="flex items-center gap-2 rounded-lg bg-zinc-800/80 px-3 py-1.5 ring-1 ring-white/5 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="grid size-5 place-items-center rounded-full bg-[var(--brand-logo)] text-[10px] font-bold text-[var(--brand-logo-text)]">
-        {address?.[2]?.toUpperCase() ?? "0"}
-      </span>
-      <span className="font-mono text-xs font-semibold tabular-nums text-white">
-        {nativeBalance.toFixed(4)} {nativeSymbol}
-      </span>
-      <span className="hidden font-mono text-xs text-zinc-400 sm:inline">{shortAddress(address)}</span>
+      <span className="inline-block size-2 rounded-full" style={{ background: net.dot }} aria-hidden />
+      <span className="hidden text-xs font-medium text-zinc-300 sm:inline">{net.label}</span>
+      <span className="font-mono text-xs text-white">{shortAddress(address)}</span>
     </button>
   );
 }

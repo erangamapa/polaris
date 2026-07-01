@@ -7,14 +7,14 @@ import { useWallet } from "@/web3/useWallet";
 // Wallet-first top bar: Connect Wallet replaces Login/Register (docs/architecture/10).
 // When connected, the wallet pill + Funds + activity controls appear.
 export function TopBar({ onBurger, onManageWallet, onFunds, onActivity }) {
-  const { isConnected, wrongNetwork } = useWallet();
+  const { isConnected } = useWallet();
 
   // Long-press the logo (~700ms) opens the dev panel on touch devices.
   const pressTimer = useRef(null);
   const startPress = () => { pressTimer.current = setTimeout(() => window.dispatchEvent(new Event("polaris:dev")), 700); };
   const cancelPress = () => clearTimeout(pressTimer.current);
 
-  const showConnected = isConnected && !wrongNetwork;
+  const showConnected = isConnected;
 
   return (
     <header className="relative z-40 flex shrink-0 items-center gap-3 border-b bg-background px-3 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))]">
