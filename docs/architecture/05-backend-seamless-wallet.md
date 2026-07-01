@@ -1,7 +1,7 @@
 # 05 — Thin Backend (read-only aggregation & gating)
 
 > **SUPERSEDED design note:** the original seamless-wallet backend (ledger, `/wallet/bet|win`,
-> settlement, HMAC, idempotency) existed to run our own off-chain casino. With the **WINR + Azuro**
+> settlement, HMAC, idempotency) existed to run our own off-chain casino. With the **BetSwirl + Azuro**
 > pivot there is **no custody and no off-chain ledger**, so that backend is **removed**. What remains is
 > a thin, read-only layer. This doc describes the new, minimal backend.
 
@@ -10,7 +10,7 @@
 The backend does **not** hold funds, run games, resolve outcomes, or settle bets — the on-chain
 protocols do all of that. It only:
 
-1. **Aggregates reads** — unified balance + bet history from on-chain sources (WINR indexer + Azuro
+1. **Aggregates reads** — unified balance + bet history from on-chain sources (BetSwirl subgraph + Azuro
    subgraph), optionally cached for speed.
 2. **Injects/enforces the affiliate address** on outgoing bet orders server-side (so it can't be
    swapped client-side — `14`, `19`).
@@ -23,12 +23,12 @@ Vercel env; nothing that can move player funds.
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /balance` | unified balance (WINR casino + Azuro-chain wallet), USD-normalized |
-| `GET /history` | merged bet history (WINR indexer + Azuro subgraph), cached |
+| `GET /balance` | unified balance (BetSwirl casino + Azuro-chain wallet), USD-normalized |
+| `GET /history` | merged bet history (BetSwirl subgraph + Azuro subgraph), cached |
 | `POST /bet/prepare` (sports) | build an Azuro order with **our affiliate address enforced**; return for signing |
 | `GET /session` | short-lived UX token (no custody) |
 
-Casino bets go **directly** from the frontend through the WINR SDK to WINR contracts; the backend is not
+Casino bets go **directly** from the frontend through the BetSwirl SDK to BetSwirl contracts; the backend is not
 in the money path. Sports bets are prepared server-side only to enforce the affiliate address, then
 signed by the player and submitted via Azuro's relayer.
 

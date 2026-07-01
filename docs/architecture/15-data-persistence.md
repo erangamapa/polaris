@@ -1,18 +1,18 @@
 # 15 — Data Persistence & History
 
-> **Updated for the WINR + Azuro pivot.** Previously casino rounds were off-chain and we HAD to store
-> them. Now **both casino (WINR) and sports (Azuro) settle on-chain**, so history is on-chain for both
+> **Updated for the BetSwirl + Azuro pivot.** Previously casino rounds were off-chain and we HAD to store
+> them. Now **both casino (BetSwirl) and sports (Azuro) settle on-chain**, so history is on-chain for both
 > and we store almost nothing of record.
 
 ## The core fact: everything is on-chain now
 
 | Data | On-chain? | Read from |
 |---|---|---|
-| Casino bets/rounds (WINR) | ✅ on-chain | WINR indexer / explorer |
-| Casino settlement (WINR bankroll) | ✅ on-chain | WINR indexer |
+| Casino bets/rounds (BetSwirl) | ✅ on-chain | BetSwirl subgraph / explorer |
+| Casino settlement (BetSwirl bankroll) | ✅ on-chain | BetSwirl subgraph |
 | Sports/prediction bets (Azuro) | ✅ on-chain | Azuro subgraph |
 | Balances | ✅ on-chain (wallet + protocol) | RPC / indexers |
-| Deposits / swaps (USDC→WINR) | ✅ on-chain | explorer |
+| Deposits / swaps (USDC→BetSwirl) | ✅ on-chain | explorer |
 
 There is **no off-chain source of truth**. The wallet address is the account; all state is derivable
 from chain.
@@ -45,17 +45,17 @@ Here's the proof."*
 
 | Vertical | Source | Shows |
 |---|---|---|
-| **Casino** | WINR indexer / explorer | game, stake, payout, outcome + **on-chain tx / explorer link**; WINR VRF proof of fairness |
+| **Casino** | BetSwirl subgraph / explorer | game, stake, payout, outcome + **on-chain tx / explorer link**; Chainlink VRF proof of fairness |
 | **Sports / Predictions** | Azuro subgraph | market, selection, odds, stake, status, payout + **explorer link** |
 
 - Each row links to its **transaction on the block explorer** — fully verifiable.
-- Casino rows can surface the **WINR VRF proof** (provably fair, on-chain).
+- Casino rows can surface the **Chainlink VRF proof** (provably fair, on-chain).
 - One "My Bets" screen with **Casino / Sports** tabs (or a merged, source-labelled, time-sorted list).
 - Tag rows 🔗 on-chain (both are) — no off-chain caveat needed anymore.
 - **Cache** both feeds per address for a fast unified view; the chain remains source of truth.
 
 > Note: this simplifies the earlier design, where casino was off-chain and needed the "off-chain rounds,
-> on-chain settlement" explanation. With WINR, casino is on-chain like sports — one clean story.
+> on-chain settlement" explanation. With BetSwirl, casino is on-chain like sports — one clean story.
 
 ## Retention & privacy
 - On-chain data is public and permanent by nature (pseudonymous by address).

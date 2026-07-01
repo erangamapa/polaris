@@ -6,11 +6,11 @@
 
 ## The non-custodial invariant (the core guarantee)
 - WildStakes holds **no custody**: no Vault, no signer, no key or contract with authority over player
-  funds. Players interact directly with WINR/Azuro from their own wallet.
+  funds. Players interact directly with BetSwirl/Azuro from their own wallet.
 - Audit check: the frontend and thin backend have **no capability to move a player's funds** (`14` T2).
 
 ## Affiliate / revenue integrity
-- Our affiliate identifiers (WINR referrer, Azuro affiliate) are **public, not secret**; the risk is
+- Our affiliate identifiers (BetSwirl affiliate, Azuro affiliate) are **public, not secret**; the risk is
   substitution. The thin backend **injects/enforces** our identifier on prepared orders and **rejects
   mismatches** before submission (`14` T1, `19`). Never trust a client-supplied affiliate value.
 
@@ -29,7 +29,7 @@
   tampering cannot change protocol settlement. `/bet/prepare` only sets the affiliate.
 
 ## Protocol dependency
-- We inherit WINR/Azuro security. Use their audited, live contracts; monitor status; degrade gracefully
+- We inherit BetSwirl/Azuro security. Use their audited, live contracts; monitor status; degrade gracefully
   (disable a vertical if its protocol/chain is down). See `14` T3.
 
 ## Responsible gambling (UI)

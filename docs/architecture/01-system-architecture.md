@@ -1,6 +1,6 @@
 # 01 — System Architecture
 
-> **WINR + Azuro integrator model.** No custody, no bankroll, no own settlement/RNG. This supersedes the
+> **BetSwirl + Azuro integrator model.** No custody, no bankroll, no own settlement/RNG. This supersedes the
 > earlier custom-stack architecture.
 
 ## High-level diagram
@@ -15,14 +15,14 @@
                 (wallet UX) │   (casino)    │   (sports/pred)    │ (reads: balance/history)
                             │               │                   │
                     ┌───────▼──────┐  ┌─────▼───────────┐  ┌────▼──────────────────┐
-                    │ WINR SDK     │  │ Azuro SDK       │  │ THIN BACKEND (apps/api)│
+                    │ BetSwirl SDK     │  │ Azuro SDK       │  │ THIN BACKEND (apps/api)│
                     │ casino games │  │ sports markets  │  │ Vercel functions       │
-                    │ on WINR L3   │  │ on Azuro chain  │  │ read-only aggregation, │
+                    │ on Base Sepolia   │  │ on Azuro chain  │  │ read-only aggregation, │
                     └───────┬──────┘  └─────┬───────────┘  │ affiliate inject,      │
                             │               │              │ session tokens (UX)    │
                             │               │              └────┬───────────────────┘
                     ┌───────▼──────┐  ┌─────▼───────────┐       │ (reads)
-                    │ WINR Protocol│  │ Azuro Protocol  │       │
+                    │ BetSwirl│  │ Azuro Protocol  │       │
                     │ bankroll·VRF │  │ liquidity·odds  │◄──────┘
                     │ settlement   │  │ settlement      │
                     │ (on-chain)   │  │ (on-chain)      │
@@ -37,7 +37,7 @@
 | Component | Owns | Notes |
 |---|---|---|
 | **Frontend** (`apps/web`) | UX, wallet connect, lobby, unified balance, bet history, bet placement via SDKs | the bulk of what we build |
-| **WINR SDK/contracts** | casino games, randomness, bankroll, settlement | on WINR L3; permissionless |
+| **BetSwirl SDK/contracts** | casino games, randomness, bankroll, settlement | on Base Sepolia; permissionless |
 | **Azuro SDK/contracts** | sports/prediction markets, odds, liquidity, settlement | on Azuro chain; permissionless |
 | **Thin backend** (`apps/api`) | read-only aggregation, affiliate injection, session tokens | **no custody, no ledger, no settlement, no RNG** |
 | **Player wallet** | custody of funds | non-custodial throughout |
@@ -45,24 +45,24 @@
 ## What we do NOT build anymore (removed vs the old custom stack)
 
 - ❌ `Vault.sol` custody contract — protocols are non-custodial.
-- ❌ Session keys / account abstraction relayer — WINR/Azuro handle bet UX on-chain.
+- ❌ Session keys / account abstraction relayer — BetSwirl/Azuro handle bet UX on-chain.
 - ❌ Seamless-wallet backend + off-chain ledger — no custody, protocols are source of truth.
-- ❌ Own provably-fair RNG engine — WINR VRF + Azuro provide it.
-- ❌ Own casino games — WINR catalog.
+- ❌ Own provably-fair RNG engine — Chainlink VRF + Azuro provide it.
+- ❌ Own casino games — BetSwirl game catalog.
 - ❌ Deposit-watcher, settlement relayer, signer key.
 
 The backend shrinks from "the core money engine" to a **thin, read-only aggregation + gating layer.**
 
 ## End-to-end flows
 
-### Casino round (via WINR)
+### Casino round (via BetSwirl)
 ```
-1. Player connects wallet (Reown/wagmi).
-2. (First time) player funds play per WINR's flow — USDC deposit auto-swapped to WINR chip on WINR L3.
-3. Player opens a WINR catalog game → plays.
-4. Each bet settles on-chain via WINR contracts; WINR VRF resolves the outcome; shared bankroll pays.
-5. Our affiliate address is attached to route commission to us.
-6. Balance/history reflect on-chain state (read via WINR indexer).
+1. Player connects wallet (Reown/wagmi) on Base Sepolia; holds the betting token in their own wallet.
+2. Player opens a BetSwirl game → plays.
+3. Each bet is an ON-CHAIN TX → native gas + Chainlink VRF fee + a MetaMask confirmation per bet.
+4. Chainlink VRF resolves the outcome; the shared bankroll pays winners on-chain.
+5. Our affiliate address (client config) routes commission to us.
+6. Balance/history reflect on-chain state (read via BetSwirl subgraph).
 ```
 
 ### Sports bet (via Azuro)
@@ -75,9 +75,9 @@ The backend shrinks from "the core money engine" to a **thin, read-only aggregat
 
 ## Data & reads
 
-- **No source-of-truth database.** Balances and bet history are **on-chain**, read via WINR indexer +
+- **No source-of-truth database.** Balances and bet history are **on-chain**, read via BetSwirl subgraph +
   Azuro subgraph. The thin backend may **cache** these for a fast unified view (see `15`).
-- **Unified balance** = WINR (casino) balance + Azuro-chain wallet balance, shown in USD; cross-chain
+- **Unified balance** = BetSwirl (casino) balance + Azuro-chain wallet balance, shown in USD; cross-chain
   reconciled at the display layer (bridging via LI.FI where needed).
 
 ## Non-functional requirements
@@ -92,9 +92,9 @@ The backend shrinks from "the core money engine" to a **thin, read-only aggregat
 
 ## Environments (testnet only)
 
-| Env | Casino (WINR) | Sports (Azuro) | Purpose |
+| Env | Casino (BetSwirl) | Sports (Azuro) | Purpose |
 |---|---|---|---|
-| `local` / `preview` / `staging` | WINR testnet | Azuro testnet | dev / demo with testnet funds |
+| `local` / `preview` / `staging` | BetSwirl testnet | Azuro testnet | dev / demo with testnet funds |
 
 Mainnet/production is out of scope for this build.
 

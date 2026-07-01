@@ -1,14 +1,15 @@
 # 03 — Blockchain Layer (Chains)
 
 > **SUPERSEDED (custody parts).** The custom `Vault.sol` + on-chain settlement below are **removed** —
-> WINR (casino) and Azuro (sports) are non-custodial protocols that handle custody/settlement. Kept for
+> BetSwirl (casino) and Azuro (sports) are non-custodial protocols that handle custody/settlement. Kept for
 > historical context. **What's still current:** the multi-chain strategy, updated here:
 >
-> - **Casino → WINR Chain** (L3 on Arbitrum, Orbit). Bets settle in the WINR chip; USDC auto-swapped.
-> - **Sports → Azuro** on a supported chain (Arbitrum / Polygon / Gnosis / Base…); pool token per chain.
-> - Casino and sports may be on **different chains** → unified balance via **LI.FI** bridging.
-> - We deploy **no contracts** for the MVP (protocols provide them). Optional own WINR games later may
->   involve WINR-engine contracts (`07`).
+> - **Both casino (BetSwirl) and sports (Azuro) run on Base Sepolia** — one shared chain.
+> - Bets use that chain's betting token; **casino bets cost per-bet gas + Chainlink VRF fee**; sports bets
+>   are **gasless** (relayer).
+> - **Co-located → one chain, one balance, no bridging** (LI.FI only if ever split later).
+> - We deploy **no contracts** for the MVP (protocols provide them). Optional own BetSwirl games later may
+>   involve BetSwirl-engine contracts (`07`).
 >
 > Everything below about `Vault.sol`, session-key settlement, and our own custody is **no longer built**.
 

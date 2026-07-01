@@ -1,6 +1,6 @@
 # 11 — Credentials, Sign-ups & Keys (SUPERSEDED — see `16`)
 
-> **SUPERSEDED by `16-credential-manifest.md`.** The WINR + Azuro pivot removed most credentials
+> **SUPERSEDED by `16-credential-manifest.md`.** The BetSwirl + Azuro pivot removed most credentials
 > (settlement signer, HMAC, JWT, Vault, thirdweb AA, required DB/KV). **Use `16` as the authoritative
 > list.** In short, to start the testnet build you now only need: `VITE_REOWN_PROJECT_ID` (+ optional
 > CDP keys or protocol faucets for test funds); GitHub + Vercel are already authed; affiliate addresses

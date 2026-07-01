@@ -1,9 +1,9 @@
 # 09 — Branded Studio Games (OPTIONAL / FUTURE — contract-gated)
 
-> **Not part of the MVP.** The casino now runs on **WINR** (`07`) — on-chain, no contracts, no bankroll.
+> **Not part of the MVP.** The casino now runs on **BetSwirl** (`07`) — on-chain, no contracts, no bankroll.
 > Branded studio content (Pragmatic/Evolution/BGaming/SOFTSWISS) remains **optional, future**, and still
 > requires signed B2B contracts + sandbox credentials, which contradicts the zero-contracts goal. Keep
-> this only if you later want licensed studio slots alongside WINR's originals. Everything below stands
+> this only if you later want licensed studio slots alongside BetSwirl's originals. Everything below stands
 > as the integration approach **if** you ever pursue it.
 
 ---

@@ -1,12 +1,12 @@
 # 04 — Wallet Connection (session keys SUPERSEDED)
 
 > **SUPERSEDED (session keys / AA).** Session keys + account abstraction existed to power our own
-> off-chain casino loop, which is **removed** in the WINR + Azuro pivot. WINR/Azuro handle on-chain bet
+> off-chain casino loop, which is **removed** in the BetSwirl + Azuro pivot. BetSwirl/Azuro handle on-chain bet
 > UX themselves. **What's still current:** plain **wallet connection** via **Reown AppKit + wagmi +
 > viem** (MetaMask/Coinbase/WalletConnect, EVM). The player connects, we ensure they're on the right
-> chain for the vertical (WINR Chain for casino, Azuro chain for sports) with a switch/bridge CTA
+> chain for the vertical (Base Sepolia for casino, Azuro chain for sports) with a switch/bridge CTA
 > (`03`, `10`). Everything below about session keys, bundlers, paymasters, and relayer settlement is
-> **no longer built**. Confirm at build time whether WINR/Azuro offer any session/gasless UX for rapid
+> **no longer built**. Confirm at build time whether BetSwirl/Azuro offer any session/gasless UX for rapid
 > play (`07`).
 
 ---

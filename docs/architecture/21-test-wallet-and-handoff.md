@@ -1,7 +1,7 @@
 # 21 — Test Wallet Provisioning & Handoff (MetaMask, testnet)
 
 > **Purpose.** During the build, the agent creates **one MetaMask-importable test wallet**, funds it
-> with **multiple balances across every supported testnet chain** (casino via WINR + sports via Azuro),
+> with **multiple balances across every supported testnet chain** (casino via BetSwirl + sports via Azuro),
 > verifies the full play loop itself, then **hands you the 12-word seed phrase**. You import it into the
 > MetaMask Chrome extension, connect to the app, and play on testnet — and it works.
 >
@@ -14,14 +14,14 @@
    (`Wallet.createRandom()` / `generateMnemonic()`). The same mnemonic/private key imports directly into
    MetaMask. One wallet, one seed, used across all chains (same address on every EVM chain).
 
-2. **Fund it across all supported testnet chains — both verticals, multiple balances:**
-   - **Casino → WINR Chain (testnet):** native gas + a casino betting balance (test USDC auto-swapped to
-     the WINR chip, or WINR test chip directly).
-   - **Sports → Azuro testnet chain(s):** native gas + the pool/betting token per chain (test
-     USDC/USDT/WXDAI/WCHZ, whichever the Azuro testnet uses).
-   - Fund **several amounts across the chains** so there's balance to play both verticals immediately.
+2. **Fund it on Base Sepolia (the one shared chain) for BOTH verticals:**
+   - **Native gas** (test ETH) — needed for BetSwirl casino bets + the Chainlink VRF fee. (Azuro sports
+     is gasless, but gas is still handy.)
+   - **The betting token** — BetSwirl casino token + Azuro pool token (ideally one shared token, e.g.
+     USDC; exact testnet token confirmed in Discovery `23`).
+   - Fund enough of each to play both verticals immediately.
    - **Funding sources (programmatic):** Coinbase CDP Faucet API (ETH/USDC on supported testnets),
-     WINR/Azuro testnet faucets, Circle testnet faucet, and LI.FI testnet bridging where a token isn't
+     BetSwirl/Azuro testnet faucets, Circle testnet faucet, and LI.FI testnet bridging where a token isn't
      directly faucetable. Some public faucets are CAPTCHA-gated → prefer API faucets (CDP) or protocol
      faucets; if a chain can only be funded manually, the agent flags that one item.
 
@@ -33,7 +33,7 @@
        "privateKey": "0x...",
        "address": "0x...",
        "chains": [
-         { "name": "WINR testnet", "chainId": 0, "rpcUrl": "...", "currency": "WINR",
+         { "name": "BetSwirl testnet", "chainId": 0, "rpcUrl": "...", "currency": "BetSwirl",
            "explorer": "...", "funded": { "gas": "...", "casino": "..." } }
          /* one entry per funded chain: Azuro testnet chain(s) too */
        ]
@@ -42,7 +42,7 @@
    - Also mirror the address (public) into build config; the mnemonic/privateKey stay only in
      `.secrets/` and are surfaced to you at handoff.
 
-4. **Run the full autonomous E2E with THIS wallet** (`17` Step 3): connect → play a WINR casino game →
+4. **Run the full autonomous E2E with THIS wallet** (`17` Step 3): connect → play a BetSwirl casino game →
    place an Azuro sports bet → view unified balance + on-chain history. This proves the exact wallet you
    receive already works before you touch it.
 
@@ -50,7 +50,7 @@
    - The **12-word seed phrase** (+ address).
    - The **chains + balances** funded (per chain: chainId, currency, amount, explorer link).
    - **MetaMask network details** to add for each non-default chain (Network Name, RPC URL, Chain ID,
-     Currency Symbol, Block Explorer) — WINR Chain testnet especially (it's a custom L3).
+     Currency Symbol, Block Explorer) — Base Sepolia testnet especially (it's a custom L3).
    - The **app URL** to connect to.
 
 ## What you do (after "build complete")
@@ -58,8 +58,8 @@
 1. Install the **MetaMask** Chrome extension.
 2. **Import wallet** → "Import using Secret Recovery Phrase" → paste the 12-word seed the agent gave you.
 3. **Add the testnet networks** — either accept the app's `wallet_addEthereumChain` prompt on connect
-   (the app adds WINR + Azuro testnet chains automatically), or add them manually from the details above.
-4. Open the app (WildStakes URL), **connect the wallet**, and play — casino (WINR) and sports (Azuro),
+   (the app adds BetSwirl + Azuro testnet chains automatically), or add them manually from the details above.
+4. Open the app (WildStakes URL), **connect the wallet**, and play — casino (BetSwirl) and sports (Azuro),
    with the pre-funded testnet balances.
 
 ## Security rules (must hold)
@@ -74,10 +74,10 @@
 
 | Vertical | Chain (testnet) | Gas | Betting token | Faucet |
 |---|---|---|---|---|
-| Casino | WINR Chain testnet | native | WINR chip (via test USDC swap) | WINR faucet |
+| Casino | Base Sepolia testnet | native | BetSwirl betting token (via test USDC swap) | BetSwirl faucet |
 | Sports | Azuro testnet chain (e.g. Polygon Amoy / Gnosis Chiado / Base Sepolia — per current Azuro deployment) | native | test USDC/USDT/WXDAI | Circle / CDP / Azuro faucet |
 
-The agent confirms the current WINR + Azuro **testnet chain IDs, RPC URLs, tokens, and faucets** at build
+The agent confirms the current BetSwirl + Azuro **testnet chain IDs, RPC URLs, tokens, and faucets** at build
 time (`17` preflight) and funds accordingly.
 
 ## Acceptance criteria

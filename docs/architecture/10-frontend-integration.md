@@ -1,11 +1,11 @@
 # 10 — Frontend Integration
 
-> **Updated for the WINR + Azuro pivot.** Still-valid: reuse the existing app, wallet connect via
-> Reown/wagmi/viem, unified balance, bet-history page. **Changed:** casino wires to the **WINR SDK**
+> **Updated for the BetSwirl + Azuro pivot.** Still-valid: reuse the existing app, wallet connect via
+> Reown/wagmi/viem, unified balance, bet-history page. **Changed:** casino wires to the **BetSwirl SDK**
 > (`07`) instead of our own games/seamless-wallet; sports/predictions wire to the **Azuro SDK** (`08`);
 > deposits/withdrawals + session keys + Vault UI are **gone** (protocols + player wallet handle funds).
 > Add a **chain switch/bridge CTA** when entering a vertical whose chain differs from the current one
-> (`03`). Unified balance = WINR (casino) + Azuro-chain wallet, shown in USD. Below, ignore references to
+> (`03`). Unified balance = BetSwirl (casino) + Azuro-chain wallet, shown in USD. Below, ignore references to
 > Vault deposit/withdraw and session keys.
 
 ---

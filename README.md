@@ -62,17 +62,17 @@ All data is mocked in `src/lib/*Data.js`. Swap these for real provider/API integ
 
 The plan to take Polaris from this mock-data prototype to a **fully on-chain, non-custodial,
 connect-wallet-and-play** platform lives in **[`docs/architecture/`](docs/architecture/README.md)** — a
-full, agent-executable build specification. It's built as an **integrator**: casino on **WINR Protocol**,
+full, agent-executable build specification. It's built as an **integrator**: casino on **BetSwirl**,
 sports/predictions on **Azuro Protocol** — both on-chain and non-custodial, so we carry **no bankroll**
 and sign **no game-provider contracts**.
 
 Start with [`docs/architecture/README.md`](docs/architecture/README.md). Highlights:
 
-- **[00 — Overview](docs/architecture/00-overview.md)** — the WINR + Azuro integrator model
-- **[07 — Casino via WINR](docs/architecture/07-casino-games.md)** + **[08 — Sports via Azuro](docs/architecture/08-sports-and-predictions-azuro.md)**
+- **[00 — Overview](docs/architecture/00-overview.md)** — the BetSwirl + Azuro integrator model
+- **[07 — Casino via BetSwirl](docs/architecture/07-casino-games.md)** + **[08 — Sports via Azuro](docs/architecture/08-sports-and-predictions-azuro.md)**
 - **[12 — Build plan](docs/architecture/12-build-plan-phases.md)** — phased, agent-followable sequence
 - **[16 — Credential manifest](docs/architecture/16-credential-manifest.md)** + **[17 — Build autonomy](docs/architecture/17-build-autonomy-protocol.md)** — what's needed and how the build runs
-- **[18 — Runtime topology](docs/architecture/18-runtime-topology.md)** — where everything runs (Vercel + WINR + Azuro)
+- **[18 — Runtime topology](docs/architecture/18-runtime-topology.md)** — where everything runs (Vercel + BetSwirl + Azuro)
 - **[19 — Monetization](docs/architecture/19-monetization.md)** — commission/affiliate revenue, no bankroll
 
 A separate near-term refactor of the current prototype is in

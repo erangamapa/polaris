@@ -1,63 +1,60 @@
-# 23 — Open Items & Discovery (resolve BEFORE building)
+# 23 — Open Items & Discovery
 
-> **The pre-build gate.** Every "confirm at build time" unknown across the whole stack, in one place.
-> The agent runs **Discovery (Phase 0.5)** first, answers each item from the live docs/SDKs/testnets,
-> and **records the answer inline here** (turn each `❓` into a `✅ <answer>`). Building does not start
-> until this list is resolved — so we never get halfway and find something missing.
+> The pre-build gate. Much of this is **already resolved** (marked ✅ from live-doc discovery). What
+> remains (❓) is a short list the agent confirms in the **first minutes of the build** (Phase 0.5) via
+> viem/RPC/SDK — mostly "is the testnet actually funded/reachable." If a ❓ turns into a blocker, the
+> agent reports **then**, before building further.
 
-Legend: `❓` unresolved · `✅` confirmed (write the value) · `⚠️` blocked/needs-user.
+Legend: `✅` confirmed · `❓` confirm at kickoff · `⚠️` needs-user.
 
-## A. WINR (casino) — see `07`
-- ❓ WINR **SDK** npm package + version + API (or contract ABIs for viem).
-- ❓ **WINR Chain testnet**: chainId, RPC URL, currency symbol, block explorer, **faucet URL**.
-- ❓ **Game launch/embed** mechanism (hosted URL / iframe / render component) + iframe origin.
-- ❓ **Catalog access**: does it expose game metadata? art/thumbnails? per-game IDs? how to list?
-- ❓ **Affiliate/referrer** mechanism + identifier format (how commission attribution is set on a bet).
-- ❓ **Bet submission** path (SDK method vs viem contract call) — must be scriptable headless (`22`).
-- ❓ **Payout model**: auto-credit on settlement vs a claim step.
-- ❓ **Funding**: USDC→WINR chip swap flow; who triggers it.
-- ❓ **Autoplay/session UX**: signature-per-bet vs session/gasless on the L3.
-- ❓ **WINR indexer/query** endpoint for balance + bet history.
-- ❓ **Tile/asset** availability (else tilecraft fallback).
+## ✅ Already confirmed (from discovery)
 
-## B. Azuro (sports/predictions) — see `08`
-- ❓ **SDK + Toolkit** package + version + hooks API (pin).
-- ❓ **Target chain + testnet** + **pool/betting token** per chain (align with casino if possible).
-- ❓ **Subgraph GraphQL endpoint(s)** per chain + example queries (markets, odds, bets, history).
-- ❓ **Oracle order API** endpoint (`POST /orders`) + EIP-712 domain/types + relayer flow.
-- ❓ **Affiliate**: affiliate-tracker registration + how `affiliate` is set + **reward claim**.
-- ❓ **Redeem/claim winnings** contract method + timing.
-- ❓ **Live betting** flow (if surfaced).
-- ❓ **Sport/league/team** metadata shape + **logo/icon** sourcing.
-- ❓ **Testnet faucet** for pool token + gas.
-- ❓ **Prediction-market** coverage on the chosen chain.
+**BetSwirl (casino)**
+- ✅ Permissionless — **no approval, no contract, no bankroll** ("no approval needed to build your app").
+- ✅ SDK: **`@betswirl/sdk-core` v0.1.27** + `viem` + `@apollo/client`; `@betswirl/wagmi-provider`;
+  **`@betswirl/ui-react`** (ready React game widgets).
+- ✅ Bet flow (headless): `initViemBetSwirlClient(pub, wallet, { affiliate })` → `playDice(...)` /
+  `getPlaceBetFunctionData()`.
+- ✅ Randomness: **Chainlink VRF** (`getChainlinkVrfCost` in SDK). **Per-bet = on-chain tx (gas + VRF + a
+  MetaMask confirm).**
+- ✅ Games: Dice, Coin Toss, Roulette, Keno (+ Wheel, Plinko, Weighted; PvP: Coin Toss Battle, Russian
+  Roulette, Backgammon).
+- ✅ Chains incl. **Base Sepolia** testnet; contracts share the same address across chains.
+- ✅ Revenue: affiliate = config field; ~**30% of house edge**; **claim on-chain, no registration**.
 
-## C. Chains / RPC / bridging — see `03`, `18`
-- ❓ Final chain choice per vertical (casino = WINR L3; sports = Azuro chain) + whether they differ.
-- ❓ **RPC URLs** (public or Alchemy) for each chain; reachability (`eth_blockNumber`).
-- ❓ **LI.FI** testnet support for the bridge route (unified balance) — or defer bridging.
-- ❓ `wallet_addEthereumChain` params for each non-default chain (for MetaMask auto-add).
+**Azuro (sports/predictions)**
+- ✅ Permissionless SDK **`@azuro-org/sdk`** (+ Toolkit); `createBet`/`createComboBet`; example app.
+- ✅ Bet flow: EIP-712 `ClientBetData` (affiliate field) → oracle `POST /orders` → relayer `betFor` —
+  **gasless** (player signs; relayer fee from bet token).
+- ✅ Testnets incl. **Base Sepolia** and Polygon Amoy → **co-locate with BetSwirl on Base Sepolia**.
+- ✅ History from **Azuro subgraph** (GraphQL).
+- ✅ Revenue: attribution on-chain; **payout requires registration with Azuro + monthly** (human,
+  mainnet-only — `19`).
 
-## D. Wallet / MetaMask — see `04`, `21`
-- ❓ Reown AppKit config with the target chains (custom WINR L3 network).
-- ❓ MetaMask network-add params (chainId, RPC, symbol, explorer) for the handoff (`21`).
+**Architecture**
+- ✅ **Both verticals on Base Sepolia — one chain, one wallet balance, no bridging.**
+- ✅ Wallet needs on that one chain: **native gas** (for BetSwirl bets + VRF) + **the betting token**.
+- ✅ GitHub + Vercel authed; only human bootstrap = `VITE_REOWN_PROJECT_ID` (+ optional CDP).
 
-## E. Thin backend / reads — see `05`, `15`
-- ❓ Confirmed indexer/subgraph query shapes for `GET /balance` + `GET /history`.
-- ❓ `/bet/prepare` affiliate-enforcement approach for Azuro orders (server-side sign/inject vs validate).
+## ❓ Confirm at kickoff (first minutes, via viem/RPC/SDK)
 
-## F. Test wallet & funding — see `21`, `22`
-- ❓ Which faucets are **programmatic** (CDP / protocol) vs CAPTCHA-gated (flag if manual needed).
-- ❓ Amounts to fund per chain (gas + betting token) for a full casino + sports test.
+1. **BetSwirl testnet betting token on Base Sepolia** + faucet (which ERC-20 / native the bankroll uses).
+2. **BetSwirl testnet bankroll has liquidity** to pay winners (read on-chain; if empty, switch to a funded
+   testnet e.g. Polygon Amoy).
+3. **BetSwirl gasless/session mode?** (to soften per-bet popups) — yes/no; else accept per-bet gas.
+4. **BetSwirl subgraph endpoint** (Apollo) for balance/history on the chosen chain.
+5. **Per-game SDK coverage** on the chosen chain (which `play*` functions/games are live there).
+6. **Azuro on Base Sepolia specifics:** exact SDK version, subgraph URL, oracle `/orders` endpoint,
+   EIP-712 domain, **pool token + faucet**, redeem/claim method, prediction-market coverage.
+7. **Shared betting token:** can casino + sports use **one token** (e.g. USDC) on Base Sepolia, or two?
+8. **RPC** for Base Sepolia (public or Alchemy) — `eth_blockNumber` reachable.
 
-## G. Assets — see `07`, `08`
-- ❓ Casino tiles: served by WINR? else **tilecraft** generation plan.
-- ❓ Sports logos/icons: served by Azuro? else sourcing plan.
+## ⚠️ Needs-user (not blocking testnet)
+- Azuro affiliate **payout registration** (mainnet/real-money only) — a form with Azuro's team (`19`).
 
 ## Discovery output (Phase 0.5 deliverable)
-- This file with every `❓` → `✅ <answer/value>` (or `⚠️` with the blocker + who resolves it).
-- `packages/shared/chains.ts` populated with confirmed chain params, tokens, RPCs, indexer/subgraph URLs.
-- Pinned SDK versions in `package.json`.
-- A go/no-go: if any item is `⚠️` and blocking, **report before building** (don't burn build tokens).
+- This file: every ❓ → ✅/⚠️; `packages/shared/chains.ts` populated (Base Sepolia params, tokens, RPC,
+  subgraph URLs); SDK versions pinned; a smoke check (RPC up, subgraphs respond, a headless test bet on
+  each protocol) green. If a ❓ blocks, **report before building**.
 
 _Last updated: 2026-07-01_

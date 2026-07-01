@@ -23,7 +23,7 @@
 | RPC / chains | `eth_blockNumber`; each chain reachable | — |
 | Wallet balances | `eth_getBalance` + ERC-20 `balanceOf` per chain | balances visible in MetaMask |
 | Wallet connect | n/a (uses the key directly) | MetaMask connect + `wallet_addEthereumChain` prompt |
-| WINR casino | read catalog/contract; submit a bet via SDK/viem; confirm on-chain settlement + VRF; affiliate attributed | game iframe renders + click-to-play feel |
+| BetSwirl casino | read catalog/contract; submit a bet via SDK/viem; confirm on-chain settlement + VRF; affiliate attributed | game iframe renders + click-to-play feel |
 | Azuro sports | subgraph query; build+sign+submit EIP-712 order via relayer; confirm settlement + affiliate | market UI + bet-slip feel |
 | Thin backend | curl `/balance`, `/history`, `/bet/prepare`; assert data + affiliate enforced | — |
 | Bridging | LI.FI quote API reachable for the test route | bridge prompt UX |
@@ -34,7 +34,7 @@
 |---|---|
 | 2 Wallet/chains | RPC up on every chain; test wallet funded (read balances) |
 | 3 Azuro | subgraph returns markets; a signed test order settles on-chain; on-chain affiliate == ours |
-| 4 WINR | catalog reads; a test bet settles on-chain via VRF; commission/affiliate attributed |
+| 4 BetSwirl | catalog reads; a test bet settles on-chain via VRF; commission/affiliate attributed |
 | 5 Backend | endpoints return correct on-chain-derived data; a forged affiliate is rejected |
 | 6 History | indexer/subgraph return the test wallet's just-placed bets |
 | 7 Bridge | LI.FI quote for the test route succeeds |

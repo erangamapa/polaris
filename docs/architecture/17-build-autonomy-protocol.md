@@ -1,6 +1,6 @@
 # 17 — Build Autonomy Protocol (Initial Steps)
 
-> **Current for the WINR + Azuro integrator model.** No signer, no Vault deploy, no HMAC/JWT, no
+> **Current for the BetSwirl + Azuro integrator model.** No signer, no Vault deploy, no HMAC/JWT, no
 > thirdweb, no Foundry. GitHub + Vercel are already authenticated. This is the "you provide a tiny
 > bootstrap once, then the agent builds end-to-end" protocol. Credentials are authoritative in `16`.
 
@@ -11,7 +11,7 @@ You do **one** small thing, then say "build":
 1. **Provide the bootstrap value(s)** into an untracked `.env.bootstrap` at the repo root:
    - `VITE_REOWN_PROJECT_ID` — from https://dashboard.reown.com (wallet connect) — **required**
    - *(optional)* `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` — only if funding test wallets via Coinbase
-     CDP instead of the WINR/Azuro testnet faucets.
+     CDP instead of the BetSwirl/Azuro testnet faucets.
 2. **Grant run permission** — autonomous mode / allowlist for `vercel`, `gh`, `npm`, `node`, `git` so
    installs/deploys don't prompt per command.
 
@@ -21,7 +21,7 @@ agent on testnet. Everything else is agent-side.
 ```
 # .env.bootstrap  (untracked — the ONLY thing you provide to START a testnet build)
 VITE_REOWN_PROJECT_ID=
-# optional (else agent uses WINR/Azuro testnet faucets for test funds):
+# optional (else agent uses BetSwirl/Azuro testnet faucets for test funds):
 # CDP_API_KEY_ID=
 # CDP_API_KEY_SECRET=
 ```
@@ -31,15 +31,15 @@ VITE_REOWN_PROJECT_ID=
 `packages/shared/scripts/preflight.ts` checks:
 - **Tooling** → `vercel` (✅ authed), `gh` (✅ authed), `node`/`npm` (✅). Install anything missing.
 - **Bootstrap** → `VITE_REOWN_PROJECT_ID` present + valid format.
-- **Protocols** → WINR SDK + Azuro SDK resolvable; current **testnet chains, RPC, faucets, indexer/
-  subgraph endpoints** discovered from docs.winr.games / gem.azuro.org and pinned into
+- **Protocols** → BetSwirl SDK + Azuro SDK resolvable; current **testnet chains, RPC, faucets, indexer/
+  subgraph endpoints** discovered from docs.betswirl.com / gem.azuro.org and pinned into
   `packages/shared/chains.ts`.
 - If the required bootstrap is missing/invalid → **STOP** with the exact item + URL. Never guess or fake.
 
 ## Step 1 — Auto-provision (agent)
 
 `packages/shared/scripts/provision.ts`:
-1. **Generate testnet affiliate addresses** (WINR referrer + Azuro affiliate) — wallets we control.
+1. **Generate testnet affiliate addresses** (BetSwirl affiliate + Azuro affiliate) — wallets we control.
 2. *(Optional)* provision a **read cache** (Vercel KV/Postgres) if indexer latency needs it.
 3. Write derived config to **Vercel env** + local `.env` (public `VITE_*` + minimal server keys).
    **No signer, no Vault, no HMAC/JWT** — none exist in this model.
@@ -48,7 +48,7 @@ Idempotent (re-run reuses existing resources).
 
 ## Step 2 — Build (agent, per `12`)
 
-Wallet connect → Azuro (sports) → WINR (casino) → thin backend (reads + affiliate + geo gate) →
+Wallet connect → Azuro (sports) → BetSwirl (casino) → thin backend (reads + affiliate + geo gate) →
 unified balance + bet history → compliance gating. Each phase's DoD must pass before the next.
 
 ## Step 3 — API-level verification (agent, no human)
@@ -58,9 +58,9 @@ each phase (`22`), so breakage surfaces immediately, not at the end. **No browse
 no iframe-load waiting.** This step is the final headless culmination:
 
 1. Provision the **MetaMask test wallet** per `21`: generate a 12-word wallet, **fund it across all
-   supported testnet chains** (WINR casino + Azuro sports, multiple balances), and persist the seed to
+   supported testnet chains** (BetSwirl casino + Azuro sports, multiple balances), and persist the seed to
    gitignored `.secrets/test-wallet.json`.
-2. Script (using that exact wallet): connect → **play a WINR casino game** → **place an Azuro sports
+2. Script (using that exact wallet): connect → **play a BetSwirl casino game** → **place an Azuro sports
    bet** → view unified balance + history.
 3. Assert: bets settle on-chain; **non-custodial** (no signer/contract of ours over user funds);
    **affiliate enforced** server-side; history reads from indexers; no secret in the frontend bundle.
@@ -73,7 +73,7 @@ app URL — so you import the pre-funded wallet into MetaMask and play immediate
 agent's own E2E).
 
 ## Tooling — CLIs only, no MCPs
-`vercel` (✅), `gh` (✅), `node`/`npm` (✅). WINR SDK, Azuro SDK, wagmi/viem = project deps run as
+`vercel` (✅), `gh` (✅), `node`/`npm` (✅). BetSwirl SDK, Azuro SDK, wagmi/viem = project deps run as
 scripts. No Foundry/signer (no contracts to deploy for the MVP). Playwright only if you ask.
 
 ## Scope
@@ -83,7 +83,7 @@ game-provider contracts and no bankroll are ever required.
 ## TL;DR
 ```
 Human:  put VITE_REOWN_PROJECT_ID in .env.bootstrap (+ optional CDP) → grant run permission → "build"
-Agent:  preflight → provision (affiliate addrs, optional cache) → build (wallet→Azuro→WINR→backend→UX)
+Agent:  preflight → provision (affiliate addrs, optional cache) → build (wallet→Azuro→BetSwirl→backend→UX)
         → provision + fund MetaMask test wallet across chains → autonomous testnet E2E
         → report + hand you the 12-word seed phrase
 Human:  import seed into MetaMask → connect to app → play on testnet (already verified working)

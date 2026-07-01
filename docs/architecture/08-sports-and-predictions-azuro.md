@@ -54,11 +54,11 @@ Sports/prediction bets are **fully on-chain**; read history from the **Azuro sub
 wallet address (don't scan the chain raw). Show each with a **block-explorer link**. Optional per-address
 cache. Full page spec in `15`.
 
-## Both verticals are on-chain (WINR + Azuro)
-- Casino: WINR (`07`). Sports/Predictions: Azuro (this doc). Both non-custodial, on-chain.
-- **Unify at the display layer only.** One USD balance = WINR (casino) + Azuro-chain wallet. Casino and
-  sports may be on **different chains** → switch/bridge CTA + LI.FI (`03`, `10`). Keep each vertical
-  native to its protocol.
+## Both verticals are on-chain (BetSwirl + Azuro)
+- Casino: BetSwirl (`07`). Sports/Predictions: Azuro (this doc). Both non-custodial, on-chain.
+- **Co-located on Base Sepolia** — casino + sports on **one chain**, so one wallet balance covers both,
+  **no bridging**. Sports bets are **gasless** (sign → relayer); casino bets are per-bet on-chain (gas +
+  VRF). Keep each vertical native to its protocol; unify only at the display layer.
 
 ## Open items to confirm in Discovery (Phase 0.5) — RESOLVE BEFORE BUILDING
 1. Exact **Azuro SDK + Toolkit** package + version + hooks API (pin them).
