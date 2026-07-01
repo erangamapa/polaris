@@ -36,10 +36,19 @@ protocol pivot.
 
 **✅ Already done:** GitHub, Vercel (local).
 
-**To start the testnet build, provide only:**
-1. `VITE_REOWN_PROJECT_ID` — https://dashboard.reown.com
-2. *(optional)* Coinbase CDP keys **or** rely on BetSwirl/Azuro testnet faucets for test funds.
+**To start the testnet build, provide:**
+1. `VITE_REOWN_PROJECT_ID` — https://dashboard.reown.com **(required)**
+2. `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` — https://portal.cdp.coinbase.com **(recommended — for
+   uninterrupted funding).** Without it, funding the test/house wallets falls back to protocol/Circle
+   faucets which may be **CAPTCHA-gated** → the one place I could get blocked and need a manual faucet
+   step from you. Providing CDP keys makes funding fully programmatic (no interruption).
 3. Grant permission to run CLIs/installs/deploys without per-command prompts.
+
+> That's the full list. The **only** thing no credential can pre-guarantee is whether the BetSwirl/Azuro
+> **testnets are fully functional on the chosen chain** (bankroll funded, betting-token faucet exists) —
+> I confirm this in Discovery kickoff (`23`); if a testnet is broken I switch chains, and only surface it
+> to you if genuinely blocked. **CI/CD auto-deploy** (GitHub↔Vercel app) is NOT required — I deploy via
+> CLI; it's optional polish.
 
 Everything else is **AGENT_GENERATED / AGENT_PROVISIONED**, including both **testnet wallets**:
 - the **house / affiliate wallet** (set as BetSwirl + Azuro affiliate, gas-funded, revenue verified), and

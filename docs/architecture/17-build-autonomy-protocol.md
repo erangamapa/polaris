@@ -10,8 +10,9 @@ You do **one** small thing, then say "build":
 
 1. **Provide the bootstrap value(s)** into an untracked `.env.bootstrap` at the repo root:
    - `VITE_REOWN_PROJECT_ID` — from https://dashboard.reown.com (wallet connect) — **required**
-   - *(optional)* `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` — only if funding test wallets via Coinbase
-     CDP instead of the BetSwirl/Azuro testnet faucets.
+   - `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` — from https://portal.cdp.coinbase.com — **recommended for
+     an uninterrupted run** (programmatic wallet funding). Without it, funding falls back to
+     protocol/Circle faucets that may be CAPTCHA-gated — the one place a manual step could be needed.
 2. **Grant run permission** — autonomous mode / allowlist for `vercel`, `gh`, `npm`, `node`, `git` so
    installs/deploys don't prompt per command.
 
@@ -21,9 +22,9 @@ agent on testnet. Everything else is agent-side.
 ```
 # .env.bootstrap  (untracked — the ONLY thing you provide to START a testnet build)
 VITE_REOWN_PROJECT_ID=
-# optional (else agent uses BetSwirl/Azuro testnet faucets for test funds):
-# CDP_API_KEY_ID=
-# CDP_API_KEY_SECRET=
+# recommended for uninterrupted funding (else faucets may be CAPTCHA-gated):
+CDP_API_KEY_ID=
+CDP_API_KEY_SECRET=
 ```
 
 ## Step 0 — Preflight readiness gate (agent runs FIRST, always)
