@@ -15,7 +15,6 @@ Inputs:
 - CDP_API_KEY_ID = <paste>        (recommended, for uninterrupted funding)
 - CDP_API_KEY_SECRET = <paste>
 - Run autonomously (no per-command prompts).
-- Notify me on Slack channel <#channel> (or say "push") on completion or a blocker.
 ```
 
 The build **cannot start without the required input** — preflight (`17` Step 0) verifies it and **stops

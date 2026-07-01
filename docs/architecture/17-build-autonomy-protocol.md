@@ -101,13 +101,11 @@ The build is designed to run **hands-off** after kickoff. The agent must:
    - faucet CAPTCHA-gated → use CDP faucet API / alternate faucet;
    - RPC flaky → fallback RPC;
    - transient errors → retry with backoff.
-4. **Notify, don't wait.** On **completion** OR a **genuine blocker** (only after auto-routing fails),
-   send a message (Slack via `$SLACK_BOT_TOKEN` to a channel given at kickoff, or a push notification)
-   with: current phase, what's blocked, and the **one exact thing needed**. Never sit silently on a screen
-   the human must watch.
-5. **Honest boundary:** one human kickoff (inputs + run permission + notify channel) is required; and a
-   rare genuine external failure may need a one-line reply from the human — which arrives as a
-   notification, not by observation.
+4. **On a genuine blocker (only after auto-routing fails):** stop and record the exact state in
+   `STATUS.md` (phase, what's blocked, the one thing needed), so resuming is a one-liner. On completion,
+   leave the result (URLs + both wallet seeds) in the final message.
+5. **Honest boundary:** one human kickoff (inputs + run permission) is required; and a rare genuine
+   external failure (e.g. a testnet down) may need a one-line reply from the human when they next check.
 
 **Do NOT `/clear` before building** to "increase autonomy" — clearing only adds a re-kickoff step. Prefer
 running in a context-full session (auto-summarization handles length). If a clear does happen, resume via
