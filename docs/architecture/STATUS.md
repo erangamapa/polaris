@@ -48,8 +48,14 @@ token feasible. If a protocol's testnet is down → switch to Polygon Amoy (both
   env `SITE_PASSWORD`, `middleware.js`). Vercel project `wildstakes` (scope `erangamapas-projects`), CLI-deployed.
 
 ## Where we are
-- **Phase: BUILD IN PROGRESS.** Done + committed: **0.5 Discovery, 0/1 provision+restructure, 2 wallet
-  connect, 4 BetSwirl casino.** In progress: **3 Azuro sports.** Then 5–8 backend/history/RG, 9 E2E.
+- **Phase: BUILD ~COMPLETE (testnet).** Done + committed: **0.5 Discovery · 0/1 provision · 2 wallet
+  connect · 4 BetSwirl casino · 3 Azuro sports · 5–8 backend/history/unified-balance/RG · 9 hardening.**
+- **Deployed to production:** https://wildstakes.vercel.app (Basic-Auth gated; `/api/*` live —
+  balance/history/geo + **forged-affiliate→403** verified in prod).
+- **Casino on-chain E2E: PASSED** (multiple dice bets settled via VRF, affiliate=house). **Sports:**
+  integration proven to relayer acceptance; on-chain settlement waits on transient testnet game data (`23`).
+- **Handoff:** both seeds in gitignored `.secrets/` (house + player). See `21`. Player funded (ETH+WETH),
+  house funded (gas to claim).
 - Architecture = **integrator**: **casino → BetSwirl**, **sports/predictions → Azuro**, both on-chain,
   non-custodial, **co-located on Base Sepolia**, testnet-only. No bankroll, no provider contracts.
 
