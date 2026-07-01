@@ -10,16 +10,28 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apollo/client": "^4.2.4",
+    "@azuro-org/sdk": "^7.4.1",
+    "@azuro-org/toolkit": "^6.3.1",
+    "@betswirl/sdk-core": "^0.1.27",
+    "@betswirl/wagmi-provider": "^0.1.27",
+    "@reown/appkit": "^1.8.21",
+    "@reown/appkit-adapter-wagmi": "^1.8.21",
+    "@tanstack/react-query": "^5.101.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "graphql": "^16.14.2",
     "lucide-react": "^0.469.0",
     "radix-ui": "^1.6.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "recharts": "^2.15.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "viem": "^2.54.1",
+    "wagmi": "^3.6.21"
   },
   "devDependencies": {
+    "@coinbase/cdp-sdk": "^1.51.2",
     "@tailwindcss/vite": "^4.3.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

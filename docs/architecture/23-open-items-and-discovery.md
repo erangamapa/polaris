@@ -36,18 +36,26 @@ Legend: `✅` confirmed · `❓` confirm at kickoff · `⚠️` needs-user.
 - ✅ Wallet needs on that one chain: **native gas** (for BetSwirl bets + VRF) + **the betting token**.
 - ✅ GitHub + Vercel authed; only human bootstrap = `VITE_REOWN_PROJECT_ID` (+ optional CDP).
 
-## ❓ Confirm at kickoff (first minutes, via viem/RPC/SDK)
+## ✅ Confirmed at kickoff (Discovery run 2026-07-01, via viem/RPC/SDK)
 
-1. **BetSwirl testnet betting token on Base Sepolia** + faucet (which ERC-20 / native the bankroll uses).
-2. **BetSwirl testnet bankroll has liquidity** to pay winners (read on-chain; if empty, switch to a funded
-   testnet e.g. Polygon Amoy).
-3. **BetSwirl gasless/session mode?** (to soften per-bet popups) — yes/no; else accept per-bet gas.
-4. **BetSwirl subgraph endpoint** (Apollo) for balance/history on the chosen chain.
-5. **Per-game SDK coverage** on the chosen chain (which `play*` functions/games are live there).
-6. **Azuro on Base Sepolia specifics:** exact SDK version, subgraph URL, oracle `/orders` endpoint,
-   EIP-712 domain, **pool token + faucet**, redeem/claim method, prediction-market coverage.
-7. **Shared betting token:** can casino + sports use **one token** (e.g. USDC) on Base Sepolia, or two?
-8. **RPC** for Base Sepolia (public or Alchemy) — `eth_blockNumber` reachable.
+1. ✅ **BetSwirl betting token** = **native ETH** (`bank.getTokens` -> `[ETH @ 0x0]`). Faucet = CDP
+   (proven: real drips landed). Bank `0x637D…2021`.
+2. ✅ **BetSwirl bankroll liquidity** = bank holds **~0.099 ETH** on Base Sepolia — enough to pay small
+   testnet wins. (Auto-route to Polygon Amoy only if it empties.)
+3. ✅ **No gasless/session mode** — accept **per-bet gas + VRF**. VRF cost read live = **~0.0000000718
+   ETH/bet** (negligible); so per-bet cost ≈ gas + tiny VRF. Per-bet MetaMask confirm stands.
+4. ⚠️ **BetSwirl subgraph** (`api.studio.thegraph.com/query/80936/betswirl-base-sepolia-v2/v0.1.3`)
+   returns **"Not found"** — used only for aggregated history (Phase 6). Bet placement/settlement read
+   directly from chain (VRF receipts), so **not blocking**. Revisit endpoint for history.
+5. ✅ **Per-game coverage** on Base Sepolia: dice, coin-toss, roulette, keno, wheel, plinko
+   (+ weighted). Addresses pinned in `packages/shared/chains.js`.
+6. ✅ **Azuro Base Sepolia** = env **`BaseSepoliaWETH`**. SDK `@azuro-org/sdk@7.4.1` /
+   `@azuro-org/toolkit@6.3.1`. Contracts lp/core/relayer/azuroBet/cashout pinned. Bets subgraph **live**
+   (block synced to chain head); feed has **future/bettable games** (e.g. 2027-03). API +
+   socket endpoints pinned.
+7. ✅ **Not one shared token — two, both ETH-denominated:** BetSwirl = **native ETH**, Azuro = **WETH**
+   (`0x9e09…935f`). Same chain; fund ETH then **wrap** some to WETH. No bridging.
+8. ✅ **RPC** `https://sepolia.base.org` — `eth_blockNumber` reachable (fallback: publicnode).
 
 ## ⚠️ Needs-user (not blocking testnet)
 - Azuro affiliate **payout registration** (mainnet/real-money only) — a form with Azuro's team (`19`).
