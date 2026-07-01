@@ -22,16 +22,19 @@ const usdtAbi = [
   ...erc20Abi,
 ];
 
-// Fetch games that currently have active markets to bet on (all markets shown).
+// Fetch games that have active markets. Each game is tagged `bettable` = its
+// kickoff is still in the future — only those can actually be bet (Azuro's
+// relayer rejects bets on games that have already started, "Game is not active").
+// We poll so a freshly-seeded live game appears without a manual refresh.
 export function useBettableGames() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setLoading(true);
+    const load = async () => {
       try {
+        const now = Math.floor(Date.now() / 1000);
         const q = { query: `{ games(first:40, orderBy: startsAt, orderDirection: desc){ gameId startsAt title sport{name} league{name} } }` };
         const res = await fetch(FEED, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(q) });
         const feed = (await res.json()).data?.games ?? [];
@@ -40,18 +43,22 @@ export function useBettableGames() {
           const conds = await getConditionsByGameIds({ chainId: SPORTS_CHAIN_ID, gameIds: [g.gameId], extended: true });
           const arr = Array.isArray(conds) ? conds : conds.conditions ?? [];
           const markets = arr.filter((c) => c.state === 'Active' && c.outcomes?.length);
-          if (markets.length) out.push({ ...g, markets });
+          if (markets.length) out.push({ ...g, markets, bettable: Number(g.startsAt) > now });
           if (out.length >= 12) break;
         }
+        // Bettable (upcoming) games first.
+        out.sort((a, b) => Number(b.bettable) - Number(a.bettable) || Number(a.startsAt) - Number(b.startsAt));
         if (!cancelled) setGames(out);
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  return { games, loading };
+  return { games, loading, bettableCount: games.filter((g) => g.bettable).length };
 }
 
 export function useAzuroBet() {
