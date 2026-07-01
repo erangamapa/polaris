@@ -86,9 +86,11 @@
 - **Branded studio games** (needs contracts) — only if desired (`09`).
 - **Read cache** (Vercel Postgres/KV) if indexer latency needs it (`05`).
 
-## Suggested agent split (parallel)
-- **Sports agent** → Phase 3. **Casino agent** → Phase 4. **Backend agent** → Phase 5.
-  **Frontend agent** → Phases 2, 6, 7, 8. Coordinate on `packages/shared` types + affiliate config.
+## Agent team & orchestration
+Executed by a **team of specialized agents** (Orchestrator, Architect, Web3/Integration, Backend,
+Frontend, QA/connectivity, DevOps, Researcher-if-needed), assigned by **complexity** on the right **model
+tier** (Opus = architecture/complex/security · Sonnet = standard build · Haiku = verification/rote). Full
+role → phase → QA-gate mapping and parallelization in **`24-agent-team-and-orchestration.md`**.
 
 ## Verify as you build (not at the end)
 Every integration phase ends with an **API-level connectivity check** (viem/SDK/curl using the test

@@ -51,6 +51,7 @@ contracts**.
 | `21-test-wallet-and-handoff.md` | Agent creates + funds a MetaMask test wallet across chains, hands you the seed | ✅ current |
 | `22-verification-strategy.md` | Incremental API-level connectivity checks as you build (not browser, not end-only) | ✅ current |
 | `23-open-items-and-discovery.md` | **Pre-build gate** — every unknown to confirm first (BetSwirl + Azuro + chains + assets) | ✅ current |
+| `24-agent-team-and-orchestration.md` | Agent team + model-per-role by complexity + role→phase work split | ✅ current |
 
 ## The one-sentence summary
 

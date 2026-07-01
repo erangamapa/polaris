@@ -50,7 +50,12 @@ CDP_API_KEY_SECRET=
 
 Idempotent (re-run reuses existing resources).
 
-## Step 2 — Build (agent, per `12`)
+## Step 2 — Build (agent TEAM, per `12` + `24`)
+
+The Orchestrator spawns a **team of specialized agents** by complexity/model tier (Architect, Web3,
+Backend, Frontend, QA, DevOps; Researcher only if a `23` item is unresolved) and splits the work per the
+role→phase mapping in `24`. Sports (Azuro) and casino (BetSwirl) tracks run in parallel after wallet
+connect; QA runs the `22` gate per phase.
 
 Wallet connect → Azuro (sports) → BetSwirl (casino) → thin backend (reads + affiliate + geo gate) →
 unified balance + bet history → compliance gating. Each phase's DoD must pass before the next.
