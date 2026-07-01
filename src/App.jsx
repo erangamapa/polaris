@@ -19,6 +19,7 @@ import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { BETSWIRL_GAMES } from "./web3/useBetSwirl";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { ActivityDialog } from "./components/activity/ActivityDialog";
+import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
 import { SupportDialog } from "./components/trust/SupportDialog";
 import { useWallet } from "./web3/useWallet";
@@ -78,6 +79,7 @@ export default function App() {
   const [onchainGame, setOnchainGame] = useState(null);
   const [fundsOpen, setFundsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [favs, setFavs] = useState(() => new Set());
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -95,6 +97,7 @@ export default function App() {
 
   const openFunds = () => { if (!ensureAuth()) return; setFundsOpen(true); };
   const openActivity = () => { if (!ensureAuth()) return; setActivityOpen(true); };
+  const openHistory = () => { if (!ensureAuth()) return; setHistoryOpen(true); };
 
   const activityRef = useRef([]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
@@ -192,7 +195,7 @@ export default function App() {
         onBurger={() => setSidebarOpen((o) => !o)}
         onManageWallet={openFunds}
         onFunds={openFunds}
-        onActivity={openActivity}
+        onActivity={openHistory}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -244,6 +247,7 @@ export default function App() {
         <BetSwirlGame game={onchainGame} onRound={logRound} onClose={() => setOnchainGame(null)} />
       )}
       <ActivityDialog open={activityOpen} onClose={() => setActivityOpen(false)} activity={activity} onCashOut={cashOut} cashoutValue={cashoutValue} />
+      <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} casinoRounds={activity} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
       <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} />
