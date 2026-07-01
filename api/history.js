@@ -8,7 +8,7 @@ import { AZURO_BETS_SUBGRAPH, isAddress, json } from './_shared.js';
 const QUERY = `query Bets($actor: String!) {
   bets(first: 50, orderBy: createdBlockTimestamp, orderDirection: desc, where: { actor: $actor }) {
     betId affiliate amount odds potentialPayout payout status result
-    createdBlockTimestamp createdTxHash resolvedTxHash isRedeemable isRedeemed
+    createdBlockNumber createdBlockTimestamp createdTxHash resolvedTxHash isRedeemable isRedeemed
     selections { outcome { outcomeId } }
   }
 }`;
@@ -35,6 +35,7 @@ export default async function handler(req, res) {
       status: b.status,
       result: b.result,
       placedAt: Number(b.createdBlockTimestamp) * 1000,
+      blockNumber: Number(b.createdBlockNumber),
       txHash: b.createdTxHash,
       resolvedTxHash: b.resolvedTxHash,
     }));

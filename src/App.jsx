@@ -190,7 +190,7 @@ export default function App() {
       {onchainGame && (
         <BetSwirlGame game={onchainGame} onRound={logRound} onClose={() => setOnchainGame(null)} />
       )}
-      <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} casinoRounds={activity} />
+      <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
       <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} />
