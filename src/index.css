@@ -94,7 +94,7 @@ body {
   animation-fill-mode: forwards;
 }
 
-/* ── WildStakes design tokens ────────────────────────────────────────────────
+/* ── TriBet design tokens ────────────────────────────────────────────────
    Brand + global-CTA + semantic tokens are fixed (never change per mode).
    Product accents switch via [data-product] on the app root. Section colour
    is an accent signal only — ~85% of the UI stays neutral dark. */

@@ -1,4 +1,4 @@
-// Pinned chain + protocol configuration for WildStakes (testnet-only).
+// Pinned chain + protocol configuration for TriBet (testnet-only).
 // Populated from live Discovery (Phase 0.5, docs/architecture/23) against the
 // BetSwirl and Azuro SDKs on 2026-07-01. Both verticals co-locate on Base Sepolia.
 //

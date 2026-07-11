@@ -39,8 +39,8 @@ createAppKit({
   metadata: {
     name: BRAND_NAME,
     description: `${BRAND_NAME} — on-chain casino, predictions & sports`,
-    url: typeof window !== 'undefined' ? window.location.origin : 'https://wildstakes.vercel.app',
-    icons: ['https://wildstakes.vercel.app/favicon.svg'],
+    url: typeof window !== 'undefined' ? window.location.origin : 'https://tribet.vercel.app',
+    icons: ['https://tribet.vercel.app/favicon.svg'],
   },
   features: {
     analytics: false,

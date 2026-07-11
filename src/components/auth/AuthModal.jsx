@@ -93,7 +93,7 @@ export function AuthModal({ open, initialTab = "login", onClose, onAuthed }) {
           Demo build — no real authentication. 18+. By continuing you agree to the Terms &amp; Privacy Policy.
         </p>
         <button
-          onClick={() => onAuthed({ method: "demo", label: "demo@wildstakes.gg", verified: false })}
+          onClick={() => onAuthed({ method: "demo", label: "demo@tribet.gg", verified: false })}
           className="mt-2 text-center text-[12px] text-[#19C7A5] hover:underline focus-visible:outline-none"
         >
           Continue as demo →

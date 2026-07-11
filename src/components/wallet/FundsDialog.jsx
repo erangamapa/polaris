@@ -8,7 +8,7 @@ import { toast } from "@/lib/toast";
 
 // Non-custodial Funds panel: shows the player's own on-chain balances across the
 // two chains (casino = Base Sepolia, sports = Polygon Amoy) and links to faucets.
-// WildStakes never holds funds — no deposit-to-us.
+// TriBet never holds funds — no deposit-to-us.
 export function FundsDialog({ open, onClose }) {
   const {
     address, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
@@ -31,7 +31,7 @@ export function FundsDialog({ open, onClose }) {
         <DialogHeader>
           <DialogTitle>Funds</DialogTitle>
           <DialogDescription>
-            Your funds stay in your own wallet. {"WildStakes"} is non-custodial — play settles on-chain.
+            Your funds stay in your own wallet. {"TriBet"} is non-custodial — play settles on-chain.
           </DialogDescription>
         </DialogHeader>
 
