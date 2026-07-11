@@ -21,6 +21,7 @@ import { toast } from "./lib/toast";
 import { parsePath, pathFor } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { AzuroMarkets } from "./components/sports/AzuroMarkets";
+import { SectionHero } from "./components/shell/SectionHero";
 import { CATEGORIES } from "./lib/mockData";
 import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
@@ -171,10 +172,26 @@ export default function App() {
               <CasinoLobby onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }} />
             )}
             {product === "predictions" && (
-              <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} />
+              <div className="mx-auto max-w-6xl space-y-4">
+                <SectionHero
+                  eyebrow="Prediction markets"
+                  title="Markets move fast"
+                  body="Trade Yes/No on real-world events. Live prices, cash out anytime."
+                  image="/heroes/predictions-hero.png"
+                  tint="radial-gradient(120% 150% at 16% 18%, rgba(79,167,184,0.22), transparent 55%), linear-gradient(135deg, #0F2025 0%, #0C1418 100%)"
+                />
+                <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} />
+              </div>
             )}
             {product === "sports" && (
               <div className="mx-auto max-w-6xl space-y-4">
+                <SectionHero
+                  eyebrow="Live now"
+                  title="Big matches, sharper odds"
+                  body="Live and upcoming across the top leagues. On-chain bets, settled trustlessly."
+                  image="/heroes/sports-hero.png"
+                  tint="radial-gradient(120% 150% at 16% 18%, rgba(175,195,74,0.20), transparent 55%), linear-gradient(135deg, #1B2110 0%, #11150D 100%)"
+                />
                 <AzuroMarkets onBetPlaced={logRound} />
               </div>
             )}

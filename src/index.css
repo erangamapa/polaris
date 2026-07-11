@@ -26,6 +26,50 @@ body {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Hero artwork as a CSS background (never an <img>). Gradients (fallback slides)
+   fill the frame; photo slides are scaled to fit (contain) and anchored right so
+   the whole object shows without heavy cropping. */
+.hero-bg {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.hero-bg--img {
+  background-size: contain;
+  background-position: right center;
+}
+.hero-bg--fallback {
+  background-size: cover;
+  background-image:
+    radial-gradient(120% 150% at 16% 18%, rgba(184, 92, 142, 0.24), transparent 55%),
+    linear-gradient(135deg, #1B1017 0%, #120D12 100%);
+}
+/* Left-to-right darkening so the left ~40% stays readable for text. */
+.hero-overlay {
+  background: linear-gradient(90deg, rgba(12, 8, 12, 0.82) 0%, rgba(12, 8, 12, 0.45) 38%, rgba(12, 8, 12, 0.02) 72%);
+}
+@media (max-width: 640px) {
+  /* Centre the fitted art and darken more behind text. */
+  .hero-bg--img { background-position: center; }
+  .hero-overlay {
+    background: linear-gradient(90deg, rgba(12, 8, 12, 0.92) 0%, rgba(12, 8, 12, 0.62) 46%, rgba(12, 8, 12, 0.18) 86%);
+  }
+}
+
+/* Favourite star: pop on toggle + a small sparkle burst on add. */
+@keyframes fav-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.fav-pop { animation: fav-pop 320ms var(--ease-out); }
+
+@keyframes fav-spark {
+  0% { transform: rotate(var(--ang)) translateY(0) scale(0.4); opacity: 0.9; }
+  100% { transform: rotate(var(--ang)) translateY(-15px) scale(1); opacity: 0; }
+}
+.fav-spark { animation: fav-spark 480ms var(--ease-out) forwards; }
+
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }

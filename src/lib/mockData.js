@@ -112,6 +112,7 @@ export const PROMOS = [
     body: "Match on your first deposit. Instant credit, no lock-up.",
     cta: "Claim bonus",
     hue: "from-emerald-500 via-teal-600 to-cyan-700",
+    image: "/heroes/casino-welcome.png",
   },
   {
     id: "race",
@@ -120,6 +121,7 @@ export const PROMOS = [
     body: "Wager to climb the leaderboard. Paid out every Monday.",
     cta: "View race",
     hue: "from-fuchsia-500 via-purple-600 to-indigo-700",
+    image: "/heroes/casino-race.png",
   },
   {
     id: "cashback",
@@ -128,6 +130,7 @@ export const PROMOS = [
     body: "Flat rate, win or lose. Credited in real time.",
     cta: "Learn more",
     hue: "from-amber-500 via-orange-600 to-rose-700",
+    image: "/heroes/casino-cashback.png",
   },
 ];
 
