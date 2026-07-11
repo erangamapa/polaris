@@ -1,6 +1,6 @@
 # 00 — Overview, Vision & Model
 
-> **ARCHITECTURE: BetSwirl + Azuro integrator (full on-chain).** WildStakes is a frontend + thin backend
+> **ARCHITECTURE: BetSwirl + Azuro integrator (full on-chain).** TriBet is a frontend + thin backend
 > that integrates two proven on-chain protocols. We provide **no bankroll** and sign **no game-provider
 > contracts**. This supersedes the earlier custom-stack design (Vault + session keys + seamless-wallet +
 > own provably-fair games), which is retained only as historical context in `03`/`04`/`05`/`06`/`07`
@@ -8,9 +8,9 @@
 
 ## Vision
 
-WildStakes (repo codename **polaris**) is a **three-in-one, fully on-chain, non-custodial**
+TriBet (repo codename **polaris**) is a **three-in-one, fully on-chain, non-custodial**
 entertainment platform (testnet build) — **Casino**, **Prediction Market**, **Sportsbook** — under one wallet and one
-unified balance. Players connect their own wallet and play; funds never touch a WildStakes-controlled
+unified balance. Players connect their own wallet and play; funds never touch a TriBet-controlled
 wallet.
 
 ## The core principle: we are an integrator, not the house

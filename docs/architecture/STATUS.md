@@ -35,22 +35,22 @@ Verified live, so a fresh session can proceed without re-checking these:
 - SDKs exist: `@betswirl/sdk-core@0.1.27`, `@azuro-org/sdk@7.4.1` ✅
 - **CDP funding WORKS on Base Sepolia** — test faucet sent **ETH + USDC** (real tx hashes). Autonomous
   wallet funding is proven ✅
-- Vercel deploy works (site live at wildstakes.vercel.app) ✅
+- Vercel deploy works (site live at tribet-app.vercel.app) ✅
 
 **Confirm at kickoff Discovery (`23`), auto-route if needed:** BetSwirl testnet deployment live + betting
 token + bankroll funded on Base Sepolia; Azuro Base Sepolia subgraph/oracle/pool-token; single shared
 token feasible. If a protocol's testnet is down → switch to Polygon Amoy (both support it).
 
 ## Project
-- **Repo:** `erangamapa/polaris` (codename **polaris**; player-visible brand **WildStakes** via
+- **Repo:** `erangamapa/polaris` (codename **polaris**; player-visible brand **TriBet** via
   `src/lib/brand.js` `BRAND_NAME`). Local dir may still be `.../boyzcasino`.
-- **Live (prototype):** https://wildstakes.vercel.app — Basic-Auth gated (user: any, pass: `WildStakes2026`,
-  env `SITE_PASSWORD`, `middleware.js`). Vercel project `wildstakes` (scope `erangamapas-projects`), CLI-deployed.
+- **Live (prototype):** https://tribet-app.vercel.app — Basic-Auth gated (user: any, pass: `TriBet2026`,
+  env `SITE_PASSWORD`, `middleware.js`). Vercel project `tribet` (scope `erangamapas-projects`), CLI-deployed.
 
 ## Where we are
 - **Phase: BUILD ~COMPLETE (testnet).** Done + committed: **0.5 Discovery · 0/1 provision · 2 wallet
   connect · 4 BetSwirl casino · 3 Azuro sports · 5–8 backend/history/unified-balance/RG · 9 hardening.**
-- **Deployed to production:** https://wildstakes.vercel.app (Basic-Auth gated; `/api/*` live —
+- **Deployed to production:** https://tribet-app.vercel.app (Basic-Auth gated; `/api/*` live —
   balance/history/geo + **forged-affiliate→403** verified in prod).
 - **Casino on-chain E2E: PASSED** (5+ dice bets settled via VRF, affiliate=house every time). **Sports:**
   integration proven to relayer acceptance; on-chain settlement waits on transient testnet game data (`23`).

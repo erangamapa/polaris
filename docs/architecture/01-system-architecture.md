@@ -82,7 +82,7 @@ The backend shrinks from "the core money engine" to a **thin, read-only aggregat
 
 ## Non-functional requirements
 
-- **Non-custodial invariant:** WildStakes must never be able to move player funds. Guaranteed by using
+- **Non-custodial invariant:** TriBet must never be able to move player funds. Guaranteed by using
   non-custodial protocols and holding no custody contract or signer over player funds.
 - **Affiliate integrity:** our affiliate address is injected/enforced **server-side** so it can't be
   swapped by the client (see `19`, `14`).

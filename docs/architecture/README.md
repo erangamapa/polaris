@@ -1,6 +1,6 @@
-# WildStakes (polaris) — Architecture & Build Specification
+# TriBet (polaris) — Architecture & Build Specification
 
-This directory is the **build blueprint** for WildStakes (repo codename **polaris**): a three-in-one,
+This directory is the **build blueprint** for TriBet (repo codename **polaris**): a three-in-one,
 **fully on-chain, non-custodial** platform (**testnet build**) — Casino + Predictions + Sportsbook — built as an
 **integrator** on two on-chain protocols. We provide **no bankroll** and sign **no game-provider
 contracts**.
@@ -57,7 +57,7 @@ contracts**.
 
 Player connects their own wallet → plays **casino on BetSwirl** (shared bankroll, Chainlink VRF, on-chain) and
 **sports/predictions on Azuro** (shared liquidity, on-chain) → **everything settles on-chain and stays
-in their wallet** → WildStakes earns a **commission/affiliate share** on the volume it sources, with
+in their wallet** → TriBet earns a **commission/affiliate share** on the volume it sources, with
 **no bankroll and no provider contracts**. This is a **testnet-only** build (mainnet + licensing out of scope).
 
 _Last updated: 2026-07-01_

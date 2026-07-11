@@ -5,7 +5,7 @@
 > non-custodial integrator.
 
 ## The non-custodial invariant (the core guarantee)
-- WildStakes holds **no custody**: no Vault, no signer, no key or contract with authority over player
+- TriBet holds **no custody**: no Vault, no signer, no key or contract with authority over player
   funds. Players interact directly with BetSwirl/Azuro from their own wallet.
 - Audit check: the frontend and thin backend have **no capability to move a player's funds** (`14` T2).
 

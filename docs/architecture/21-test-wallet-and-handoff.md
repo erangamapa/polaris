@@ -81,7 +81,7 @@
 2. **Import wallet** → "Import using Secret Recovery Phrase" → paste the 12-word seed the agent gave you.
 3. **Add the testnet networks** — either accept the app's `wallet_addEthereumChain` prompt on connect
    (the app adds BetSwirl + Azuro testnet chains automatically), or add them manually from the details above.
-4. Open the app (WildStakes URL), **connect the wallet**, and play — casino (BetSwirl) and sports (Azuro),
+4. Open the app (TriBet URL), **connect the wallet**, and play — casino (BetSwirl) and sports (Azuro),
    with the pre-funded testnet balances.
 
 ## Security rules (must hold)

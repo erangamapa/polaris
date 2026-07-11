@@ -75,7 +75,7 @@ apps/web/src/
 ## Reuse & keep
 - Keep `ErrorBoundary`, `CurrencyProvider`, `OddsFormatProvider`, responsible-gambling UI, the lobby,
   event rows, odds buttons, bet slip, toasts, dev panel (from the imported UI).
-- `BRAND_NAME` (WildStakes) drives the visible brand.
+- `BRAND_NAME` (TriBet) drives the visible brand.
 
 ## Env (frontend, public only)
 `VITE_REOWN_PROJECT_ID`, chain ids, public RPC, affiliate address (public). **No secrets in the bundle.**
