@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" width="320" height="420" role="img" aria-label="Game tile">
+  <!-- Tile template: portrait 3:4. Edit the gradient, the key visual, and the two
+       title lines. Keep the "TRIBET STUDIO" wordmark bottom-right. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c2540"/>
+      <stop offset="0.6" stop-color="#0f1428"/>
+      <stop offset="1" stop-color="#0a0c18"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.32" r="0.5">
+      <stop offset="0" stop-color="#2b62ff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#2b62ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="320" height="420" rx="18" fill="url(#bg)"/>
+  <rect width="320" height="420" rx="18" fill="url(#glow)"/>
+
+  <!-- KEY VISUAL: replace this circle with your game's motif (wheel/reel/dice/curve). -->
+  <circle cx="160" cy="165" r="78" fill="none" stroke="#5a76f4" stroke-width="10" stroke-opacity="0.85"/>
+  <circle cx="160" cy="165" r="52" fill="#2b62ff" fill-opacity="0.18"/>
+
+  <!-- TITLE: two lines. -->
+  <text x="26" y="374" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff" letter-spacing="0.5">COIN</text>
+  <text x="26" y="404" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#5a76f4" letter-spacing="0.5">FLIP</text>
+
+  <!-- STUDIO wordmark (keep). -->
+  <g transform="translate(294,398)" text-anchor="end">
+    <text font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#19C7C5" letter-spacing="3">TRIBET</text>
+    <text y="13" font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="600" fill="#ffffff" fill-opacity="0.5" letter-spacing="2">STUDIO</text>
+  </g>
+</svg>

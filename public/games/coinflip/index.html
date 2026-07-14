@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TriBet Game Template</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!--
+      Template game: Coin Flip. It demonstrates the TriBet Game Bridge.
+      Replace the visuals/animation with your own game; keep the bridge calls.
+    -->
+    <main class="stage">
+      <div class="coin" id="coin"><div class="face heads">H</div><div class="face tails">T</div></div>
+      <div class="result" id="result">Pick a side and flip</div>
+
+      <div class="controls">
+        <div class="sides">
+          <button class="side is-active" data-side="HEADS">HEADS</button>
+          <button class="side" data-side="TAILS">TAILS</button>
+        </div>
+        <label class="amount">
+          <span>Bet</span>
+          <input id="amount" type="number" min="0" step="1" value="10" />
+        </label>
+        <button class="flip" id="flip">Flip</button>
+      </div>
+    </main>
+    <script src="game.js"></script>
+  </body>
+</html>
