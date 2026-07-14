@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nova Wheel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <svg id="wheel" viewBox="0 0 300 300" aria-label="Nova Wheel">
+          <g id="wheelGroup"></g>
+          <circle cx="150" cy="150" r="30" class="hub" />
+          <circle cx="150" cy="150" r="30" class="hub-ring" />
+          <text x="150" y="156" class="hub-label" text-anchor="middle">NOVA</text>
+        </svg>
+      </div>
+
+      <div class="result" id="result">Set a stake and spin</div>
+
+      <div class="controls">
+        <label class="amount">
+          <span>Bet</span>
+          <input id="amount" type="number" min="0" step="1" value="10" />
+          <button class="chip" data-set="10">10</button>
+          <button class="chip" data-set="50">50</button>
+          <button class="chip" data-set="100">100</button>
+        </label>
+        <button class="spin" id="spin">SPIN</button>
+      </div>
+    </main>
+    <script src="game.js"></script>
+  </body>
+</html>

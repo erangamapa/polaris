@@ -9,6 +9,7 @@ export const PROVIDER_GAMES = [
   { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "TriBet Studio", image: "/img/games/vector-dice.svg" },
   // Reference game built from skills/build-casino-game — runs on mock balance via the bridge.
   { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", badge: "TriBet Studio", image: "/img/games/coinflip.svg" },
+  { key: "nova-wheel", title: "Nova Wheel", src: "/games/nova-wheel/index.html", badge: "TriBet Studio", image: "/img/games/nova-wheel.svg" },
 ];
 
 // Provider games run inside a sandboxed iframe (loaded only when opened). Games

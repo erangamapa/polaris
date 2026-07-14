@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" width="320" height="420" role="img" aria-label="Nova Wheel">
+  <defs>
+    <linearGradient id="nwBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a1350"/>
+      <stop offset="0.6" stop-color="#0d0a2a"/>
+      <stop offset="1" stop-color="#080614"/>
+    </linearGradient>
+    <radialGradient id="nwGlow" cx="0.5" cy="0.4" r="0.5">
+      <stop offset="0" stop-color="#5a5cff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#5a5cff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="nwBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="320" height="420" rx="18" fill="url(#nwBg)"/>
+  <rect width="320" height="420" rx="18" fill="url(#nwGlow)"/>
+
+  <!-- starfield -->
+  <g fill="#ffffff">
+    <circle cx="46" cy="60" r="1.6" opacity="0.8"/><circle cx="250" cy="44" r="1.4" opacity="0.7"/>
+    <circle cx="290" cy="120" r="1.6" opacity="0.8"/><circle cx="40" cy="150" r="1.2" opacity="0.6"/>
+    <circle cx="270" cy="220" r="1.3" opacity="0.7"/><circle cx="60" cy="250" r="1.5" opacity="0.7"/>
+  </g>
+
+  <!-- wheel (8 segments) -->
+  <g transform="translate(160,170)">
+    <circle r="98" fill="none" stroke="#5a5cff" stroke-width="2" opacity="0.4" filter="url(#nwBlur)"/>
+    <!-- segments as 45° pie slices; alternate neon + dark, one gold 5x -->
+    <g stroke="#0d0a2a" stroke-width="2">
+      <path d="M0 0 L0 -92 A92 92 0 0 1 65.05 -65.05 Z" fill="#23d3ff"/>
+      <path d="M0 0 L65.05 -65.05 A92 92 0 0 1 92 0 Z" fill="#20264f"/>
+      <path d="M0 0 L92 0 A92 92 0 0 1 65.05 65.05 Z" fill="#7d5cff"/>
+      <path d="M0 0 L65.05 65.05 A92 92 0 0 1 0 92 Z" fill="#20264f"/>
+      <path d="M0 0 L0 92 A92 92 0 0 1 -65.05 65.05 Z" fill="#23d3ff"/>
+      <path d="M0 0 L-65.05 65.05 A92 92 0 0 1 -92 0 Z" fill="#20264f"/>
+      <path d="M0 0 L-92 0 A92 92 0 0 1 -65.05 -65.05 Z" fill="#ffd76a"/>
+      <path d="M0 0 L-65.05 -65.05 A92 92 0 0 1 0 -92 Z" fill="#20264f"/>
+    </g>
+    <circle r="22" fill="#0c0f26" stroke="#6ce4ff" stroke-width="2.5"/>
+    <text y="4" font-family="Arial, sans-serif" font-size="10" font-weight="800" fill="#9ad7ff" text-anchor="middle" letter-spacing="1">NOVA</text>
+    <!-- pointer -->
+    <path d="M0 -104 l -11 -20 l 22 0 z" fill="#6ce4ff"/>
+  </g>
+
+  <!-- title -->
+  <text x="26" y="374" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff" letter-spacing="0.5">NOVA</text>
+  <text x="26" y="404" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#23d3ff" letter-spacing="0.5">WHEEL</text>
+
+  <!-- studio -->
+  <g transform="translate(294,398)" text-anchor="end">
+    <text font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#19C7C5" letter-spacing="3">TRIBET</text>
+    <text y="13" font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="600" fill="#ffffff" fill-opacity="0.5" letter-spacing="2">STUDIO</text>
+  </g>
+</svg>
