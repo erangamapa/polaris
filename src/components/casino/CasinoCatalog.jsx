@@ -31,14 +31,14 @@ export function CasinoCatalog({ onLaunch, onLaunchProvider }) {
               key={game.key}
               onClick={() => onLaunchProvider(game)}
               data-test-id={`provider-${game.key}`}
-              className={`group relative aspect-[3/4] overflow-hidden rounded-xl bg-gradient-to-br ${game.hue} ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+              className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <div className="absolute inset-0 grid place-items-center p-2 text-center text-sm font-black text-white drop-shadow">
-                {game.title}
-              </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                <div className="text-[10px] font-semibold text-white/80">{game.badge}</div>
-              </div>
+              <img
+                src={game.image}
+                alt={game.title}
+                loading="lazy"
+                className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+              />
             </button>
           ))}
         </div>

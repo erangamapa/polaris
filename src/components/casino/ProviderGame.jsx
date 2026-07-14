@@ -4,8 +4,8 @@ import { Loader2 } from "lucide-react";
 // Vendored provider games (self-contained vanilla apps under public/games/*).
 // Served as static assets and embedded via iframe, loaded on demand.
 export const PROVIDER_GAMES = [
-  { key: "crash", title: "Vector Crash", src: "/games/crash/index.html", badge: "Provider · Crash", hue: "from-rose-600 to-orange-600" },
-  { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "Provider · Dice", hue: "from-indigo-600 to-violet-700" },
+  { key: "crash", title: "Vector Crash", src: "/games/crash/index.html", badge: "TriBet Studio", image: "/img/games/vector-crash.svg" },
+  { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "TriBet Studio", image: "/img/games/vector-dice.svg" },
 ];
 
 // Provider games (vendored vanilla apps under public/games/*) run inside a
