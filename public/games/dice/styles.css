@@ -1,0 +1,2565 @@
+/* ============================================================================
+   VECTOR SIX — visual system
+   PLAYFUL ARCADE: flat purple/pink/yellow/teal, thick black outlines, hard
+   offset "sticker" shadows, chunky rounded shapes. No gradients, no blur,
+   no glow — everything reads like a bold mobile-game UI kit.
+
+   Layout: a focused two-pane casino game screen — big game area (pick
+   faces -> live payout preview -> secondary stats) on the left, a fixed
+   bet panel on the right. Technical/admin-style fields (run id, nonce,
+   seed hash, full run history) live behind the Fairness / History modals,
+   not on the primary gameplay surface.
+   ========================================================================== */
+
+:root {
+  --void: #2b1a63;
+  --void-2: #24175a;
+  --panel: #3c2790;
+  --panel-solid: #37237f;
+  --panel-strong: #432c9e;
+  --ink: #1a0f3d;
+  --border: var(--ink);
+  --border-strong: var(--ink);
+
+  --text-1: #ffffff;
+  --text-2: #d6c9f2;
+  --text-3: #a795d6;
+
+  --cyan: #37e0c4;
+  --cyan-soft: rgba(55, 224, 196, 0.18);
+  --cyan-line: var(--ink);
+  --cyan-glow: rgba(55, 224, 196, 0.3);
+
+  --green: #2ecc71;
+  --green-soft: rgba(46, 204, 113, 0.2);
+  --green-line: var(--ink);
+
+  --amber: #ff9d3d;
+  --amber-soft: rgba(255, 157, 61, 0.2);
+  --amber-line: var(--ink);
+  --amber-glow: rgba(255, 157, 61, 0.3);
+
+  --red: #ff5c7a;
+  --red-soft: rgba(255, 92, 122, 0.2);
+  --red-line: var(--ink);
+
+  --pink: #ff4d94;
+  --pink-soft: rgba(255, 77, 148, 0.18);
+  --yellow: #ffe14d;
+  --yellow-soft: rgba(255, 225, 77, 0.22);
+
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+
+  --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-ui: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Fredoka", var(--font-ui);
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input {
+  font-family: inherit;
+  color: inherit;
+}
+.mono {
+  font-family: var(--font-mono);
+}
+::selection {
+  background: var(--pink-soft);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pink) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--pink);
+  border-radius: 8px;
+}
+:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- App shell ------------------------------------------------------------ */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Top bar --------------------------------------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  height: 56px;
+  padding: 0 18px;
+  border-bottom: 3px solid var(--ink);
+  background: var(--void-2);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--yellow);
+  border: 1.5px solid var(--panel-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  position: relative;
+  flex: none;
+}
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: var(--pink);
+  border-radius: 3px;
+}
+.topbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.rtp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--panel-strong);
+  background: var(--cyan);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.rtp-badge:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.rtp-badge svg {
+  width: 12px;
+  height: 12px;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--panel-strong);
+  background: var(--panel-solid);
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), background 0.15s var(--ease);
+  flex: none;
+}
+.icon-btn:hover {
+  background: var(--panel-strong);
+  transform: translateY(-1px);
+}
+.icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.icon-btn[aria-pressed="false"] svg {
+  opacity: 0.5;
+}
+.balance-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--panel-strong);
+  background: var(--panel-solid);
+}
+.balance-chip .label {
+  color: var(--text-3);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.balance-chip .value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.25s var(--ease);
+}
+.balance-chip .value.flash-up {
+  color: var(--cyan);
+}
+.balance-chip .value.flash-down {
+  color: var(--red);
+}
+.deposit-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease);
+  flex: none;
+}
+.deposit-btn:hover {
+  transform: scale(1.1);
+}
+
+/* ---- Main layout: centered shell, 1fr game column + fixed 360px bet panel -
+   Rebuilt from scratch per the "clean principal-level layout" brief: a
+   single continuous left column (title -> dice -> streak -> result card)
+   top-aligned with a right column that holds the bet panel AND Recent
+   Results, stacked. No full-width siblings, no floating pieces. */
+/* align-items: start (not stretch) -- the sidebar column is simply as tall
+   as its own natural content (bet panel + a tight fixed gap + Recent
+   Results), it is never force-stretched to match the game column's height.
+   An earlier pass tried forcing an exact bottom-edge match via stretch +
+   space-between, but that produced a large, loose-feeling empty gap
+   whenever the game column ran taller -- the desktop vertical-tightening
+   pass replaced that with simply shrinking the Potential Win card (see
+   .payout-card / .payout-hero-die below) so the two columns land close in
+   height on their own, without any artificial gap-filling. */
+.game-shell {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 36px;
+  align-items: start;
+  padding: 20px 20px 32px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ---- Left column: one continuous gameplay flow -----------------------------
+   Spacing between sections is deliberate, not a single uniform gap: face
+   selector -> Streak Bonus is a bit more generous (24px) than Streak
+   Bonus -> result card (20px), so the eye reads a subtle top-to-bottom
+   compression toward the result card, the priority element. */
+.game-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dice-selector {
+  margin-bottom: 36px;
+}
+.streak-card {
+  margin-bottom: 28px;
+}
+
+.title-block {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.game-title {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 3px;
+  text-transform: uppercase;
+}
+.game-subtitle {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Mobile-only meta row (see index.html + the <=767px block for its shown
+   styling) -- hidden by default so it never appears on desktop, where the
+   Bet Summary panel already covers this same information. */
+.face-meta-row {
+  display: none;
+}
+
+/* Dice selector: title + face grid + selection pill grouped as one visual
+   unit, tightly spaced, no extra explanation copy beneath it. Deliberately
+   NOT a card (no border, no panel background, no rounded container) --
+   full-card treatment here would make the screen feel cluttered with three
+   stacked cards in a row. Instead, a soft purple/cyan radial glow sits
+   behind the face row (::before, blurred, no hard edge) just enough to lift
+   it off the page background without reading as "another module". */
+.dice-selector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dice-selector::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 980px;
+  max-width: 96vw;
+  height: 250px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(55, 224, 196, 0.12) 0%, rgba(140, 80, 255, 0.10) 42%, rgba(140, 80, 255, 0) 74%);
+  filter: blur(6px);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Tiles land in the 118-135px range on desktop (up from the previous
+   ~88px) so the dice read as the main interactive element, per the
+   reworked mockup -- clamp() lets them shrink gracefully on narrower
+   desktop widths before the tablet breakpoint takes over entirely. */
+.face-picker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 28px);
+  width: 100%;
+  max-width: 900px;
+}
+/* Unselected: white face, thin violet border, soft shadow. Border-width is
+   constant across states (only border-color transitions) and the size
+   change on selection is done purely with transform:scale — never
+   width/height — so nothing in the grid ever reflows or jumps. */
+.face-btn {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-width: 135px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--panel-strong);
+  background: #ffffff;
+  cursor: pointer;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+/* Hover is intentionally scoped away from .selected so the two states never
+   mix or fight over the same transform. */
+.face-btn:hover:not(:disabled):not(.selected) {
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.32);
+}
+/* Selected: stays white/neutral (no colored fill) with a clean cyan/teal
+   outline, a modest scale-up, and a brighter cyan-tinted glow layered under
+   the normal drop shadow -- reads as "chosen," not as an error/negative
+   state. */
+.face-btn.selected {
+  border-color: var(--cyan);
+  /* Slightly thicker than the unselected 2px border (border-box sizing
+     means this only eats into the inner padding a touch -- the tile's own
+     outer box size, and therefore the grid, never shifts). */
+  border-width: 3px;
+  transform: scale(1.08);
+  box-shadow: 0 0 0 1px rgba(55, 224, 196, 0.35), 0 6px 16px rgba(55, 224, 196, 0.38), 0 3px 8px rgba(0, 0, 0, 0.22);
+}
+.face-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.face-btn:active:not(:disabled):not(.selected) {
+  transform: scale(0.94);
+}
+/* Small check badge, top-right of a selected die: neutral cyan/teal circle
+   with a white glyph, never red/pink. Pips stay dark/readable since the
+   face itself never takes a full colored fill. */
+.face-check {
+  display: none;
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cyan);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.face-btn.selected .face-check {
+  display: flex;
+}
+/* Once a roll settles, only the one face that actually landed is called
+   out — enlarged either way, with a full solid color fill (cyan for a win,
+   pink for a miss) so the result reads at a glance rather than requiring a
+   close look at a thin outline ring. The rest of your selection is left
+   exactly as it was. Both win on specificity over .selected/.hover because
+   they're listed last and match the same number of classes. */
+.face-btn.face-hit,
+.face-btn.face-miss {
+  border-color: transparent;
+  transform: scale(1.14);
+  z-index: 3;
+}
+.face-btn.face-hit:hover:not(:disabled),
+.face-btn.face-miss:hover:not(:disabled) {
+  transform: scale(1.14);
+}
+.face-btn.face-hit {
+  background: var(--cyan);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 0 16px rgba(55, 224, 196, 0.5);
+}
+.face-btn.face-hit .pip-dot {
+  background: var(--ink);
+}
+/* A hit tile is always also .selected (you can only win on a face you
+   picked), so its check badge would otherwise be the same cyan as the new
+   full-tile fill and nearly disappear. Flip it to a white badge with a
+   cyan glyph so it still stands out against the fill. */
+.face-btn.face-hit .face-check {
+  background: #ffffff;
+  color: var(--cyan);
+}
+.face-btn.face-miss {
+  background: var(--pink);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 0 16px rgba(255, 77, 148, 0.45);
+}
+.face-btn.face-miss .pip-dot {
+  background: var(--ink);
+}
+
+.pip-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6%;
+}
+.pip-dot {
+  visibility: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--ink);
+  align-self: center;
+  justify-self: center;
+  max-width: 10px;
+  max-height: 10px;
+}
+/* Standard six-sided pip layouts, 3x3 grid read left-to-right, top-to-bottom */
+.pip-grid[data-face="1"] .pip-dot:nth-child(5) {
+  visibility: visible;
+}
+.pip-grid[data-face="2"] .pip-dot:nth-child(3),
+.pip-grid[data-face="2"] .pip-dot:nth-child(7) {
+  visibility: visible;
+}
+.pip-grid[data-face="3"] .pip-dot:nth-child(1),
+.pip-grid[data-face="3"] .pip-dot:nth-child(5),
+.pip-grid[data-face="3"] .pip-dot:nth-child(9) {
+  visibility: visible;
+}
+.pip-grid[data-face="4"] .pip-dot:nth-child(1),
+.pip-grid[data-face="4"] .pip-dot:nth-child(3),
+.pip-grid[data-face="4"] .pip-dot:nth-child(7),
+.pip-grid[data-face="4"] .pip-dot:nth-child(9) {
+  visibility: visible;
+}
+.pip-grid[data-face="5"] .pip-dot:nth-child(1),
+.pip-grid[data-face="5"] .pip-dot:nth-child(3),
+.pip-grid[data-face="5"] .pip-dot:nth-child(5),
+.pip-grid[data-face="5"] .pip-dot:nth-child(7),
+.pip-grid[data-face="5"] .pip-dot:nth-child(9) {
+  visibility: visible;
+}
+.pip-grid[data-face="6"] .pip-dot:nth-child(1),
+.pip-grid[data-face="6"] .pip-dot:nth-child(3),
+.pip-grid[data-face="6"] .pip-dot:nth-child(4),
+.pip-grid[data-face="6"] .pip-dot:nth-child(6),
+.pip-grid[data-face="6"] .pip-dot:nth-child(7),
+.pip-grid[data-face="6"] .pip-dot:nth-child(9) {
+  visibility: visible;
+}
+
+/* Hidden per request -- app.js still updates these elements' text/classes
+   on every render() call (coverageCount, faceCountHint warnings like "Max
+   5 faces covered"), so they stay in the DOM rather than being deleted;
+   this just removes them from the visible layout without touching any
+   game logic or risking null-reference errors in app.js. */
+.selected-pill,
+.face-count-hint {
+  display: none;
+}
+.selected-pill {
+  align-items: center;
+  gap: 5px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--panel-strong);
+  background: var(--panel-solid);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.selected-pill .mono {
+  color: var(--text-1);
+}
+
+.face-count-hint {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  min-height: 13px;
+  text-align: center;
+  opacity: 0.85;
+}
+
+/* ---- Streak Bonus card ------------------------------------------------------
+   Sits between the dice selector and the Potential Win hero card. Three
+   sections in a row on desktop (left copy / mid streak count / right
+   tracker), stacking to a single column (in the same DOM order) on mobile.
+   Background is a shade darker than the other panel-solid cards so it reads
+   as a distinct strip, not another copy of the same card. */
+.streak-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 24px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--panel-strong);
+  background: var(--void-2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+/* The three-section row (left copy / mid streak count / right tracker) --
+   split out from .streak-card itself so the card can stack a full-width
+   status message underneath it without needing a second wrapper element. */
+.streak-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+/* Brief highlight the instant a milestone is paid out -- a short, one-shot
+   glow, not a repeating/distracting animation (see renderStreakCard(), which
+   only toggles this class on for the exact roll that hit the milestone). */
+@keyframes streak-reward-glow {
+  0% {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+    border-color: var(--panel-strong);
+  }
+  30% {
+    box-shadow: 0 0 0 3px var(--cyan-glow), 0 2px 10px rgba(0, 0, 0, 0.22);
+    border-color: var(--cyan);
+  }
+  100% {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+    border-color: var(--panel-strong);
+  }
+}
+.streak-card.reward-pulse {
+  animation: streak-reward-glow 1.1s var(--ease);
+}
+
+.streak-left {
+  flex: 0 0 22%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.streak-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.streak-flame {
+  width: 15px;
+  height: 15px;
+  color: var(--amber);
+  flex: none;
+}
+.streak-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+/* Placeholder for a future full tooltip -- for now a native title attribute
+   carries the explanation ("Win with the same faces. Loss or face change
+   resets streak."), so no JS/positioning logic is needed yet. */
+.streak-help {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-left: 1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-3);
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+  cursor: help;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.streak-help:hover {
+  color: var(--text-1);
+  border-color: var(--text-1);
+}
+.streak-copy {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.streak-rule {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.streak-mid {
+  flex: 0 0 14%;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0 8px;
+  border-left: 1.5px dashed var(--panel-strong);
+  border-right: 1.5px dashed var(--panel-strong);
+}
+.streak-mid-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+.streak-count-row {
+  display: inline-flex;
+}
+.streak-count {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--cyan);
+}
+/* Mobile-only "/ N" next-milestone denominator (see index.html + the
+   <=767px block) -- hidden by default so desktop's plain streak count is
+   unchanged. */
+.streak-mid-target {
+  display: none;
+}
+.streak-mid-sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+}
+
+.streak-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ---- Organic 10-dot timeline (Game 1 -> Game 10) ---------------------------
+   Every game in the streak gets a dot, not just the four milestones — that's
+   the whole point of this pass. With the old status sentence removed, this
+   is now the ONLY thing in the right column, so the freed-up vertical space
+   goes straight into bigger circles and much bolder reward captions instead
+   — those now carry the "what am I working toward" signal on their own.
+   Small dots and milestone circles share the same circle-center line (20px
+   from the row top) so the connecting line passes cleanly through every one
+   of them regardless of size:
+     - small dot: 14px circle, 13px top margin -> center at 13 + 7 = 20px
+     - milestone circle: 40px circle, 0 top margin -> center at 20px
+   Still a single non-wrapping row on desktop; only the 4 milestone dots
+   ever show caption text, so the row never gets visually noisy. */
+.streak-timeline {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+/* Small, non-milestone dot: a bare circle, no label, ever. Border is always
+   reserved (transparent by default) so toggling border-color on ".next"
+   never changes the box size. */
+.stl-dot:not(.stl-milestone) {
+  flex: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin-top: 13px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--panel-strong);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.stl-dot:not(.stl-milestone).completed {
+  background: var(--cyan);
+}
+.stl-dot:not(.stl-milestone).next {
+  background: var(--void-2);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-soft);
+}
+.stl-line {
+  flex: 1;
+  min-width: 10px;
+  height: 2px;
+  margin-top: 19px;
+  background: var(--panel-strong);
+}
+/* Milestone dot (Game 3/5/7/10): bigger circle + a much bigger, bolder
+   reward caption underneath. This is a small flex column, not a circle
+   itself — its own box must NOT inherit the small-dot circle rules above
+   (hence the `:not(.stl-milestone)` scoping on those). */
+.stl-dot.stl-milestone {
+  flex: none;
+  width: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stl-circle {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--panel-strong);
+  background: var(--panel-solid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.stl-num {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.stl-check {
+  display: none;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+/* This caption now does the job the removed status line used to do (the
+   next milestone's cash value is the single biggest, boldest number in the
+   whole card besides the streak count itself). */
+.stl-reward {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-2);
+  text-align: center;
+  white-space: nowrap;
+  min-height: 18px;
+  font-family: var(--font-mono);
+}
+.stl-dot.stl-milestone.next .stl-circle {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px var(--cyan-soft);
+}
+.stl-dot.stl-milestone.next .stl-num {
+  color: var(--text-1);
+}
+.stl-dot.stl-milestone.next .stl-reward {
+  color: var(--cyan);
+  font-size: 16px;
+}
+.stl-dot.stl-milestone.completed .stl-circle {
+  border-color: var(--cyan);
+  background: var(--cyan);
+}
+.stl-dot.stl-milestone.completed .stl-num {
+  display: none;
+}
+.stl-dot.stl-milestone.completed .stl-check {
+  display: flex;
+}
+
+/* Single compact status line spanning the full width of the strip,
+   directly under the left/mid/right row -- e.g. "Win 1 more to unlock
+   +$1.00" or, right after a milestone pays out, "Streak reward unlocked:
+   +$1.00". min-height is reserved and opacity is what toggles visibility,
+   so the card never resizes as this appears/disappears (streak = 0 -> no
+   message at all). */
+.streak-status-msg {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1.5px dashed var(--panel-strong);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-align: center;
+  min-height: 15px;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.streak-status-msg.show {
+  opacity: 1;
+}
+/* Mobile-only "View streak ›" link that opens #streakDetailModal -- hidden
+   by default so desktop (which already shows the full rule copy + 10-dot
+   timeline inline) doesn't get a redundant link to the same information. */
+.view-streak-btn {
+  display: none;
+}
+
+/* ---- Hero payout card: the emotional center of the screen ------------------
+   Two zones, left to right: a text column (payout amount -> rolled-result
+   copy -> chance/multiplier/coverage -> streak/next-roll, in that priority
+   order) and the hero die zone. The die zone stretches to the row's full
+   height (align-self:stretch) and centers its contents, instead of sitting
+   in an undersized fixed box — that's what removes the leftover dead space
+   around it. Its clip wrapper is sized at roughly 1.5x the die's own edge
+   length (the ratio already proven safe earlier in this project for this
+   exact tilt/perspective) so the rotated cube's projected bounding box can
+   never be cropped. Since
+   at least 1 face is always selected (see toggleFace in app.js), this card
+   has no separate "empty" state to render. */
+/* Two explicit columns (rather than an unconstrained flex:1 left side) so
+   the split between text and die is a fixed ratio of the card, not however
+   much space happens to be left over once the die's own fixed width is
+   subtracted — that leftover-space approach was what created the large,
+   awkward dead gap between the stats and the die. */
+/* Vertical padding trimmed from 28px to 18px per side (a 20px total
+   reduction) as part of the desktop vertical-tightening pass -- horizontal
+   padding is untouched so the card stays just as wide. Combined with the
+   shrunk die zone below, this brings the card's overall height down
+   roughly 15-20% without losing the hero amount's presence or re-adding
+   any of the removed Chance/Multiplier/Coverage stats. */
+.payout-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 45% 55%;
+  align-items: center;
+  gap: 32px;
+  padding: 18px 34px;
+  border-radius: 24px;
+  border: 1.5px solid var(--panel-strong);
+  background: var(--panel-solid);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+.payout-left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hero die zone: fills its grid column (58% of the card) rather than a
+   fixed pixel width pinned to the right edge. The die cluster is aligned to
+   the START of this column (not centered within it) via a deliberate
+   padding-left, so it reads as roughly 40-70px left of a fully-centered
+   position — pulled toward the middle of the card, still with a clean gap
+   from the text/stats, rather than floating far right as a disconnected
+   decoration. */
+/* min-height set to match .die-visual-clip's 256px content height plus its
+   10px top/bottom padding (276px) -- bumped up from 210px specifically to
+   stop the rotating cube from clipping against its own clip box mid-tumble
+   (see .die-visual-clip above for the math). This re-adds some of the
+   height the desktop vertical-tightening pass had trimmed; the cropping
+   bug takes priority over the extra ~55-65px, but if the card needs to
+   come back down again later, shrink the die (.die-object / --die-z) and
+   re-derive .die-visual-clip's size from scratch rather than just
+   re-shrinking this box back down, or the cropping will return. Die stays
+   vertically centered via align-items:center, unchanged. */
+.payout-hero-die {
+  position: relative;
+  width: 100%;
+  min-height: 276px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 10px 10px 24px;
+}
+/* Now nested inside .die-visual-clip (see index.html) so it's centered on
+   the die's own box, not the wider hero zone — it moves as one unit with
+   the die whenever the die's position shifts. */
+.die-glow-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 170px;
+  height: 170px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(55, 224, 196, 0.24) 0%, rgba(55, 224, 196, 0.09) 55%, rgba(55, 224, 196, 0) 76%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* 256x256 -- sized from an actual simulation of the CSS 3D transform chain
+   (die-rig's static rotateX(-14deg)/rotateY(22deg) tilt composed with the
+   cube's own dynamic per-roll rotation, projected through perspective:
+   900px), not eyeballed. A 142px-edge cube's 8 corners can reach up to
+   ~124.1px from center on screen at worst-case rotation (perspective
+   foreshortening makes near corners project slightly larger than their
+   flat 71px half-edge), so anything under ~248px square WILL clip corners
+   during the tumble -- confirmed this was happening at the previous 200px
+   box. 256px gives a small safety margin beyond the computed minimum. If
+   the die's own size (.die-object) or perspective value ever changes,
+   re-derive this number -- don't just eyeball a new one. */
+.die-visual-clip {
+  position: relative;
+  z-index: 1;
+  width: 256px;
+  height: 256px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+/* Soft grounding shadow so the die reads as an object resting in the scene
+   rather than floating loose — sits low in the clip, behind the die.
+   Positioned as a fixed offset BELOW the clip's vertical center (where the
+   die itself is always centered, via the flex centering above) rather than
+   a fixed distance from the box's bottom edge, so it stays glued to the
+   die's visual base even as the clip box is resized (see die-visual-clip
+   above) instead of drifting away from it. */
+.die-ground-shadow {
+  position: absolute;
+  bottom: 47px;
+  left: 50%;
+  width: 94px;
+  height: 18px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 72%);
+  z-index: 0;
+  pointer-events: none;
+}
+.die-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+/* ~142px edge (down from 162px, ~87% scale) as part of the desktop
+   vertical-tightening pass -- same computed-safe ratio to its clip box
+   preserved, so the cube still can't crop mid-tumble. */
+.die-object {
+  width: 142px;
+  height: 142px;
+  --die-z: 71px;
+  perspective: 900px;
+  position: relative;
+}
+/* Constant showcase tilt so the cube always reads as a real volumetric
+   object, even at rest — the per-roll tumble happens inside this frame. */
+.die-rig {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(-14deg) rotateY(22deg);
+}
+/* True six-face 3D cube. Each face is a real, permanently-numbered panel;
+   we never redraw pips at runtime — instead the whole cube physically
+   rotates (via inline transform, driven by app.js) so the correct face
+   ends up pointing at the camera. */
+.cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.95s cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.die-object.rolling .cube {
+  transition: transform 0.95s cubic-bezier(0.3, 0.1, 0.2, 1);
+}
+.cube-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #ffffff 0%, #f2effa 100%);
+  border: 1.5px solid var(--panel-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.26);
+  backface-visibility: hidden;
+  transition: background 0.3s var(--ease), opacity 0.3s var(--ease), transform 0.32s var(--ease), box-shadow 0.32s var(--ease);
+}
+.cf-front {
+  transform: translateZ(var(--die-z));
+}
+.cf-back {
+  transform: rotateY(180deg) translateZ(var(--die-z));
+}
+.cf-right {
+  transform: rotateY(90deg) translateZ(var(--die-z));
+}
+.cf-left {
+  transform: rotateY(-90deg) translateZ(var(--die-z));
+}
+.cf-top {
+  transform: rotateX(90deg) translateZ(var(--die-z));
+}
+.cf-bottom {
+  transform: rotateX(-90deg) translateZ(var(--die-z));
+}
+.die-object.result-win .cube-face {
+  background: var(--cyan);
+}
+.die-object.result-loss .cube-face {
+  opacity: 0.85;
+}
+.die-object.rolling .cube-face .pip-dot {
+  opacity: 0.55;
+}
+.cube-face .pip-grid .pip-dot {
+  background: var(--ink);
+  transition: opacity 0.2s var(--ease);
+}
+/* Glow reacts to the same result classes already applied to #dieObject by
+   app.js, so the "main result object" feeling extends to the ambient light
+   behind it too — win glows cyan, loss dims to a muted purple, idle/armed
+   stays warm amber/orange. */
+.payout-hero-die:has(.die-object.result-win) .die-glow-bg {
+  background: radial-gradient(circle, rgba(55, 224, 196, 0.32) 0%, rgba(55, 224, 196, 0.12) 55%, rgba(55, 224, 196, 0) 76%);
+}
+.payout-hero-die:has(.die-object.result-loss) .die-glow-bg {
+  background: radial-gradient(circle, rgba(67, 44, 158, 0.35) 0%, rgba(67, 44, 158, 0.14) 55%, rgba(67, 44, 158, 0) 76%);
+}
+
+/* Hero payout text: label, huge teal value, formula, helper — stacked
+   tight so nothing floats apart. This is the single biggest, boldest text
+   on the whole screen by design (the "carrot on the stick"). Three content
+   modes share these same slots (see renderPayoutCard() in app.js):
+   idle/prospective ("Potential Win" + the live next-roll amount, cyan),
+   just-won ("YOU WON" + the actual total payout, cyan), and just-lost
+   ("YOU LOST" + $0.00, muted) -- only the label/color/text change, never
+   the layout, so nothing ever jumps between states. */
+.payout-label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+}
+.payout-label.state-win {
+  color: var(--cyan);
+}
+.payout-label.state-loss {
+  color: var(--text-3);
+}
+.payout-hero {
+  display: block;
+  font-weight: 800;
+  font-size: 48px;
+  line-height: 1.05;
+  color: var(--cyan);
+  margin: 2px 0 6px;
+  transition: color 0.2s var(--ease);
+}
+.payout-hero.state-loss {
+  color: var(--text-3);
+}
+.payout-formula {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: opacity 0.2s var(--ease), font-size 0.2s var(--ease);
+}
+/* Loss state: shrunk and muted a touch so the formula reads as secondary
+   detail under "YOU LOST" instead of competing with it. */
+.payout-formula.compact {
+  font-size: 11px;
+  opacity: 0.72;
+}
+
+.result-copy {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  min-height: 18px;
+  margin: 4px 0 0;
+}
+.result-copy strong {
+  color: var(--text-1);
+}
+.result-copy.state-win {
+  color: var(--cyan);
+}
+.result-copy.state-loss {
+  color: var(--text-2);
+}
+
+/* Repurposed as a loss-only line ("Streak reset") -- the win-time streak
+   count now lives inline in .result-copy ("Rolled N · K win streak 🔥")
+   instead, so this element only ever shows one thing. */
+.streak-line {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--amber);
+  min-height: 16px;
+}
+
+/* Live-recalculation feedback: every face tap / bet change briefly pulses
+   the reactive numbers so the risk/reward tradeoff reads as instant. */
+@keyframes value-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+    color: var(--pink);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.value-pulse {
+  animation: value-pulse 0.32s var(--ease);
+}
+
+/* ---- Sidebar column (right, fixed width) ------------------------------------
+   Holds the bet panel and, directly beneath it, the compact Recent Results
+   card -- both share this column's fixed 340px width automatically since
+   each is width:100%. Only .bet-panel is sticky (unchanged from before);
+   Recent Results scrolls with the page underneath it, which is fine since
+   it's secondary/glanceable info, not something that needs to stay pinned
+   while betting. */
+/* A plain, tight, fixed 24px gap -- Recent Results sits close under the bet
+   panel rather than being pushed down by an artificially stretched gap
+   (see the .game-shell comment above for why that stretch approach was
+   removed). */
+.sidebar-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---- Bet panel (right column) ----------------------------------------------
+   Softened so it reads as part of the same game surface rather than a
+   separate admin widget: lighter border, smaller shadow, larger radius to
+   match the payout card, and its top edge lines up with the left column
+   (both are grid children with align-items: start on .game-shell). */
+.bet-panel {
+  width: 100%;
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 24px;
+  border: 2px solid var(--panel-strong);
+  background: var(--panel);
+  box-shadow: 2px 2px 0 rgba(26, 15, 61, 0.5);
+  overflow: hidden;
+}
+.bet-tabs {
+  display: flex;
+  gap: 0;
+  padding: 5px;
+  background: var(--void-2);
+  border-bottom: 2px solid var(--ink);
+}
+.bet-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.bet-tab.active {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.bet-panel-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.auto-bet-placeholder {
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  text-align: center;
+}
+.auto-bet-copy {
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.fg-label {
+  font-size: 10.5px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--panel-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  overflow: hidden;
+}
+.stepper button {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  width: 38px;
+  height: 42px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 800;
+  flex: none;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.stepper button:hover:not(:disabled) {
+  background: var(--yellow-soft);
+}
+.stepper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.stepper input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0 4px;
+  height: 42px;
+}
+.stepper input:disabled {
+  opacity: 0.6;
+}
+.stepper input:focus-visible {
+  outline: none;
+}
+.quick-amounts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+/* Mobile-only preset row (see index.html) -- hidden on desktop by default
+   (ID-level so it safely wins over the shared .quick-amounts base rule
+   above regardless of source order); the <=767px block re-shows it with
+   its own 7-column layout and hides the desktop #quickAmounts instead. */
+#quickAmountsMobile {
+  display: none;
+}
+.quick-amounts button {
+  border: 2px solid var(--ink);
+  background: var(--panel-solid);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 6px 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), background 0.15s var(--ease);
+}
+.quick-amounts button:hover:not(:disabled) {
+  background: var(--yellow);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.quick-amounts button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+#betMaxBtn {
+  background: var(--pink);
+  color: #ffffff;
+  border-color: var(--ink);
+}
+#betMaxBtn:hover:not(:disabled) {
+  background: var(--pink);
+  color: #ffffff;
+  filter: brightness(1.1);
+}
+
+.bet-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--panel-strong);
+  background: var(--panel-solid);
+}
+.bs-title {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.bs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--panel-strong);
+  font-size: 12.5px;
+}
+.bs-row:last-child {
+  border-bottom: none;
+}
+.bs-row .k {
+  color: var(--text-3);
+  font-weight: 700;
+}
+.bs-row .v {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.bs-row.bs-highlight {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-bottom: none;
+  border-radius: var(--radius-sm);
+  background: var(--cyan-soft);
+  border: 1.5px solid var(--cyan);
+}
+.bs-row.bs-highlight .k {
+  color: var(--text-1);
+}
+.bs-row.bs-highlight .v {
+  color: var(--cyan);
+  font-size: 14px;
+}
+/* Only shown when the pending bet is exactly one win away from a streak
+   milestone -- a light-touch accent (not a full highlight box like
+   Potential Win) so the Bet Summary doesn't compete with it. */
+.bs-row.bs-streak .v {
+  color: var(--cyan);
+}
+/* "1 win away (at 3 wins)" -- sits directly under the bs-streak row,
+   same visibility toggle (both driven by the same oneWinAway check in
+   app.js), just a smaller/quieter second line rather than its own row. */
+.bs-streak-sub {
+  margin: -2px 0 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-align: right;
+  min-height: 12px;
+}
+
+/* CTA zone: fixed height so 1-button and 3-button states never shift layout */
+.cta-zone {
+  flex: none;
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  height: 54px;
+  margin-top: 4px;
+}
+.btn {
+  appearance: none;
+  border: 1.5px solid var(--panel-strong);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  height: 100%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+.btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.btn-primary {
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 14.5px;
+}
+.btn-primary.state-rolling {
+  background: var(--panel-strong);
+  color: var(--text-2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+/* Calm, intentional disabled state (e.g. "SELECT A FACE FIRST") — a
+   dedicated muted-purple/gray treatment instead of relying on
+   .btn:disabled { opacity: 0.5 } on top of the yellow fill, which is what
+   produced the muddy "brown error button" look. This selector must win
+   over .btn-primary, so it's declared after it and targets :disabled
+   directly rather than through the generic .btn:disabled opacity trick. */
+.btn-primary:disabled {
+  background: var(--panel-solid);
+  color: var(--text-3);
+  border-color: var(--panel-strong);
+  opacity: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+/* Lower-emphasis button for the "destructive" side of a confirm dialog
+   (e.g. "Reset and continue") -- muted panel fill instead of the primary
+   yellow, so the safe/recommended action (Keep streak) is always the
+   visually louder of the two. */
+.btn-secondary {
+  background: var(--panel-solid);
+  color: var(--text-2);
+  font-size: 13px;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--panel-strong);
+  color: var(--text-1);
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid rgba(26, 15, 61, 0.25);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fairness-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fairness-row svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-3);
+}
+.fairness-row:hover {
+  color: var(--text-1);
+}
+.fairness-verified {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+/* ---- Recent results: compact sidebar card, directly under the bet panel
+   -- 4 simple circular chips (rolled face + W/L), no multiplier detail (that
+   stays behind View History). .compact narrows the padding a touch since
+   this card now lives in the 340px sidebar column rather than the wider
+   center column it used to sit in. ------------------------------------- */
+.recent-results-card {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 2.5px solid var(--panel-strong);
+  background: var(--panel-solid);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.recent-results-card.compact {
+  padding: 14px;
+}
+.rr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rr-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+/* 4 fixed slots, most-recent-first -- always renders exactly 4 (missing
+   ones become a muted empty placeholder), so the card never changes height
+   as rolls come in. */
+.rr-chips {
+  display: flex;
+  gap: 8px;
+}
+.rr-chip {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 4px;
+  border-radius: 12px;
+  border: 1.5px solid var(--panel-strong);
+  background: var(--void-2);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.rr-chip:hover {
+  transform: translateY(-1px);
+}
+.rr-chip.win {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+.rr-chip.loss {
+  border-color: var(--pink);
+  background: rgba(255, 77, 148, 0.08);
+}
+.rr-chip.empty {
+  border-style: dashed;
+  border-color: var(--panel-strong);
+  background: transparent;
+  opacity: 0.55;
+  cursor: default;
+}
+.rr-chip.empty:hover {
+  transform: none;
+}
+.rr-chip-face {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-1);
+}
+.rr-chip.win .rr-chip-face {
+  color: var(--cyan);
+}
+.rr-chip.loss .rr-chip-face {
+  color: var(--pink);
+}
+.rr-chip.empty .rr-chip-face {
+  color: var(--text-3);
+}
+.rr-chip-wl {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.rr-chip.win .rr-chip-wl {
+  color: var(--cyan);
+}
+.rr-chip.loss .rr-chip-wl {
+  color: var(--pink);
+}
+.view-history-btn {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 2px;
+  cursor: pointer;
+  transition: color 0.15s var(--ease);
+  white-space: nowrap;
+}
+.view-history-btn:hover {
+  color: var(--text-1);
+}
+
+/* ---- Modal (fairness / history / help) -------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 15, 61, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal {
+  width: 100%;
+  max-width: 500px;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--panel-strong);
+  border: 2px solid var(--panel-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.25s var(--ease);
+}
+.modal-overlay.open .modal {
+  transform: translateY(0) scale(1);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 3px solid var(--ink);
+  position: sticky;
+  top: 0;
+  background: var(--panel-strong);
+}
+.modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  margin: 0;
+}
+.modal-body {
+  padding: 16px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-close {
+  background: #ffffff;
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+.modal-close:hover {
+  background: var(--yellow);
+}
+.modal-copy {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+/* Streak reset confirmation is a fast yes/no decision, not a page of
+   detail -- capped narrower than the default 500px modal so it reads as a
+   focused prompt rather than a document. */
+.modal-compact {
+  max-width: 360px;
+}
+/* The dynamic "You are X wins away from a +$Y bonus" line -- called out in
+   cyan (same accent used for Potential Win / bonus figures elsewhere) so
+   what the player stands to lose is the most visually prominent line in
+   the dialog. */
+.streak-reset-sub {
+  color: var(--cyan);
+  font-weight: 700;
+}
+.streak-reset-actions {
+  display: flex;
+  gap: 10px;
+  height: 50px;
+  margin-top: 4px;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.stat-cell {
+  background: var(--panel-solid);
+  border: 1.5px solid var(--panel-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+}
+.stat-cell .k {
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.stat-cell .v {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 3px;
+  word-break: break-all;
+}
+.fairness-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.fairness-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fairness-field .k {
+  font-size: 10.5px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.fairness-field .v {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--panel-solid);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 7px 9px;
+  word-break: break-all;
+  color: var(--text-1);
+}
+.verify-result {
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--panel-strong);
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  display: none;
+}
+.verify-result.show {
+  display: block;
+}
+.verify-result.ok {
+  background: var(--cyan);
+  color: var(--ink);
+}
+.verify-result.bad {
+  background: var(--red);
+  color: var(--ink);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.history-empty {
+  color: var(--text-3);
+  font-size: 12px;
+  padding: 8px 2px;
+}
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--ink);
+  background: var(--panel-solid);
+  font-size: 12px;
+  width: 100%;
+  text-align: left;
+}
+.recent-face {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 2px solid var(--ink);
+  background: #ffffff;
+  color: var(--ink);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.recent-row.win .recent-face {
+  background: var(--cyan);
+}
+.recent-row.loss .recent-face {
+  opacity: 0.6;
+}
+.recent-row .r-mode {
+  color: var(--text-3);
+  font-size: 10.5px;
+  flex: 1;
+  font-weight: 700;
+}
+.recent-row .r-mult {
+  font-family: var(--font-mono);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 700;
+}
+.recent-row.win .r-mult {
+  color: var(--cyan);
+}
+
+/* ---- Responsive --------------------------------------------------------------
+   Tablet/mobile: the sidebar column (bet panel + Recent Results) stacks
+   under the whole game column, in DOM order -- title -> dice -> streak ->
+   result card -> bet amount/ROLL -> Recent Results, per the required
+   mobile order. */
+@media (max-width: 1000px) {
+  .game-shell {
+    grid-template-columns: 1fr;
+    padding: 16px 14px 24px;
+    gap: 20px;
+  }
+  .bet-panel {
+    width: 100%;
+    position: static;
+  }
+  /* Streak card's row stacks to a single column, in the same DOM order as
+     desktop (title/rules -> current streak -> milestone tracker), per the
+     required mobile order. The status message below it is already
+     full-width at every breakpoint, so it needs no override here. */
+  .streak-card {
+    padding: 16px 18px;
+  }
+  .streak-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .streak-left {
+    text-align: center;
+    align-items: center;
+  }
+  .streak-mid {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-left: none;
+    border-right: none;
+    border-top: 1.5px dashed var(--panel-strong);
+    border-bottom: 1.5px dashed var(--panel-strong);
+  }
+  .streak-right {
+    align-items: stretch;
+  }
+  /* Timeline can shrink at tablet width but still shouldn't need to scroll
+     yet -- .streak-timeline's own flex-line spacing absorbs the narrower
+     available width first. */
+
+  .payout-card {
+    /* Below this width the card reverts to the original stacked (not
+       grid) layout: text on top, die below — the desktop-only 44%/56%
+       grid split doesn't apply here. */
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+  }
+  .payout-left {
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .payout-hero-die {
+    /* The desktop-only leftward shift (justify-content:flex-start + the
+       asymmetric left padding) is undone here — once the card stacks
+       vertically, the die should sit dead-center under the text again.
+       width/min-height at 256px to match .die-visual-clip, which is NOT
+       overridden at this breakpoint (still the desktop 256px, itself sized
+       from the anti-crop math above) -- 250px here used to be 6px too
+       small for that box. */
+    justify-content: center;
+    padding: 10px;
+    align-self: center;
+    width: 256px;
+    min-height: 256px;
+  }
+  .cta-zone {
+    flex-wrap: wrap;
+    height: auto;
+  }
+  .btn {
+    min-height: 46px;
+  }
+}
+
+/* ============================================================================
+   MOBILE GAME CONSOLE (<=767px) — desktop-untouched, additive/override rules
+   only. Built from a specific high-fidelity mobile mockup: compact header,
+   3x2 dice grid, milestone-only streak strip, compact bet controls, and a
+   dominant Roll CTA, all fitting close to one viewport on common phone
+   widths (360-430px) without a 2-3 screen scroll.
+
+   Reordering note: no DOM reordering trick is needed for the MACRO section
+   order (header -> dice -> streak -> payout -> bet+CTA -> fairness ->
+   recent results) -- .game-shell already collapses to a single column at
+   <=1000px (see that block above), and .game-column's children (title,
+   dice, streak, payout) then .sidebar-column's children (bet-panel, recent
+   results) already stack in exactly that order via plain DOM/source order.
+   The only LOCAL reorder used below is inside .streak-card, via
+   `display: contents` on .streak-row to unwrap it so streak-mid /
+   streak-status-msg / streak-right can be resequenced with `order` (see
+   the streak strip section). ============================================ */
+@media (max-width: 767px) {
+  /* ---- 2. Mobile header --------------------------------------------------
+     Reflows the SAME topbar elements (no duplicate header markup) via
+     `display: contents` unwrapping + flex `order` + `margin-left: auto`:
+     menu icon first, logo next, then balance pill + icon-only fairness
+     shield pushed to the right edge. Help/sound icons are dropped from the
+     default mobile view (still reachable via View streak / Help entry
+     points elsewhere) to keep the bar short. */
+  .topbar {
+    height: 52px;
+    padding: 0 12px;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+  .topbar-right {
+    display: contents;
+  }
+  .topbar-center {
+    display: contents;
+  }
+  #helpBtn,
+  #soundToggle {
+    display: none;
+  }
+  .brand {
+    order: 0;
+  }
+  #menuBtn {
+    order: -1;
+    margin-right: 2px;
+  }
+  .balance-chip {
+    order: 1;
+    margin-left: auto;
+  }
+  .rtp-badge {
+    order: 2;
+    padding: 8px;
+    font-size: 0;
+    /* Icon-only shield button on mobile -- the SVG has explicit px
+       dimensions (see .rtp-badge svg below) so it's unaffected by
+       font-size:0, only the "98% RTP · Provably Fair" text run collapses.
+       Kept as the SAME element/click target as desktop (opens the fairness
+       modal) rather than a duplicate icon, so there's exactly one "how is
+       this fair" entry point to keep in sync. */
+  }
+  .rtp-badge svg {
+    width: 16px;
+    height: 16px;
+  }
+  /* Balance pill: stacked "BALANCE" label above the value (matches the
+     mockup) instead of desktop's single-row label+value, with the deposit
+     button spanning both rows on the right -- achieved with CSS Grid
+     placement on the SAME three existing children, no new markup. */
+  .balance-chip {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    row-gap: 0;
+    align-items: center;
+    padding: 6px 8px 6px 14px;
+  }
+  .balance-chip .label {
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .balance-chip .value {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 14px;
+  }
+  .balance-chip .deposit-btn {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 26px;
+    height: 26px;
+  }
+
+  /* ---- 1. Layout shell ---------------------------------------------------
+     Single column, tighter outer padding than the tablet breakpoint above.
+     Every margin/padding/gap in this file from here down was sized to
+     actually fit the Roll CTA in (or very near) one 360-430px-wide phone
+     viewport -- see the height-budget verification script for the running
+     total this is checked against. */
+  .game-shell {
+    padding: 10px 12px calc(96px + env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+    /* Extra bottom padding reserves room for the fixed Roll CTA bar (see
+       .cta-zone below) so it never covers the fairness line / Recent
+       Results content underneath it. */
+  }
+  .title-block {
+    margin-bottom: 10px;
+  }
+  .game-title {
+    font-size: 17px;
+    margin-bottom: 2px;
+  }
+  /* Long desktop subtitle replaced by the live meta row below it. */
+  .game-subtitle {
+    display: none;
+  }
+  .dice-selector {
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+  .dice-selector::before {
+    height: 160px;
+  }
+
+  /* ---- 3. Face selector: 3x2 grid + compact meta row ---------------------
+     "3 selected · 50.00% chance · 1.94x multiplier" (or the zero-state
+     copy) directly under the title -- the same live numbers the desktop
+     Bet Summary panel shows, surfaced here instead of requiring a scroll
+     to the sidebar. Written by app.js's existing updateStageAndBetbarMaths()
+     (one new textContent target, no new game-state logic). */
+  .face-meta-row {
+    display: block;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-2);
+    text-align: center;
+  }
+  .face-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 420px;
+  }
+  /* Tile height trimmed below the brief's suggested 88-112px range on
+     purpose -- the brief explicitly prioritizes "fit into one playable
+     screen" as the main goal over that specific range, and 72px still
+     clears the 44px accessible tap-target floor with plenty of margin. A
+     2-row grid at 112px was, on its own, ~30-40px of the total scroll
+     overrun. */
+  .face-btn {
+    max-width: none;
+    min-height: 72px;
+    max-height: 88px;
+  }
+
+  /* ---- 4. Compact mobile streak strip -------------------------------------
+     Hides the desktop rule copy and the 6 non-milestone dots/connector
+     lines, leaving just: flame + "STREAK X / Y" + the existing status
+     message ("Win N more to unlock +$Y" / "Streak reward unlocked...") +
+     a milestone-only row (3 -- 5 -- 7 -- 10). `display: contents` on
+     .streak-row unwraps it so .streak-mid / .streak-status-msg /
+     .streak-right (previously nested at different depths) can be
+     resequenced with `order` into that exact visual stack. */
+  .streak-card {
+    padding: 10px 14px;
+    /* Was inheriting desktop's 28px unchanged -- a real contributor to the
+       scroll overrun that had nothing to do with the card's own content. */
+    margin-bottom: 10px;
+  }
+  .streak-row {
+    display: contents;
+  }
+  .streak-left {
+    display: none;
+  }
+  .streak-mid {
+    order: 1;
+    flex-direction: row;
+    justify-content: center;
+    align-items: baseline;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    min-width: 0;
+  }
+  .streak-mid::before {
+    content: "🔥";
+    font-size: 15px;
+    margin-right: 2px;
+  }
+  .streak-mid-label {
+    display: none;
+  }
+  .streak-mid-sub {
+    display: none;
+  }
+  .streak-count {
+    font-size: 20px;
+  }
+  .streak-count-row {
+    display: inline-flex;
+    align-items: baseline;
+  }
+  /* "/ 3" -- the current streak's NEXT milestone target, written by
+     renderStreakCard(). Blank once there's no next milestone to show
+     (e.g. right after the 10-win crown moment, or 0 faces selected). */
+  .streak-mid-target {
+    display: inline;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-3);
+    margin-left: 1px;
+  }
+  .streak-status-msg {
+    order: 2;
+    margin: 1px 0 6px;
+    padding-top: 0;
+    border-top: none;
+    font-size: 11px;
+  }
+  /* Zero-state ("Select faces to preview rewards" / "Win 3 times to
+     unlock...") always has SOME text once faces are selected, but before
+     any streak activity there's nothing to show via the win-count message
+     -- reserve the line's height either way so the milestone row below
+     never jumps. */
+  .streak-status-msg:empty {
+    min-height: 0;
+    margin-bottom: 2px;
+  }
+  .streak-right {
+    order: 3;
+  }
+  .streak-timeline {
+    position: relative;
+    justify-content: space-between;
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  /* One continuous connector line behind the 4 remaining milestone circles
+     -- top offset matches the smaller mobile circle's own center line
+     (16px radius -> 16px from the row top), replacing the individual
+     .stl-line segments, which are hidden below along with every
+     non-milestone dot. */
+  .streak-timeline::before {
+    content: "";
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--panel-strong);
+    z-index: 0;
+  }
+  .stl-dot:not(.stl-milestone),
+  .stl-line {
+    display: none;
+  }
+  .stl-dot.stl-milestone {
+    position: relative;
+    z-index: 1;
+    width: auto;
+  }
+  /* Smaller milestone circle + tighter caption than desktop's 40px/15px --
+     the 10-dot desktop timeline had room to be generous; the 4-circle
+     mobile row needs to be compact, not a second hero element competing
+     with the payout card above it. */
+  .stl-circle {
+    width: 32px;
+    height: 32px;
+  }
+  .stl-num {
+    font-size: 12px;
+  }
+  .stl-check {
+    font-size: 14px;
+  }
+  .stl-reward {
+    margin-top: 3px;
+    font-size: 12px;
+    min-height: 14px;
+  }
+  .stl-dot.stl-milestone.next .stl-reward {
+    font-size: 13px;
+  }
+  .view-streak-btn {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-3);
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+  }
+  .view-streak-btn:hover {
+    color: var(--text-1);
+  }
+  .streak-detail-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .streak-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--panel-strong);
+    background: var(--panel-solid);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .streak-detail-row .k {
+    color: var(--text-2);
+  }
+  .streak-detail-row .v {
+    font-family: var(--font-mono);
+    color: var(--cyan);
+  }
+  .streak-detail-row.completed {
+    opacity: 0.55;
+  }
+
+  /* ---- 6. Payout card ------------------------------------------------------
+     THE single biggest height cost in the whole flow: the tablet breakpoint
+     above stacks this card (text on top, die BELOW, both centered), which
+     on a narrow-but-tall phone screen burns ~350px of scarce vertical space
+     for no reason -- the mockup puts the die beside the text, not under it.
+     Overridden back to a row layout here (text left, die right), same as
+     desktop's own approach, with a purpose-sized smaller die (see the die
+     rules further below) instead of reusing the larger stacked-layout
+     sizing. This one change is most of the "why am I scrolling so much"
+     fix. */
+  .payout-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .payout-left {
+    align-items: flex-start;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .payout-label {
+    font-size: 11px;
+  }
+  .payout-hero {
+    font-size: 26px;
+    margin: 1px 0 3px;
+  }
+  .payout-formula {
+    font-size: 10.5px;
+  }
+  .result-copy {
+    font-size: 11px;
+    min-height: 14px;
+    margin-top: 2px;
+  }
+  .streak-line {
+    font-size: 10.5px;
+    min-height: 13px;
+  }
+  /* Purpose-sized SMALLER die for the row-layout card above -- re-derived
+     from the same simulated-transform math as the desktop/tablet dice (see
+     the desktop .die-visual-clip comment for the method), not just a
+     shrunk copy of the tablet-stacked sizing: a 72px-edge cube (half=36) at
+     perspective:420px has a worst-case projected corner radius of ~63.05px
+     (requires a clip >= ~126.1px square); 130px leaves a small safety
+     margin. This is the ONLY place mobile die sizing lives -- the old,
+     larger die-sizing override that used to also live in the <=640px block
+     below has been removed from there specifically so it can't silently
+     re-win (it was declared later in the file and matched every real phone
+     width, undoing this sizing every time). If this die is ever resized
+     again, this is the single place to change, and _die_crop_check.cjs
+     will fail loudly if the <=640px block ever redefines it again. */
+  .payout-hero-die {
+    width: 146px;
+    min-height: 146px;
+    padding: 8px;
+    justify-content: center;
+  }
+  .die-glow-bg {
+    width: 88px;
+    height: 88px;
+  }
+  .die-visual-clip {
+    width: 130px;
+    height: 130px;
+  }
+  .die-ground-shadow {
+    bottom: 24px;
+    width: 49px;
+    height: 9px;
+  }
+  .die-object {
+    width: 72px;
+    height: 72px;
+    --die-z: 36px;
+    perspective: 420px;
+  }
+
+  /* ---- 7. Bet controls -----------------------------------------------------
+     Manual/Auto tabs and the full Bet Summary panel are desktop-only detail
+     (duplicated by the meta row above the dice + the streak strip already
+     on screen) -- hidden here rather than removed, so nothing in app.js
+     needs to special-case "mobile" when writing into them. The mobile-only
+     quick-amounts row (added in index.html, hidden on desktop via the rule
+     further below) is shown in place of the desktop preset row. */
+  .bet-tabs {
+    display: none;
+  }
+  .bet-panel {
+    border-radius: var(--radius-md);
+  }
+  .bet-panel-body {
+    padding: 12px;
+    gap: 6px;
+  }
+  .fg-label {
+    font-size: 10px;
+  }
+  /* 44px -- the accessible tap-target floor (section 17), not shrunk
+     further even though it's one of the taller blocks in the flow. */
+  .stepper button {
+    width: 44px;
+    height: 44px;
+    font-size: 19px;
+  }
+  .stepper input {
+    height: 44px;
+    font-size: 16px;
+  }
+  #quickAmounts {
+    display: none;
+  }
+  /* ID selector (not just .quick-amounts-mobile) so this reliably beats
+     the base #quickAmountsMobile { display: none; } rule above regardless
+     of specificity -- a class-only override here would lose to that ID
+     rule and stay hidden. */
+  #quickAmountsMobile {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .quick-amounts-mobile button {
+    padding: 8px 1px;
+    font-size: 9.5px;
+    min-height: 44px;
+  }
+  /* Active preset -- reflects the CURRENT bet amount, written by app.js
+     (same helper drives the desktop row too, but desktop has no matching
+     CSS for .qa-active, so this is visually mobile-only). */
+  .quick-amounts button.qa-active {
+    border-color: var(--cyan);
+    background: var(--cyan-soft);
+    color: var(--text-1);
+  }
+  #betMaxBtnMobile.qa-active {
+    filter: brightness(1.15);
+  }
+  .bet-summary {
+    display: none;
+  }
+
+  /* ---- 8. Roll CTA -----------------------------------------------------
+     HARD REQUIREMENT: the Roll button must be reachable with zero scrolling
+     on any modern phone viewport, regardless of how tall the content above
+     it (face grid, streak strip, payout card) ends up being. Pixel-budgeting
+     every element above it turned out to be too fragile to guarantee that
+     without a real renderer to check against -- so instead of trying to
+     make everything else short enough to fit above it, the CTA is docked to
+     the bottom of the viewport itself via position:fixed. This makes the
+     "one viewport, no exceptions" rule true by construction rather than by
+     careful-but-breakable arithmetic. .game-shell's bottom padding above
+     reserves room so this bar never covers the fairness line / Recent
+     Results underneath it. */
+  .cta-zone {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    height: auto;
+    margin-top: 0;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--void);
+    border-top: 1.5px solid var(--panel-strong);
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+  }
+  .btn-primary {
+    font-size: 16px;
+  }
+
+  /* ---- 9. Fairness line -------------------------------------------------- */
+  .fairness-row {
+    margin-top: 0;
+    padding: 4px;
+    font-size: 10.5px;
+  }
+
+  /* ---- Sidebar / recent results ------------------------------------------
+     Sidebar column no longer needs a large gap once the bet panel and
+     Recent Results are both full-bleed, single-column blocks. */
+  .sidebar-column {
+    gap: 10px;
+  }
+  .recent-results-card.compact {
+    padding: 10px;
+  }
+  .rr-chip {
+    padding: 7px 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .game-title {
+    font-size: 22px;
+  }
+  .face-picker {
+    gap: 8px;
+  }
+  /* Below this width the timeline is allowed to scroll horizontally rather
+     than compress the now-larger dots/circles back down — per spec, that's
+     an acceptable mobile trade-off (it never forces the card taller). The
+     circle-center alignment math (20px from the row top) is unchanged, so
+     no per-size overrides are needed here, just the scroll affordance.
+     NOTE: this only matters if the mobile-console <=767px block above ever
+     stops hiding the non-milestone dots/lines -- with them hidden, the
+     milestone-only row shouldn't need to scroll in practice. */
+  .streak-timeline {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  /* .streak-card padding, .payout-card layout/padding, the die sizing
+     (.payout-hero-die/.die-glow-bg/.die-visual-clip/.die-ground-shadow/
+     .die-object), and .payout-hero's font-size are ALL now owned by the
+     mobile-console <=767px block above (which covers every phone width
+     this block also matches) -- values used to be re-specified here too,
+     which silently re-inflated the card back to the old, larger stacked
+     sizing on every real phone (<=640px matches BOTH blocks, and this one
+     comes later in the file, so it used to win). Deliberately left empty
+     of those properties now so the <=767px block's compact sizing applies
+     uncontested all the way down to the smallest supported width (320px). */
+  .quick-amounts {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  .die-object.rolling .cube {
+    transform: none;
+  }
+}

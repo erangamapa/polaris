@@ -11,6 +11,7 @@ import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
 import { PromoHero } from "./components/casino/PromoHero";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
+import { ProviderGame } from "./components/casino/ProviderGame";
 import { CasinoCatalog } from "./components/casino/CasinoCatalog";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
@@ -67,6 +68,7 @@ export default function App() {
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
   const [onchainGame, setOnchainGame] = useState(null);
+  const [providerGame, setProviderGame] = useState(null);
   const [fundsOpen, setFundsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [rgOpen, setRgOpen] = useState(false);
@@ -169,7 +171,10 @@ export default function App() {
         <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4">
           <div key={product} className="animate-fade-in-up">
             {product === "casino" && (
-              <CasinoLobby onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }} />
+              <CasinoLobby
+                onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }}
+                onLaunchProvider={(g) => setProviderGame(g)}
+              />
             )}
             {product === "predictions" && (
               <div className="mx-auto max-w-6xl space-y-4">
@@ -207,6 +212,9 @@ export default function App() {
       {onchainGame && (
         <BetSwirlGame game={onchainGame} onRound={logRound} onClose={() => setOnchainGame(null)} />
       )}
+      {providerGame && (
+        <ProviderGame game={providerGame} onClose={() => setProviderGame(null)} />
+      )}
       <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
@@ -215,11 +223,11 @@ export default function App() {
   );
 }
 
-function CasinoLobby({ onLaunchOnchain }) {
+function CasinoLobby({ onLaunchOnchain, onLaunchProvider }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <PromoHero />
-      <CasinoCatalog onLaunch={onLaunchOnchain} />
+      <CasinoCatalog onLaunch={onLaunchOnchain} onLaunchProvider={onLaunchProvider} />
     </div>
   );
 }
