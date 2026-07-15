@@ -1,11 +1,11 @@
-import { Dices, TrendingUp, Trophy } from "lucide-react";
+import { Dices, TrendingUp, Volleyball as SoccerBall } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 const PRODUCTS = [
   { id: "casino", label: "Casino", icon: Dices },
   { id: "predictions", label: "Predictions", icon: TrendingUp },
-  { id: "sports", label: "Sports", icon: Trophy },
+  { id: "sports", label: "Sports", icon: SoccerBall },
 ];
 
 // Subtle per-product accents (no left bar) — tint + tinted text only.

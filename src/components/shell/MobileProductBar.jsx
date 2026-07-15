@@ -1,10 +1,10 @@
-import { Dices, TrendingUp, Trophy } from "lucide-react";
+import { Dices, TrendingUp, Volleyball as SoccerBall } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PRODUCTS = [
   { id: "casino", label: "Casino", icon: Dices, color: "#D99AB9" },
   { id: "predictions", label: "Predictions", icon: TrendingUp, color: "#92D4DF" },
-  { id: "sports", label: "Sports", icon: Trophy, color: "#D7E78A" },
+  { id: "sports", label: "Sports", icon: SoccerBall, color: "#D7E78A" },
 ];
 
 // Static bar (last item in the app's flex column) — never `fixed`, so iOS Safari's
