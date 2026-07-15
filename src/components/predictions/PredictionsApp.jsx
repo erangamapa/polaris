@@ -37,7 +37,7 @@ export function PredictionsApp({ section, balance, setBalance, onBet, ensureAuth
     : marketsByCategory(section).filter((m) => !q || m.question.toLowerCase().includes(q));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       {detail ? (
         <MarketDetail market={detail} onBack={() => setDetail(null)} onBuy={openTicket} />
       ) : isPositions ? (

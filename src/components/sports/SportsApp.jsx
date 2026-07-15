@@ -189,7 +189,7 @@ export function SportsApp({ sport, balance, setBalance, onBet, ensureAuth, onVie
   );
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <div className="mb-4">
         <h1 className="text-xl font-bold">{sportLabel}</h1>
         <p className="text-sm text-muted-foreground">Live and upcoming matches.</p>
