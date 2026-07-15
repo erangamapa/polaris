@@ -14,10 +14,14 @@
 export const CHANNEL = 'tribet-game';
 const MOCK_KEY = 'tribet_mock_balance';
 const DEFAULT_MOCK_BALANCE = 1000;
+// Mock faucet: this is a demo economy, so it must never dead-end. When the shared
+// balance runs (nearly) dry we top it back up to the default instead of blocking
+// play with an "insufficient" wall. Real on-chain settlement never uses this path.
+const MOCK_FLOOR = 10;
 
 export function loadMockBalance() {
   const v = Number(localStorage.getItem(MOCK_KEY));
-  return Number.isFinite(v) && v > 0 ? v : DEFAULT_MOCK_BALANCE;
+  return Number.isFinite(v) && v >= MOCK_FLOOR ? v : DEFAULT_MOCK_BALANCE;
 }
 export function saveMockBalance(v) {
   localStorage.setItem(MOCK_KEY, String(Math.max(0, Number(v) || 0)));
@@ -63,6 +67,15 @@ export function attachMockHost(iframe, { currency = 'TBET', onBalance, settle } 
     if (m.type === 'ready') { post({ type: 'init', balance, currency }); return; }
 
     if (m.type === 'bet') {
+      // Mock faucet: if the demo balance can't cover a (valid) bet, refill before
+      // settling so the games never dead-end. Mock path only — a custom `settle`
+      // (on-chain) owns its own economy and must never be topped up here.
+      const amount = Number(m.amount);
+      if (!settle && amount > 0 && amount > balance) {
+        balance = Math.max(DEFAULT_MOCK_BALANCE, Math.ceil(amount));
+        saveMockBalance(balance);
+        onBalance?.(balance);
+      }
       const result = settle
         ? await settle({ amount: m.amount, outcomes: m.outcomes, meta: m.meta, balance })
         : settleBet({ amount: m.amount, outcomes: m.outcomes, balance });
