@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpaceX Rush — TriBet Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!--
+      SpaceX Rush — a retro-arcade crash game. Presentation only; the HOST owns
+      money + randomness via the TriBet Game Bridge (see game.js ── BRIDGE ──).
+      Player sets a bet + auto-cashout, launches, and cashes out before the bust.
+    -->
+    <main class="stage">
+      <div class="arena" id="arena">
+        <div class="stars"></div>
+        <div class="stars stars2"></div>
+        <div class="grid"></div>
+
+        <!-- rising multiplier curve -->
+        <svg class="trail" id="trail" viewBox="0 0 400 300" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="trailFill" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#ff2fb9" stop-opacity="0" />
+              <stop offset="1" stop-color="#ff2fb9" stop-opacity="0.35" />
+            </linearGradient>
+          </defs>
+          <path id="trailArea" fill="url(#trailFill)" d="" />
+          <path id="trailLine" fill="none" stroke="#ff5ccd" stroke-width="3" stroke-linecap="round" d="" />
+        </svg>
+
+        <!-- rocket + founder mascot ride the tip of the curve -->
+        <div class="flyer" id="flyer">
+          <div class="mascot" id="mascot" aria-hidden="true">
+            <svg viewBox="0 0 80 90" width="72" height="81">
+              <!-- dizzy stars (crash) -->
+              <g class="only-crash spin">
+                <text x="6"  y="12" class="dizzy">✦</text>
+                <text x="58" y="8"  class="dizzy">✦</text>
+                <text x="66" y="28" class="dizzy">✦</text>
+              </g>
+              <!-- body: black tee -->
+              <path d="M22 52 L58 52 L62 88 L18 88 Z" fill="#141821" />
+              <path d="M22 52 L58 52 L60 66 L20 66 Z" fill="#1e2431" />
+              <!-- collar hint -->
+              <path d="M34 52 L46 52 L40 60 Z" fill="#0c0f16" />
+              <!-- arms: fist-pump (default while climbing) -->
+              <g class="arm arm-climb"><rect x="14" y="54" width="9" height="22" rx="4" fill="#141821" transform="rotate(24 18 60)"/><circle cx="12" cy="50" r="6" fill="#f6c79a"/></g>
+              <!-- arms: to-the-moon (both up) -->
+              <g class="arm arm-moon"><rect x="12" y="34" width="9" height="22" rx="4" fill="#141821" transform="rotate(-18 16 45)"/><circle cx="10" cy="30" r="6" fill="#f6c79a"/></g>
+              <g class="arm arm-moon r"><rect x="59" y="34" width="9" height="22" rx="4" fill="#141821" transform="rotate(18 64 45)"/><circle cx="70" cy="30" r="6" fill="#f6c79a"/></g>
+              <!-- arms: thumbs-up (cashed out) -->
+              <g class="arm arm-thumb"><rect x="57" y="46" width="9" height="20" rx="4" fill="#141821" transform="rotate(-28 62 54)"/><circle cx="66" cy="40" r="6.5" fill="#f6c79a"/><rect x="64" y="30" width="4" height="9" rx="2" fill="#f6c79a"/></g>
+              <!-- head -->
+              <circle cx="40" cy="34" r="17" fill="#f6c79a" />
+              <!-- dark hair -->
+              <path d="M23 30 q0 -20 17 -20 q17 0 17 20 q-6 -9 -17 -9 q-11 0 -17 9 Z" fill="#241c18" />
+              <!-- eyes: normal -->
+              <g class="only-live"><circle cx="34" cy="33" r="2.4" fill="#20140c"/><circle cx="47" cy="33" r="2.4" fill="#20140c"/></g>
+              <!-- eyes: crash (x_x) -->
+              <g class="only-crash" stroke="#20140c" stroke-width="2" stroke-linecap="round"><path d="M31 30 l6 6 M37 30 l-6 6"/><path d="M44 30 l6 6 M50 30 l-6 6"/></g>
+              <!-- grin (live) -->
+              <path class="only-live" d="M32 40 q8 8 16 0" fill="none" stroke="#20140c" stroke-width="2.4" stroke-linecap="round"/>
+              <!-- open mouth (crash) -->
+              <ellipse class="only-crash" cx="40" cy="43" rx="4.5" ry="5.5" fill="#20140c"/>
+            </svg>
+          </div>
+          <div class="rocket" id="rocket">
+            <svg viewBox="0 0 40 90" width="30" height="68">
+              <path d="M20 2 C31 14 31 34 28 50 L12 50 C9 34 9 14 20 2 Z" fill="#e9edf7"/>
+              <path d="M20 2 C31 14 31 34 28 50 L20 50 Z" fill="#b9c2d6"/>
+              <circle cx="20" cy="24" r="5.5" fill="#23e3ff" stroke="#0a2a33" stroke-width="2"/>
+              <path d="M12 50 L4 66 L12 58 Z" fill="#ff2fb9"/>
+              <path d="M28 50 L36 66 L28 58 Z" fill="#ff2fb9"/>
+              <path d="M14 50 L26 50 L23 58 L17 58 Z" fill="#2a3550"/>
+              <g class="flame"><path d="M17 58 Q20 84 23 58 Z" fill="#ffd76a"/><path d="M18 58 Q20 74 22 58 Z" fill="#ff5ccd"/></g>
+            </svg>
+          </div>
+          <div class="burst" id="burst"></div>
+        </div>
+
+        <!-- big glowing multiplier -->
+        <div class="readout">
+          <div class="multiplier" id="multiplier">1.00×</div>
+          <div class="status" id="status">Set your bet &amp; auto-cashout, then launch</div>
+        </div>
+
+        <div class="flash" id="flash"></div>
+        <div class="boom" id="boom"></div>
+      </div>
+
+      <div class="controls">
+        <div class="fields">
+          <label class="field">
+            <span>Bet</span>
+            <input id="amount" type="number" min="1" step="1" value="10" inputmode="decimal" />
+          </label>
+          <label class="field">
+            <span>Auto-cashout ×</span>
+            <input id="cashout" type="number" min="1.01" step="0.05" value="2.00" inputmode="decimal" />
+          </label>
+        </div>
+        <div class="odds" id="odds"></div>
+        <button class="launch" id="launch" data-state="idle">🚀 Launch</button>
+      </div>
+    </main>
+    <script src="game.js"></script>
+  </body>
+</html>

@@ -10,6 +10,7 @@ export const PROVIDER_GAMES = [
   // Reference game built from skills/build-casino-game — runs on mock balance via the bridge.
   { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", badge: "TriBet Studio", image: "/img/games/coinflip.svg" },
   { key: "nova-wheel", title: "Nova Wheel", src: "/games/nova-wheel/index.html", badge: "TriBet Studio", image: "/img/games/nova-wheel.svg" },
+  { key: "spacex-rush", title: "SpaceX Rush", src: "/games/spacex-rush/index.html", badge: "TriBet Studio", image: "/img/games/spacex-rush.svg" },
   // Imported via skills/import-casino-game — self-contained crash game (own mock economy).
   { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", badge: "TriBet Studio", image: "/img/games/tumble.svg" },
 ];

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" width="320" height="420" role="img" aria-label="SpaceX Rush">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a1145"/>
+      <stop offset="0.6" stop-color="#160a2c"/>
+      <stop offset="1" stop-color="#08040f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#ff2fb9" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ff2fb9" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="curve" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#23e3ff"/>
+      <stop offset="1" stop-color="#ff5ccd"/>
+    </linearGradient>
+    <linearGradient id="trailfill" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ff2fb9" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ff2fb9" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="320" height="420" rx="18" fill="url(#bg)"/>
+  <rect width="320" height="420" rx="18" fill="url(#glow)"/>
+
+  <!-- stars -->
+  <g fill="#ffffff">
+    <circle cx="40" cy="60" r="1.6"/><circle cx="90" cy="110" r="1.2"/><circle cx="260" cy="50" r="1.8"/>
+    <circle cx="290" cy="130" r="1.2"/><circle cx="200" cy="90" r="1.4"/><circle cx="60" cy="180" r="1.2"/>
+    <circle cx="240" cy="200" r="1.5" fill="#a9e8ff"/><circle cx="150" cy="40" r="1.3" fill="#ff9fe6"/>
+    <circle cx="120" cy="70" r="1.1"/><circle cx="280" cy="230" r="1.3"/>
+  </g>
+
+  <!-- rising multiplier curve -->
+  <path d="M40 300 C110 300 170 250 220 120 L40 120 L40 300 Z" fill="url(#trailfill)"/>
+  <path d="M40 300 C110 300 170 250 220 120" fill="none" stroke="url(#curve)" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- multiplier label -->
+  <text x="150" y="170" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900" fill="#ffffff" opacity="0.95">2.41×</text>
+
+  <!-- rocket + founder mascot at the curve tip -->
+  <g transform="translate(196,86)">
+    <!-- rocket -->
+    <g transform="rotate(30)">
+      <path d="M10 0 C18 8 18 24 15 36 L5 36 C2 24 2 8 10 0 Z" fill="#e9edf7"/>
+      <circle cx="10" cy="14" r="4" fill="#23e3ff" stroke="#0a2a33" stroke-width="1.5"/>
+      <path d="M5 36 L0 48 L5 42 Z" fill="#ff2fb9"/>
+      <path d="M15 36 L20 48 L15 42 Z" fill="#ff2fb9"/>
+      <path d="M7 42 Q10 60 13 42 Z" fill="#ffd76a"/>
+    </g>
+    <!-- founder mascot: black tee, dark hair, grin, fist-pump -->
+    <g transform="translate(22,10)">
+      <path d="M2 34 L26 34 L29 60 L-1 60 Z" fill="#141821"/>
+      <path d="M2 34 L26 34 L27 44 L1 44 Z" fill="#1e2431"/>
+      <g><rect x="-6" y="12" width="7" height="16" rx="3" fill="#141821" transform="rotate(-24 -3 20)"/><circle cx="-8" cy="8" r="5" fill="#f6c79a"/></g>
+      <circle cx="14" cy="22" r="12" fill="#f6c79a"/>
+      <path d="M2 20 q0 -14 12 -14 q12 0 12 14 q-5 -7 -12 -7 q-7 0 -12 7 Z" fill="#241c18"/>
+      <circle cx="10" cy="21" r="1.7" fill="#20140c"/><circle cx="19" cy="21" r="1.7" fill="#20140c"/>
+      <path d="M9 26 q5 5 10 0" fill="none" stroke="#20140c" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- TITLE -->
+  <text x="26" y="374" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff" letter-spacing="0.5">SPACEX</text>
+  <text x="26" y="404" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ff5ccd" letter-spacing="0.5">RUSH</text>
+
+  <!-- STUDIO wordmark -->
+  <g transform="translate(294,398)" text-anchor="end">
+    <text font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#23e3ff" letter-spacing="3">TRIBET</text>
+    <text y="13" font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="600" fill="#ffffff" fill-opacity="0.5" letter-spacing="2">STUDIO</text>
+  </g>
+</svg>
