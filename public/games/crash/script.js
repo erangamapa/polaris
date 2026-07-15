@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VECTOR — script.js
+   WARPOUT — script.js
    Front-end-only crash game prototype. No backend, no real money, no auth.
 
    Table of contents:
@@ -36,7 +36,7 @@
     STARTING_BALANCE: 1250.0,
     MIN_BET: 1,
     MAX_BET: 500,
-    // RTP/house edge live in roundProvider.js (VECTOR-PF-v1) — this app
+    // RTP/house edge live in roundProvider.js (WARPOUT-PF-v1) — this app
     // never redefines them locally, so there is exactly one source of truth
     // for the number that actually determines payouts.
     // Pacing polish pass: widened from 3.0s so players have real time to
@@ -219,7 +219,7 @@
     publicRandomnessOverride: null, // player-set value from the fairness popover input, applies to the round currently committing
     cosmeticRng: null, // seeded PRNG for NPCs/backdrop only — never the crash point; see generateRound()
 
-    // The full VECTOR-PF-v1 record for the round currently in progress.
+    // The full WARPOUT-PF-v1 record for the round currently in progress.
     // Snapshotted by reference into each history entry (see pushHistory), so
     // once a round settles its fairness object is shared between state.
     // fairness and that history row — revealing the seed later updates both
@@ -283,20 +283,20 @@
   let animRafId = null;
 
   /* ------------------------------------------------------------------ */
-  /* 4. Round generation — provably fair (VECTOR-PF-v1) + cosmetic RNG   */
+  /* 4. Round generation — provably fair (WARPOUT-PF-v1) + cosmetic RNG   */
   /* ------------------------------------------------------------------ */
   // The crash multiplier itself is generated, committed, revealed and
   // independently verifiable entirely via roundProvider.js — this file
   // never touches crypto or randomness for that number. See that file's
   // header for the full RoundProvider contract (commitRound/revealRound)
   // and why LocalDemoAdapter is explicitly NOT the same thing as a real
-  // backend, even though the maths it runs is identical to VECTOR-PF-v1.
-  const RTP = window.VectorRoundProvider.RTP;
-  const HOUSE_EDGE = window.VectorRoundProvider.HOUSE_EDGE;
-  const CALCULATION_VERSION = window.VectorRoundProvider.CALCULATION_VERSION;
-  // Swap this one line for `new window.VectorRoundProvider.ServerAdapter()`
+  // backend, even though the maths it runs is identical to WARPOUT-PF-v1.
+  const RTP = window.WarpoutRoundProvider.RTP;
+  const HOUSE_EDGE = window.WarpoutRoundProvider.HOUSE_EDGE;
+  const CALCULATION_VERSION = window.WarpoutRoundProvider.CALCULATION_VERSION;
+  // Swap this one line for `new window.WarpoutRoundProvider.ServerAdapter()`
   // once real backend endpoints exist — nothing else in this file changes.
-  const roundProvider = new window.VectorRoundProvider.LocalDemoAdapter();
+  const roundProvider = new window.WarpoutRoundProvider.LocalDemoAdapter();
 
   // Mulberry32 — small, fast PRNG, reseeded every round from Math.random().
   // This is COSMETIC ONLY: NPC bot names/amounts/behaviour and the drifting
@@ -318,8 +318,8 @@
   // Kicks off the real provably-fair commit for this round: a fresh server
   // seed is generated, its SHA-256 hash and this round's public randomness
   // are made available immediately (see state.fairness), and the crash
-  // multiplier is derived via HMAC-SHA256(serverSeed, "VECTOR:roundId:
-  // publicRandomness") per VECTOR-PF-v1 — fixed now, before betting closes,
+  // multiplier is derived via HMAC-SHA256(serverSeed, "WARPOUT:roundId:
+  // publicRandomness") per WARPOUT-PF-v1 — fixed now, before betting closes,
   // never touched again. This is async (real Web Crypto calls); state.
   // roundCommitReady flips true once it resolves, and tick() will not let
   // the round leave COUNTDOWN until it does (in practice this resolves in
@@ -360,7 +360,7 @@
         // Fail safe, not fail silent: without Web Crypto there is no honest
         // way to generate a real-outcome number, so the round simply never
         // becomes ready rather than quietly falling back to Math.random().
-        console.error("[VECTOR] round commit failed — betting cannot proceed safely:", err);
+        console.error("[WARPOUT] round commit failed — betting cannot proceed safely:", err);
       });
 
     state.cosmeticRng = createCosmeticRng();
@@ -594,7 +594,7 @@
 
       drawTunnel(now);
     } catch (err) {
-      console.error("[VECTOR] frame error (loop continues):", err);
+      console.error("[WARPOUT] frame error (loop continues):", err);
     }
 
     // Deliberately NOT calling renderLiveBets() unconditionally here. It
@@ -1277,7 +1277,7 @@
       try {
         generateNpcs();
       } catch (err) {
-        console.error("[VECTOR] NPC regeneration failed:", err);
+        console.error("[WARPOUT] NPC regeneration failed:", err);
       }
     }
 
@@ -1295,7 +1295,7 @@
         rowCount++;
       }
     } catch (err) {
-      console.error("[VECTOR] failed to render own bet row:", err);
+      console.error("[WARPOUT] failed to render own bet row:", err);
     }
 
     for (const npc of state.npcs) {
@@ -1307,7 +1307,7 @@
         frag.appendChild(buildBetRow(npc.name, npc.amount, tag.cls, tag.text, false, npc.color));
         rowCount++;
       } catch (err) {
-        console.error("[VECTOR] failed to render NPC row:", npc, err);
+        console.error("[WARPOUT] failed to render NPC row:", npc, err);
       }
     }
 
@@ -1388,7 +1388,7 @@
   }
 
   // Shared by the live Verify Round button and each history row's Verify
-  // link — runs window.VectorRoundProvider.verifyRound() against whatever
+  // link — runs window.WarpoutRoundProvider.verifyRound() against whatever
   // fairness snapshot it's handed and paints the result into a status node.
   // `baseClass` lets callers use their own compact styling (history rows)
   // instead of the popover's full-width status bar.
@@ -1398,7 +1398,7 @@
     statusEl.hidden = false;
     statusEl.className = `${cls} is-checking`;
     statusEl.textContent = "Checking…";
-    const result = await window.VectorRoundProvider.verifyRound(fairness);
+    const result = await window.WarpoutRoundProvider.verifyRound(fairness);
     const labels = {
       verified: "Verified",
       missing: "Missing fairness data",
@@ -1558,7 +1558,7 @@
         tone(ctx, { freq: 540 + idx * 80, start: t, duration: 0.06, type: "sine", gain: 0.07 });
       }
     } catch (err) {
-      console.error("[VECTOR] sound playback failed:", err);
+      console.error("[WARPOUT] sound playback failed:", err);
     }
   }
 
@@ -2658,7 +2658,7 @@
     }
     if (el.fairRandomnessRegen) {
       el.fairRandomnessRegen.addEventListener("click", () => {
-        const fresh = window.VectorRoundProvider.randomHex(16);
+        const fresh = window.WarpoutRoundProvider.randomHex(16);
         state.publicRandomnessOverride = fresh;
         if (el.fairRandomnessInput) el.fairRandomnessInput.value = fresh;
         renderFairPopover();
@@ -2761,14 +2761,14 @@
       try {
         renderLiveBets();
       } catch (err) {
-        console.error("[VECTOR] live bets heartbeat render failed:", err);
+        console.error("[WARPOUT] live bets heartbeat render failed:", err);
       }
     }, 500);
 
     // Diagnostic hook only — lets state be inspected from the browser
-    // console (e.g. `__VECTOR_DEBUG__.state.npcs.length`) without changing
+    // console (e.g. `__WARPOUT_DEBUG__.state.npcs.length`) without changing
     // any gameplay behaviour.
-    window.__VECTOR_DEBUG__ = { state, CONFIG, el };
+    window.__WARPOUT_DEBUG__ = { state, CONFIG, el };
 
     // First-time onboarding: show the rules once per session so a new
     // player knows how cashing out and the collapse point work before

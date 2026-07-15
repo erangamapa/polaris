@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VECTOR — Round Provider (provably fair engine), calculation VECTOR-PF-v1
+   WARPOUT — Round Provider (provably fair engine), calculation WARPOUT-PF-v1
    ==========================================================================
    This file is the ONLY place that knows how a crash result is generated
    and verified. script.js never touches crypto or randomness directly — it
@@ -35,7 +35,7 @@
 
    Nothing in this file uses Math.random() for the crash multiplier. Every
    real-money-adjacent number here comes from Web Crypto (crypto.getRandom
-   Values / crypto.subtle) and the documented VECTOR-PF-v1 formula below.
+   Values / crypto.subtle) and the documented WARPOUT-PF-v1 formula below.
    ========================================================================== */
 
 (function (global) {
@@ -43,22 +43,22 @@
 
   const RTP = 0.98;
   const HOUSE_EDGE = 0.02;
-  const CALCULATION_VERSION = "VECTOR-PF-v1";
+  const CALCULATION_VERSION = "WARPOUT-PF-v1";
   const MAX_VISIBLE_MULTIPLIER = 1000; // safety cap, matches the app's own CONFIG.MAX_VISIBLE_MULTIPLIER
 
   const DEMO_MODE_DISCLAIMER =
     "This tab generates and holds its own \"server\" seed locally — there is " +
     "no real backend, so there is nothing genuinely secret from a determined " +
     "user of this same browser. It is a faithful implementation of the " +
-    "VECTOR-PF-v1 commit-reveal maths, not production-grade provably fair " +
+    "WARPOUT-PF-v1 commit-reveal maths, not production-grade provably fair " +
     "infrastructure. See CALCULATION_VERSION for the exact formula this " +
     "build runs, byte for byte the same one a real backend would run.";
 
   function assertCrypto() {
     if (!global.crypto || !global.crypto.subtle || !global.crypto.getRandomValues) {
       throw new Error(
-        "[VECTOR] Web Crypto API is unavailable in this environment. " +
-          "VECTOR-PF-v1 requires crypto.subtle + crypto.getRandomValues for " +
+        "[WARPOUT] Web Crypto API is unavailable in this environment. " +
+          "WARPOUT-PF-v1 requires crypto.subtle + crypto.getRandomValues for " +
           "real outcomes and deliberately has no Math.random() fallback for them."
       );
     }
@@ -149,7 +149,7 @@
           ? String(publicRandomnessOverride).trim()
           : randomHex(16); // 128 bits, auto-generated "development randomness" if the player hasn't set their own
 
-      const message = `VECTOR:${roundId}:${publicRandomness}`;
+      const message = `WARPOUT:${roundId}:${publicRandomness}`;
       const entropyHash = await hmacSha256Hex(serverSeed, message);
       const crashMultiplier = crashFromEntropyHex(entropyHash);
 
@@ -174,7 +174,7 @@
   class ServerAdapter {
     async commitRound() {
       throw new Error(
-        "[VECTOR] ServerAdapter.commitRound() is not implemented. Wire this " +
+        "[WARPOUT] ServerAdapter.commitRound() is not implemented. Wire this " +
           "to a real backend endpoint that generates and stores the server " +
           "seed server-side, and returns { roundId, serverSeedHash, " +
           "publicRandomness, entropyHash, crashMultiplier } — never the raw seed."
@@ -182,7 +182,7 @@
     }
     async revealRound() {
       throw new Error(
-        "[VECTOR] ServerAdapter.revealRound() is not implemented. Wire this " +
+        "[WARPOUT] ServerAdapter.revealRound() is not implemented. Wire this " +
           "to a real backend endpoint that returns { roundId, serverSeed } " +
           "only once that round has actually settled server-side."
       );
@@ -202,7 +202,7 @@
     if (recomputedHash !== fairness.serverSeedHash) {
       return { ok: false, reason: "seed_hash_mismatch" };
     }
-    const message = `VECTOR:${fairness.roundId}:${fairness.publicRandomness}`;
+    const message = `WARPOUT:${fairness.roundId}:${fairness.publicRandomness}`;
     const recomputedEntropy = await hmacSha256Hex(fairness.serverSeed, message);
     if (recomputedEntropy !== fairness.entropyHash) {
       return { ok: false, reason: "entropy_mismatch" };
@@ -214,7 +214,7 @@
     return { ok: true, reason: "verified" };
   }
 
-  global.VectorRoundProvider = {
+  global.WarpoutRoundProvider = {
     RTP,
     HOUSE_EDGE,
     CALCULATION_VERSION,
