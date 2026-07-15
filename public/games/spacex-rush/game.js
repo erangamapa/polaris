@@ -287,7 +287,8 @@ launchBtn.addEventListener("click", () => {
   if (state === "idle") {
     const amount = Math.max(0, Number(amountEl.value) || 0);
     if (amount <= 0) { setStatus("Enter a bet amount", "lose"); return; }
-    if (amount > balance) { setStatus("Insufficient balance", "lose"); return; }
+    // No balance guard: the mock host is a faucet — it tops the balance up when a
+    // bet can't be covered, so we let the bet through and let the host settle it.
     autoTarget = clampCashout();
     cashoutEl.value = autoTarget.toFixed(2);
 

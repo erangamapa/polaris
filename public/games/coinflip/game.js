@@ -51,7 +51,8 @@ flipBtn.addEventListener("click", async () => {
   if (pending) return;
   const amount = Math.max(0, Number(amountEl.value) || 0);
   if (amount <= 0) { setResult("Enter a bet amount", ""); return; }
-  if (amount > balance) { setResult("Insufficient balance", "lose"); return; }
+  // No balance guard: the mock host is a faucet (tops up when a bet can't be
+  // covered), so we send the bet and let the host settle it.
 
   // Outcomes encode the player's choice already:
   //   index 0 = the chosen side wins (1.96×), index 1 = other side (lose).

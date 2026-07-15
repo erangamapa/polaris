@@ -82,7 +82,8 @@ spinBtn.addEventListener("click", async () => {
   if (busy) return;
   const amount = Math.max(0, Number(amountEl.value) || 0);
   if (amount <= 0) { setResult("Enter a bet amount", ""); return; }
-  if (amount > balance) { setResult("Insufficient balance", "lose"); return; }
+  // No balance guard: the mock host is a faucet (tops up when a bet can't be
+  // covered), so we send the bet and let the host settle it.
 
   busy = true; spinBtn.disabled = true; clearWin(); setResult("Spinning…", "");
   const outcomes = SEGMENTS.map((s) => ({ label: s.label, weight: s.weight, multiplier: s.multiplier }));

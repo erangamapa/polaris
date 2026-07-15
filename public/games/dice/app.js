@@ -527,6 +527,15 @@ function updateBalanceDisplay(delta) {
   }
 }
 
+// Mock demo — never dead-end on funds. Top the balance up to cover an amount so
+// no "insufficient balance" state can ever trigger (faucet).
+function ensureFunds(amount) {
+  if (amount > balance) {
+    balance = Math.max(1000, Math.ceil(amount));
+    updateBalanceDisplay(1);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Face selection — freeform, 1 to MAX_SELECTED_FACES, no fixed modes.
 // ---------------------------------------------------------------------------
@@ -728,6 +737,7 @@ function renderCta() {
     return;
   }
 
+  ensureFunds(betAmount); // mock faucet — keep the bet affordable, no insufficient state
   const facesReady = selectedFaces.length >= MIN_SELECTED_FACES;
   const invalid = !facesReady || betAmount <= 0 || betAmount > balance;
 
@@ -922,7 +932,8 @@ async function onRoll() {
   if (gameState !== GameState.READY || isBusy) return;
   if (!isValidFaceSelection(selectedFaces)) return;
   const stake = betAmount;
-  if (!(stake > 0) || stake > balance) return;
+  if (!(stake > 0)) return;
+  ensureFunds(stake); // mock faucet — top up so the roll never blocks on funds
 
   isBusy = true;
   gameState = GameState.ROLLING;

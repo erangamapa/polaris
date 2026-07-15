@@ -955,6 +955,11 @@
   // pure noise.
   let lastBalanceShown = null;
   function renderBalance() {
+    // Mock demo — never dead-end on funds. Between rounds, keep enough to cover
+    // any bet so no "insufficient balance" state can ever trigger (faucet).
+    if (!state.bet && state.balance < CONFIG.MAX_BET) {
+      state.balance = CONFIG.STARTING_BALANCE;
+    }
     el.balanceValue.textContent = formatMoney(state.balance);
     if (lastBalanceShown != null && state.balance > lastBalanceShown) {
       el.balanceValue.classList.remove("flash-up");
