@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#6fc0f5" />
+    <title>Tumble</title>
+    <script type="module" crossorigin src="./assets/index-iq9OL2J_.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Cqka4WAT.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">Tumble</div>
+        <div class="session" id="session" aria-live="off">
+          <span id="sessionTimer">0:00</span>
+          <span id="sessionNet" class="net">±0.00</span>
+        </div>
+        <div class="topbar-right">
+          <button id="muteBtn" class="icon-btn" aria-label="Toggle sound">🔊</button>
+          <div class="balance"><span id="balance">0.00</span> <span id="currency"></span></div>
+        </div>
+      </header>
+
+      <main class="stage">
+        <canvas id="scene"></canvas>
+        <div class="mult-wrap">
+          <div class="mult" id="multiplier">1.00×</div>
+          <div class="banner" id="banner" aria-live="polite"></div>
+        </div>
+        <button class="fair-chip" id="fairChip" aria-label="Provably fair details">
+          <span class="fair-dot"></span><span id="fairHash">…</span>
+        </button>
+        <div class="history" id="history" aria-label="Recent rounds"></div>
+      </main>
+
+      <section class="controls">
+        <div class="bet-row">
+          <label class="field">
+            <span class="field-label">Bet</span>
+            <input id="betInput" type="number" inputmode="decimal" min="0" step="1" value="10" />
+          </label>
+          <div class="presets">
+            <button id="betHalf" class="preset">½</button>
+            <button id="betDouble" class="preset">2×</button>
+            <button id="betMax" class="preset">MAX</button>
+          </div>
+          <label class="field auto-field">
+            <span class="field-label">Auto @</span>
+            <input
+              id="autoInput"
+              type="number"
+              inputmode="decimal"
+              min="1.01"
+              step="0.5"
+              placeholder="off"
+            />
+          </label>
+        </div>
+        <button id="action" class="action-btn state-idle">
+          <span class="action-title" id="actionTitle">Drop in</span>
+          <span class="action-sub" id="actionSub"></span>
+        </button>
+      </section>
+
+      <dialog id="fairModal" class="fair-modal">
+        <h2>Provably fair</h2>
+        <p class="fair-copy">
+          Before each round starts we commit to a hashed server seed. The bust point is
+          HMAC-SHA256(server&nbsp;seed, client&nbsp;seed&nbsp;:&nbsp;nonce) — fixed before you bet,
+          revealed after the round so you can verify it yourself.
+        </p>
+        <div class="fair-grid">
+          <span>Next hash</span><code id="fmHash">…</code>
+          <span>Client seed</span>
+          <span class="seed-edit"><input id="fmClientSeed" maxlength="64" /><button id="fmSeedSave" class="preset">Set</button></span>
+          <span>Nonce</span><code id="fmNonce">0</code>
+        </div>
+        <h3>Last round</h3>
+        <div class="fair-grid" id="fmLastWrap">
+          <span>Server seed</span><code id="fmServerSeed">—</code>
+          <span>Bust point</span><code id="fmBust">—</code>
+          <span>Check</span><code id="fmVerdict">—</code>
+        </div>
+        <div class="fair-actions">
+          <button id="fmVerify" class="preset">Verify last round</button>
+          <button id="fmClose" class="preset">Close</button>
+        </div>
+      </dialog>
+    </div>
+  </body>
+</html>
