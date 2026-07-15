@@ -5,7 +5,7 @@ import { attachMockHost } from "@/lib/gameBridge";
 // Vendored provider games (self-contained apps under public/games/*).
 // Served as static assets and embedded via iframe, loaded on demand.
 export const PROVIDER_GAMES = [
-  { key: "crash", title: "Warpout", src: "/games/crash/index.html", badge: "TriBet Studio", image: "/img/games/vector-crash.svg" },
+  { key: "crash", title: "Warpout", src: "/games/crash/index.html", badge: "TriBet Studio", image: "/img/games/warpout.svg" },
   { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "TriBet Studio", image: "/img/games/vector-dice.svg" },
   // Reference game built from skills/build-casino-game — runs on mock balance via the bridge.
   { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", badge: "TriBet Studio", image: "/img/games/coinflip.svg" },

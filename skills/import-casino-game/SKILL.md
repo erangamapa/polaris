@@ -46,7 +46,7 @@ into `public/games/<slug>/`. **Never vendor `node_modules`, tests, or archives.*
 Portrait **3:4** tile with the **game name** + **"TRIBET STUDIO"** at the bottom.
 - If the source ships usable art/branding, adapt it.
 - Otherwise generate an SVG: `cp skills/build-casino-game/templates/tile.svg public/img/games/<slug>.svg`
-  and edit the key visual + the two title lines (mirror `public/img/games/vector-crash.svg`).
+  and edit the key visual + the two title lines (mirror `public/img/games/warpout.svg`).
 
 ## Step 3 — Add to the lobby + link the game
 Register one entry in `src/components/casino/ProviderGame.jsx` → `PROVIDER_GAMES`:

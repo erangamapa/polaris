@@ -48,7 +48,7 @@ Portrait **3:4** SVG, showing the **game name** + **"TRIBET STUDIO"** at the bot
 cp skills/build-casino-game/templates/tile.svg public/img/games/<slug>.svg
 ```
 Edit the colors, key visual, and the two title lines. (Template mirrors
-`public/img/games/vector-crash.svg`.)
+`public/img/games/warpout.svg`.)
 
 ## Step 3 — Add to the lobby + link the game
 Register one entry in `src/components/casino/ProviderGame.jsx` → `PROVIDER_GAMES`:
