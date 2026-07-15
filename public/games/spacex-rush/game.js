@@ -18,6 +18,73 @@ const MIN_CASHOUT = 1.01;
 const MAX_CASHOUT = 100;
 const survival = (m) => Math.min(0.999, HOUSE / m); // P(rocket clears m×)
 
+// ── Sound (WebAudio, self-contained — no assets; unlocked on first Launch click).
+const Sound = (() => {
+  let ctx, master, thrust, muted = false;
+  const ensure = () => {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0.22; master.connect(ctx.destination);
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  };
+  const tone = (freq, dur, type = "sine", vol = 0.3, slideTo) => {
+    if (muted || !ensure()) return;
+    const t0 = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(master); o.start(t0); o.stop(t0 + dur + 0.03);
+  };
+  const noise = (dur, vol = 0.5) => {
+    if (muted || !ensure()) return;
+    const t0 = ctx.currentTime;
+    const buf = ctx.createBuffer(1, Math.max(1, ctx.sampleRate * dur), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = vol;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass";
+    lp.frequency.setValueAtTime(1400, t0); lp.frequency.exponentialRampToValueAtTime(120, t0 + dur);
+    src.connect(lp).connect(g).connect(master); src.start(t0); src.stop(t0 + dur);
+  };
+  return {
+    unlock: ensure,
+    get muted() { return muted; },
+    setMuted(m) { muted = m; if (m) this.stopThrust(); },
+    launch() { tone(170, 0.5, "sawtooth", 0.35, 720); },
+    startThrust() {
+      if (muted || !ensure()) return;
+      this.stopThrust();
+      const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = 90;
+      const g = ctx.createGain(); g.gain.value = 0.05;
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 320;
+      o.connect(lp).connect(g).connect(master); o.start();
+      thrust = { o, g, lp };
+    },
+    setThrust(p) {
+      if (!thrust) return;
+      const t = ctx.currentTime;
+      thrust.o.frequency.setTargetAtTime(90 + p * 300, t, 0.06);
+      thrust.lp.frequency.setTargetAtTime(320 + p * 1600, t, 0.06);
+    },
+    stopThrust() {
+      if (!thrust) return;
+      try { thrust.g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.05); thrust.o.stop(ctx.currentTime + 0.25); } catch { /* already stopped */ }
+      thrust = null;
+    },
+    tick(p) { tone(520 + p * 1100, 0.045, "square", 0.045); },
+    cashout() { tone(660, 0.12, "sine", 0.4); setTimeout(() => tone(990, 0.16, "sine", 0.4), 90); setTimeout(() => tone(1320, 0.22, "triangle", 0.35), 200); },
+    crash() { noise(0.55, 0.55); tone(150, 0.5, "sawtooth", 0.3, 42); },
+  };
+})();
+
 // ── BRIDGE ── protocol constant (must match src/lib/gameBridge.js)
 const CHANNEL = "tribet-game";
 const post = (m) => window.parent.postMessage({ channel: CHANNEL, ...m }, "*");
@@ -69,7 +136,7 @@ const VW = 400, VH = 300;           // trail viewBox
 
 // ── State machine: idle → flying → (resolving) → idle
 let state = "idle";
-let raf = 0, startTs = 0, liveMult = 1, autoTarget = 2, resolving = false;
+let raf = 0, startTs = 0, liveMult = 1, autoTarget = 2, resolving = false, lastTick = 0;
 
 const clampCashout = () => {
   let v = Number(cashoutEl.value);
@@ -133,6 +200,12 @@ function tick(ts) {
   drawTrail(liveMult);
   placeFlyer(liveMult);
   setMascot(liveMult >= 5 ? "moon" : "climb");
+
+  const prog = Math.min(1, Math.log(liveMult) / Math.log(DISPLAY_MAX));
+  Sound.setThrust(prog);
+  const step = Math.floor(liveMult * 4); // a rising blip as the multiplier climbs
+  if (step > lastTick) { lastTick = step; Sound.tick(prog); }
+
   raf = requestAnimationFrame(tick);
 }
 
@@ -154,16 +227,19 @@ async function resolve(target) {
 
   const won = res.isWin;              // host owns this decision
   const at = target;
+  Sound.stopThrust();
   drawTrail(at); placeFlyer(at); setMult(at, won ? "won" : "bust");
 
   if (won) {
     // Cashed out in time — green burst, thumbs-up / to-the-moon.
+    Sound.cashout();
     flash.className = "flash green";
     setMascot(at >= 5 ? "moon" : "win");
     showBurst(`+${res.payout.toFixed(2)} 💸`, at >= 10 ? "gold" : "green");
     setStatus(`Cashed out ${at.toFixed(2)}× — won ${res.payout.toFixed(2)}`, "win");
   } else {
     // Rocket didn't clear the cashout line — explosion, shake, dizzy face-plant.
+    Sound.crash();
     explode();
     setMascot("crash");
     setStatus(`Crashed at ${at.toFixed(2)}× — stake lost`, "lose");
@@ -190,9 +266,10 @@ function explode() {
 }
 
 function reset() {
+  Sound.stopThrust();
   state = "idle";
   resolving = false;
-  liveMult = 1; startTs = 0;
+  liveMult = 1; startTs = 0; lastTick = 0;
   flyer.classList.add("idle");
   setMascot("");
   drawTrail(1); placeFlyer(1);
@@ -214,6 +291,8 @@ launchBtn.addEventListener("click", () => {
     autoTarget = clampCashout();
     cashoutEl.value = autoTarget.toFixed(2);
 
+    Sound.unlock(); Sound.launch(); Sound.startThrust();
+    lastTick = 0;
     state = "flying";
     flyer.classList.remove("idle");
     amountEl.disabled = true; cashoutEl.disabled = true;
@@ -227,6 +306,14 @@ launchBtn.addEventListener("click", () => {
     // Manual cash out at the live multiplier (never above the auto target).
     resolve(Math.min(liveMult, autoTarget));
   }
+});
+
+// ── Mute toggle
+const muteBtn = document.getElementById("mute");
+muteBtn.addEventListener("click", () => {
+  Sound.setMuted(!Sound.muted);
+  muteBtn.textContent = Sound.muted ? "🔇" : "🔊";
+  muteBtn.setAttribute("aria-pressed", String(Sound.muted));
 });
 
 // initial paint
