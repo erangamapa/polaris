@@ -16,6 +16,7 @@ Shared chain/protocol config = `packages/shared/chains.js` (imported via `@share
 - **Brand is always "TriBet"** — never reintroduce old names. Use `BRAND_NAME` from `@/lib/brand`.
 - **Keep it building.** Run `npm run build` and `npm run lint` before committing; both must be green.
 - Match surrounding code style (single quotes, semicolons, `data-test-id` not `data-testid`).
+- **Push straight to `main`, and deploy from `main`.** Do NOT create pull requests or feature branches unless explicitly asked. When work is done, commit to `main`, push, and let the Vercel Git integration deploy production.
 
 ---
 
