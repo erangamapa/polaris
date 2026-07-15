@@ -95,6 +95,9 @@ CasinoCatalog (src/components/casino/CasinoCatalog.jsx)
 ```bash
 npm run build     # must pass
 npm run lint      # must pass (exit 0)
-# commit on a branch; PR to main. Deploy is CLI: vercel --prod (project "tribet").
 ```
+- Push straight to `main` (see Golden rules — no PRs/branches).
+- When committing, always use a single-line `git commit -m "message"` (no heredocs, no multi-line messages via `$(cat <<EOF...)`).
+- Deploy is CLI: `vercel --prod` (project "tribet").
+
 Live: https://tribet-app.vercel.app (Vercel project `tribet`, scope `erangamapas-projects`).

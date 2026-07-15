@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kill *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(npx --version)",
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(npx playwright *)",
+      "Bash(node verify.mjs)",
+      "Bash(pkill -f \"vite preview\")",
+      "Bash(pkill -f \"npm run preview\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)"
+    ]
+  }
+}
