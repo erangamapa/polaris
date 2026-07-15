@@ -32,6 +32,16 @@ const CASINO_ICONS = {
   Lobby: LayoutGrid, Popular: Gem, Slots: Cherry, "Live Casino": Radio,
   "Game Shows": Tv, New: Sparkles, Favorites: Star,
 };
+
+// Favorites persist across sessions in localStorage, keyed by the game's favId.
+const FAVS_KEY = "tribet_favs";
+const loadFavs = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(FAVS_KEY) || "[]")); }
+  catch { return new Set(); }
+};
+const saveFavs = (set) => {
+  try { localStorage.setItem(FAVS_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
+};
 const PRED_ICONS = {
   Trending: Flame, Politics: Landmark, Crypto: Bitcoin, Sports: Trophy, Tech: Cpu, Economy: LineChart,
 };
@@ -67,6 +77,8 @@ export default function App() {
 
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
+  const [favs, setFavs] = useState(loadFavs);
+  useEffect(() => { saveFavs(favs); }, [favs]);
   const [onchainGame, setOnchainGame] = useState(null);
   const [providerGame, setProviderGame] = useState(null);
   const [fundsOpen, setFundsOpen] = useState(false);
@@ -113,6 +125,17 @@ export default function App() {
   const logRound = (e) =>
     setActivity((list) => [{ id: `a${Date.now()}${Math.random().toString(36).slice(2, 5)}`, ref: betRef(), time: nowLabel(), ...e }, ...list]);
 
+  const isFav = (game) => favs.has(game.favId);
+  const toggleFav = (game) => {
+    const adding = !favs.has(game.favId);
+    setFavs((s) => {
+      const n = new Set(s);
+      if (adding) n.add(game.favId); else n.delete(game.favId);
+      return n;
+    });
+    if (adding) toast.success("Added to favorites", { message: game.title });
+  };
+
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
     if (product === "casino") {
@@ -120,7 +143,10 @@ export default function App() {
         title: "Casino",
         selected: casinoCategory,
         onSelect: setCasinoCategory,
-        items: CATEGORIES.map((c) => ({ id: c, label: c, icon: CASINO_ICONS[c] })),
+        items: CATEGORIES.map((c) => ({
+          id: c, label: c, icon: CASINO_ICONS[c],
+          count: c === "Favorites" && favs.size > 0 ? favs.size : undefined,
+        })),
       };
     }
     if (product === "predictions") {
@@ -172,8 +198,11 @@ export default function App() {
           <div key={product} className="animate-fade-in-up">
             {product === "casino" && (
               <CasinoLobby
+                category={casinoCategory}
                 onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }}
                 onLaunchProvider={(g) => setProviderGame(g)}
+                isFav={isFav}
+                onFav={toggleFav}
               />
             )}
             {product === "predictions" && (
@@ -223,11 +252,17 @@ export default function App() {
   );
 }
 
-function CasinoLobby({ onLaunchOnchain, onLaunchProvider }) {
+function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <PromoHero />
-      <CasinoCatalog onLaunch={onLaunchOnchain} onLaunchProvider={onLaunchProvider} />
+      <CasinoCatalog
+        category={category}
+        onLaunch={onLaunchOnchain}
+        onLaunchProvider={onLaunchProvider}
+        isFav={isFav}
+        onFav={onFav}
+      />
     </div>
   );
 }

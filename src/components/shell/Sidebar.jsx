@@ -85,6 +85,11 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
                   <span className="size-1.5 rounded-full bg-[#D65A70]" />{it.live}
                 </Badge>
               )}
+              {it.count > 0 && (
+                <Badge variant="outline" className="ml-auto min-w-5 justify-center px-1.5 tabular-nums text-muted-foreground">
+                  {it.count}
+                </Badge>
+              )}
             </button>
           )
         )}
