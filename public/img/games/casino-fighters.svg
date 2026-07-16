@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" width="320" height="420" role="img" aria-label="Casino Fighters">
+  <defs>
+    <linearGradient id="cfBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a1020"/>
+      <stop offset="0.55" stop-color="#140a14"/>
+      <stop offset="1" stop-color="#0a0610"/>
+    </linearGradient>
+    <radialGradient id="cfGlow" cx="0.5" cy="0.3" r="0.55">
+      <stop offset="0" stop-color="#ff3d6e" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ff3d6e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cfAccent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd36a"/>
+      <stop offset="1" stop-color="#ff3d6e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="320" height="420" rx="18" fill="url(#cfBg)"/>
+  <rect width="320" height="420" rx="18" fill="url(#cfGlow)"/>
+
+  <!-- arena floor -->
+  <ellipse cx="160" cy="250" rx="100" ry="18" fill="#ffffff" fill-opacity="0.06"/>
+
+  <!-- left fighter silhouette -->
+  <g fill="#ffd36a" fill-opacity="0.9">
+    <circle cx="100" cy="120" r="18"/>
+    <rect x="88" y="138" width="24" height="48" rx="6"/>
+    <rect x="70" y="148" width="22" height="10" rx="4" transform="rotate(-25 81 153)"/>
+    <rect x="108" y="148" width="28" height="10" rx="4" transform="rotate(20 122 153)"/>
+    <rect x="90" y="184" width="10" height="36" rx="4"/>
+    <rect x="110" y="184" width="10" height="36" rx="4"/>
+  </g>
+
+  <!-- right fighter silhouette -->
+  <g fill="#ff3d6e" fill-opacity="0.95">
+    <circle cx="220" cy="120" r="18"/>
+    <rect x="208" y="138" width="24" height="48" rx="6"/>
+    <rect x="184" y="148" width="28" height="10" rx="4" transform="rotate(-20 198 153)"/>
+    <rect x="228" y="148" width="22" height="10" rx="4" transform="rotate(25 239 153)"/>
+    <rect x="210" y="184" width="10" height="36" rx="4"/>
+    <rect x="230" y="184" width="10" height="36" rx="4"/>
+  </g>
+
+  <!-- VS badge -->
+  <text x="160" y="168" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="url(#cfAccent)" text-anchor="middle" letter-spacing="2">VS</text>
+
+  <!-- HI / LO chips -->
+  <rect x="48" y="280" width="90" height="36" rx="8" fill="#19c7c5" fill-opacity="0.25" stroke="#19c7c5" stroke-width="2"/>
+  <text x="93" y="304" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#19c7c5" text-anchor="middle">HI</text>
+  <rect x="182" y="280" width="90" height="36" rx="8" fill="#ff3d6e" fill-opacity="0.25" stroke="#ff3d6e" stroke-width="2"/>
+  <text x="227" y="304" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#ff3d6e" text-anchor="middle">LO</text>
+
+  <text x="26" y="374" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="0.5">CASINO</text>
+  <text x="26" y="404" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" fill="#ff3d6e" letter-spacing="0.5">FIGHTERS</text>
+
+  <g transform="translate(294,398)" text-anchor="end">
+    <text font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#19C7C5" letter-spacing="3">TRIBET</text>
+    <text y="13" font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="600" fill="#ffffff" fill-opacity="0.5" letter-spacing="2">STUDIO</text>
+  </g>
+</svg>
