@@ -35,7 +35,7 @@ It loads **on demand** (only when the tile is clicked) via a sandboxed iframe.
 
 2. **Add a tile image** to `public/img/games/<slug>.svg` (or `.webp`/`.png`).
    Convention: portrait **3:4**, show the **game name** + **"TRIBET STUDIO"** at the bottom
-   (see `public/img/games/warpout.svg` as the template).
+   (see `public/img/games/nova-wheel.svg` as the template).
 
 3. **Register the game** in `src/components/casino/ProviderGame.jsx` → `PROVIDER_GAMES`:
    ```js
