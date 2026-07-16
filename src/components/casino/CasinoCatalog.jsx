@@ -10,7 +10,13 @@ const SPARKS = [0, 60, 120, 180, 240, 300];
 // never collide in the favorites set.
 const ONCHAIN = BETSWIRL_GAMES.map((g) => ({ ...g, favId: `casino:${g.key}`, kind: "onchain" }));
 const PROVIDER = PROVIDER_GAMES.map((g) => ({ ...g, favId: `provider:${g.key}`, kind: "provider" }));
-const ALL_GAMES = [...ONCHAIN, ...PROVIDER];
+export const ALL_GAMES = [...ONCHAIN, ...PROVIDER];
+
+// Deep-link helper: build/read the `?play=<favId>` query param a tile's
+// href points to, so a plain URL (new tab, reload, shared link) can open
+// the right game modal on its own.
+export const gameHref = (game) => `/casino/lobby?play=${encodeURIComponent(game.favId)}`;
+export const findGameByFavId = (favId) => ALL_GAMES.find((g) => g.favId === favId) ?? null;
 
 // Favorite star overlay: pop animation on toggle + a one-shot sparkle burst on add.
 // Sits above the launch button (z-20) and stops propagation so favoriting never
@@ -57,15 +63,26 @@ function FavStar({ faved, onToggle, title }) {
   );
 }
 
+// A tile is a real <a href> so the browser's native middle-click / cmd-click /
+// ctrl-click "open in new tab" behaviour works, like on most sites. A plain left
+// click is intercepted to open the game in-place (no full page reload); modified
+// clicks are left alone so the browser opens the target URL itself.
+const linkClick = (onLaunch, game) => (e) => {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  onLaunch(game);
+};
+
 function OnchainTile({ game, onLaunch, faved, onFav }) {
   return (
     <div className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)]">
-      <button
-        onClick={() => onLaunch(game)}
-        disabled={!game.playable}
+      <a
+        href={gameHref(game)}
+        onClick={game.playable ? linkClick(onLaunch, game) : (e) => e.preventDefault()}
+        aria-disabled={!game.playable}
         data-test-id={`onchain-${game.key}`}
         aria-label={`Play ${game.title}`}
-        className="absolute inset-0 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={`absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${game.playable ? "" : "pointer-events-none cursor-not-allowed"}`}
       >
         <img
           src={game.image}
@@ -76,7 +93,7 @@ function OnchainTile({ game, onLaunch, faved, onFav }) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
           <div className="text-xs font-bold text-white">{game.title}</div>
         </div>
-      </button>
+      </a>
       {!game.playable && (
         <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold text-white/80">
           Testnet n/a
@@ -90,8 +107,9 @@ function OnchainTile({ game, onLaunch, faved, onFav }) {
 function ProviderTile({ game, onLaunch, faved, onFav }) {
   return (
     <div className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)]">
-      <button
-        onClick={() => onLaunch(game)}
+      <a
+        href={gameHref(game)}
+        onClick={linkClick(onLaunch, game)}
         data-test-id={`provider-${game.key}`}
         aria-label={`Play ${game.title}`}
         className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -102,7 +120,7 @@ function ProviderTile({ game, onLaunch, faved, onFav }) {
           loading="lazy"
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
-      </button>
+      </a>
       {onFav && <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} />}
     </div>
   );

@@ -12,7 +12,7 @@ import { DevPanel } from "./components/dev/DevPanel";
 import { PromoHero } from "./components/casino/PromoHero";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
-import { CasinoCatalog } from "./components/casino/CasinoCatalog";
+import { CasinoCatalog, gameHref, findGameByFavId } from "./components/casino/CasinoCatalog";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
@@ -70,6 +70,7 @@ export default function App() {
       setCasinoCategory(nav.casinoCategory);
       setPredSection(nav.predSection);
       setSportId(nav.sportId);
+      syncGameFromUrl();
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -99,6 +100,37 @@ export default function App() {
 
   const openFunds = () => { if (!ensureAuth()) return; setFundsOpen(true); };
   const openHistory = () => { if (!ensureAuth()) return; setHistoryOpen(true); };
+
+  // Game tiles are real links (`?play=<favId>`) so middle-click / cmd-click opens
+  // a new tab, like on most sites. These helpers keep that URL in sync with the
+  // modal state for the in-page (left-click) path, and resolve it back to a
+  // modal on load / back-forward so the link actually works when followed.
+  const openGame = (game) => {
+    if (game.kind === "onchain") {
+      if (game.playable && ensureAuth()) setOnchainGame(game);
+      return;
+    }
+    setProviderGame(game);
+  };
+  const launchGame = (game) => {
+    window.history.pushState({}, "", gameHref(game));
+    openGame(game);
+  };
+  const closeGame = () => {
+    setOnchainGame(null);
+    setProviderGame(null);
+    const bare = pathFor({ product, casinoCategory, predSection, sportId });
+    if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
+  };
+  const syncGameFromUrl = () => {
+    const favId = new URLSearchParams(window.location.search).get("play");
+    const game = favId ? findGameByFavId(favId) : null;
+    const openable = game && (game.kind !== "onchain" || game.playable);
+    if (openable) openGame(game);
+    else { setOnchainGame(null); setProviderGame(null); if (favId) closeGame(); }
+  };
+  // Resolve a deep link on first load (e.g. a game opened in a new tab).
+  useEffect(() => { syncGameFromUrl(); }, []);
 
   const activityRef = useRef([]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
@@ -199,8 +231,8 @@ export default function App() {
             {product === "casino" && (
               <CasinoLobby
                 category={casinoCategory}
-                onLaunchOnchain={(g) => { if (ensureAuth()) setOnchainGame(g); }}
-                onLaunchProvider={(g) => setProviderGame(g)}
+                onLaunchOnchain={launchGame}
+                onLaunchProvider={launchGame}
                 isFav={isFav}
                 onFav={toggleFav}
               />
@@ -239,10 +271,10 @@ export default function App() {
       <DevPanel />
 
       {onchainGame && (
-        <BetSwirlGame game={onchainGame} onRound={logRound} onClose={() => setOnchainGame(null)} />
+        <BetSwirlGame game={onchainGame} onRound={logRound} onClose={closeGame} />
       )}
       {providerGame && (
-        <ProviderGame game={providerGame} onClose={() => setProviderGame(null)} />
+        <ProviderGame game={providerGame} onClose={closeGame} />
       )}
       <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
