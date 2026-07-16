@@ -41,6 +41,29 @@
         ></video>
       </div>
 
+      <div id="charSelect" class="char-select" hidden aria-hidden="true">
+        <p class="char-select-eyebrow">PLAYER SELECT</p>
+        <h2 class="char-select-title">SELECT YOUR FIGHTER</h2>
+        <div class="char-select-row" role="group" aria-label="Fighter roster">
+          <button type="button" class="char-card is-selected" data-char="rookie" aria-pressed="true">
+            <span class="char-card-p1">1P</span>
+            <span class="char-portrait">
+              <img id="portraitRookie" alt="" width="180" height="220" />
+            </span>
+            <span class="char-name">ROOKIE</span>
+          </button>
+          <button type="button" class="char-card" data-char="trump" aria-pressed="false">
+            <span class="char-card-p1">1P</span>
+            <span class="char-portrait">
+              <img id="portraitTrump" alt="" width="180" height="220" />
+            </span>
+            <span class="char-name">PREZZ</span>
+          </button>
+        </div>
+        <p class="char-select-hint">Click a fighter, then FIGHT</p>
+        <button type="button" class="btn btn-fight" id="btnFight">FIGHT!</button>
+      </div>
+
       <div id="gameOverlay" class="overlay" hidden>
         <h2 id="overlayTitle">YOU WIN!</h2>
         <p id="overlaySub"></p>

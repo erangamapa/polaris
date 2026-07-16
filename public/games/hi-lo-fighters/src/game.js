@@ -1,7 +1,7 @@
 /**
  * Hi-Lo Fighters — core game loop & Hi/Lo resolution.
  *
- * Flow: BETTING → (HI or LO) → RESOLVING (animations) → BETTING | GAME_OVER
+ * Flow: SELECT → BETTING → (HI or LO) → RESOLVING (animations) → BETTING | GAME_OVER
  */
 
 import { GAME_PHASE, HEALTH, MULTIPLIER, STAGE, TIMING, WALLET } from './constants.js';
@@ -9,11 +9,13 @@ import { Fighter } from './fighter.js';
 import { EffectsSystem } from './effects.js';
 import { InputHandler } from './input.js';
 import { Renderer } from './render.js';
+import { getCharacter } from './characters.js';
 import {
   assets,
   loadAssets,
-  createPlayerAnimations,
+  createAnimationsForCharacter,
   createOpponentAnimations,
+  portraitDataUrl,
   startStageVideo,
 } from './assets.js';
 import {
@@ -71,6 +73,11 @@ export class Game {
    *   btnCheat2pDamage?: HTMLButtonElement,
    *   btnToggleMusic?: HTMLButtonElement,
    *   btnToggleSfx?: HTMLButtonElement,
+   *   charSelect?: HTMLElement,
+   *   charCards?: HTMLElement[],
+   *   portraitRookie?: HTMLImageElement,
+   *   portraitTrump?: HTMLImageElement,
+   *   btnFight?: HTMLButtonElement,
    * }} ui
    */
   constructor(canvas, ui) {
@@ -79,7 +86,9 @@ export class Game {
     this.renderer = new Renderer(canvas);
     this.effects = new EffectsSystem();
     this.fairness = new Fairness();
-    this.phase = GAME_PHASE.BETTING;
+    this.phase = GAME_PHASE.SELECT;
+    /** @type {'rookie' | 'trump'} */
+    this.characterId = 'rookie';
     this.streak = 0;
     this.round = 1;
     this.multiplier = MULTIPLIER.START;
@@ -99,6 +108,10 @@ export class Game {
     this.cutsceneActive = false;
     /** @type {'none' | 'roundClear' | 'gameOver'} */
     this.overlayMode = 'none';
+    /** @type {null | { phase: 'grab' | 'throw' | 'fly', elapsed: number, launched: boolean, impactDone: boolean }} */
+    this.wigAttack = null;
+    /** @type {null | { x: number, y: number, startX: number, startY: number, endX: number, endY: number, t: number, dur: number, image: HTMLCanvasElement, rotation: number, scale: number }} */
+    this.projectile = null;
 
     // Feet planted on the stone floor tiles
     this.player = new Fighter({
@@ -130,23 +143,22 @@ export class Game {
     this._bindSkipVideosUi();
     this._bindCheatUi();
     this._bindAudioTogglesUi();
+    this._bindCharSelectUi();
 
     window.addEventListener('resize', () => this.renderer.resize());
   }
 
   async init() {
     await Promise.all([loadAssets(), loadAudio(), this.fairness.initSession()]);
-    if (!assets.playerFighter || !assets.opponentFighter) {
+    if (!assets.playerFighter || !assets.opponentFighter || !assets.trump) {
       throw new Error('Fighter sprites failed to load');
     }
-    this.player.registerAnimations(
-      createPlayerAnimations(assets.playerFighter, assets.playerKick)
-    );
     this.opponent.registerAnimations(
       createOpponentAnimations(assets.opponentFighter, assets.opponentPunch)
     );
-    // SOUND: start ambient / idle music loop here
+    this._fillCharPortraits();
     this._syncHud();
+    this._showCharacterSelect();
     this.running = true;
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this._frame(t));
@@ -161,6 +173,7 @@ export class Game {
     this.player.update(dt);
     this.opponent.update(dt);
     this.effects.update(dt);
+    this._updateWigAttack(dt);
 
     this.renderer.draw({
       player: this.player,
@@ -171,6 +184,7 @@ export class Game {
       multiplier: this.multiplier,
       multiplierHistory: this.multiplierHistory,
       cutsceneActive: this.cutsceneActive,
+      projectile: this.projectile,
     });
 
     requestAnimationFrame((t) => this._frame(t));
@@ -251,24 +265,111 @@ export class Game {
     });
     this._syncHud();
 
-    this.player.playKickAttack(this.opponent.x, {
-      onImpact: () => {
-        playKickSound();
-        this.opponent.takeDamage(HEALTH.WIN_COST);
-        this.opponent.playHitReaction();
+    if (getCharacter(this.characterId).attackStyle === 'wig') {
+      this._startWigAttack();
+      return;
+    }
 
-        this.effects.spawnSparks(this.opponent.x - 40, this.opponent.y - 180, 18);
-        this.effects.spawnDamageNumber(
-          this.opponent.x,
-          this.opponent.y - 220,
-          HEALTH.WIN_COST,
-          'dealt'
-        );
-        this.effects.triggerFlash(0.45, 110);
-        this.effects.triggerShake(8, 180);
-      },
+    this.player.playKickAttack(this.opponent.x, {
+      onImpact: () => this._applyWinImpact(),
       onComplete: () => this._afterResolve(),
     });
+  }
+
+  /** Shared win hit FX + 2P yellow-box damage. */
+  _applyWinImpact() {
+    playKickSound();
+    this.opponent.takeDamage(HEALTH.WIN_COST);
+    this.opponent.playHitReaction();
+
+    this.effects.spawnSparks(this.opponent.x - 40, this.opponent.y - 180, 18);
+    this.effects.spawnDamageNumber(
+      this.opponent.x,
+      this.opponent.y - 220,
+      HEALTH.WIN_COST,
+      'dealt'
+    );
+    this.effects.triggerFlash(0.45, 110);
+    this.effects.triggerShake(8, 180);
+  }
+
+  /** Trump: grab wig → throw pose → wig projectile → 2P loses a box. */
+  _startWigAttack() {
+    this.wigAttack = {
+      phase: 'grab',
+      elapsed: 0,
+      launched: false,
+      impactDone: false,
+    };
+    this.projectile = null;
+    this.player.state = 'ATTACKING';
+    this.player.anim.play('attackGrab', { loop: false });
+  }
+
+  /** @param {number} dt */
+  _updateWigAttack(dt) {
+    if (!this.wigAttack) return;
+
+    const atk = this.wigAttack;
+    atk.elapsed += dt;
+
+    if (atk.phase === 'grab' && atk.elapsed >= TIMING.WIG_GRAB) {
+      atk.phase = 'throw';
+      atk.elapsed = 0;
+      this.player.anim.play('attackThrow', { loop: false });
+    }
+
+    if (atk.phase === 'throw' && !atk.launched && atk.elapsed >= TIMING.WIG_THROW * 0.35) {
+      atk.launched = true;
+      const wig = assets.trump?.wig;
+      if (wig) {
+        const startX = this.player.x + 70;
+        const startY = this.player.y - TIMING.WIG_Y_OFFSET;
+        this.projectile = {
+          x: startX,
+          y: startY,
+          startX,
+          startY,
+          endX: this.opponent.x - 30,
+          endY: this.opponent.y - TIMING.WIG_Y_OFFSET + 20,
+          t: 0,
+          dur: TIMING.WIG_FLIGHT,
+          image: wig,
+          rotation: -0.35,
+          scale: 0.2,
+        };
+      } else if (!atk.impactDone) {
+        atk.impactDone = true;
+        this._applyWinImpact();
+        this.player.setIdle();
+        this.wigAttack = null;
+        this._afterResolve();
+        return;
+      }
+    }
+
+    if (atk.phase === 'throw' && atk.elapsed >= TIMING.WIG_THROW) {
+      atk.phase = 'fly';
+    }
+
+    if (this.projectile) {
+      const p = this.projectile;
+      p.t = Math.min(1, p.t + dt / p.dur);
+      const u = p.t;
+      const eased = u * u * (3 - 2 * u);
+      p.x = p.startX + (p.endX - p.startX) * eased;
+      p.y = p.startY + (p.endY - p.startY) * eased - Math.sin(u * Math.PI) * 40;
+      p.rotation = -0.35 + u * 2.8;
+
+      if (p.t >= 1 && !atk.impactDone) {
+        atk.impactDone = true;
+        this.projectile = null;
+        this._applyWinImpact();
+        this.player.setIdle();
+        this.wigAttack = null;
+        this._afterResolve();
+      }
+    }
   }
 
   _resolveLoss() {
@@ -560,13 +661,15 @@ export class Game {
     this.roundHistory = [];
     this._opponentDepleted = false;
     this.overlayMode = 'none';
-    this.phase = GAME_PHASE.BETTING;
+    this.wigAttack = null;
+    this.projectile = null;
     this._setCutsceneActive(false);
     this.effects.sparks = [];
     this.effects.floatTexts = [];
     this.effects.multiplierPopups = [];
     this.effects.flashes = [];
     this.effects.specialBanner.active = false;
+    this._showCharacterSelect();
     this.effects.multiplierTint.active = false;
     if (this.ui.victoryOverlay) {
       this.ui.victoryOverlay.hidden = true;
@@ -587,6 +690,70 @@ export class Game {
     }
     this.fairness.initSession().then(() => this._syncHud());
     this._syncHud();
+  }
+
+  _bindCharSelectUi() {
+    const cards = this.ui.charCards ?? [];
+    for (const card of cards) {
+      card.addEventListener('click', () => {
+        const id = card.getAttribute('data-char');
+        if (id === 'rookie' || id === 'trump') this._highlightCharacter(id);
+      });
+    }
+    this.ui.btnFight?.addEventListener('click', () => this.confirmCharacterSelect());
+  }
+
+  _fillCharPortraits() {
+    if (this.ui.portraitRookie) this.ui.portraitRookie.src = portraitDataUrl('rookie');
+    if (this.ui.portraitTrump) this.ui.portraitTrump.src = portraitDataUrl('trump');
+  }
+
+  /** Street Fighter–style select before betting. */
+  _showCharacterSelect() {
+    this.phase = GAME_PHASE.SELECT;
+    this.input.setEnabled(false);
+    this._setButtonsDisabled(true);
+    this.wigAttack = null;
+    this.projectile = null;
+    if (this.ui.charSelect) {
+      this.ui.charSelect.hidden = false;
+      this.ui.charSelect.setAttribute('aria-hidden', 'false');
+    }
+    this._highlightCharacter(this.characterId);
+  }
+
+  /** @param {'rookie' | 'trump'} id */
+  _highlightCharacter(id) {
+    this.characterId = id;
+    const cards = this.ui.charCards ?? [];
+    for (const card of cards) {
+      const selected = card.getAttribute('data-char') === id;
+      card.classList.toggle('is-selected', selected);
+      card.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    }
+  }
+
+  /** Apply selected 1P kit and start the match. */
+  confirmCharacterSelect() {
+    if (this.phase !== GAME_PHASE.SELECT) return;
+    const id = this.characterId;
+    const char = getCharacter(id);
+    this.player.name = char.name;
+    this.player.drawScale = id === 'trump' ? 0.42 : STAGE.FIGHTER_SCALE;
+    this.player.registerAnimations(createAnimationsForCharacter(id));
+    this.player.reset();
+    // 2P always stays the original opponent
+    this.opponent.name = 'CPU';
+    this.opponent.drawScale = STAGE.OPPONENT_SCALE;
+    this.opponent.registerAnimations(
+      createOpponentAnimations(assets.opponentFighter, assets.opponentPunch)
+    );
+    this.opponent.reset();
+
+    if (this.ui.charSelect) {
+      this.ui.charSelect.hidden = true;
+      this.ui.charSelect.setAttribute('aria-hidden', 'true');
+    }
     this._returnToBetting();
   }
 

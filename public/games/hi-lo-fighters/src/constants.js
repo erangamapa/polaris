@@ -8,6 +8,7 @@ export const FIGHTER_STATE = {
 };
 
 export const GAME_PHASE = {
+  SELECT: 'SELECT',
   BETTING: 'BETTING',
   RESOLVING: 'RESOLVING',
   GAME_OVER: 'GAME_OVER',
@@ -47,6 +48,11 @@ export const TIMING = {
   KICK_HOLD: 160,
   KICK_RECOVER: 200,
   KICK_REACH: 145,
+  /** Trump wig throw timeline (ms) */
+  WIG_GRAB: 320,
+  WIG_THROW: 160,
+  WIG_FLIGHT: 380,
+  WIG_Y_OFFSET: 210,
 };
 
 export const COLORS = {

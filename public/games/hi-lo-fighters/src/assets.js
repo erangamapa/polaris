@@ -80,6 +80,8 @@ export const assets = {
   opponentFighter: /** @type {HTMLImageElement | HTMLCanvasElement | null} */ (null),
   opponentPunch: /** @type {HTMLImageElement | HTMLCanvasElement | null} */ (null),
   playerKick: /** @type {HTMLImageElement | HTMLCanvasElement | null} */ (null),
+  /** @type {{ idle: HTMLCanvasElement, grab: HTMLCanvasElement, throwPose: HTMLCanvasElement, wig: HTMLCanvasElement } | null} */
+  trump: null,
   stageBackground: /** @type {HTMLVideoElement | HTMLImageElement | null} */ (null),
   hudOverlay: /** @type {HTMLImageElement | HTMLCanvasElement | null} */ (null),
   loaded: false,
@@ -90,11 +92,26 @@ export const assets = {
  * @returns {Promise<void>}
  */
 export async function loadAssets() {
-  const [raw, kickRaw, opponentRaw, punchRaw, stageBackground, hudRaw] = await Promise.all([
+  const [
+    raw,
+    kickRaw,
+    opponentRaw,
+    punchRaw,
+    trumpIdleRaw,
+    trumpGrabRaw,
+    trumpThrowRaw,
+    trumpWigRaw,
+    stageBackground,
+    hudRaw,
+  ] = await Promise.all([
     loadImage('assets/player-fighter.png'),
     loadImage('assets/player-kick.png'),
     loadImage('assets/opponent-fighter.png'),
     loadImage('assets/opponent-punch.png'),
+    loadImage('assets/trump-idle.png'),
+    loadImage('assets/trump-grab-wig.png'),
+    loadImage('assets/trump-throw-wig.png'),
+    loadImage('assets/trump-wig.png'),
     loadVideo('assets/stage-background.mp4'),
     loadImage('assets/hud-overlay.png'),
   ]);
@@ -106,15 +123,39 @@ export async function loadAssets() {
   // 2P plates → key green, crop empty padding (feet on FLOOR_Y), flip to face 1P
   const opponent = flipHorizontal(cropToOpaque(keyOutGreen(opponentRaw)));
   const punch = flipHorizontal(cropToOpaque(keyOutGreen(punchRaw)));
+  // Trump plates face right already (1P side) — key green + crop feet
+  const trumpIdle = cropToOpaque(keyOutGreen(trumpIdleRaw));
+  const trumpGrab = cropToOpaque(keyOutGreen(trumpGrabRaw));
+  const trumpThrow = cropToOpaque(keyOutGreen(trumpThrowRaw));
+  const trumpWig = cropToOpaque(keyOutGreen(trumpWigRaw));
+
   assets.playerFighter = player;
   assets.opponentFighter = opponent;
   assets.opponentPunch = punch;
   assets.playerKick = kick;
+  assets.trump = {
+    idle: trumpIdle,
+    grab: trumpGrab,
+    throwPose: trumpThrow,
+    wig: trumpWig,
+  };
   assets.stageBackground = stageBackground;
   assets.hudOverlay = hudRaw;
   assets.loaded = true;
 
   startStageVideo();
+}
+
+/**
+ * Data-URL portrait for the character-select cards (keyed idle).
+ * @param {'rookie' | 'trump'} id
+ * @returns {string}
+ */
+export function portraitDataUrl(id) {
+  const canvas =
+    id === 'trump' ? assets.trump?.idle : /** @type {HTMLCanvasElement | null} */ (assets.playerFighter);
+  if (!canvas || typeof canvas.toDataURL !== 'function') return '';
+  return canvas.toDataURL('image/png');
 }
 
 /** @param {string} src @returns {Promise<HTMLImageElement>} */
@@ -372,6 +413,89 @@ export function createPlayerAnimations(image, kickImage = null) {
       proceduralFrames: SPECIAL_PROCEDURAL,
     },
   };
+}
+
+/**
+ * Trump 1P — idle + grab / throw poses for the wig special.
+ * @returns {Record<string, AnimationDef>}
+ */
+export function createTrumpAnimations() {
+  const kit = assets.trump;
+  if (!kit) throw new Error('Trump assets not loaded');
+  const { idle, grab, throwPose } = kit;
+  const frameW = idle.width;
+  const frameH = idle.height;
+
+  return {
+    idle: {
+      image: idle,
+      frameW,
+      frameH,
+      frameDuration: 1000 / TIMING.IDLE_FPS,
+      loop: true,
+      procedural: true,
+      proceduralFrames: IDLE_PROCEDURAL,
+    },
+    attackGrab: {
+      image: grab,
+      frameW: grab.width,
+      frameH: grab.height,
+      frameDuration: TIMING.WIG_GRAB,
+      loop: false,
+      procedural: true,
+      proceduralFrames: [{ offsetX: 0, offsetY: 0, scaleX: 1, scaleY: 1, rotation: 0 }],
+    },
+    attackThrow: {
+      image: throwPose,
+      frameW: throwPose.width,
+      frameH: throwPose.height,
+      frameDuration: TIMING.WIG_THROW + TIMING.WIG_FLIGHT,
+      loop: false,
+      procedural: true,
+      proceduralFrames: [
+        { offsetX: 4, offsetY: -2, scaleX: 1.02, scaleY: 0.98, rotation: 0.02 },
+        { offsetX: 8, offsetY: -4, scaleX: 1.04, scaleY: 0.96, rotation: 0.04 },
+      ],
+    },
+    // Unused by Trump win path — keep so hit/special share idle plate
+    attack: {
+      image: grab,
+      frameW: grab.width,
+      frameH: grab.height,
+      frameDuration: TIMING.ATTACK_DURATION / KICK_PROCEDURAL.length,
+      loop: false,
+      procedural: true,
+      proceduralFrames: KICK_PROCEDURAL,
+    },
+    hit: {
+      image: idle,
+      frameW,
+      frameH,
+      frameDuration: TIMING.HIT_DURATION / HIT_PROCEDURAL.length,
+      loop: false,
+      procedural: true,
+      proceduralFrames: HIT_PROCEDURAL,
+    },
+    special: {
+      image: idle,
+      frameW,
+      frameH,
+      frameDuration: TIMING.SPECIAL_DURATION / SPECIAL_PROCEDURAL.length,
+      loop: false,
+      procedural: true,
+      proceduralFrames: SPECIAL_PROCEDURAL,
+    },
+  };
+}
+
+/**
+ * @param {'rookie' | 'trump'} characterId
+ * @returns {Record<string, AnimationDef>}
+ */
+export function createAnimationsForCharacter(characterId) {
+  if (characterId === 'trump') return createTrumpAnimations();
+  if (!assets.playerFighter) throw new Error('Rookie assets not loaded');
+  return createPlayerAnimations(assets.playerFighter, assets.playerKick);
 }
 
 /**

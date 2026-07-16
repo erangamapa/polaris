@@ -40,6 +40,13 @@ const skipVideosToggle = /** @type {HTMLInputElement} */ (document.getElementByI
 const btnCheat2pDamage = /** @type {HTMLButtonElement} */ (document.getElementById('btnCheat2pDamage'));
 const btnToggleMusic = /** @type {HTMLButtonElement} */ (document.getElementById('btnToggleMusic'));
 const btnToggleSfx = /** @type {HTMLButtonElement} */ (document.getElementById('btnToggleSfx'));
+const charSelect = /** @type {HTMLElement} */ (document.getElementById('charSelect'));
+const portraitRookie = /** @type {HTMLImageElement} */ (document.getElementById('portraitRookie'));
+const portraitTrump = /** @type {HTMLImageElement} */ (document.getElementById('portraitTrump'));
+const btnFight = /** @type {HTMLButtonElement} */ (document.getElementById('btnFight'));
+const charCards = /** @type {HTMLElement[]} */ ([
+  ...document.querySelectorAll('.char-card[data-char]'),
+]);
 
 const game = new Game(canvas, {
   btnHi,
@@ -75,6 +82,11 @@ const game = new Game(canvas, {
   btnCheat2pDamage,
   btnToggleMusic,
   btnToggleSfx,
+  charSelect,
+  charCards,
+  portraitRookie,
+  portraitTrump,
+  btnFight,
 });
 
 overlay.hidden = false;
@@ -100,6 +112,7 @@ game.init()
   })
   .catch((err) => {
     console.error(err);
+    if (charSelect) charSelect.hidden = true;
     overlay.hidden = false;
     overlayTitle.textContent = 'LOAD ERROR';
     overlaySub.textContent = String(err.message || err);

@@ -5,6 +5,8 @@
 const MUSIC_VOL = 0.35;
 const SFX_VOL = 0.85;
 const RESULT_VOL = 0.9;
+/** Win clip is quieter in the source file — nudge up to sit with you-lose. */
+const YOU_WIN_VOL = 1;
 const MUSIC_MUTE_KEY = 'hi-lo-fighters-music-muted';
 const SFX_MUTE_KEY = 'hi-lo-fighters-sfx-muted';
 
@@ -47,7 +49,7 @@ export async function loadAudio() {
       await Promise.all([
         loadOne('assets/kick-sound.mp3'),
         loadOne('assets/punch-sound.mp3'),
-        loadOne('assets/you-win.mp3', RESULT_VOL),
+        loadOne('assets/you-win.mp3', YOU_WIN_VOL),
         loadOne('assets/you-lose.mp3', RESULT_VOL),
         loadOne('assets/coins-collect.mp3', RESULT_VOL),
         loadOne('assets/retro-fight-music.mp3', MUSIC_VOL),

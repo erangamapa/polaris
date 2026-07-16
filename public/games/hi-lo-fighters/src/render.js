@@ -46,6 +46,13 @@ export class Renderer {
    *   multiplier: number,
    *   multiplierHistory: Array<{ value: number, won: boolean }>,
    *   cutsceneActive?: boolean,
+   *   projectile?: null | {
+   *     x: number,
+   *     y: number,
+   *     image: HTMLImageElement | HTMLCanvasElement,
+   *     rotation?: number,
+   *     scale?: number,
+   *   },
    * }} state
    */
   draw(state) {
@@ -68,6 +75,7 @@ export class Renderer {
     this._drawStage(ctx);
     this._drawFighter(ctx, state.opponent);
     this._drawFighter(ctx, state.player);
+    this._drawProjectile(ctx, state.projectile);
     this._drawEffects(ctx, state.effects);
 
     ctx.restore();
@@ -135,7 +143,11 @@ export class Renderer {
 
     let scale = fighter.drawScale;
     const idleDef = fighter.anim.definitions.get('idle');
-    if (fighter.anim.currentName === 'attack' && idleDef?.frameH && sh > 0) {
+    const attackPose =
+      fighter.anim.currentName === 'attack' ||
+      fighter.anim.currentName === 'attackGrab' ||
+      fighter.anim.currentName === 'attackThrow';
+    if (attackPose && idleDef?.frameH && sh > 0) {
       scale = (idleDef.frameH * fighter.drawScale) / sh;
     }
 
@@ -176,6 +188,32 @@ export class Renderer {
     );
 
     ctx.filter = 'none';
+    ctx.restore();
+  }
+
+  /**
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {null | undefined | {
+   *   x: number,
+   *   y: number,
+   *   image: HTMLImageElement | HTMLCanvasElement,
+   *   rotation?: number,
+   *   scale?: number,
+   * }} projectile
+   */
+  _drawProjectile(ctx, projectile) {
+    if (!projectile?.image) return;
+    const img = projectile.image;
+    const scale = projectile.scale ?? 0.22;
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+
+    ctx.save();
+    ctx.translate(projectile.x, projectile.y);
+    ctx.rotate(projectile.rotation ?? 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.imageSmoothingEnabled = false;
     ctx.restore();
   }
 
