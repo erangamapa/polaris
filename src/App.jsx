@@ -9,7 +9,7 @@ import { MobileProductBar } from "./components/shell/MobileProductBar";
 import { Footer } from "./components/shell/Footer";
 import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
-import { PromoHero } from "./components/casino/PromoHero";
+import { PromoStrip } from "./components/casino/PromoStrip";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
 import { CasinoCatalog, gameHref, findGameByFavId } from "./components/casino/CasinoCatalog";
@@ -285,11 +285,13 @@ export default function App() {
 }
 
 function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav }) {
+  const [query, setQuery] = useState("");
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <PromoHero />
+      <PromoStrip query={query} onQuery={setQuery} />
       <CasinoCatalog
         category={category}
+        query={query}
         onLaunch={onLaunchOnchain}
         onLaunchProvider={onLaunchProvider}
         isFav={isFav}

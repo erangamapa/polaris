@@ -147,13 +147,19 @@ function FavHeader() {
 
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6";
 
+const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
+
 // Casino catalog: on-chain BetSwirl games (portrait art tiles) + vendored
 // provider games (embedded, loaded on demand). Each launches via its callback.
 // Favorites (persisted upstream) get a star on every tile, a "Your favorites"
-// rail, and a dedicated view when the Favorites category is selected.
-export function CasinoCatalog({ category, onLaunch, onLaunchProvider, isFav, onFav }) {
+// rail, and a dedicated view when the Favorites category is selected. `query`
+// (from the search box above the catalog) filters every section by title.
+export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav }) {
   const tileProps = { onLaunchOnchain: onLaunch, onLaunchProvider, isFav, onFav };
-  const favorites = isFav ? ALL_GAMES.filter((g) => isFav(g)) : [];
+  const q = query?.trim().toLowerCase() ?? "";
+  const favorites = (isFav ? ALL_GAMES.filter((g) => isFav(g)) : []).filter((g) => matchesQuery(g, q));
+  const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
+  const provider = PROVIDER.filter((g) => matchesQuery(g, q));
 
   if (category === "Favorites") {
     return (
@@ -165,10 +171,18 @@ export function CasinoCatalog({ category, onLaunch, onLaunchProvider, isFav, onF
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
-            No favorites yet — tap the star on any game to save it here.
+            {q ? `No favorites match “${query}”.` : "No favorites yet — tap the star on any game to save it here."}
           </div>
         )}
       </section>
+    );
+  }
+
+  if (q && !favorites.length && !onchain.length && !provider.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
+        No games match “{query}”.
+      </div>
     );
   }
 
@@ -183,27 +197,31 @@ export function CasinoCatalog({ category, onLaunch, onLaunchProvider, isFav, onF
         </section>
       )}
 
-      <section>
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="text-sm font-bold">On-chain casino</h2>
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
-            BetSwirl · Base Sepolia · Chainlink VRF
-          </span>
-        </div>
-        <div className={GRID}>
-          {ONCHAIN.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-        </div>
-      </section>
+      {onchain.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold">On-chain casino</h2>
+            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+              BetSwirl · Base Sepolia · Chainlink VRF
+            </span>
+          </div>
+          <div className={GRID}>
+            {onchain.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+          </div>
+        </section>
+      )}
 
-      <section>
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="text-sm font-bold">Provider games</h2>
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">embedded · loads on open</span>
-        </div>
-        <div className={GRID}>
-          {PROVIDER.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-        </div>
-      </section>
+      {provider.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold">Provider games</h2>
+            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">embedded · loads on open</span>
+          </div>
+          <div className={GRID}>
+            {provider.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
