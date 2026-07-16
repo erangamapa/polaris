@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Wallet, ChevronDown, Check, AlertTriangle, Copy, Loader2 } from "lucide-react";
+import { Search, Wallet, ChevronDown, AlertTriangle, Copy, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
 import { useWallet, shortAddress } from "@/web3/useWallet";
@@ -36,64 +36,65 @@ function PromoTile({ promo }) {
   );
 }
 
-// Restrained decorative wallet mark — inspired by the reference art (dark
-// bifold + a coin catching a teal glow), built as a small inline SVG rather
-// than the generated image itself (no generated text, no background, no
-// branded logos). Its own left edge is masked to transparent so it blends
-// into the card instead of showing a hard image edge. Hidden below `sm:` —
-// at the ~110px mobile card width (fixed by the existing 3-col grid) there
-// isn't room for both a readable illustration and the text/CTA, and the
-// mobile spec here prioritises text/CTA legibility over the artwork.
+// A clearly legible wallet mark — inspired by the reference art (dark bifold +
+// a coin catching a teal glow), built as an inline SVG (no generated text, no
+// background, no branded logos), sized to actually fill its column rather
+// than fade away. Only a soft radial glow behind it, full-opacity clean edges.
 function WalletMark() {
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-0 hidden w-24 select-none sm:block md:w-28"
-      style={{ maskImage: "linear-gradient(to right, transparent, black 42%)", WebkitMaskImage: "linear-gradient(to right, transparent, black 42%)" }}
-    >
+    <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
       <div
         className="absolute inset-0"
-        style={{ background: "radial-gradient(60% 55% at 62% 42%, rgba(25,199,165,0.26), transparent 72%)" }}
+        style={{ background: "radial-gradient(65% 65% at 50% 45%, rgba(25,199,165,0.22), transparent 72%)" }}
       />
-      <svg viewBox="0 0 100 100" className="absolute bottom-2 right-2 h-20 w-20 md:h-24 md:w-24">
-        <rect x="18" y="34" width="64" height="46" rx="9" fill="#0F1A20" stroke="rgba(25,199,165,0.32)" strokeWidth="1.5" />
-        <path d="M18 46 h64" stroke="rgba(25,199,165,0.2)" strokeWidth="1" />
-        <circle cx="70" cy="57" r="5" fill="#19C7A5" fillOpacity="0.9" />
-        <rect x="30" y="16" width="30" height="20" rx="4" fill="#132229" stroke="rgba(25,199,165,0.26)" strokeWidth="1.5" transform="rotate(-8 45 26)" />
-        <circle cx="56" cy="22" r="11" fill="#FFD36B" fillOpacity="0.9" />
-        <circle cx="56" cy="22" r="6.5" fill="none" stroke="#0F1A20" strokeOpacity="0.5" strokeWidth="1" />
+      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-28 max-w-28">
+        <rect x="12" y="32" width="76" height="52" rx="10" fill="#101C22" stroke="rgba(25,199,165,0.45)" strokeWidth="2" />
+        <path d="M12 47 h76" stroke="rgba(25,199,165,0.3)" strokeWidth="1.2" />
+        <circle cx="76" cy="60" r="6" fill="#19C7A5" />
+        <rect x="26" y="12" width="36" height="24" rx="5" fill="#16262E" stroke="rgba(25,199,165,0.4)" strokeWidth="1.5" transform="rotate(-8 44 24)" />
+        <circle cx="54" cy="20" r="13" fill="#FFD36B" />
+        <circle cx="54" cy="20" r="7.5" fill="none" stroke="#16262E" strokeOpacity="0.55" strokeWidth="1.2" />
       </svg>
     </div>
   );
 }
 
-const BENEFITS = ["Instant deposits", "Provably fair", "Automatic rewards"];
-
-// One combined wallet/player tile with five distinct states. Structurally
-// identical to a promo tile (same CARD_H, same w-full so it matches the grid
-// column exactly — a <button> is inline-block by default and won't stretch
-// on its own). Every state uses the same top/middle/bottom flex skeleton so
-// the card never changes height when the state changes (no layout shift).
+// Two-column shell every wallet-tile state shares: text column (~60%, its own
+// justify-between so heading/body/CTA space out instead of clustering at the
+// top) + a fixed-width illustration column (~38-40%) that can never be
+// overlapped by text since they're separate flex children, not a text-over-
+// image overlay. Same CARD_H/width as a promo tile — a bare <button> is
+// inline-block and won't stretch on its own, which is why the outer div (not
+// the button) owns `w-full`. Illustration hidden below `sm:`: at the ~110px
+// mobile card width fixed by the existing 3-col grid there isn't room for a
+// legible illustration alongside readable text and a tappable CTA.
 function WalletCard({ children, tone = "neutral" }) {
   return (
     <div
       className={cn(
         CARD_H,
-        "relative flex w-full min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-4 text-left transition",
+        "relative flex w-full min-w-0 items-stretch gap-2 overflow-hidden rounded-xl border p-4 text-left transition",
         tone === "warning" ? "border-amber-500/25 bg-zinc-900" : "border-white/10 bg-zinc-900"
       )}
     >
-      <WalletMark />
-      <div className="relative z-10 flex h-full min-w-0 flex-col justify-between sm:pr-9 md:pr-11">{children}</div>
+      <div className="flex h-full min-w-0 flex-1 flex-col justify-between">{children}</div>
+      <div className="hidden w-[26%] shrink-0 sm:block md:w-[34%] lg:w-[40%]">
+        <WalletMark />
+      </div>
     </div>
   );
 }
 
-// Deliberately the app's global teal CTA token (the same one the header's real
-// Connect Wallet button uses), not --casino-primary — this tile is product
-// utility, not a promotion, and needs to read as visually distinct from the
-// pink promo-card CTAs beside it.
-const PRIMARY_BTN = "inline-flex h-11 items-center justify-center gap-1.5 rounded-lg bg-[var(--global-cta)] px-3 text-xs font-bold text-[var(--global-cta-text)] transition hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900";
+// Exactly the header WalletButton's visual language (same bg/padding/height/
+// type scale) so the tile CTA doesn't read as a separate design system —
+// content-width via `self-start` (the parent stretches flex children by
+// default), never full-width, never stronger than the promo cards' CTAs.
+// Icon-only below `sm:` (the label is in a `hidden sm:inline` span at each call
+// site) — at the ~110px mobile card width there's no room for "Connect wallet"
+// + icon unclipped, so it collapses to just the icon (with aria-label) rather
+// than wrapping or getting cut mid-word. Full label from `sm:` up.
+const HEADER_BTN = "self-start flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg bg-[var(--global-cta)] px-2.5 py-1.5 sm:px-4 text-sm font-semibold text-[var(--global-cta-text)] transition hover:bg-[var(--global-cta-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-zinc-500";
 
 function PlayerTile() {
   const {
@@ -109,14 +110,14 @@ function PlayerTile() {
   if (connecting) {
     return (
       <WalletCard>
-        <Wallet className="size-5 text-zinc-500" aria-hidden="true" />
         <div className="min-w-0" role="status" aria-live="polite">
-          <div className="text-sm font-bold text-white">Connecting…</div>
-          <div className="truncate text-xs text-zinc-500">Approve the request in your wallet.</div>
+          <div className={LABEL}>Wallet</div>
+          <h3 className="mt-1 text-base font-bold leading-snug text-[#F2F3F5]">Connecting…</h3>
+          <p className="mt-1 truncate text-xs text-zinc-400">Approve the request in your wallet.</p>
         </div>
-        <button type="button" disabled className={cn(PRIMARY_BTN, "w-full")} aria-label="Connecting to wallet">
-          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-          Connecting…
+        <button type="button" disabled className={HEADER_BTN} aria-label="Connecting to wallet">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          <span className="hidden sm:inline">Connecting…</span>
         </button>
       </WalletCard>
     );
@@ -127,26 +128,20 @@ function PlayerTile() {
   if (!isConnected) {
     return (
       <WalletCard>
-        <Wallet className="size-5 text-zinc-400" aria-hidden="true" />
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-bold leading-tight text-[#F2F3F5]">One wallet. Every game.</h3>
-          <p className="mt-0.5 truncate text-[11px] leading-snug text-zinc-400">Connect once to play, track rewards and withdraw.</p>
-          <div className="mt-1.5 hidden items-center gap-x-2 overflow-hidden text-[10px] text-zinc-500 sm:flex">
-            {BENEFITS.map((b) => (
-              <span key={b} className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-                <Check className="size-2.5 text-[var(--global-cta)]" aria-hidden="true" />
-                {b}
-              </span>
-            ))}
-          </div>
+          <div className={LABEL}>Wallet</div>
+          <h3 className="mt-1 truncate text-base font-bold leading-snug text-[#F2F3F5]">One wallet. Every game.</h3>
+          <p
+            className="mt-1 text-xs leading-snug text-zinc-400"
+            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+          >
+            Connect once to play, track rewards and withdraw.
+          </p>
+          <p className="mt-1.5 truncate text-[10px] text-zinc-500">Instant deposits · Provably fair · Automatic rewards</p>
         </div>
-        <button
-          type="button"
-          onClick={connect}
-          data-test-id="wallet-tile-connect"
-          className={cn(PRIMARY_BTN, "w-full")}
-        >
-          Connect wallet
+        <button type="button" onClick={connect} data-test-id="wallet-tile-connect" aria-label="Connect wallet" className={HEADER_BTN}>
+          <Wallet className="size-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Connect wallet</span>
         </button>
       </WalletCard>
     );
@@ -156,20 +151,21 @@ function PlayerTile() {
   if (!onCasinoChain) {
     return (
       <WalletCard tone="warning">
-        <AlertTriangle className="size-5 text-amber-400" aria-hidden="true" />
         <div className="min-w-0" role="status" aria-live="polite">
-          <div className="text-sm font-bold text-white">Wrong network</div>
-          <div className="truncate text-xs text-zinc-400">Switch to Base Sepolia to continue.</div>
+          <div className={cn(LABEL, "text-amber-400/80")}>Wallet</div>
+          <h3 className="mt-1 text-base font-bold leading-snug text-[#F2F3F5]">Wrong network</h3>
+          <p className="mt-1 truncate text-xs text-zinc-400">Switch to Base Sepolia to continue.</p>
         </div>
         <button
           type="button"
           onClick={() => switchTo(CASINO_CHAIN_ID)}
           disabled={isSwitching}
           data-test-id="wallet-tile-switch-network"
-          className={cn(PRIMARY_BTN, "w-full")}
+          aria-label={isSwitching ? "Switching network" : "Switch network"}
+          className={HEADER_BTN}
         >
-          {isSwitching && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
-          {isSwitching ? "Switching…" : "Switch network"}
+          {isSwitching ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <AlertTriangle className="size-4" aria-hidden="true" />}
+          <span className="hidden sm:inline">{isSwitching ? "Switching…" : "Switch network"}</span>
         </button>
       </WalletCard>
     );
@@ -187,42 +183,41 @@ function PlayerTile() {
 
   return (
     <WalletCard>
-      <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+      <div className="min-w-0">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
           <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
           Wallet connected
         </span>
-        <span className="shrink-0 truncate font-mono text-[10px] text-zinc-500">{shortAddress(address)}</span>
+        <div className="mt-1 truncate font-mono text-xs text-zinc-400">{shortAddress(address)}</div>
+        <div className="mt-1.5">
+          {casinoBalanceLoading ? (
+            <div className="h-6 w-24 animate-pulse rounded bg-white/10" role="status" aria-live="polite" aria-label="Loading balance" />
+          ) : casinoBalanceError ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Balance unavailable</span>
+              <button type="button" onClick={() => refetchCasinoBalance?.()} className="text-xs font-semibold text-[var(--global-cta)] hover:underline">
+                Retry
+              </button>
+            </div>
+          ) : (
+            <div className="truncate text-lg font-black text-white">
+              {casinoBalance.toFixed(5)} <span className="text-xs font-semibold text-zinc-400">{casinoSymbol}</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wide text-zinc-500">Balance</div>
-        {casinoBalanceLoading ? (
-          <div className="mt-1.5 h-5 w-24 animate-pulse rounded bg-white/10" role="status" aria-live="polite" aria-label="Loading balance" />
-        ) : casinoBalanceError ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">Balance unavailable</span>
-            <button type="button" onClick={() => refetchCasinoBalance?.()} className="text-xs font-semibold text-[var(--global-cta)] hover:underline">
-              Retry
-            </button>
-          </div>
-        ) : (
-          <div className="truncate text-xl font-black text-white">
-            {casinoBalance.toFixed(5)} <span className="text-sm font-semibold text-zinc-400">{casinoSymbol}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2">
-        <button type="button" onClick={openAccount} data-test-id="wallet-tile-view" className={cn(PRIMARY_BTN, "flex-1")}>
-          View wallet
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={openAccount} data-test-id="wallet-tile-view" aria-label="View wallet" className={HEADER_BTN}>
+          <Wallet className="size-4" aria-hidden="true" />
+          <span className="hidden sm:inline">View wallet</span>
         </button>
         <button
           type="button"
           onClick={copyAddress}
           aria-label="Copy wallet address"
           data-test-id="wallet-tile-copy"
-          className="grid size-11 shrink-0 place-items-center rounded-lg border border-white/10 text-zinc-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--casino-primary)]"
+          className="grid size-9 shrink-0 place-items-center rounded-lg border border-white/10 text-zinc-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)]"
         >
           <Copy className="size-4" aria-hidden="true" />
         </button>
