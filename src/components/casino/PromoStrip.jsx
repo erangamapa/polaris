@@ -134,9 +134,9 @@ export function PromoStrip({ query, onQuery }) {
   return (
     <div className="casino-content-column w-full space-y-3">
       <div className="top-card-grid grid grid-cols-3 gap-3">
+        <PlayerTile />
         <PromoTile promo={p1} />
         <PromoTile promo={p2} />
-        <PlayerTile />
       </div>
       <ScopedSearch query={query} onQuery={onQuery} />
     </div>
