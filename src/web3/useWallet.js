@@ -22,7 +22,7 @@ export function useWallet() {
   const enabled = Boolean(address);
 
   // Casino stake/gas: native ETH on Base Sepolia.
-  const { data: casinoBal } = useBalance({
+  const { data: casinoBal, isLoading: casinoBalLoading, isError: casinoBalError, refetch: refetchCasinoBalance } = useBalance({
     address, chainId: CASINO_CHAIN_ID,
     query: { enabled, refetchInterval: 15_000 },
   });
@@ -54,6 +54,9 @@ export function useWallet() {
     onSportsChain: chainId === SPORTS_CHAIN_ID,
     casinoBalance: fmt(casinoBal),
     casinoSymbol: casinoBal?.symbol ?? 'ETH',
+    casinoBalanceLoading: casinoBalLoading,
+    casinoBalanceError: casinoBalError,
+    refetchCasinoBalance,
     sportsBalance: usdtRaw !== undefined ? Number(formatUnits(usdtRaw, azuro.betToken.decimals)) : 0,
     sportsSymbol: azuro.betToken.symbol,
     sportsGas: fmt(sportsGasBal),
