@@ -14,8 +14,8 @@ export const PROVIDER_GAMES = [
   // Imported via skills/import-casino-game — self-contained crash game (own mock economy).
   { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", badge: "TriBet Studio", image: "/img/games/tumble.svg" },
   // Imported from aquistsang GitHub — self-contained (own mock economy).
-  { key: "casino-fighters", title: "Casino Fighters", src: "/games/casino-fighters/index.html", badge: "TriBet Studio", image: "/img/games/casino-fighters.svg" },
-  { key: "keymines", title: "KeyMines", src: "/games/keymines/index.html", badge: "TriBet Studio", image: "/img/games/keymines.svg" },
+  { key: "hi-lo-fighters", title: "Hi-Lo Fighters", src: "/games/hi-lo-fighters/index.html", badge: "TriBet Studio", image: "/img/games/hi-lo-fighters.svg" },
+  { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", badge: "TriBet Studio", image: "/img/games/keymines-v2.svg" },
   { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "TriBet Studio", image: "/img/games/drunken-pirate.svg" },
 ];
 

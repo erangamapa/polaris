@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" width="320" height="420" role="img" aria-label="Casino Fighters">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 420" width="320" height="420" role="img" aria-label="Hi-Lo Fighters">
   <defs>
     <linearGradient id="cfBg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#2a1020"/>
@@ -50,7 +50,7 @@
   <rect x="182" y="280" width="90" height="36" rx="8" fill="#ff3d6e" fill-opacity="0.25" stroke="#ff3d6e" stroke-width="2"/>
   <text x="227" y="304" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#ff3d6e" text-anchor="middle">LO</text>
 
-  <text x="26" y="374" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="0.5">CASINO</text>
+  <text x="26" y="374" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="0.5">HI-LO</text>
   <text x="26" y="404" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" fill="#ff3d6e" letter-spacing="0.5">FIGHTERS</text>
 
   <g transform="translate(294,398)" text-anchor="end">
