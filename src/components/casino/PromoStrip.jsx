@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Wallet, ChevronDown, AlertTriangle, Copy, Loader2 } from "lucide-react";
+import { Search, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
 import { useWallet, shortAddress } from "@/web3/useWallet";
@@ -59,9 +59,9 @@ function WalletMark() {
   );
 }
 
-// Two-column shell every wallet-tile state shares: text column (~60%, its own
-// justify-between so heading/body/CTA space out instead of clustering at the
-// top) + a fixed-width illustration column (~38-40%) that can never be
+// Two-column shell every wallet-tile state shares: text column (~60-64%, its
+// own justify-between so heading/body/CTA space out instead of clustering at
+// the top) + a fixed-width illustration column (~36-40%) that can never be
 // overlapped by text since they're separate flex children, not a text-over-
 // image overlay. Same CARD_H/width as a promo tile — a bare <button> is
 // inline-block and won't stretch on its own, which is why the outer div (not
@@ -73,27 +73,24 @@ function WalletCard({ children, tone = "neutral" }) {
     <div
       className={cn(
         CARD_H,
-        "relative flex w-full min-w-0 items-stretch gap-2 overflow-hidden rounded-xl border p-4 text-left transition",
+        "relative flex w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-xl border p-4 text-left transition",
         tone === "warning" ? "border-amber-500/25 bg-zinc-900" : "border-white/10 bg-zinc-900"
       )}
     >
       <div className="flex h-full min-w-0 flex-1 flex-col justify-between">{children}</div>
-      <div className="hidden w-[26%] shrink-0 sm:block md:w-[34%] lg:w-[40%]">
+      <div className="hidden w-[36%] shrink-0 sm:block lg:w-[40%]">
         <WalletMark />
       </div>
     </div>
   );
 }
 
-// Exactly the header WalletButton's visual language (same bg/padding/height/
-// type scale) so the tile CTA doesn't read as a separate design system —
-// content-width via `self-start` (the parent stretches flex children by
-// default), never full-width, never stronger than the promo cards' CTAs.
-// Icon-only below `sm:` (the label is in a `hidden sm:inline` span at each call
-// site) — at the ~110px mobile card width there's no room for "Connect wallet"
-// + icon unclipped, so it collapses to just the icon (with aria-label) rather
-// than wrapping or getting cut mid-word. Full label from `sm:` up.
-const HEADER_BTN = "self-start flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg bg-[var(--global-cta)] px-2.5 py-1.5 sm:px-4 text-sm font-semibold text-[var(--global-cta-text)] transition hover:bg-[var(--global-cta-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+// Exactly the promo-card CTA's size and shape (same rounded-lg, px-3 py-1.5,
+// text-xs font-bold — see PromoTile above), just recoloured teal so this tile
+// still reads as product utility rather than a promotion. Content-width via
+// `w-fit` (the parent stretches flex children by default), never full-width,
+// never visually heavier than "Claim bonus" / "View race" beside it.
+const PROMO_BTN = "w-fit shrink-0 flex items-center gap-1.5 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-xs font-bold text-[var(--global-cta-text)] transition hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900";
 const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-zinc-500";
 
 function PlayerTile() {
@@ -113,11 +110,11 @@ function PlayerTile() {
         <div className="min-w-0" role="status" aria-live="polite">
           <div className={LABEL}>Wallet</div>
           <h3 className="mt-1 text-base font-bold leading-snug text-[#F2F3F5]">Connecting…</h3>
-          <p className="mt-1 truncate text-xs text-zinc-400">Approve the request in your wallet.</p>
+          <p className="mt-1 text-xs leading-snug text-zinc-400">Approve the request in your wallet.</p>
         </div>
-        <button type="button" disabled className={HEADER_BTN} aria-label="Connecting to wallet">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          <span className="hidden sm:inline">Connecting…</span>
+        <button type="button" disabled className={PROMO_BTN} aria-label="Connecting to wallet">
+          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          Connecting…
         </button>
       </WalletCard>
     );
@@ -130,18 +127,11 @@ function PlayerTile() {
       <WalletCard>
         <div className="min-w-0">
           <div className={LABEL}>Wallet</div>
-          <h3 className="mt-1 truncate text-base font-bold leading-snug text-[#F2F3F5]">One wallet. Every game.</h3>
-          <p
-            className="mt-1 text-xs leading-snug text-zinc-400"
-            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-          >
-            Connect once to play, track rewards and withdraw.
-          </p>
-          <p className="mt-1.5 truncate text-[10px] text-zinc-500">Instant deposits · Provably fair · Automatic rewards</p>
+          <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1.5 sm:leading-snug">One wallet. Every game.</h3>
+          <p className="mt-1.5 hidden text-xs leading-snug text-zinc-400 xl:block">Play, earn and withdraw with one connection.</p>
         </div>
-        <button type="button" onClick={connect} data-test-id="wallet-tile-connect" aria-label="Connect wallet" className={HEADER_BTN}>
-          <Wallet className="size-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Connect wallet</span>
+        <button type="button" onClick={connect} data-test-id="wallet-tile-connect" className={PROMO_BTN}>
+          Connect wallet
         </button>
       </WalletCard>
     );
@@ -153,19 +143,18 @@ function PlayerTile() {
       <WalletCard tone="warning">
         <div className="min-w-0" role="status" aria-live="polite">
           <div className={cn(LABEL, "text-amber-400/80")}>Wallet</div>
-          <h3 className="mt-1 text-base font-bold leading-snug text-[#F2F3F5]">Wrong network</h3>
-          <p className="mt-1 truncate text-xs text-zinc-400">Switch to Base Sepolia to continue.</p>
+          <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1 sm:leading-snug">Wrong network</h3>
+          <p className="mt-1 hidden text-xs leading-snug text-zinc-400 sm:block">Switch to Base Sepolia to continue.</p>
         </div>
         <button
           type="button"
           onClick={() => switchTo(CASINO_CHAIN_ID)}
           disabled={isSwitching}
           data-test-id="wallet-tile-switch-network"
-          aria-label={isSwitching ? "Switching network" : "Switch network"}
-          className={HEADER_BTN}
+          className={PROMO_BTN}
         >
-          {isSwitching ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <AlertTriangle className="size-4" aria-hidden="true" />}
-          <span className="hidden sm:inline">{isSwitching ? "Switching…" : "Switch network"}</span>
+          {isSwitching && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
+          {isSwitching ? "Switching…" : "Switch network"}
         </button>
       </WalletCard>
     );
@@ -208,9 +197,8 @@ function PlayerTile() {
       </div>
 
       <div className="flex items-center gap-2">
-        <button type="button" onClick={openAccount} data-test-id="wallet-tile-view" aria-label="View wallet" className={HEADER_BTN}>
-          <Wallet className="size-4" aria-hidden="true" />
-          <span className="hidden sm:inline">View wallet</span>
+        <button type="button" onClick={openAccount} data-test-id="wallet-tile-view" className={PROMO_BTN}>
+          View wallet
         </button>
         <button
           type="button"
