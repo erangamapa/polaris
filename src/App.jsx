@@ -227,7 +227,7 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4">
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 [scrollbar-gutter:stable]">
           <div key={product} className="animate-fade-in-up">
             {product === "casino" && (
               <CasinoLobby
