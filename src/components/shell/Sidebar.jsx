@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dices, TrendingUp, Volleyball as SoccerBall } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const PRODUCTS = [
@@ -45,8 +45,11 @@ function SideIndicator({ color }) {
 }
 
 // One rail item, icon-only, for the collapsed (60px) rail. Tooltip shows on
-// hover AND keyboard focus (Radix default) so nothing is hover-only.
-function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ariaCurrent, testId, navId }) {
+// hover AND keyboard focus (Radix default) so nothing is hover-only. `badge`
+// is a ready-made <StatusBadge> element — RailIcon only anchors it top-right
+// (positioning is this container's job; the badge's own look/behavior is
+// entirely the shared component's).
+function RailIcon({ icon, label, active, accentColor, onClick, badge, ariaCurrent, testId, navId }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -64,16 +67,7 @@ function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ari
         >
           {active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
           <ItemIcon icon={icon} />
-          {badge != null && badge > 0 && (
-            <span
-              className={cn(
-                "absolute -end-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-amber-400 px-1 text-[9px] font-bold text-black",
-                pulse && "motion-safe:animate-[fav-badge-pulse_200ms_ease-out]"
-              )}
-            >
-              {badge > 99 ? "99+" : badge}
-            </span>
-          )}
+          {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
         </button>
       </TooltipTrigger>
       <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{label}</TooltipContent>
@@ -81,35 +75,9 @@ function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ari
   );
 }
 
-// Tracks the previous value of `count` and reports true for one render right
-// after it increases — used to fire a badge pulse only on add. Cooldown-gated
-// so a rapidly-updating count (live event totals, polling) can't retrigger
-// the animation back-to-back — at most one pulse per window.
-const PULSE_COOLDOWN_MS = 1200;
-function usePulseOnIncrease(count) {
-  const prev = useRef(count);
-  const lastPulseAt = useRef(0);
-  const [pulsing, setPulsing] = useState(false);
-  useEffect(() => {
-    if (count > prev.current) {
-      const now = Date.now();
-      if (now - lastPulseAt.current >= PULSE_COOLDOWN_MS) {
-        lastPulseAt.current = now;
-        setPulsing(true);
-        const t = setTimeout(() => setPulsing(false), 220);
-        prev.current = count;
-        return () => clearTimeout(t);
-      }
-    }
-    prev.current = count;
-  }, [count]);
-  return pulsing;
-}
-
 function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
   const favItem = items.find((it) => it.id === "Favorites");
   const mainItems = items.filter((it) => !it.divider && it.id !== "Favorites");
-  const pulse = usePulseOnIncrease(favItem?.count ?? 0);
 
   return (
     <div className="flex h-full flex-col items-center gap-1.5 overflow-y-auto py-3">
@@ -140,7 +108,17 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
           accentColor={product}
           ariaCurrent={selected === it.id ? "page" : undefined}
           onClick={() => onSelect(it.id)}
-          badge={it.live}
+          badge={
+            it.live > 0 ? (
+              <StatusBadge
+                variant="live"
+                size="small"
+                icon="dot"
+                count={it.live}
+                ariaLabel={`${it.live} live ${it.label} event${it.live === 1 ? "" : "s"}`}
+              />
+            ) : null
+          }
         />
       ))}
 
@@ -157,9 +135,17 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
             accentColor={product}
             ariaCurrent={selected === favItem.id ? "page" : undefined}
             onClick={() => onSelect(favItem.id)}
-            badge={favItem.count}
-            pulse={pulse}
             testId="sidebar-favorites-collapsed"
+            badge={
+              favItem.count > 0 ? (
+                <StatusBadge
+                  variant="neutral"
+                  size="small"
+                  count={favItem.count}
+                  ariaLabel={`${favItem.count} favorite${favItem.count === 1 ? "" : "s"}`}
+                />
+              ) : null
+            }
           />
         </>
       )}
@@ -223,18 +209,24 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
               <ItemIcon icon={it.icon} />
               <span className="truncate">{it.label}</span>
               {it.live > 0 && (
-                <Badge variant="outline" className="ms-auto gap-1 border-[rgba(214,90,112,0.42)] px-1.5 text-[#E8758B]">
-                  <span className="size-1.5 rounded-full bg-[#D65A70]" />{it.live}
-                </Badge>
+                <StatusBadge
+                  variant="live"
+                  size="medium"
+                  icon="dot"
+                  count={it.live}
+                  ariaLabel={`${it.live} live ${it.label} event${it.live === 1 ? "" : "s"}`}
+                  className="ms-auto"
+                />
               )}
               {it.count > 0 && (
-                <Badge
+                <StatusBadge
                   data-test-id={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
-                  variant="outline"
-                  className="ms-auto min-w-5 justify-center px-1.5 tabular-nums text-muted-foreground"
-                >
-                  {it.count}
-                </Badge>
+                  variant="neutral"
+                  size="medium"
+                  count={it.count}
+                  ariaLabel={it.id === "Favorites" ? `${it.count} favorite${it.count === 1 ? "" : "s"}` : `${it.count} ${it.label}`}
+                  className="ms-auto"
+                />
               )}
             </button>
           )

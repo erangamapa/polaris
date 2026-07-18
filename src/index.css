@@ -70,11 +70,10 @@ body {
 }
 .fav-spark { animation: fav-spark 480ms var(--ease-out) forwards; }
 
-/* Sidebar Favorites badge: a quick scale pulse when the count increases (rail
-   icon badge and the expanded-row badge both reuse this). */
-@keyframes fav-badge-pulse {
+/* StatusBadge's own count-change pulse — subtle, single-shot, no bounce. */
+@keyframes status-badge-pulse {
   0% { transform: scale(1); }
-  40% { transform: scale(1.35); }
+  45% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
 
@@ -125,6 +124,40 @@ body {
   --warning-bg: rgba(214, 168, 74, 0.14);
   --danger: #D65A70;
   --danger-bg: rgba(214, 90, 112, 0.14);
+
+  /* StatusBadge — semantic, not arena-based: same meaning on every product
+     surface regardless of which arena (casino/predictions/sports) renders
+     it. live/attention/success alias the tokens above so a badge always
+     matches the rest of the UI's existing semantic language; contrast
+     verified >=4.5:1 for every *-text token against both --background and
+     --card. */
+  --badge-neutral-bg: rgba(255, 255, 255, 0.08);
+  --badge-neutral-border: rgba(255, 255, 255, 0.14);
+  --badge-neutral-text: var(--foreground);
+
+  --badge-live-bg: var(--danger-bg);
+  --badge-live-border: rgba(214, 90, 112, 0.42);
+  --badge-live-text: #E8758B;
+  --badge-live-accent: var(--danger);
+
+  --badge-attention-bg: var(--warning-bg);
+  --badge-attention-border: rgba(214, 168, 74, 0.42);
+  --badge-attention-text: var(--warning);
+  --badge-attention-accent: var(--warning);
+
+  --badge-pending-bg: rgba(214, 136, 62, 0.14);
+  --badge-pending-border: rgba(214, 136, 62, 0.38);
+  --badge-pending-text: #D6883E;
+  --badge-pending-accent: #D6883E;
+
+  --badge-success-bg: var(--success-bg);
+  --badge-success-border: rgba(73, 184, 137, 0.38);
+  --badge-success-text: var(--success);
+  --badge-success-accent: var(--success);
+
+  --badge-muted-bg: rgba(255, 255, 255, 0.04);
+  --badge-muted-border: rgba(255, 255, 255, 0.08);
+  --badge-muted-text: var(--muted-foreground);
 
   /* casino — muted berry / rose-magenta */
   --casino-primary: #B85C8E;

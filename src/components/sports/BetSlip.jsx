@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { X, Ticket } from "lucide-react";
 import { fmt } from "@/lib/format";
 import { useOddsFormat } from "@/lib/odds";
@@ -15,7 +16,8 @@ export function BetSlip({
 }) {
   const { fmtOdds } = useOddsFormat();
   const [confirming, setConfirming] = useState(false);
-  const hasPending = selections.some((s) => s.pendingOdds != null);
+  const pendingSelections = selections.filter((s) => s.pendingOdds != null);
+  const hasPending = pendingSelections.length > 0;
   const canMulti = selections.length >= 2;
   const combinedOdds = selections.reduce((acc, s) => acc * s.odds, 1);
 
@@ -37,9 +39,20 @@ export function BetSlip({
       <div className="flex items-center gap-2 border-b p-3">
         <span className="text-sm font-bold">Bet slip</span>
         {!empty && (
-          <span className="grid size-5 place-items-center rounded-full bg-[var(--product-primary)] text-xs font-medium text-[var(--product-cta-text)]">
-            {selections.length}
-          </span>
+          hasPending ? (
+            <StatusBadge
+              variant="attention"
+              icon="warning"
+              count={pendingSelections.length}
+              ariaLabel={`${pendingSelections.length} selection${pendingSelections.length === 1 ? "" : "s"} with updated odds`}
+            />
+          ) : (
+            <StatusBadge
+              variant="neutral"
+              count={selections.length}
+              ariaLabel={`${selections.length} betslip selection${selections.length === 1 ? "" : "s"}`}
+            />
+          )
         )}
         {!empty && (
           <button onClick={clear} className="ml-auto text-xs text-muted-foreground hover:text-foreground">Clear</button>

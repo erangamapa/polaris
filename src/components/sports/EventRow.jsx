@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Radio, Clock, ChevronRight } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Clock, ChevronRight } from "lucide-react";
 import { mainMarket } from "@/lib/sportsData";
 import { OddsButton } from "./OddsButton";
 
@@ -14,9 +14,12 @@ export function EventRow({ event, selection, onPick, onOpen }) {
       <CardContent className="p-3">
         <button onClick={() => onOpen(event)} className="mb-2 flex w-full items-center gap-2 text-left text-xs text-muted-foreground">
           {event.live ? (
-            <Badge variant="outline" className="gap-1 border-[rgba(214,90,112,0.42)] bg-[rgba(214,90,112,0.12)] text-[#E8758B]">
-              <Radio className="size-3" /> Live · {event.clock}
-            </Badge>
+            <StatusBadge
+              variant="live"
+              icon="dot"
+              label={`Live · ${event.clock}`}
+              ariaLabel={`Live, ${event.clock} elapsed`}
+            />
           ) : (
             <span className="flex items-center gap-1"><Clock className="size-3.5" />{event.time}</span>
           )}
