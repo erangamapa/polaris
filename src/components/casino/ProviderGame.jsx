@@ -15,6 +15,7 @@ export const PROVIDER_GAMES = [
   { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", badge: "TriBet Studio", image: "/img/games/tumble.svg", tags: ["new"] },
   // Imported from aquistsang GitHub — self-contained (own mock economy).
   { key: "coin-fighters", title: "Coin Fighters", src: "/games/coin-fighters/index.html", badge: "TriBet Studio", image: "/img/games/coin-fighters.svg", tags: ["new", "game-shows"] },
+  { key: "raiders-escape", title: "Raider's Escape", src: "/games/raiders-escape/index.html", badge: "TriBet Studio", image: "/img/games/raiders-escape.svg", tags: ["new", "popular"] },
   { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", badge: "TriBet Studio", image: "/img/games/keymines-v2.svg", tags: ["new"] },
   { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "TriBet Studio", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
 ];
