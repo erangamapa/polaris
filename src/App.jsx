@@ -22,11 +22,12 @@ import { toast } from "./lib/toast";
 import { parsePath, pathFor } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { AzuroMarkets } from "./components/sports/AzuroMarkets";
-import { SectionHero } from "./components/shell/SectionHero";
+import { ArenaTileRow } from "./components/shell/ArenaTileRow";
 import { CATEGORIES } from "./lib/mockData";
 import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { SPORTS, liveCountBySport } from "./lib/sportsData";
+import { SPORTS_PROMOS, PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 
 const CASINO_ICONS = {
   Lobby: LayoutGrid, Popular: Gem, Slots: Cherry, "Live Casino": Radio,
@@ -238,29 +239,15 @@ export default function App() {
               />
             )}
             {product === "predictions" && (
-              <div className="mx-auto max-w-6xl space-y-4">
-                <SectionHero
-                  eyebrow="Prediction markets"
-                  title="Markets move fast"
-                  body="Trade Yes/No on real-world events. Live prices, cash out anytime."
-                  image="/heroes/predictions-hero.png"
-                  tint="radial-gradient(120% 150% at 16% 18%, rgba(79,167,184,0.22), transparent 55%), linear-gradient(135deg, #0F2025 0%, #0C1418 100%)"
-                />
-                <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={placeBet} ensureAuth={ensureAuth} />
-              </div>
+              <PredictionsSection
+                predSection={predSection}
+                balance={balance}
+                setBalance={setBalance}
+                onBet={placeBet}
+                ensureAuth={ensureAuth}
+              />
             )}
-            {product === "sports" && (
-              <div className="mx-auto max-w-6xl space-y-4">
-                <SectionHero
-                  eyebrow="Live now"
-                  title="Big matches, sharper odds"
-                  body="Live and upcoming across the top leagues. On-chain bets, settled trustlessly."
-                  image="/heroes/sports-hero.png"
-                  tint="radial-gradient(120% 150% at 16% 18%, rgba(175,195,74,0.20), transparent 55%), linear-gradient(135deg, #1B2110 0%, #11150D 100%)"
-                />
-                <AzuroMarkets onBetPlaced={logRound} />
-              </div>
-            )}
+            {product === "sports" && <SportsSection onBetPlaced={logRound} />}
           </div>
           <Footer onResponsibleGambling={() => setRgOpen(true)} onSupport={() => setSupportOpen(true)} />
         </main>
@@ -297,6 +284,29 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         isFav={isFav}
         onFav={onFav}
       />
+    </div>
+  );
+}
+
+// Same top-section system as Casino (ArenaTileRow: wallet tile + two arena
+// promos + scoped search), just with predictions-flavoured promos and search
+// scope. Replaces the old single oversized SectionHero.
+function PredictionsSection({ predSection, balance, setBalance, onBet, ensureAuth }) {
+  const [query, setQuery] = useState("");
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <ArenaTileRow arena="predictions" promos={PREDICTIONS_PROMOS} query={query} onQuery={setQuery} />
+      <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={onBet} ensureAuth={ensureAuth} query={query} />
+    </div>
+  );
+}
+
+function SportsSection({ onBetPlaced }) {
+  const [query, setQuery] = useState("");
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <ArenaTileRow arena="sports" promos={SPORTS_PROMOS} query={query} onQuery={setQuery} />
+      <AzuroMarkets onBetPlaced={onBetPlaced} query={query} />
     </div>
   );
 }

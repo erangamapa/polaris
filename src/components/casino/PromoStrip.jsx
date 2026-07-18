@@ -9,7 +9,9 @@ import { CASINO_CHAIN_ID } from "@shared/chains";
 // All three top cards share this fixed height at every breakpoint — identical
 // width comes from the grid (grid-cols-3 = repeat(3, minmax(0, 1fr))), identical
 // height comes from here. Neither is allowed to grow from content or artwork.
-const CARD_H = "h-40"; // 160px — inside the 150-170px desktop target
+// Exported so Sports/Predictions can build their own tiles at the exact same
+// dimensions (see ArenaPromoTile) without duplicating the constant.
+export const CARD_H = "h-40"; // 160px — inside the 150-170px desktop target
 
 // Compact promo tile — same art/overlay treatment as the old full hero, just
 // clamped to CARD_H instead of a min-h-[300px+] banner.
@@ -85,15 +87,22 @@ function WalletCard({ children, tone = "neutral" }) {
   );
 }
 
-// Exactly the promo-card CTA's size and shape (same rounded-lg, px-3 py-1.5,
-// text-xs font-bold — see PromoTile above), just recoloured teal so this tile
-// still reads as product utility rather than a promotion. Content-width via
-// `w-fit` (the parent stretches flex children by default), never full-width,
-// never visually heavier than "Claim bonus" / "View race" beside it.
+// Shared shape/size for every promo-style CTA in the app (Casino's "Claim
+// bonus"/"View race", the wallet tile, and Sports/Predictions' arena promos)
+// — same rounded-lg, px-3 py-1.5, text-xs font-bold everywhere. Callers add
+// their own color classes (this has none baked in).
+export const PROMO_CTA_BASE = "w-fit shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900";
+
+// The wallet tile's own CTA: PROMO_CTA_BASE recoloured teal (--global-cta) so
+// it still reads as product utility rather than a promotion, never visually
+// heavier than "Claim bonus" / "View race" beside it.
 const PROMO_BTN = "w-fit shrink-0 flex items-center gap-1.5 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-xs font-bold text-[var(--global-cta-text)] transition hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900";
 const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-zinc-500";
 
-function PlayerTile() {
+// Exported: this is the one shared "Tribet infrastructure" tile reused as the
+// first card on Casino, Sports and Predictions (see ArenaTileRow). It has no
+// arena-specific content by design — same wallet, same CTA, everywhere.
+export function PlayerTile() {
   const {
     address, isConnected, status, onCasinoChain, isSwitching,
     casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, refetchCasinoBalance,
@@ -223,14 +232,18 @@ const SEARCH_SCOPES = [
 // One combined control — a borderless scope <select> and a borderless input
 // sharing a single outer border/height/radius/focus ring, not two separate
 // controls. Switching scope only swaps the placeholder copy: it doesn't
-// navigate (Predictions/Sports each keep their own search on their own page)
-// and never clears whatever the user already typed.
-function ScopedSearch({ query, onQuery }) {
-  const [scope, setScope] = useState("casino");
+// navigate — Casino/Sports/Predictions each search their own page's own
+// content, and `defaultScope` just seeds which one this instance opens on
+// (Sports opens on "sports", Predictions on "predictions", etc). Exported:
+// this is the one search implementation shared by all three arenas — the
+// arena-tinted focus ring comes from --product-primary, which the page root's
+// [data-product] attribute already resolves per arena.
+export function ScopedSearch({ query, onQuery, defaultScope = "casino" }) {
+  const [scope, setScope] = useState(defaultScope);
   const active = SEARCH_SCOPES.find((s) => s.id === scope);
 
   return (
-    <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--casino-primary)]">
+    <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--product-primary)]">
       <div className="relative flex h-full shrink-0 items-center">
         <select
           value={scope}
@@ -253,7 +266,7 @@ function ScopedSearch({ query, onQuery }) {
           onChange={(e) => onQuery(e.target.value)}
           placeholder={active.placeholder}
           aria-label={active.placeholder}
-          data-test-id="casino-search"
+          data-test-id="arena-search"
           className="h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none"
         />
       </div>

@@ -4,14 +4,14 @@ import { MarketDetail } from "./MarketDetail";
 import { PositionTicket } from "./PositionTicket";
 import { PositionsTable } from "./PositionsTable";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
 import { useBriefLoad } from "@/lib/useBriefLoad";
 import { marketsByCategory, POSITIONS } from "@/lib/predictionsData";
 
 // `section` is a category name (Trending, Politics, ...) or "My Positions".
-export function PredictionsApp({ section, balance, setBalance, onBet, ensureAuth }) {
+// `query` comes from the shared scoped search in ArenaTileRow (above this
+// component, see App.jsx's PredictionsSection) — no local search input here.
+export function PredictionsApp({ section, balance, setBalance, onBet, ensureAuth, query = "" }) {
   const ready = useBriefLoad();
-  const [query, setQuery] = useState("");
   const [detail, setDetail] = useState(null);
   const [positions, setPositions] = useState(POSITIONS);
   const [ticket, setTicket] = useState({ open: false, market: null, side: "Yes" });
@@ -50,18 +50,9 @@ export function PredictionsApp({ section, balance, setBalance, onBet, ensureAuth
         </>
       ) : (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-xl font-bold">{section}</h1>
-              <p className="text-sm text-muted-foreground">Take a Yes/No position on real-world events.</p>
-            </div>
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search markets"
-              aria-label="Search markets"
-              className="h-9 sm:max-w-56"
-            />
+          <div>
+            <h1 className="text-xl font-bold">{section}</h1>
+            <p className="text-sm text-muted-foreground">Take a Yes/No position on real-world events.</p>
           </div>
           {!ready ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

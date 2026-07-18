@@ -8,10 +8,17 @@ import { AzuroBetSlip } from "./AzuroBetSlip";
 // markets and shows ALL markets (each condition) with every outcome. Clicking an
 // outcome opens the bet slip modal — that's where the stake is set and the bet
 // is submitted (with all progress shown in the modal, not on the odds button).
-export function AzuroMarkets({ onBetPlaced }) {
-  const { games, loading, bettableCount } = useBettableGames();
+// `query` comes from the shared scoped search in ArenaTileRow (see App.jsx's
+// SportsSection) — this page never had its own search before.
+export function AzuroMarkets({ onBetPlaced, query = "" }) {
+  const { games: allGames, loading, bettableCount } = useBettableGames();
   const { sportsBalance, sportsGas } = useWallet();
   const [slip, setSlip] = useState(null); // { game, market, outcome }
+
+  const q = query.trim().toLowerCase();
+  const games = q
+    ? allGames.filter((g) => [g.title, g.sport?.name, g.league?.name].some((s) => s?.toLowerCase().includes(q)))
+    : allGames;
 
   const totalMarkets = games.reduce((s, g) => s + g.markets.length, 0);
 
@@ -32,6 +39,10 @@ export function AzuroMarkets({ onBetPlaced }) {
       {loading ? (
         <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> Loading live Azuro markets…
+        </div>
+      ) : allGames.length > 0 && games.length === 0 && q ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No games match “{query}”.
         </div>
       ) : games.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
