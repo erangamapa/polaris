@@ -136,49 +136,132 @@ function Tile({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav }) {
   );
 }
 
-function FavHeader() {
-  return (
-    <div className="mb-3 flex items-center gap-2">
-      <Star className="size-4 fill-amber-400 text-amber-400" />
-      <h2 className="text-sm font-bold">Your favorites</h2>
-    </div>
-  );
-}
-
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6";
+// Compact horizontal row for the 2-5 item tier of "Your games" — fixed-width
+// tiles in a single scrollable line, deliberately not the full wrapping grid
+// (which is what produced the old "giant empty row" look for a single item).
+const ROW = "flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]";
+const ROW_TILE = "w-[136px] shrink-0";
 
 const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
 
+// "Your games": recently played first, then favorites not already covered by
+// recent play — never a lobby row just because a label exists elsewhere.
+// Sizing follows content, not a fixed layout: 0 → no section at all; exactly
+// 1 → shown inline (still the grid, so it's one small tile, never a
+// full-width row); 2-5 → compact horizontal row; 6+ → a preview with
+// "View all" expanding the rest in place.
+function YourGames({ games, tileProps }) {
+  const [expanded, setExpanded] = useState(false);
+  if (games.length === 0) return null;
+
+  const heading = (
+    <div className="mb-3 flex items-center gap-2">
+      <Star className="size-4 fill-amber-400 text-amber-400" />
+      <h2 className="text-sm font-bold">Your games</h2>
+    </div>
+  );
+
+  if (games.length <= 5) {
+    const cls = games.length === 1 ? "grid grid-cols-2 gap-3 sm:grid-cols-3" : ROW;
+    return (
+      <section data-test-id="your-games-section">
+        {heading}
+        <div className={cls}>
+          {games.map((game) => (
+            <div key={game.favId} className={games.length === 1 ? "w-[136px]" : ROW_TILE}>
+              <Tile game={game} {...tileProps} />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  const PREVIEW = 6;
+  const shown = expanded ? games : games.slice(0, PREVIEW);
+  return (
+    <section data-test-id="your-games-section">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Star className="size-4 fill-amber-400 text-amber-400" />
+          <h2 className="text-sm font-bold">Your games</h2>
+        </div>
+        {!expanded && (
+          <button
+            onClick={() => setExpanded(true)}
+            data-test-id="your-games-view-all"
+            className="text-xs font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            View all ({games.length})
+          </button>
+        )}
+      </div>
+      <div className={GRID}>
+        {shown.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+      </div>
+    </section>
+  );
+}
+
+function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
+  return (
+    <section className="animate-fade-in-up">
+      <div className="mb-4 flex items-center gap-2">
+        <Star className="size-5 fill-amber-400 text-amber-400" />
+        <h1 className="text-lg font-bold">Favorites</h1>
+        {favorites.length > 0 && (
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+            {favorites.length} game{favorites.length === 1 ? "" : "s"}
+          </span>
+        )}
+      </div>
+      {favorites.length ? (
+        <div className={GRID}>
+          {favorites.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+        </div>
+      ) : q ? (
+        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
+          No favorites match “{query}”.
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
+          <p className="text-sm font-medium text-zinc-300">No favorites yet</p>
+          <p className="mt-1 text-sm text-zinc-500">Save games using the star icon to find them here.</p>
+          <button
+            onClick={onBrowseGames}
+            data-test-id="favorites-browse-games"
+            className="mt-4 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Browse games
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // Casino catalog: on-chain BetSwirl games (portrait art tiles) + vendored
 // provider games (embedded, loaded on demand). Each launches via its callback.
-// Favorites (persisted upstream) get a star on every tile, a "Your favorites"
-// rail, and a dedicated view when the Favorites category is selected. `query`
-// (from the search box above the catalog) filters every section by title.
-export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav }) {
+// `recentIds` (most-recent-first favIds) + favorites feed "Your games" —
+// dedup content priority: recently played, then favorites. `query` (from the
+// search box above the catalog) filters every section by title.
+export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames }) {
   const tileProps = { onLaunchOnchain: onLaunch, onLaunchProvider, isFav, onFav };
   const q = query?.trim().toLowerCase() ?? "";
   const favorites = (isFav ? ALL_GAMES.filter((g) => isFav(g)) : []).filter((g) => matchesQuery(g, q));
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
   const provider = PROVIDER.filter((g) => matchesQuery(g, q));
 
+  const recentGames = (recentIds ?? []).map((id) => ALL_GAMES.find((g) => g.favId === id)).filter(Boolean);
+  const yourGames = [...recentGames, ...favorites.filter((g) => !recentGames.some((r) => r.favId === g.favId))]
+    .filter((g) => matchesQuery(g, q));
+
   if (category === "Favorites") {
-    return (
-      <section>
-        <FavHeader />
-        {favorites.length ? (
-          <div className={GRID}>
-            {favorites.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
-            {q ? `No favorites match “${query}”.` : "No favorites yet — tap the star on any game to save it here."}
-          </div>
-        )}
-      </section>
-    );
+    return <FavoritesPage favorites={favorites} q={q} query={query} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
-  if (q && !favorites.length && !onchain.length && !provider.length) {
+  if (q && !yourGames.length && !onchain.length && !provider.length) {
     return (
       <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
         No games match “{query}”.
@@ -188,14 +271,7 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 
   return (
     <div className="space-y-6">
-      {favorites.length > 0 && (
-        <section>
-          <FavHeader />
-          <div className={GRID}>
-            {favorites.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-          </div>
-        </section>
-      )}
+      <YourGames games={yourGames} tileProps={tileProps} />
 
       {onchain.length > 0 && (
         <section>

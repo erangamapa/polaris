@@ -43,6 +43,28 @@ const loadFavs = () => {
 const saveFavs = (set) => {
   try { localStorage.setItem(FAVS_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
 };
+
+// Recently-played games (most-recent-first), capped — feeds "Your games"
+// content priority (recently played > favorites). Persisted like favorites.
+const RECENT_KEY = "tribet_recent";
+const RECENT_CAP = 12;
+const loadRecent = () => {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+};
+const saveRecent = (list) => {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+};
+
+// Mock "account favorites" — there's no real backend, so wallet-linked
+// favorites are simulated as a per-address localStorage bucket (easy to swap
+// for a real API later without touching the merge logic below).
+const loadAccountFavs = (address) => {
+  try { return new Set(JSON.parse(localStorage.getItem(`tribet_favs_${address}`) || "[]")); }
+  catch { return new Set(); }
+};
+const saveAccountFavs = (address, set) => {
+  try { localStorage.setItem(`tribet_favs_${address}`, JSON.stringify([...set])); } catch { /* ignore */ }
+};
 const PRED_ICONS = {
   Trending: Flame, Politics: Landmark, Crypto: Bitcoin, Sports: Trophy, Tech: Cpu, Economy: LineChart,
 };
@@ -115,6 +137,11 @@ export default function App() {
   const [activity, setActivity] = useState([]);
   const [favs, setFavs] = useState(loadFavs);
   useEffect(() => { saveFavs(favs); }, [favs]);
+  const [recentIds, setRecentIds] = useState(loadRecent);
+  useEffect(() => { saveRecent(recentIds); }, [recentIds]);
+  const trackRecent = (game) => {
+    setRecentIds((list) => [game.favId, ...list.filter((id) => id !== game.favId)].slice(0, RECENT_CAP));
+  };
   const [onchainGame, setOnchainGame] = useState(null);
   const [providerGame, setProviderGame] = useState(null);
   const [fundsOpen, setFundsOpen] = useState(false);
@@ -142,10 +169,11 @@ export default function App() {
   // modal on load / back-forward so the link actually works when followed.
   const openGame = (game) => {
     if (game.kind === "onchain") {
-      if (game.playable && ensureAuth()) setOnchainGame(game);
+      if (game.playable && ensureAuth()) { setOnchainGame(game); trackRecent(game); }
       return;
     }
     setProviderGame(game);
+    trackRecent(game);
   };
   const launchGame = (game) => {
     window.history.pushState({}, "", gameHref(game));
@@ -193,6 +221,13 @@ export default function App() {
     setActivity((list) => [{ id: `a${Date.now()}${Math.random().toString(36).slice(2, 5)}`, ref: betRef(), time: nowLabel(), ...e }, ...list]);
 
   const isFav = (game) => favs.has(game.favId);
+  // Optimistic: the star fills / sidebar count updates immediately (setFavs is
+  // synchronous). "Sync in background" has nothing real to sync against yet —
+  // there's no favorites backend, only localStorage — so this always
+  // "succeeds"; the shape (a resolved promise + a revert path) is here so a
+  // real API can slot in later without changing the calling code or the
+  // never-navigate/never-a-modal contract.
+  const syncFavorite = () => Promise.resolve(true);
   const toggleFav = (game) => {
     const adding = !favs.has(game.favId);
     setFavs((s) => {
@@ -200,8 +235,43 @@ export default function App() {
       if (adding) n.add(game.favId); else n.delete(game.favId);
       return n;
     });
-    if (adding) toast.success("Added to favorites", { message: game.title });
+    syncFavorite(game, adding).then((ok) => {
+      if (ok) {
+        toast.success(adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
+          action: { label: "View favorites", onClick: () => { setCasinoCategory("Favorites"); } },
+        } : undefined);
+      } else {
+        setFavs((s) => {
+          const n = new Set(s);
+          if (adding) n.delete(game.favId); else n.add(game.favId);
+          return n;
+        });
+        toast.error("Couldn't update Favorites — Try again");
+      }
+    });
   };
+
+  // Favorites work fully offline (local-first). On wallet connect, merge in
+  // that address's own favorites as a union, deduped by game id — silently if
+  // either set is empty, confirmation toast only (never a modal, never a
+  // navigation). Mock account-favorites store (see loadAccountFavs above)
+  // stands in for a real API; this effect is the only thing that would need
+  // to change to point at one.
+  const mergedForAddress = useRef(null);
+  useEffect(() => {
+    if (!wallet.isConnected || !wallet.address) { mergedForAddress.current = null; return; }
+    if (mergedForAddress.current === wallet.address) return;
+    mergedForAddress.current = wallet.address;
+    const account = loadAccountFavs(wallet.address);
+    const merged = new Set([...favs, ...account]);
+    const added = merged.size - favs.size;
+    if (added > 0) {
+      setFavs(merged);
+      toast.success(`Synced ${added} favorite${added === 1 ? "" : "s"} from your wallet`);
+    }
+    saveAccountFavs(wallet.address, merged);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet.isConnected, wallet.address]);
 
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
@@ -277,6 +347,8 @@ export default function App() {
                 onLaunchProvider={launchGame}
                 isFav={isFav}
                 onFav={toggleFav}
+                recentIds={recentIds}
+                onBrowseGames={() => setCasinoCategory("Lobby")}
               />
             )}
             {product === "predictions" && (
@@ -312,7 +384,7 @@ export default function App() {
   );
 }
 
-function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav }) {
+function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames }) {
   const [query, setQuery] = useState("");
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -324,6 +396,8 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         onLaunchProvider={onLaunchProvider}
         isFav={isFav}
         onFav={onFav}
+        recentIds={recentIds}
+        onBrowseGames={onBrowseGames}
       />
     </div>
   );

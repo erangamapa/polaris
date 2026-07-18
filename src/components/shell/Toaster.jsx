@@ -71,7 +71,12 @@ export function Toaster() {
   const list = useToasts();
   if (!list.length) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-16 z-50 flex flex-col items-center gap-2 px-4">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="false"
+      className="pointer-events-none fixed inset-x-0 top-16 z-50 flex flex-col items-center gap-2 px-4"
+    >
       {list.map((t) => <ToastCard key={t.id} t={t} />)}
     </div>
   );
