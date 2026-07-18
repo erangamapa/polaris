@@ -32,6 +32,7 @@ import { NetworkBanner } from "./components/shell/NetworkBanner";
 import { GeoBlock } from "./components/shell/GeoBlock";
 import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
+import { track } from "./lib/analytics";
 
 const CASINO_ICONS = {
   Lobby: LayoutGrid, Popular: Gem, Slots: Cherry, "Live Casino": Radio,
@@ -107,12 +108,15 @@ export default function App() {
 
   const toggleSidebar = () => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setMobileDrawerOpen((o) => !o);
+      const opening = !mobileDrawerOpen;
+      setMobileDrawerOpen(opening);
+      if (opening) track("casino_nav_opened", { sidebarState: "mobile-drawer" });
       return;
     }
     setRailMode((m) => {
       const next = m === "expanded" ? "collapsed" : "expanded";
       saveSidebarMode(next);
+      track(next === "expanded" ? "casino_nav_expanded" : "casino_nav_collapsed", { sidebarState: next });
       return next;
     });
   };
@@ -186,11 +190,16 @@ export default function App() {
   // modal on load / back-forward so the link actually works when followed.
   const openGame = (game) => {
     if (game.kind === "onchain") {
-      if (game.playable && ensureAuth()) { setOnchainGame(game); trackRecent(game); }
+      if (game.playable && ensureAuth()) {
+        setOnchainGame(game);
+        trackRecent(game);
+        track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected" });
+      }
       return;
     }
     setProviderGame(game);
     trackRecent(game);
+    track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected" });
   };
   const launchGame = (game) => {
     window.history.pushState({}, "", gameHref(game));
@@ -257,6 +266,7 @@ export default function App() {
         toast.success(adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
           action: { label: "View favorites", onClick: () => { setCasinoCategory("Favorites"); } },
         } : undefined);
+        track(adding ? "casino_favorite_added" : "casino_favorite_removed", { gameId: game.favId, category: casinoCategory });
       } else {
         setFavs((s) => {
           const n = new Set(s);
@@ -279,6 +289,7 @@ export default function App() {
     if (!wallet.isConnected || !wallet.address) { mergedForAddress.current = null; return; }
     if (mergedForAddress.current === wallet.address) return;
     mergedForAddress.current = wallet.address;
+    track("wallet_connected", { walletState: "connected" });
     const account = loadAccountFavs(wallet.address);
     const merged = new Set([...favs, ...account]);
     const added = merged.size - favs.size;
@@ -289,6 +300,17 @@ export default function App() {
     saveAccountFavs(wallet.address, merged);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.isConnected, wallet.address]);
+
+  // network_switched fires on real chain changes only — not on the very
+  // first render (that's just "the wallet happened to already be on chain
+  // X", not a switch).
+  const lastChainId = useRef(wallet.chainId);
+  useEffect(() => {
+    if (lastChainId.current !== undefined && lastChainId.current !== wallet.chainId) {
+      track("network_switched", { chainId: wallet.chainId, category: product });
+    }
+    lastChainId.current = wallet.chainId;
+  }, [wallet.chainId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
@@ -330,6 +352,7 @@ export default function App() {
 
   const handleSelect = (id) => {
     sidebar.onSelect(id);
+    track("casino_nav_item_selected", { category: id, sidebarState: railMode });
     if (typeof window !== "undefined" && window.innerWidth < 768) setMobileDrawerOpen(false);
   };
 
@@ -425,6 +448,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         searchResults={searchResults}
         onSelectResult={selectSearchResult}
         onBrowseAll={browseAll}
+        onZeroResults={(q) => track("casino_search_zero_results", { query: q, searchScope: "casino" })}
       />
       <CasinoCatalog
         category={category}

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
 import { PROVIDER_GAMES } from "./ProviderGame";
 
@@ -292,7 +293,7 @@ function YourGames({ games, tileProps }) {
         </div>
         {!expanded && (
           <button
-            onClick={() => setExpanded(true)}
+            onClick={() => { setExpanded(true); track("casino_view_all_selected", { sourceSection: "your-games" }); }}
             data-test-id="your-games-view-all"
             className="text-xs font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -308,6 +309,9 @@ function YourGames({ games, tileProps }) {
 }
 
 function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
+  // Fires once per navigation into this page (mount), not per re-render —
+  // toggling a favorite while already here doesn't re-fire it.
+  useEffect(() => { track("casino_favorites_opened", {}); }, []);
   return (
     <section className="animate-fade-in-up">
       <div className="mb-4 flex items-center gap-2">
@@ -378,7 +382,18 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     return <CategoryPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
-  // Lobby dashboard.
+  return (
+    <LobbyDashboard
+      category={category} query={query} q={q} yourGames={yourGames} tileProps={tileProps} onBrowseGames={onBrowseGames}
+    />
+  );
+}
+
+// Its own component (not just a branch inside CasinoCatalog) so its
+// view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
+// itself returns early for Favorites/CategoryPage before this would ever be
+// reached, and hooks can't live after an early return in the same component.
+function LobbyDashboard({ category, query, q, yourGames, tileProps, onBrowseGames }) {
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
   const provider = PROVIDER.filter((g) => matchesQuery(g, q));
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
@@ -389,8 +404,23 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
   const providerRow = dedupAgainstYourGames(provider, yourGameIds);
   const liveCasinoRow = dedupAgainstYourGames(byTag("live-casino"), yourGameIds);
   const gameShowsRow = dedupAgainstYourGames(byTag("game-shows"), yourGameIds);
+  const isEmpty = q && !yourGames.length && !onchain.length && !popularRow.length && !newRow.length && !providerRow.length && !liveCasinoRow.length && !gameShowsRow.length;
 
-  if (q && !yourGames.length && !onchain.length && !popularRow.length && !newRow.length && !providerRow.length && !liveCasinoRow.length && !gameShowsRow.length) {
+  const visibleSections = [
+    yourGames.length > 0 && "your-games",
+    "on-chain-casino",
+    popularRow.length > 0 && "popular",
+    newRow.length > 0 && "new",
+    providerRow.length > 0 && "provider-games",
+    liveCasinoRow.length > 0 && "live-casino",
+    gameShowsRow.length > 0 && "game-shows",
+  ].filter(Boolean).join(",");
+  useEffect(() => {
+    if (!isEmpty) track("casino_lobby_section_viewed", { sections: visibleSections.split(",") });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, q, visibleSections, isEmpty]);
+
+  if (isEmpty) {
     return (
       <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
         <p className="text-sm text-zinc-500">No games match “{query}”.</p>

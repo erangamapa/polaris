@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { toast } from "@/lib/toast";
+import { track } from "@/lib/analytics";
 import { CASINO_CHAIN_ID } from "@shared/chains";
 
 // All three top cards share this fixed height at every breakpoint — identical
@@ -260,15 +261,23 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
 
   useEffect(() => { setActiveIndex(-1); }, [query, scope]);
 
+  // Debounced: report a zero-results query once the user pauses typing, not
+  // on every keystroke — "zzzn" and "zzzno" mid-type aren't separate search
+  // intents worth separate events.
   useEffect(() => {
-    if (showDropdown && shown.length === 0 && zeroReportedFor.current !== trimmed) {
-      zeroReportedFor.current = trimmed;
-      onZeroResults?.(trimmed);
-    }
+    if (!(showDropdown && shown.length === 0)) return;
+    const t = setTimeout(() => {
+      if (zeroReportedFor.current !== trimmed) {
+        zeroReportedFor.current = trimmed;
+        onZeroResults?.(trimmed);
+      }
+    }, 500);
+    return () => clearTimeout(t);
   }, [showDropdown, shown.length, trimmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectResult = (game) => {
     onSelectResult?.(game);
+    track("casino_search_result_selected", { gameId: game.favId, searchScope: scope });
     setOpen(false);
   };
 
@@ -296,7 +305,7 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
           <div className="relative flex h-full shrink-0 items-center">
             <select
               value={scope}
-              onChange={(e) => setScope(e.target.value)}
+              onChange={(e) => { setScope(e.target.value); track("casino_search_scope_changed", { searchScope: e.target.value }); }}
               aria-label="Search scope"
               data-test-id="search-scope"
               className="h-full appearance-none rounded-l-lg border-0 bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-white focus-visible:outline-none"
@@ -314,7 +323,7 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
               id="arena-search-input"
               value={query}
               onChange={(e) => onQuery(e.target.value)}
-              onFocus={() => setOpen(true)}
+              onFocus={() => { setOpen(true); track("casino_search_focused", { searchScope: scope }); }}
               onKeyDown={onKeyDown}
               placeholder={active.placeholder}
               data-test-id="arena-search"
