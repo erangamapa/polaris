@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { toast } from "@/lib/toast";
-import { track } from "@/lib/analytics";
+import { track } from "@/lib/telemetry";
 import { CASINO_CHAIN_ID } from "@shared/chains";
 
 // All three top cards share this fixed height at every breakpoint — identical
