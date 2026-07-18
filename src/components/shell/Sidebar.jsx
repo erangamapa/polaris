@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import { Dices, TrendingUp, Volleyball as SoccerBall } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const PRODUCTS = [
   { id: "casino", label: "Casino", icon: Dices },
@@ -14,25 +16,146 @@ const ACCENTS = {
   casino: {
     tab: { background: "rgba(184,92,142,0.12)", color: "#D99AB9", border: "1px solid rgba(184,92,142,0.42)" },
     item: { background: "rgba(184,92,142,0.16)", color: "#D99AB9" },
+    bar: "#D99AB9",
   },
   predictions: {
     tab: { background: "rgba(79,167,184,0.12)", color: "#92D4DF", border: "1px solid rgba(79,167,184,0.42)" },
     item: { background: "rgba(79,167,184,0.16)", color: "#92D4DF" },
+    bar: "#92D4DF",
   },
   sports: {
     tab: { background: "rgba(175,195,74,0.12)", color: "#D7E78A", border: "1px solid rgba(175,195,74,0.42)" },
     item: { background: "rgba(175,195,74,0.16)", color: "#D7E78A" },
+    bar: "#D7E78A",
   },
 };
 
-function ItemIcon({ icon }) {
-  if (!icon) return <span className="size-4" />;
-  if (typeof icon === "string") return <span className="grid size-4 place-items-center text-sm">{icon}</span>;
+function ItemIcon({ icon, className = "size-4" }) {
+  if (!icon) return <span className={className} />;
+  if (typeof icon === "string") return <span className={cn("grid place-items-center text-sm", className)}>{icon}</span>;
   const Icon = icon;
-  return <Icon className="size-4" />;
+  return <Icon className={className} />;
 }
 
-function SidebarContent({ product, setProduct, items, selected, onSelect }) {
+// Active state is never colour-only: an accent background PLUS a left-edge
+// bar, so it still reads correctly for colour-blind users / high-contrast
+// mode. Shared by every rail item (arena tab, section item, collapsed icon).
+function SideIndicator({ color }) {
+  return <span aria-hidden="true" className="absolute inset-y-1 left-0 w-[3px] rounded-full" style={{ background: color }} />;
+}
+
+// One rail item, icon-only, for the collapsed (60px) rail. Tooltip shows on
+// hover AND keyboard focus (Radix default) so nothing is hover-only.
+function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ariaCurrent, testId }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          aria-label={label}
+          aria-current={ariaCurrent}
+          data-test-id={testId}
+          className={cn(
+            "relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+          )}
+          style={active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
+        >
+          {active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
+          <ItemIcon icon={icon} />
+          {badge != null && badge > 0 && (
+            <span
+              className={cn(
+                "absolute -right-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-amber-400 px-1 text-[9px] font-bold text-black",
+                pulse && "motion-safe:animate-[fav-badge-pulse_200ms_ease-out]"
+              )}
+            >
+              {badge > 99 ? "99+" : badge}
+            </span>
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+// Tracks the previous value of `count` and reports true for one render right
+// after it increases — used to fire the Favorites badge pulse only on add.
+function usePulseOnIncrease(count) {
+  const prev = useRef(count);
+  const [pulsing, setPulsing] = useState(false);
+  useEffect(() => {
+    if (count > prev.current) {
+      setPulsing(true);
+      const t = setTimeout(() => setPulsing(false), 220);
+      prev.current = count;
+      return () => clearTimeout(t);
+    }
+    prev.current = count;
+  }, [count]);
+  return pulsing;
+}
+
+function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
+  const favItem = items.find((it) => it.id === "Favorites");
+  const mainItems = items.filter((it) => !it.divider && it.id !== "Favorites");
+  const pulse = usePulseOnIncrease(favItem?.count ?? 0);
+
+  return (
+    <div className="flex h-full flex-col items-center gap-1.5 overflow-y-auto py-3">
+      {PRODUCTS.map((p) => (
+        <RailIcon
+          key={p.id}
+          icon={p.icon}
+          label={p.label}
+          active={product === p.id}
+          accentColor={p.id}
+          ariaCurrent={product === p.id ? "page" : undefined}
+          onClick={() => setProduct(p.id)}
+        />
+      ))}
+
+      {/* Arena/section boundary — a full-width, more opaque rule so the two
+          hierarchy levels (arena vs section) read as visually distinct. */}
+      <div className="my-1 h-px w-8 bg-white/25" aria-hidden="true" />
+
+      {mainItems.map((it) => (
+        <RailIcon
+          key={it.id}
+          icon={it.icon}
+          label={it.label}
+          active={selected === it.id}
+          accentColor={product}
+          ariaCurrent={selected === it.id ? "page" : undefined}
+          onClick={() => onSelect(it.id)}
+          badge={it.live}
+        />
+      ))}
+
+      {favItem && (
+        <>
+          {/* Favorites is a separated utility destination, not just another
+              section — a lighter inset rule, distinct from the rule above. */}
+          <div className="my-1 h-px w-5 bg-white/10" aria-hidden="true" />
+          <RailIcon
+            icon={favItem.icon}
+            label="Favorites"
+            active={selected === favItem.id}
+            accentColor={product}
+            ariaCurrent={selected === favItem.id ? "page" : undefined}
+            onClick={() => onSelect(favItem.id)}
+            badge={favItem.count}
+            pulse={pulse}
+            testId="sidebar-favorites-collapsed"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
   const accent = ACCENTS[product];
   return (
     <div className="p-3">
@@ -45,6 +168,7 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
             <button
               key={p.id}
               onClick={() => setProduct(p.id)}
+              aria-current={active ? "page" : undefined}
               style={active ? ACCENTS[p.id].tab : undefined}
               className={cn(
                 // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
@@ -59,25 +183,29 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
         })}
       </div>
 
-      <div className="my-2 border-t" />
+      {/* Arena/section boundary — same distinct, more opaque rule as the
+          collapsed rail, so the hierarchy reads the same in both modes. */}
+      <div className="my-2 border-t-2 border-white/15" />
 
       {/* contextual menu (no header — the product tab is the header) */}
       <div className="space-y-0.5">
         {items.map((it) =>
           it.divider ? (
-            <div key={it.id} className="my-2 border-t" />
+            <div key={it.id} className="my-2 border-t border-white/10" />
           ) : (
             <button
               key={it.id}
               onClick={() => onSelect(it.id)}
+              aria-current={selected === it.id ? "page" : undefined}
               style={selected === it.id ? accent.item : undefined}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 selected === it.id
                   ? "font-medium"
                   : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
               )}
             >
+              {selected === it.id && <SideIndicator color={accent.bar} />}
               <ItemIcon icon={it.icon} />
               <span className="truncate">{it.label}</span>
               {it.live > 0 && (
@@ -86,7 +214,11 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
                 </Badge>
               )}
               {it.count > 0 && (
-                <Badge variant="outline" className="ml-auto min-w-5 justify-center px-1.5 tabular-nums text-muted-foreground">
+                <Badge
+                  data-test-id={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
+                  variant="outline"
+                  className="ml-auto min-w-5 justify-center px-1.5 tabular-nums text-muted-foreground"
+                >
                   {it.count}
                 </Badge>
               )}
@@ -98,30 +230,39 @@ function SidebarContent({ product, setProduct, items, selected, onSelect }) {
   );
 }
 
-export function Sidebar({ open, onClose, product, setProduct, items, selected, onSelect }) {
-  const content = (
-    <SidebarContent
-      product={product} setProduct={setProduct}
-      items={items} selected={selected} onSelect={onSelect}
-    />
-  );
+// Sidebar is never fully hidden on desktop (≥768px) — burger toggles between
+// an expanded rail (~220px, full labels) and a collapsed icon rail (~60px),
+// per `railMode`. Below 768px it's still the original full-screen drawer
+// overlay, and mode/persistence don't apply there. Width/offset transitions
+// (180-220ms) respect prefers-reduced-motion via motion-reduce:transition-none.
+export function Sidebar({ railMode, mobileOpen, onCloseMobile, product, setProduct, items, selected, onSelect }) {
+  const expanded = railMode === "expanded";
+
   return (
     <>
-      {/* desktop inline rail */}
+      {/* desktop/tablet persistent rail — never fully hidden at md+ */}
       <aside
         className={cn(
-          "hidden shrink-0 border-r bg-sidebar transition-all lg:block lg:overflow-y-auto",
-          open ? "lg:w-60" : "lg:w-0 lg:overflow-hidden lg:border-r-0"
+          "hidden shrink-0 overflow-hidden border-r bg-sidebar transition-[width] duration-200 motion-reduce:transition-none md:block",
+          expanded ? "md:w-[220px]" : "md:w-[60px]"
         )}
       >
-        {content}
+        <div className={cn("h-full", expanded ? "overflow-y-auto" : "")}>
+          {expanded ? (
+            <ExpandedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
+          ) : (
+            <CollapsedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
+          )}
+        </div>
       </aside>
 
-      {/* mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-          <aside className="absolute left-0 top-0 h-full w-64 overflow-y-auto border-r bg-sidebar">{content}</aside>
+      {/* mobile drawer — unchanged full overlay, < 768px only */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={onCloseMobile} />
+          <aside className="absolute left-0 top-0 h-full w-64 overflow-y-auto border-r bg-sidebar">
+            <ExpandedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
+          </aside>
         </div>
       )}
     </>

@@ -47,13 +47,47 @@ const PRED_ICONS = {
   Trending: Flame, Politics: Landmark, Crypto: Bitcoin, Sports: Trophy, Tech: Cpu, Economy: LineChart,
 };
 
+// Sidebar rail mode ("expanded" | "collapsed") persists across sessions —
+// an explicit user choice always wins over the breakpoint default below.
+const SIDEBAR_KEY = "casinoSidebarState";
+const loadSidebarMode = () => {
+  try { return localStorage.getItem(SIDEBAR_KEY); } catch { return null; }
+};
+const saveSidebarMode = (mode) => {
+  try { localStorage.setItem(SIDEBAR_KEY, mode); } catch { /* ignore */ }
+};
+
 export default function App() {
   // Seed navigation from the URL so deep links work.
   const initialNav = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
   const [product, setProduct] = useState(initialNav.product);
-  const [sidebarOpen, setSidebarOpen] = useState(
-    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
-  );
+
+  // Desktop/tablet (≥768px): a persistent expanded/collapsed rail, never
+  // fully hidden. Mobile (<768px): the original full-screen drawer overlay —
+  // separate, ephemeral state, never persisted. Defaults (no stored
+  // preference): expanded ≥1280px, collapsed 768-1279px.
+  const [railMode, setRailMode] = useState(() => {
+    const stored = loadSidebarMode();
+    if (stored === "expanded" || stored === "collapsed") return stored;
+    if (typeof window === "undefined") return "expanded";
+    return window.innerWidth >= 1280 ? "expanded" : "collapsed";
+  });
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileDrawerOpen((o) => !o);
+      return;
+    }
+    setRailMode((m) => {
+      const next = m === "expanded" ? "collapsed" : "expanded";
+      saveSidebarMode(next);
+      return next;
+    });
+  };
+  const sidebarLabel = typeof window !== "undefined" && window.innerWidth < 768
+    ? (mobileDrawerOpen ? "Close menu" : "Open menu")
+    : (railMode === "expanded" ? "Collapse menu" : "Expand menu");
 
   const [casinoCategory, setCasinoCategory] = useState(initialNav.casinoCategory);
   const [predSection, setPredSection] = useState(initialNav.predSection);
@@ -172,14 +206,19 @@ export default function App() {
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
     if (product === "casino") {
+      // Favorites is a separated utility destination, not just another
+      // category — kept out of the main flat list and appended after a
+      // divider (Architecture rules: "Favorites as a separated utility item
+      // at the bottom").
       return {
         title: "Casino",
         selected: casinoCategory,
         onSelect: setCasinoCategory,
-        items: CATEGORIES.map((c) => ({
-          id: c, label: c, icon: CASINO_ICONS[c],
-          count: c === "Favorites" && favs.size > 0 ? favs.size : undefined,
-        })),
+        items: [
+          ...CATEGORIES.filter((c) => c !== "Favorites").map((c) => ({ id: c, label: c, icon: CASINO_ICONS[c] })),
+          { id: "fav-divider", divider: true },
+          { id: "Favorites", label: "Favorites", icon: CASINO_ICONS.Favorites, count: favs.size > 0 ? favs.size : undefined },
+        ],
       };
     }
     if (product === "predictions") {
@@ -204,13 +243,14 @@ export default function App() {
 
   const handleSelect = (id) => {
     sidebar.onSelect(id);
-    if (typeof window !== "undefined" && window.innerWidth < 1024) setSidebarOpen(false);
+    if (typeof window !== "undefined" && window.innerWidth < 768) setMobileDrawerOpen(false);
   };
 
   return (
     <div data-product={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <TopBar
-        onBurger={() => setSidebarOpen((o) => !o)}
+        onBurger={toggleSidebar}
+        burgerLabel={sidebarLabel}
         onManageWallet={openFunds}
         onFunds={openFunds}
         onActivity={openHistory}
@@ -218,8 +258,9 @@ export default function App() {
 
       <div className="flex min-h-0 flex-1">
         <Sidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
+          railMode={railMode}
+          mobileOpen={mobileDrawerOpen}
+          onCloseMobile={() => setMobileDrawerOpen(false)}
           product={product}
           setProduct={setProduct}
           items={sidebar.items}

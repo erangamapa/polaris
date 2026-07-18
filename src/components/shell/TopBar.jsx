@@ -6,7 +6,7 @@ import { useWallet } from "@/web3/useWallet";
 
 // Wallet-first top bar: Connect Wallet replaces Login/Register (docs/architecture/10).
 // When connected, the wallet pill + Funds + activity controls appear.
-export function TopBar({ onBurger, onManageWallet, onFunds, onActivity }) {
+export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, onFunds, onActivity }) {
   const { isConnected } = useWallet();
 
   // Long-press the logo (~700ms) opens the dev panel on touch devices.
@@ -20,7 +20,7 @@ export function TopBar({ onBurger, onManageWallet, onFunds, onActivity }) {
     <header className="relative z-40 flex shrink-0 items-center gap-3 border-b bg-background px-3 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))]">
       <button
         onClick={onBurger}
-        aria-label="Toggle menu"
+        aria-label={burgerLabel}
         className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Menu className="size-5" />

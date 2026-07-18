@@ -70,6 +70,14 @@ body {
 }
 .fav-spark { animation: fav-spark 480ms var(--ease-out) forwards; }
 
+/* Sidebar Favorites badge: a quick scale pulse when the count increases (rail
+   icon badge and the expanded-row badge both reuse this). */
+@keyframes fav-badge-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
