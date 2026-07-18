@@ -419,14 +419,14 @@ export class Renderer {
     const h = c.h * unit;
     const cx = x + w / 2;
     const cy = y + h / 2;
-    const maxW = w * 0.88;
-    const maxH = h * 0.7;
+    const maxW = w * 0.94;
+    const maxH = h * 0.82;
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    let size = Math.floor(Math.min(maxH, w * (label.length <= 4 ? 0.32 : 0.22)));
-    size = Math.max(10, size);
+    let size = Math.floor(Math.min(maxH, w * (label.length <= 4 ? 0.4 : 0.28)));
+    size = Math.max(12, size);
     ctx.font = `bold ${size}px "Press Start 2P", monospace`;
     while (size > 9 && ctx.measureText(label).width > maxW) {
       size -= 1;

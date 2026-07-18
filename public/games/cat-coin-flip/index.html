@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cat Coin Flip</title>
+  <style>
+    :root {
+      --green: #22b14c;
+      --green-deep: #148a38;
+      --gold: #f0d060;
+      --ink: #1a1208;
+      --panel: rgba(8, 20, 12, 0.55);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      height: 100%;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 20px 16px 32px;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #fff8e7;
+      background:
+        radial-gradient(ellipse at 50% 30%, #3ad06a 0%, transparent 55%),
+        linear-gradient(180deg, var(--green) 0%, var(--green-deep) 100%);
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: min(100%, 420px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      letter-spacing: 0.06em;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 0 24px rgba(255, 230, 120, 0.35);
+    }
+
+    .subtitle {
+      margin: -8px 0 0;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+
+    .stage {
+      position: relative;
+      width: min(64vw, 275px);
+      height: min(64vw, 275px);
+      display: grid;
+      place-items: center;
+    }
+
+    .glow {
+      position: absolute;
+      inset: 12% 10% 18%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 236, 140, 0.55) 0%, transparent 70%);
+      filter: blur(6px);
+      pointer-events: none;
+      z-index: 0;
+      animation: glowPulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.55; transform: scale(0.96); }
+      50% { opacity: 0.9; transform: scale(1.04); }
+    }
+
+    .shadow {
+      position: absolute;
+      left: 50%;
+      bottom: 6%;
+      width: 46%;
+      height: 10%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse, rgba(0, 60, 20, 0.55) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 1;
+      transition: transform 0.08s linear, width 0.08s linear, opacity 0.08s linear;
+      pointer-events: none;
+    }
+
+    .coin-wrap {
+      position: relative;
+      z-index: 2;
+      width: 96%;
+      height: 96%;
+      display: grid;
+      place-items: center;
+      transform-style: preserve-3d;
+      filter: drop-shadow(0 0 18px rgba(255, 220, 90, 0.35));
+    }
+
+    .coin {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      user-select: none;
+      -webkit-user-drag: none;
+      transition: transform 0.05s linear;
+      will-change: transform, contents;
+    }
+
+    .result {
+      min-height: 2.2rem;
+      font-size: clamp(1.25rem, 4.5vw, 1.75rem);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: translateY(8px) scale(0.92);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .result.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .result.heads { color: #ffe566; }
+    .result.tails { color: #ffb0d0; }
+
+    .btn-flip {
+      appearance: none;
+      border: 3px solid #1a1000;
+      border-radius: 14px;
+      padding: 14px 42px;
+      font-size: clamp(1.1rem, 4vw, 1.35rem);
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      color: #1a1200;
+      cursor: pointer;
+      background: linear-gradient(180deg, #ffe566 0%, #e0a820 55%, #c48910 100%);
+      box-shadow:
+        0 5px 0 #6a4a08,
+        0 10px 24px rgba(0, 0, 0, 0.28),
+        inset 0 2px 0 rgba(255, 255, 255, 0.45);
+      transition: transform 0.08s ease, filter 0.12s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-flip:hover:not(:disabled) {
+      filter: brightness(1.06);
+    }
+
+    .btn-flip:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow:
+        0 2px 0 #6a4a08,
+        0 6px 16px rgba(0, 0, 0, 0.25),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-flip:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.8rem;
+      opacity: 0.85;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 20;
+    }
+
+    .spark {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      top: 40%;
+      left: 50%;
+      opacity: 0;
+      animation: sparkBurst 900ms ease-out forwards;
+    }
+
+    @keyframes sparkBurst {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2) rotate(220deg);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .btn-flip {
+        width: 100%;
+        max-width: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>CAT COIN FLIP</h1>
+    <p class="subtitle">Heads · Edge · Tails</p>
+
+    <div class="stage" aria-live="polite">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="shadow" id="shadow" aria-hidden="true"></div>
+      <div class="coin-wrap">
+        <img
+          id="coin"
+          class="coin"
+          src="assets/coin-heads.png"
+          alt="Cat coin"
+          width="280"
+          height="280"
+          draggable="false"
+        />
+      </div>
+    </div>
+
+    <div id="result" class="result" aria-live="assertive"></div>
+
+    <button type="button" class="btn-flip" id="btnFlip">FLIP</button>
+    <p class="hint">Provably random · Snappy casino spin</p>
+  </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script>
+    (() => {
+      const FRAME_SRCS = [
+        { src: 'assets/coin-heads.png', kind: 'heads' },
+        { src: 'assets/coin-middle.png', kind: 'edge' },
+        { src: 'assets/coin-tails.png', kind: 'tails' },
+        { src: 'assets/coin-middle.png', kind: 'edge' },
+      ];
+
+      const coin = document.getElementById('coin');
+      const shadow = document.getElementById('shadow');
+      const btn = document.getElementById('btnFlip');
+      const resultEl = document.getElementById('result');
+      const confetti = document.getElementById('confetti');
+
+      /** @type {{ src: string, kind: string }[]} */
+      let FRAMES = FRAME_SRCS.map((f) => ({ ...f }));
+
+      function loadImage(src) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error(`Failed to load ${src}`));
+          img.src = src;
+        });
+      }
+
+      function contentBounds(img) {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const { data } = ctx.getImageData(0, 0, c.width, c.height);
+        let minX = c.width;
+        let minY = c.height;
+        let maxX = -1;
+        let maxY = -1;
+        for (let y = 0; y < c.height; y++) {
+          for (let x = 0; x < c.width; x++) {
+            const i = (y * c.width + x) * 4;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            // Skip green-screen backdrop
+            if (g > 90 && g > r * 1.35 && g > b * 1.35 && r < 140 && b < 140) continue;
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          }
+        }
+        if (maxX < 0) return null;
+        return { minX, minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+      }
+
+      // Shared square + thinned edge so middle doesn't balloon vs heads/tails.
+      async function prepareFrames() {
+        const unique = [...new Set(FRAME_SRCS.map((f) => f.src))];
+        const loaded = await Promise.all(unique.map(loadImage));
+        const bySrc = Object.fromEntries(unique.map((src, i) => [src, loaded[i]]));
+        const headsImg = bySrc['assets/coin-heads.png'];
+        const tailsImg = bySrc['assets/coin-tails.png'];
+        const middleImg = bySrc['assets/coin-middle.png'];
+        const hb = contentBounds(headsImg);
+        const tb = contentBounds(tailsImg);
+        const mb = contentBounds(middleImg);
+        const faceH = Math.max(hb?.h || 0, tb?.h || 0);
+        const faceW = Math.max(hb?.w || 0, tb?.w || 0);
+        const edgeW = Math.max(8, Math.round(faceH * 0.18));
+        const box = Math.max(faceW, faceH) + 8;
+
+        function place(img, bounds, destW, destH) {
+          const c = document.createElement('canvas');
+          c.width = box;
+          c.height = box;
+          const ctx = c.getContext('2d');
+          if (!bounds) {
+            ctx.drawImage(img, (box - img.naturalWidth) / 2, (box - img.naturalHeight) / 2);
+          } else {
+            ctx.drawImage(
+              img,
+              bounds.minX,
+              bounds.minY,
+              bounds.w,
+              bounds.h,
+              (box - destW) / 2,
+              (box - destH) / 2,
+              destW,
+              destH,
+            );
+          }
+          return c.toDataURL('image/png');
+        }
+
+        const urls = {
+          'assets/coin-heads.png': place(headsImg, hb, faceW, faceH),
+          'assets/coin-tails.png': place(tailsImg, tb, faceW, faceH),
+          'assets/coin-middle.png': place(middleImg, mb, edgeW, faceH),
+        };
+        FRAMES = FRAME_SRCS.map((f) => ({ kind: f.kind, src: urls[f.src] }));
+        coin.src = FRAMES[0].src;
+      }
+
+      prepareFrames().catch(() => {
+        /* fall back to raw srcs */
+      });
+
+      let spinning = false;
+      let raf = 0;
+      let landTimer = 0;
+
+      function showFrame(index) {
+        const frame = FRAMES[index % FRAMES.length];
+        coin.src = frame.src;
+        // Soft shadow shifts with spin phase
+        const phase = (index % 4) / 4;
+        const skew = Math.sin(phase * Math.PI * 2);
+        shadow.style.transform = `translateX(calc(-50% + ${skew * 10}px)) scaleX(${1 - Math.abs(skew) * 0.12})`;
+        shadow.style.opacity = String(0.75 + Math.abs(skew) * 0.2);
+        shadow.style.width = `${46 - Math.abs(skew) * 6}%`;
+      }
+
+      function burstSparks(isHeads) {
+        confetti.innerHTML = '';
+        const colors = isHeads
+          ? ['#ffe566', '#ffd36a', '#fff', '#c9a227']
+          : ['#ffb0d0', '#ff7eb3', '#fff', '#ffd36a'];
+        for (let i = 0; i < 28; i++) {
+          const s = document.createElement('span');
+          s.className = 'spark';
+          const ang = (Math.PI * 2 * i) / 28 + Math.random() * 0.4;
+          const dist = 60 + Math.random() * 140;
+          s.style.setProperty('--dx', `${Math.cos(ang) * dist}px`);
+          s.style.setProperty('--dy', `${Math.sin(ang) * dist - 40}px`);
+          s.style.background = colors[i % colors.length];
+          s.style.animationDelay = `${Math.random() * 80}ms`;
+          confetti.appendChild(s);
+        }
+        window.setTimeout(() => {
+          confetti.innerHTML = '';
+        }, 1100);
+      }
+
+      function finish(isHeads) {
+        spinning = false;
+        btn.disabled = false;
+        showFrame(isHeads ? 0 : 2);
+        shadow.style.transform = 'translateX(-50%)';
+        shadow.style.width = '46%';
+        shadow.style.opacity = '0.85';
+
+        resultEl.textContent = isHeads ? 'Heads!' : 'Tails!';
+        resultEl.className = `result show ${isHeads ? 'heads' : 'tails'}`;
+        burstSparks(isHeads);
+      }
+
+      function flip() {
+        if (spinning) return;
+        spinning = true;
+        btn.disabled = true;
+        resultEl.className = 'result';
+        resultEl.textContent = '';
+
+        // Casino-style random land (crypto when available)
+        let roll = Math.random();
+        try {
+          const buf = new Uint32Array(1);
+          crypto.getRandomValues(buf);
+          roll = buf[0] / 0x100000000;
+        } catch {
+          /* Math.random fallback */
+        }
+        const isHeads = roll < 0.5;
+
+        const duration = 1800 + Math.random() * 1200; // 1.8s–3.0s
+        const landHold = 220;
+        const start = performance.now();
+        let frameIndex = 0;
+        let nextAt = 0;
+
+        const tick = (now) => {
+          const t = now - start;
+          if (t >= duration) {
+            showFrame(isHeads ? 0 : 2);
+            landTimer = window.setTimeout(() => finish(isHeads), landHold);
+            return;
+          }
+          const u = Math.min(1, t / duration);
+          // Ease-out interval: snappy start → slow finish
+          const interval = 40 + u * u * 240;
+          if (now >= nextAt) {
+            showFrame(frameIndex);
+            frameIndex += 1;
+            nextAt = now + interval;
+          }
+          raf = requestAnimationFrame(tick);
+        };
+
+        cancelAnimationFrame(raf);
+        clearTimeout(landTimer);
+        raf = requestAnimationFrame(tick);
+      }
+
+      btn.addEventListener('click', flip);
+      showFrame(0);
+    })();
+  </script>
+</body>
+</html>

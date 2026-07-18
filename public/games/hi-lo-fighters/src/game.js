@@ -1,7 +1,7 @@
 /**
- * Hi-Lo Fighters — core game loop & Hi/Lo resolution.
+ * Hi-Lo Fighters — core game loop & coin-flip resolution.
  *
- * Flow: SELECT → BETTING → (HI or LO) → RESOLVING (animations) → BETTING | GAME_OVER
+ * Flow: SELECT → BETTING → (HEADS or TAILS) → coin flip → RESOLVING (fight) → BETTING | GAME_OVER
  */
 
 import { GAME_PHASE, HEALTH, MULTIPLIER, STAGE, TIMING, WALLET } from './constants.js';
@@ -25,6 +25,8 @@ import {
   playYouWinSound,
   playYouLoseSound,
   playCoinsCollectSound,
+  playCoinSpinSound,
+  stopCoinSpinSound,
   unlockAudio,
   isMusicMuted,
   isSfxMuted,
@@ -49,6 +51,7 @@ export class Game {
    *   streakEl: HTMLElement,
    *   roundHistoryEl?: HTMLElement,
    *   rtpPercentEl?: HTMLElement,
+   *   rtpEdgeEl?: HTMLElement,
    *   rtpHashEl?: HTMLElement,
    *   rtpClientEl?: HTMLElement,
    *   rtpNonceEl?: HTMLElement,
@@ -74,6 +77,9 @@ export class Game {
    *   skipVideosToggle?: HTMLInputElement,
    *   btnCheat2pDamage?: HTMLButtonElement,
    *   btnCheat1pDamage?: HTMLButtonElement,
+   *   coinFlipOverlay?: HTMLElement,
+   *   coinFlipImg?: HTMLImageElement,
+   *   btnSkipFlip?: HTMLButtonElement,
    *   btnToggleMusic?: HTMLButtonElement,
    *   btnToggleSfx?: HTMLButtonElement,
    *   charSelect?: HTMLElement,
@@ -136,10 +142,14 @@ export class Game {
     });
 
     this.input = new InputHandler({
-      onHi: () => this.placeBet('HI'),
-      onLo: () => this.placeBet('LO'),
+      onHi: () => this.placeBet('HEADS'),
+      onLo: () => this.placeBet('TAILS'),
       onRestart: () => this._onOverlayPrimary(),
     });
+    /** @type {number | null} */
+    this._coinFlipRaf = null;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this._coinFlipLandTimer = null;
     this.input.bindUI(ui);
     this._bindWalletUi();
     this._bindRulesAndFairnessUi();
@@ -194,7 +204,7 @@ export class Game {
   }
 
   /**
-   * @param {'HI' | 'LO'} choice
+   * @param {'HEADS' | 'TAILS'} choice
    */
   async placeBet(choice) {
     if (this.phase !== GAME_PHASE.BETTING) return;
@@ -220,20 +230,134 @@ export class Game {
     this.input.setEnabled(false);
     this._setButtonsDisabled(true);
 
-    const { cardIsHigh } = await this.fairness.nextCard();
-    const playerWon =
-      (choice === 'HI' && cardIsHigh) || (choice === 'LO' && !cardIsHigh);
+    const { face, playerWon } = await this.fairness.nextCard(choice);
 
-    this._lastCard = cardIsHigh ? 'HI' : 'LO';
+    this._lastCard = face;
     this._syncRtpUi();
 
-    setTimeout(() => {
-      if (playerWon) {
-        this._resolveWin(choice);
-      } else {
-        this._resolveLoss();
-      }
-    }, TIMING.RESOLVE_DELAY);
+    // Landing still = RNG face (HEADS/cat or TAILS/paws), not merely the player's pick
+    await this._playCoinFlip(face);
+
+    if (playerWon) {
+      this._resolveWin(choice);
+    } else {
+      this._resolveLoss();
+    }
+  }
+
+  /**
+   * 3s coin spin (fast → slow): heads → middle → tails → middle…
+   * Lands on the RNG outcome face (cat head or paw). Skip jumps to that still.
+   * @param {'HEADS' | 'TAILS'} face — coin side that won this flip
+   * @returns {Promise<void>}
+   */
+  _playCoinFlip(face) {
+    const overlay = this.ui.coinFlipOverlay;
+    const img = this.ui.coinFlipImg;
+    const skipBtn = this.ui.btnSkipFlip;
+    const landUrl = face === 'HEADS' ? assets.coinHeadsUrl : assets.coinTailsUrl;
+    const frames = [
+      assets.coinHeadsUrl,
+      assets.coinMiddleUrl,
+      assets.coinTailsUrl,
+      assets.coinMiddleUrl,
+    ].filter(Boolean);
+
+    if (!overlay || !img || !landUrl || frames.length < 3) {
+      return Promise.resolve();
+    }
+
+    const landMs = TIMING.COIN_FLIP_LAND_MS;
+
+    /** Show final face briefly, then dismiss overlay. */
+    const showLandingStill = () =>
+      new Promise((resolve) => {
+        stopCoinSpinSound();
+        if (this._coinFlipRaf != null) {
+          cancelAnimationFrame(this._coinFlipRaf);
+          this._coinFlipRaf = null;
+        }
+        if (this._coinFlipLandTimer != null) {
+          clearTimeout(this._coinFlipLandTimer);
+          this._coinFlipLandTimer = null;
+        }
+        overlay.hidden = false;
+        overlay.setAttribute('aria-hidden', 'false');
+        // Force a paint of the outcome face (cat head / paw)
+        img.removeAttribute('src');
+        img.src = landUrl;
+        img.alt = face === 'HEADS' ? 'Heads' : 'Tails';
+        img.classList.remove('is-flip');
+        if (skipBtn) skipBtn.hidden = true;
+        this._coinFlipLandTimer = setTimeout(() => {
+          this._coinFlipLandTimer = null;
+          overlay.hidden = true;
+          overlay.setAttribute('aria-hidden', 'true');
+          if (skipBtn) skipBtn.hidden = false;
+          resolve();
+        }, landMs);
+      });
+
+    // "Skip video" also skips the spin — still shows the result face.
+    if (this.skipVideos) {
+      return showLandingStill();
+    }
+
+    return new Promise((resolve) => {
+      let finished = false;
+      let frameIndex = 0;
+      let nextFlipAt = 0;
+      const duration = TIMING.COIN_FLIP_MS;
+      const start = performance.now();
+
+      const showFrame = (url) => {
+        img.src = url;
+        img.classList.remove('is-flip');
+      };
+
+      const cleanup = () => {
+        if (this._coinFlipRaf != null) {
+          cancelAnimationFrame(this._coinFlipRaf);
+          this._coinFlipRaf = null;
+        }
+        skipBtn?.removeEventListener('click', onSkip);
+      };
+
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        showLandingStill().then(resolve);
+      };
+
+      const onSkip = () => finish();
+
+      const tick = (now) => {
+        if (finished) return;
+        const t = now - start;
+        if (t >= duration) {
+          finish();
+          return;
+        }
+        const u = Math.min(1, t / duration);
+        // Interval eases from ~55ms → ~280ms (fast start, slow end)
+        const interval = 55 + u * u * 225;
+        if (now >= nextFlipAt) {
+          showFrame(frames[frameIndex % frames.length]);
+          frameIndex += 1;
+          nextFlipAt = now + interval;
+        }
+        this._coinFlipRaf = requestAnimationFrame(tick);
+      };
+
+      overlay.hidden = false;
+      overlay.setAttribute('aria-hidden', 'false');
+      if (skipBtn) skipBtn.hidden = false;
+      showFrame(frames[0]);
+      playCoinSpinSound();
+      skipBtn?.addEventListener('click', onSkip);
+      this._coinFlipRaf = requestAnimationFrame(tick);
+    });
   }
 
   /** Bank bet × multiplier and reset the climb. */
@@ -251,7 +375,7 @@ export class Game {
   }
 
   /**
-   * @param {'HI' | 'LO'} choice
+   * @param {'HEADS' | 'TAILS'} choice
    */
   _resolveWin(choice) {
     this._pushRoundHistory('W');
@@ -680,6 +804,19 @@ export class Game {
     this.overlayMode = 'none';
     this.wigAttack = null;
     this.projectile = null;
+    if (this._coinFlipRaf != null) {
+      cancelAnimationFrame(this._coinFlipRaf);
+      this._coinFlipRaf = null;
+    }
+    if (this._coinFlipLandTimer != null) {
+      clearTimeout(this._coinFlipLandTimer);
+      this._coinFlipLandTimer = null;
+    }
+    stopCoinSpinSound();
+    if (this.ui.coinFlipOverlay) {
+      this.ui.coinFlipOverlay.hidden = true;
+      this.ui.coinFlipOverlay.setAttribute('aria-hidden', 'true');
+    }
     this._setCutsceneActive(false);
     this.effects.sparks = [];
     this.effects.floatTexts = [];
@@ -837,6 +974,7 @@ export class Game {
   _syncRtpUi() {
     const f = this.fairness;
     if (this.ui.rtpPercentEl) this.ui.rtpPercentEl.textContent = `${f.rtpPercent}%`;
+    if (this.ui.rtpEdgeEl) this.ui.rtpEdgeEl.textContent = `${f.houseEdgePercent}%`;
     if (this.ui.rtpHashEl) this.ui.rtpHashEl.textContent = f.shortHash();
     if (this.ui.rtpClientEl) this.ui.rtpClientEl.textContent = f.shortClient();
     if (this.ui.rtpNonceEl) this.ui.rtpNonceEl.textContent = String(f.nonce);

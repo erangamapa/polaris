@@ -21,6 +21,8 @@ let youLoseSound = null;
 /** @type {HTMLAudioElement | null} */
 let coinsCollectSound = null;
 /** @type {HTMLAudioElement | null} */
+let coinSpinSound = null;
+/** @type {HTMLAudioElement | null} */
 let fightMusic = null;
 let unlocked = false;
 let musicStarted = false;
@@ -45,13 +47,14 @@ export async function loadAudio() {
     });
 
   try {
-    [kickSound, punchSound, youWinSound, youLoseSound, coinsCollectSound, fightMusic] =
+    [kickSound, punchSound, youWinSound, youLoseSound, coinsCollectSound, coinSpinSound, fightMusic] =
       await Promise.all([
         loadOne('assets/kick-sound.mp3'),
         loadOne('assets/punch-sound.mp3'),
         loadOne('assets/you-win.mp3', YOU_WIN_VOL),
         loadOne('assets/you-lose.mp3', RESULT_VOL),
         loadOne('assets/coins-collect.mp3', RESULT_VOL),
+        loadOne('assets/coin-spin.mp3', SFX_VOL),
         loadOne('assets/retro-fight-music.mp3', MUSIC_VOL),
       ]);
     if (fightMusic) {
@@ -65,6 +68,7 @@ export async function loadAudio() {
     youWinSound = youWinSound ?? null;
     youLoseSound = youLoseSound ?? null;
     coinsCollectSound = coinsCollectSound ?? null;
+    coinSpinSound = coinSpinSound ?? null;
     fightMusic = fightMusic ?? null;
   }
 }
@@ -207,6 +211,22 @@ export function playYouLoseSound() {
 /** Play when the player cashes out a climb. */
 export function playCoinsCollectSound() {
   playSound(coinsCollectSound);
+}
+
+/** Play when the coin flip spin starts. */
+export function playCoinSpinSound() {
+  playSound(coinSpinSound);
+}
+
+/** Stop the coin spin SFX (skip / land). */
+export function stopCoinSpinSound() {
+  if (!coinSpinSound) return;
+  try {
+    coinSpinSound.pause();
+    coinSpinSound.currentTime = 0;
+  } catch {
+    // no-op
+  }
 }
 
 /** @param {string} key */
