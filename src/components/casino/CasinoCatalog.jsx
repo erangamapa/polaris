@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
 import { PROVIDER_GAMES } from "./ProviderGame";
 
@@ -153,6 +154,100 @@ const ROW_TILE = "w-[136px] shrink-0";
 
 const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
 
+// A lobby row only drops games also shown in "Your games" if doing so still
+// leaves it with a reasonable amount of content — a row that would collapse
+// to 1-5 items from deduping is more useful showing the duplicate than
+// showing a half-empty row. Category *pages* (below) never dedup at all.
+const DEDUP_MIN = 6;
+const dedupAgainstYourGames = (games, yourGameIds) => {
+  if (yourGameIds.size === 0) return games;
+  const withoutDupes = games.filter((g) => !yourGameIds.has(g.favId));
+  return withoutDupes.length >= DEDUP_MIN ? withoutDupes : games;
+};
+
+// Sidebar categories that get their own tag-filtered page (title + chips +
+// grid) instead of the multi-row Lobby dashboard. "Slots" has no games in
+// this catalog yet — it's a real, working empty category page, not a fake row.
+const CATEGORY_META = {
+  Popular: { tag: "popular", description: "What players are choosing most right now." },
+  New: { tag: "new", description: "Just added to the lobby." },
+  "Live Casino": { tag: "live-casino", description: "Real-format, live-style games." },
+  "Game Shows": { tag: "game-shows", description: "TV-style games with big multipliers." },
+  Slots: { tag: "slots", description: "Reel games." },
+};
+const KIND_CHIPS = [
+  { id: "all", label: "All" },
+  { id: "onchain", label: "On-chain" },
+  { id: "provider", label: "Provider" },
+];
+
+// A category page (Popular/Slots/Live Casino/Game Shows/New): title,
+// description, kind filter chips, plain grid. Never the top promo tiles
+// (those are Lobby-only), never deduped against "Your games" — a full
+// category listing should always be the complete, real list.
+function CategoryPage({ category, tileProps, onBrowseGames }) {
+  const [chip, setChip] = useState("all");
+  const meta = CATEGORY_META[category];
+  const games = ALL_GAMES.filter((g) => g.tags?.includes(meta.tag)).filter((g) => chip === "all" || g.kind === chip);
+
+  return (
+    <section className="animate-fade-in-up">
+      <h1 className="text-lg font-bold">{category}</h1>
+      {meta.description && <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>}
+
+      <div className="mb-4 mt-3 flex gap-2" role="group" aria-label="Filter by provider">
+        {KIND_CHIPS.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setChip(c.id)}
+            aria-pressed={chip === c.id}
+            data-test-id={`category-chip-${c.id}`}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              chip === c.id
+                ? "border-[var(--casino-primary-border)] bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]"
+                : "border-white/10 text-zinc-400 hover:text-white"
+            )}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {games.length ? (
+        <div className={GRID}>
+          {games.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
+          <p className="text-sm text-zinc-500">No {category.toLowerCase()} games yet.</p>
+          <button
+            onClick={onBrowseGames}
+            className="mt-3 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Browse games
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function LobbyRow({ title, badge, games, tileProps }) {
+  if (games.length === 0) return null;
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-bold">{title}</h2>
+        {badge && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{badge}</span>}
+      </div>
+      <div className={GRID}>
+        {games.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+      </div>
+    </section>
+  );
+}
+
 // "Your games": recently played first, then favorites not already covered by
 // recent play — never a lobby row just because a label exists elsewhere.
 // Sizing follows content, not a fixed layout: 0 → no section at all; exactly
@@ -255,17 +350,21 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   );
 }
 
-// Casino catalog: on-chain BetSwirl games (portrait art tiles) + vendored
-// provider games (embedded, loaded on demand). Each launches via its callback.
+// Casino catalog. Three destinations share this one component:
+//  - category === "Favorites" → the Favorites page.
+//  - category is a tag category (Popular/Slots/Live Casino/Game Shows/New)
+//    → its own page: title, chips, full grid, never deduped.
+//  - anything else (Lobby, default) → the lobby dashboard: Your games →
+//    On-chain Casino (always) → Popular → New → Provider games → Live Casino
+//    → Game Shows, each hidden if empty and deduped against Your games
+//    (never below DEDUP_MIN — see dedupAgainstYourGames).
 // `recentIds` (most-recent-first favIds) + favorites feed "Your games" —
-// dedup content priority: recently played, then favorites. `query` (from the
-// search box above the catalog) filters every section by title.
+// content priority: recently played, then favorites. `query` (from the
+// search box above the catalog) filters every row/page by title.
 export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames }) {
   const tileProps = { onLaunchOnchain: onLaunch, onLaunchProvider, isFav, onFav };
   const q = query?.trim().toLowerCase() ?? "";
   const favorites = (isFav ? ALL_GAMES.filter((g) => isFav(g)) : []).filter((g) => matchesQuery(g, q));
-  const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
-  const provider = PROVIDER.filter((g) => matchesQuery(g, q));
 
   const recentGames = (recentIds ?? []).map((id) => ALL_GAMES.find((g) => g.favId === id)).filter(Boolean);
   const yourGames = [...recentGames, ...favorites.filter((g) => !recentGames.some((r) => r.favId === g.favId))]
@@ -275,7 +374,23 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     return <FavoritesPage favorites={favorites} q={q} query={query} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
-  if (q && !yourGames.length && !onchain.length && !provider.length) {
+  if (CATEGORY_META[category]) {
+    return <CategoryPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
+  }
+
+  // Lobby dashboard.
+  const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
+  const provider = PROVIDER.filter((g) => matchesQuery(g, q));
+  const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
+  const yourGameIds = new Set(yourGames.map((g) => g.favId));
+
+  const popularRow = dedupAgainstYourGames(byTag("popular"), yourGameIds);
+  const newRow = dedupAgainstYourGames(byTag("new"), yourGameIds);
+  const providerRow = dedupAgainstYourGames(provider, yourGameIds);
+  const liveCasinoRow = dedupAgainstYourGames(byTag("live-casino"), yourGameIds);
+  const gameShowsRow = dedupAgainstYourGames(byTag("game-shows"), yourGameIds);
+
+  if (q && !yourGames.length && !onchain.length && !popularRow.length && !newRow.length && !providerRow.length && !liveCasinoRow.length && !gameShowsRow.length) {
     return (
       <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
         <p className="text-sm text-zinc-500">No games match “{query}”.</p>
@@ -295,31 +410,24 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     <div className="space-y-6">
       <YourGames games={yourGames} tileProps={tileProps} />
 
-      {onchain.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-2">
-            <h2 className="text-sm font-bold">On-chain casino</h2>
-            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
-              BetSwirl · Base Sepolia · Chainlink VRF
-            </span>
-          </div>
-          <div className={GRID}>
-            {onchain.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-          </div>
-        </section>
-      )}
+      {/* On-chain Casino is always shown, unlike every row below it. */}
+      <section>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold">On-chain casino</h2>
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+            BetSwirl · Base Sepolia · Chainlink VRF
+          </span>
+        </div>
+        <div className={GRID}>
+          {onchain.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+        </div>
+      </section>
 
-      {provider.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-2">
-            <h2 className="text-sm font-bold">Provider games</h2>
-            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">embedded · loads on open</span>
-          </div>
-          <div className={GRID}>
-            {provider.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-          </div>
-        </section>
-      )}
+      <LobbyRow title="Popular" games={popularRow} tileProps={tileProps} />
+      <LobbyRow title="New" games={newRow} tileProps={tileProps} />
+      <LobbyRow title="Provider games" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} />
+      <LobbyRow title="Live Casino" games={liveCasinoRow} tileProps={tileProps} />
+      <LobbyRow title="Game Shows" games={gameShowsRow} tileProps={tileProps} />
     </div>
   );
 }

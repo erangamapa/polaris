@@ -5,18 +5,18 @@ import { attachMockHost } from "@/lib/gameBridge";
 // Vendored provider games (self-contained apps under public/games/*).
 // Served as static assets and embedded via iframe, loaded on demand.
 export const PROVIDER_GAMES = [
-  { key: "crash", title: "Warpout", src: "/games/crash/index.html", badge: "TriBet Studio", image: "/img/games/warpout.jpg" },
-  { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "TriBet Studio", image: "/img/games/vector-dice.svg" },
+  { key: "crash", title: "Warpout", src: "/games/crash/index.html", badge: "TriBet Studio", image: "/img/games/warpout.jpg", tags: ["new", "popular"] },
+  { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "TriBet Studio", image: "/img/games/vector-dice.svg", tags: ["popular"] },
   // Reference game built from skills/build-casino-game — runs on mock balance via the bridge.
-  { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", badge: "TriBet Studio", image: "/img/games/coinflip.svg" },
-  { key: "nova-wheel", title: "Nova Wheel", src: "/games/nova-wheel/index.html", badge: "TriBet Studio", image: "/img/games/nova-wheel.svg" },
-  { key: "spacex-rush", title: "SpaceX Rush", src: "/games/spacex-rush/index.html", badge: "TriBet Studio", image: "/img/games/spacex-rush.svg" },
+  { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", badge: "TriBet Studio", image: "/img/games/coinflip.svg", tags: ["popular"] },
+  { key: "nova-wheel", title: "Nova Wheel", src: "/games/nova-wheel/index.html", badge: "TriBet Studio", image: "/img/games/nova-wheel.svg", tags: ["game-shows"] },
+  { key: "spacex-rush", title: "SpaceX Rush", src: "/games/spacex-rush/index.html", badge: "TriBet Studio", image: "/img/games/spacex-rush.svg", tags: ["new"] },
   // Imported via skills/import-casino-game — self-contained crash game (own mock economy).
-  { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", badge: "TriBet Studio", image: "/img/games/tumble.svg" },
+  { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", badge: "TriBet Studio", image: "/img/games/tumble.svg", tags: ["new"] },
   // Imported from aquistsang GitHub — self-contained (own mock economy).
-  { key: "hi-lo-fighters", title: "Hi-Lo Fighters", src: "/games/hi-lo-fighters/index.html", badge: "TriBet Studio", image: "/img/games/hi-lo-fighters.svg" },
-  { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", badge: "TriBet Studio", image: "/img/games/keymines-v2.svg" },
-  { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "TriBet Studio", image: "/img/games/drunken-pirate.svg" },
+  { key: "hi-lo-fighters", title: "Hi-Lo Fighters", src: "/games/hi-lo-fighters/index.html", badge: "TriBet Studio", image: "/img/games/hi-lo-fighters.svg", tags: ["new", "game-shows"] },
+  { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", badge: "TriBet Studio", image: "/img/games/keymines-v2.svg", tags: ["new"] },
+  { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "TriBet Studio", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
 ];
 
 // Provider games run inside a sandboxed iframe (loaded only when opened). Games

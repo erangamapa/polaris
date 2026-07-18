@@ -19,12 +19,12 @@ const ETH_TOKEN = { symbol: 'ETH', address: GAS_TOKEN_ADDRESS, decimals: 18 };
 // weighted games (wheel/plinko) revert on this testnet deployment, so they show
 // in the catalog but aren't bettable here.
 export const BETSWIRL_GAMES = [
-  { key: 'dice', title: 'Dice', image: '/img/games/dice.webp', playable: true, control: 'dice' },
-  { key: 'coin-toss', title: 'Coin Toss', image: '/img/games/coin-toss.webp', playable: true, control: 'coin' },
-  { key: 'roulette', title: 'Roulette', image: '/img/games/roulette.webp', playable: true, control: 'roulette' },
-  { key: 'keno', title: 'Keno', image: '/img/games/keno.webp', playable: true, control: 'keno' },
-  { key: 'wheel', title: 'Wheel', image: '/img/games/wheel.webp', playable: false, control: 'weighted' },
-  { key: 'plinko', title: 'Plinko', image: '/img/games/plinko.webp', playable: false, control: 'weighted' },
+  { key: 'dice', title: 'Dice', image: '/img/games/dice.webp', playable: true, control: 'dice', tags: ['popular'] },
+  { key: 'coin-toss', title: 'Coin Toss', image: '/img/games/coin-toss.webp', playable: true, control: 'coin', tags: ['popular'] },
+  { key: 'roulette', title: 'Roulette', image: '/img/games/roulette.webp', playable: true, control: 'roulette', tags: ['popular', 'live-casino'] },
+  { key: 'keno', title: 'Keno', image: '/img/games/keno.webp', playable: true, control: 'keno', tags: ['game-shows'] },
+  { key: 'wheel', title: 'Wheel', image: '/img/games/wheel.webp', playable: false, control: 'weighted', tags: ['new'] },
+  { key: 'plinko', title: 'Plinko', image: '/img/games/plinko.webp', playable: false, control: 'weighted', tags: ['new'] },
 ];
 
 export function useBetSwirl() {
