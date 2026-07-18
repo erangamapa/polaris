@@ -29,6 +29,8 @@ import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { SPORTS, liveCountBySport } from "./lib/sportsData";
 import { SPORTS_PROMOS, PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 import { NetworkBanner } from "./components/shell/NetworkBanner";
+import { GeoBlock } from "./components/shell/GeoBlock";
+import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 
 const CASINO_ICONS = {
@@ -82,6 +84,11 @@ const saveSidebarMode = (mode) => {
 };
 
 export default function App() {
+  // Geo-block: a page-level state, checked before anything else renders —
+  // no header, sidebar or game grid ever mounts behind it. Stubbed to always
+  // allow for now (see useGeoCheck); the gate itself is real.
+  const geo = useGeoCheck();
+
   // Seed navigation from the URL so deep links work.
   const initialNav = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
   const [product, setProduct] = useState(initialNav.product);
@@ -325,6 +332,10 @@ export default function App() {
     sidebar.onSelect(id);
     if (typeof window !== "undefined" && window.innerWidth < 768) setMobileDrawerOpen(false);
   };
+
+  // All hooks above run unconditionally either way — only the returned JSX
+  // branches on the geo check, so this stays a valid conditional render.
+  if (geo.blocked) return <GeoBlock reason={geo.reason} />;
 
   return (
     <div data-product={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">

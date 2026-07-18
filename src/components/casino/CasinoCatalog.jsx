@@ -37,7 +37,7 @@ function FavStar({ faved, onToggle, title }) {
       role="button"
       tabIndex={0}
       data-fav
-      aria-label={faved ? `Remove ${title} from favourites` : `Add ${title} to favourites`}
+      aria-label={faved ? `Remove ${title} from Favorites` : `Add ${title} to Favorites`}
       aria-pressed={faved}
       onClick={handle}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handle(e); }}
