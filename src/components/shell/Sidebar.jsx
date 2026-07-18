@@ -41,22 +41,23 @@ function ItemIcon({ icon, className = "size-4" }) {
 // bar, so it still reads correctly for colour-blind users / high-contrast
 // mode. Shared by every rail item (arena tab, section item, collapsed icon).
 function SideIndicator({ color }) {
-  return <span aria-hidden="true" className="absolute inset-y-1 left-0 w-[3px] rounded-full" style={{ background: color }} />;
+  return <span aria-hidden="true" className="absolute inset-y-1 start-0 w-[3px] rounded-full" style={{ background: color }} />;
 }
 
 // One rail item, icon-only, for the collapsed (60px) rail. Tooltip shows on
 // hover AND keyboard focus (Radix default) so nothing is hover-only.
-function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ariaCurrent, testId }) {
+function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ariaCurrent, testId, navId }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
+          id={navId}
           onClick={onClick}
           aria-label={label}
           aria-current={ariaCurrent}
           data-test-id={testId}
           className={cn(
-            "relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
           )}
           style={active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
@@ -66,7 +67,7 @@ function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ari
           {badge != null && badge > 0 && (
             <span
               className={cn(
-                "absolute -right-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-amber-400 px-1 text-[9px] font-bold text-black",
+                "absolute -end-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-amber-400 px-1 text-[9px] font-bold text-black",
                 pulse && "motion-safe:animate-[fav-badge-pulse_200ms_ease-out]"
               )}
             >
@@ -75,22 +76,30 @@ function RailIcon({ icon, label, active, accentColor, onClick, badge, pulse, ari
           )}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{label}</TooltipContent>
     </Tooltip>
   );
 }
 
 // Tracks the previous value of `count` and reports true for one render right
-// after it increases — used to fire the Favorites badge pulse only on add.
+// after it increases — used to fire a badge pulse only on add. Cooldown-gated
+// so a rapidly-updating count (live event totals, polling) can't retrigger
+// the animation back-to-back — at most one pulse per window.
+const PULSE_COOLDOWN_MS = 1200;
 function usePulseOnIncrease(count) {
   const prev = useRef(count);
+  const lastPulseAt = useRef(0);
   const [pulsing, setPulsing] = useState(false);
   useEffect(() => {
     if (count > prev.current) {
-      setPulsing(true);
-      const t = setTimeout(() => setPulsing(false), 220);
-      prev.current = count;
-      return () => clearTimeout(t);
+      const now = Date.now();
+      if (now - lastPulseAt.current >= PULSE_COOLDOWN_MS) {
+        lastPulseAt.current = now;
+        setPulsing(true);
+        const t = setTimeout(() => setPulsing(false), 220);
+        prev.current = count;
+        return () => clearTimeout(t);
+      }
     }
     prev.current = count;
   }, [count]);
@@ -107,6 +116,7 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
       {PRODUCTS.map((p) => (
         <RailIcon
           key={p.id}
+          navId={`nav-arena-${p.id}`}
           icon={p.icon}
           label={p.label}
           active={product === p.id}
@@ -123,6 +133,7 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
       {mainItems.map((it) => (
         <RailIcon
           key={it.id}
+          navId={`nav-item-${it.id}`}
           icon={it.icon}
           label={it.label}
           active={selected === it.id}
@@ -139,6 +150,7 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
               section — a lighter inset rule, distinct from the rule above. */}
           <div className="my-1 h-px w-5 bg-white/10" aria-hidden="true" />
           <RailIcon
+            navId={`nav-item-${favItem.id}`}
             icon={favItem.icon}
             label="Favorites"
             active={selected === favItem.id}
@@ -167,6 +179,7 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
           return (
             <button
               key={p.id}
+              id={`nav-arena-${p.id}`}
               onClick={() => setProduct(p.id)}
               aria-current={active ? "page" : undefined}
               style={active ? ACCENTS[p.id].tab : undefined}
@@ -195,6 +208,7 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
           ) : (
             <button
               key={it.id}
+              id={`nav-item-${it.id}`}
               onClick={() => onSelect(it.id)}
               aria-current={selected === it.id ? "page" : undefined}
               style={selected === it.id ? accent.item : undefined}
@@ -209,7 +223,7 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
               <ItemIcon icon={it.icon} />
               <span className="truncate">{it.label}</span>
               {it.live > 0 && (
-                <Badge variant="outline" className="ml-auto gap-1 border-[rgba(214,90,112,0.42)] px-1.5 text-[#E8758B]">
+                <Badge variant="outline" className="ms-auto gap-1 border-[rgba(214,90,112,0.42)] px-1.5 text-[#E8758B]">
                   <span className="size-1.5 rounded-full bg-[#D65A70]" />{it.live}
                 </Badge>
               )}
@@ -217,7 +231,7 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
                 <Badge
                   data-test-id={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
                   variant="outline"
-                  className="ml-auto min-w-5 justify-center px-1.5 tabular-nums text-muted-foreground"
+                  className="ms-auto min-w-5 justify-center px-1.5 tabular-nums text-muted-foreground"
                 >
                   {it.count}
                 </Badge>
@@ -238,12 +252,45 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
 export function Sidebar({ railMode, mobileOpen, onCloseMobile, product, setProduct, items, selected, onSelect }) {
   const expanded = railMode === "expanded";
 
+  // Focus retention: collapsed <-> expanded swaps the entire rail's DOM
+  // (different components), which would otherwise drop focus to <body>.
+  // Track the last-focused nav item's id continuously and, once the mode
+  // switch commits, refocus the same logical item in its new (icon-only or
+  // labelled) form — both variants share ids via `nav-arena-*`/`nav-item-*`.
+  const focusedIdRef = useRef(null);
+  const onFocusCapture = (e) => {
+    if (e.target.id?.startsWith("nav-")) focusedIdRef.current = e.target.id;
+  };
+  useEffect(() => {
+    const id = focusedIdRef.current;
+    if (!id) return;
+    document.getElementById(id)?.focus();
+  }, [expanded]);
+
+  // Announce meaningful nav-state changes only (not every animation frame,
+  // and not duplicating the burger button's own aria-label, which describes
+  // the *next* action rather than the state just entered).
+  const [announcement, setAnnouncement] = useState("");
+  const prevExpanded = useRef(expanded);
+  const prevMobileOpen = useRef(mobileOpen);
+  useEffect(() => {
+    if (prevExpanded.current !== expanded) setAnnouncement(expanded ? "Navigation expanded" : "Navigation collapsed");
+    prevExpanded.current = expanded;
+  }, [expanded]);
+  useEffect(() => {
+    if (prevMobileOpen.current !== mobileOpen) setAnnouncement(mobileOpen ? "Navigation opened" : "Navigation closed");
+    prevMobileOpen.current = mobileOpen;
+  }, [mobileOpen]);
+
   return (
     <>
+      <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
+
       {/* desktop/tablet persistent rail — never fully hidden at md+ */}
       <aside
+        onFocusCapture={onFocusCapture}
         className={cn(
-          "hidden shrink-0 overflow-hidden border-r bg-sidebar transition-[width] duration-200 motion-reduce:transition-none md:block",
+          "hidden shrink-0 overflow-hidden border-e bg-sidebar transition-[width] duration-200 motion-reduce:transition-none md:block",
           expanded ? "md:w-[220px]" : "md:w-[60px]"
         )}
       >
@@ -260,7 +307,7 @@ export function Sidebar({ railMode, mobileOpen, onCloseMobile, product, setProdu
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={onCloseMobile} />
-          <aside className="absolute left-0 top-0 h-full w-64 overflow-y-auto border-r bg-sidebar">
+          <aside className="absolute start-0 top-0 h-full w-64 overflow-y-auto border-e bg-sidebar">
             <ExpandedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
           </aside>
         </div>

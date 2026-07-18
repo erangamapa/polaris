@@ -10,8 +10,15 @@ function baseContext() {
   };
 }
 
+// Tracking must never be able to block navigation or surface an error to the
+// user — swallow anything a future real vendor's SDK might throw (network
+// failure, blocked request, etc).
 export function track(event, properties = {}) {
-  const payload = { ...baseContext(), ...properties };
-  // eslint-disable-next-line no-console
-  console.info(`[analytics] ${event}`, payload);
+  try {
+    const payload = { ...baseContext(), ...properties };
+    // eslint-disable-next-line no-console
+    console.info(`[analytics] ${event}`, payload);
+  } catch {
+    /* ignore */
+  }
 }

@@ -30,6 +30,7 @@ import { SPORTS, liveCountBySport } from "./lib/sportsData";
 import { SPORTS_PROMOS, PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 import { NetworkBanner } from "./components/shell/NetworkBanner";
 import { GeoBlock } from "./components/shell/GeoBlock";
+import { ArenaErrorBoundary } from "./components/shell/ArenaErrorBoundary";
 import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
@@ -54,7 +55,10 @@ const saveFavs = (set) => {
 const RECENT_KEY = "tribet_recent";
 const RECENT_CAP = 12;
 const loadRecent = () => {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch { return []; }
 };
 const saveRecent = (list) => {
   try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* ignore */ }
@@ -106,6 +110,20 @@ export default function App() {
   });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
+  // Cross-tab sync: another tab flipping the rail mode updates this one too.
+  // Guarded so it never fires from our own write (storage events only reach
+  // *other* tabs) and never touches the mobile drawer, which is per-tab and
+  // ephemeral by design.
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== SIDEBAR_KEY) return;
+      if (e.newValue !== "expanded" && e.newValue !== "collapsed") return;
+      setRailMode((current) => (current === e.newValue ? current : e.newValue));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const toggleSidebar = () => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       const opening = !mobileDrawerOpen;
@@ -146,10 +164,22 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Wallet connection replaces password login. Connecting (on the right network)
+  // is the gate for placing bets; the Reown modal handles the connect flow.
+  const wallet = useWallet();
+
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
   const [favs, setFavs] = useState(loadFavs);
-  useEffect(() => { saveFavs(favs); }, [favs]);
+  // Favorites captured before any wallet was ever connected on this device —
+  // the baseline every account merge starts from, so switching accounts
+  // never carries a *different* account's favorites forward (see the merge
+  // effect below). Captured once; never mutated after mount.
+  const deviceBaselineRef = useRef(loadFavs());
+  // While a wallet is connected, favorites are account-scoped (see toggleFav)
+  // and must not bleed back into the shared device bucket, or the next
+  // account to connect on this device would inherit them.
+  useEffect(() => { if (!wallet.isConnected) saveFavs(favs); }, [favs, wallet.isConnected]);
   const [recentIds, setRecentIds] = useState(loadRecent);
   useEffect(() => { saveRecent(recentIds); }, [recentIds]);
   const trackRecent = (game) => {
@@ -162,13 +192,9 @@ export default function App() {
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
-  // Wallet connection replaces password login. Connecting (on the right network)
-  // is the gate for placing bets; the Reown modal handles the connect flow.
-  const wallet = useWallet();
-
   // Gate: require a connected wallet on Base Sepolia before betting.
   const ensureAuth = () => {
-    if (!wallet.isConnected) { wallet.connect(); return false; }
+    if (!wallet.isConnected) { setMobileDrawerOpen(false); wallet.connect(); return false; }
     if (!wallet.onCasinoChain) { toast.warning("Switch to Base Sepolia to continue"); wallet.switchTo(CASINO_CHAIN_ID); return false; }
     return true;
   };
@@ -181,8 +207,10 @@ export default function App() {
   const wrongNetwork = wallet.isConnected && product !== "predictions" &&
     (product === "sports" ? !wallet.onSportsChain : !wallet.onCasinoChain);
 
-  const openFunds = () => { if (!ensureAuth()) return; setFundsOpen(true); };
-  const openHistory = () => { if (!ensureAuth()) return; setHistoryOpen(true); };
+  // Only one overlay owns focus/scroll-lock at a time — any dialog opening
+  // closes the mobile drawer first so they never stack.
+  const openFunds = () => { setMobileDrawerOpen(false); if (!ensureAuth()) return; setFundsOpen(true); };
+  const openHistory = () => { setMobileDrawerOpen(false); if (!ensureAuth()) return; setHistoryOpen(true); };
 
   // Game tiles are real links (`?play=<favId>`) so middle-click / cmd-click opens
   // a new tab, like on most sites. These helpers keep that URL in sync with the
@@ -256,11 +284,13 @@ export default function App() {
   const syncFavorite = () => Promise.resolve(true);
   const toggleFav = (game) => {
     const adding = !favs.has(game.favId);
-    setFavs((s) => {
-      const n = new Set(s);
-      if (adding) n.add(game.favId); else n.delete(game.favId);
-      return n;
-    });
+    const next = new Set(favs);
+    if (adding) next.add(game.favId); else next.delete(game.favId);
+    setFavs(next);
+    // Once connected, favorites are account-scoped — persist to that
+    // account's own bucket so a different account connecting later on this
+    // device never inherits this one's picks (see the merge effect below).
+    if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, next);
     syncFavorite(game, adding).then((ok) => {
       if (ok) {
         toast.success(adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
@@ -268,35 +298,36 @@ export default function App() {
         } : undefined);
         track(adding ? "casino_favorite_added" : "casino_favorite_removed", { gameId: game.favId, category: casinoCategory });
       } else {
-        setFavs((s) => {
-          const n = new Set(s);
-          if (adding) n.delete(game.favId); else n.add(game.favId);
-          return n;
-        });
+        const reverted = new Set(favs);
+        if (adding) reverted.delete(game.favId); else reverted.add(game.favId);
+        setFavs(reverted);
+        if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, reverted);
         toast.error("Couldn't update Favorites — Try again");
       }
     });
   };
 
-  // Favorites work fully offline (local-first). On wallet connect, merge in
-  // that address's own favorites as a union, deduped by game id — silently if
-  // either set is empty, confirmation toast only (never a modal, never a
-  // navigation). Mock account-favorites store (see loadAccountFavs above)
-  // stands in for a real API; this effect is the only thing that would need
-  // to change to point at one.
+  // Favorites work fully offline (local-first) via `deviceBaselineRef` — the
+  // set captured before any wallet was ever connected. Every account merge
+  // starts from that same fixed baseline (not from whatever `favs` currently
+  // holds), so switching from account A to account B can never carry A's
+  // picks into B: on disconnect it reverts to the baseline, and on connect
+  // it's baseline ∪ that address's own bucket, always freshly computed.
   const mergedForAddress = useRef(null);
   useEffect(() => {
-    if (!wallet.isConnected || !wallet.address) { mergedForAddress.current = null; return; }
+    if (!wallet.isConnected || !wallet.address) {
+      if (mergedForAddress.current) setFavs(deviceBaselineRef.current);
+      mergedForAddress.current = null;
+      return;
+    }
     if (mergedForAddress.current === wallet.address) return;
     mergedForAddress.current = wallet.address;
     track("wallet_connected", { walletState: "connected" });
     const account = loadAccountFavs(wallet.address);
-    const merged = new Set([...favs, ...account]);
-    const added = merged.size - favs.size;
-    if (added > 0) {
-      setFavs(merged);
-      toast.success(`Synced ${added} favorite${added === 1 ? "" : "s"} from your wallet`);
-    }
+    const merged = new Set([...deviceBaselineRef.current, ...account]);
+    const added = merged.size - deviceBaselineRef.current.size;
+    setFavs(merged);
+    if (added > 0) toast.success(`Synced ${added} favorite${added === 1 ? "" : "s"} from your wallet`);
     saveAccountFavs(wallet.address, merged);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.isConnected, wallet.address]);
@@ -384,30 +415,35 @@ export default function App() {
         />
 
         <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 [scrollbar-gutter:stable]">
-          <div key={product} className="animate-fade-in-up">
-            {product === "casino" && (
-              <CasinoLobby
-                category={casinoCategory}
-                onLaunchOnchain={launchGame}
-                onLaunchProvider={launchGame}
-                isFav={isFav}
-                onFav={toggleFav}
-                recentIds={recentIds}
-                onBrowseGames={() => setCasinoCategory("Lobby")}
-              />
-            )}
-            {product === "predictions" && (
-              <PredictionsSection
-                predSection={predSection}
-                balance={balance}
-                setBalance={setBalance}
-                onBet={placeBet}
-                ensureAuth={ensureAuth}
-              />
-            )}
-            {product === "sports" && <SportsSection onBetPlaced={logRound} />}
-          </div>
-          <Footer onResponsibleGambling={() => setRgOpen(true)} onSupport={() => setSupportOpen(true)} />
+          <ArenaErrorBoundary key={product}>
+            <div className="animate-fade-in-up">
+              {product === "casino" && (
+                <CasinoLobby
+                  category={casinoCategory}
+                  onLaunchOnchain={launchGame}
+                  onLaunchProvider={launchGame}
+                  isFav={isFav}
+                  onFav={toggleFav}
+                  recentIds={recentIds}
+                  onBrowseGames={() => setCasinoCategory("Lobby")}
+                />
+              )}
+              {product === "predictions" && (
+                <PredictionsSection
+                  predSection={predSection}
+                  balance={balance}
+                  setBalance={setBalance}
+                  onBet={placeBet}
+                  ensureAuth={ensureAuth}
+                />
+              )}
+              {product === "sports" && <SportsSection onBetPlaced={logRound} />}
+            </div>
+          </ArenaErrorBoundary>
+          <Footer
+        onResponsibleGambling={() => { setMobileDrawerOpen(false); setRgOpen(true); }}
+        onSupport={() => { setMobileDrawerOpen(false); setSupportOpen(true); }}
+      />
         </main>
       </div>
 
