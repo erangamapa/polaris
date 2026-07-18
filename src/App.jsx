@@ -28,6 +28,8 @@ import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { SPORTS, liveCountBySport } from "./lib/sportsData";
 import { SPORTS_PROMOS, PREDICTIONS_PROMOS } from "./lib/arenaPromos";
+import { NetworkBanner } from "./components/shell/NetworkBanner";
+import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 
 const CASINO_ICONS = {
   Lobby: LayoutGrid, Popular: Gem, Slots: Cherry, "Live Casino": Radio,
@@ -156,9 +158,17 @@ export default function App() {
   // Gate: require a connected wallet on Base Sepolia before betting.
   const ensureAuth = () => {
     if (!wallet.isConnected) { wallet.connect(); return false; }
-    if (wallet.wrongNetwork) { toast.warning("Switch to Base Sepolia to continue"); wallet.switchToBaseSepolia(); return false; }
+    if (!wallet.onCasinoChain) { toast.warning("Switch to Base Sepolia to continue"); wallet.switchTo(CASINO_CHAIN_ID); return false; }
     return true;
   };
+
+  // Global network state, detected once from the wallet's real chainId (not
+  // per-card): "wrong" is relative to whichever arena is active — Casino
+  // wants Base Sepolia, Sports wants Polygon Amoy, Predictions is mock (no
+  // chain requirement). Game/market cards never detect this themselves.
+  const arenaChainId = product === "sports" ? SPORTS_CHAIN_ID : CASINO_CHAIN_ID;
+  const wrongNetwork = wallet.isConnected && product !== "predictions" &&
+    (product === "sports" ? !wallet.onSportsChain : !wallet.onCasinoChain);
 
   const openFunds = () => { if (!ensureAuth()) return; setFundsOpen(true); };
   const openHistory = () => { if (!ensureAuth()) return; setHistoryOpen(true); };
@@ -325,6 +335,7 @@ export default function App() {
         onFunds={openFunds}
         onActivity={openHistory}
       />
+      <NetworkBanner show={wrongNetwork} switching={wallet.isSwitching} onSwitch={() => wallet.switchTo(arenaChainId)} />
 
       <div className="flex min-h-0 flex-1">
         <Sidebar

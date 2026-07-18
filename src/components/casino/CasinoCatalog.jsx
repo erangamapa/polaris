@@ -73,7 +73,15 @@ const linkClick = (onLaunch, game) => (e) => {
   onLaunch(game);
 };
 
+// Per-card status: only for card-specific conditions (this game isn't wired
+// up yet), never network state — a disconnected/wrong-network wallet doesn't
+// change whether Wheel/Plinko show this. Always a plain-language label, never
+// jargon, and never colour/greyscale alone — the label is the real signal.
+const STATUS_LABEL = { "coming-soon": "Coming soon" };
+
 function OnchainTile({ game, onLaunch, faved, onFav }) {
+  const status = game.playable ? null : (game.status ?? "coming-soon");
+  const statusLabel = status ? STATUS_LABEL[status] ?? status : null;
   return (
     <div className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)]">
       <a
@@ -81,7 +89,7 @@ function OnchainTile({ game, onLaunch, faved, onFav }) {
         onClick={game.playable ? linkClick(onLaunch, game) : (e) => e.preventDefault()}
         aria-disabled={!game.playable}
         data-test-id={`onchain-${game.key}`}
-        aria-label={`Play ${game.title}`}
+        aria-label={game.playable ? `Play ${game.title}` : `${game.title} — ${statusLabel}`}
         className={`absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${game.playable ? "" : "pointer-events-none cursor-not-allowed"}`}
       >
         <img
@@ -94,9 +102,9 @@ function OnchainTile({ game, onLaunch, faved, onFav }) {
           <div className="text-xs font-bold text-white">{game.title}</div>
         </div>
       </a>
-      {!game.playable && (
-        <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold text-white/80">
-          Testnet n/a
+      {statusLabel && (
+        <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+          {statusLabel}
         </span>
       )}
       {onFav && <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} />}
