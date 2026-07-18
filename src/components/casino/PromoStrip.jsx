@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
@@ -238,37 +238,139 @@ const SEARCH_SCOPES = [
 // this is the one search implementation shared by all three arenas — the
 // arena-tinted focus ring comes from --product-primary, which the page root's
 // [data-product] attribute already resolves per arena.
-export function ScopedSearch({ query, onQuery, defaultScope = "casino" }) {
+//
+// `results` is optional — pass it (Casino does; Sports/Predictions don't yet,
+// per "casino first") to get real combobox behaviour: a keyboard-navigable
+// results dropdown, Enter-to-open, and a zero-results state with a "Browse
+// games" way out instead of a silent empty pane. Without `results` this is
+// just the scoped input, filtering whatever's below it inline (unchanged
+// behaviour for Sports/Predictions).
+export function ScopedSearch({ query, onQuery, defaultScope = "casino", results, onSelectResult, onBrowseAll, onZeroResults }) {
   const [scope, setScope] = useState(defaultScope);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const rootRef = useRef(null);
+  const zeroReportedFor = useRef(null);
   const active = SEARCH_SCOPES.find((s) => s.id === scope);
 
+  const hasResults = results !== undefined;
+  const trimmed = query.trim();
+  const showDropdown = hasResults && open && trimmed.length > 0;
+  const shown = results?.slice(0, 8) ?? [];
+
+  useEffect(() => { setActiveIndex(-1); }, [query, scope]);
+
+  useEffect(() => {
+    if (showDropdown && shown.length === 0 && zeroReportedFor.current !== trimmed) {
+      zeroReportedFor.current = trimmed;
+      onZeroResults?.(trimmed);
+    }
+  }, [showDropdown, shown.length, trimmed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selectResult = (game) => {
+    onSelectResult?.(game);
+    setOpen(false);
+  };
+
+  const onKeyDown = (e) => {
+    if (!showDropdown || shown.length === 0) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, shown.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter" && activeIndex >= 0) { e.preventDefault(); selectResult(shown[activeIndex]); }
+    else if (e.key === "Escape") { setOpen(false); }
+  };
+
+  // Close only when focus truly leaves the whole combobox (input, listbox,
+  // scope select) — not on every internal focus move.
+  const onBlur = (e) => {
+    if (!rootRef.current?.contains(e.relatedTarget)) setOpen(false);
+  };
+
   return (
-    <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--product-primary)]">
-      <div className="relative flex h-full shrink-0 items-center">
-        <select
-          value={scope}
-          onChange={(e) => setScope(e.target.value)}
-          aria-label="Search scope"
-          data-test-id="search-scope"
-          className="h-full appearance-none rounded-l-lg border-0 bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-white focus-visible:outline-none"
-        >
-          {SEARCH_SCOPES.map((s) => (
-            <option key={s.id} value={s.id} className="bg-zinc-900 text-white">{s.label}</option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-2 size-3.5 text-zinc-500" />
-      </div>
-      <span className="h-5 w-px shrink-0 bg-white/10" aria-hidden="true" />
-      <div className="relative min-w-0 flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
-        <input
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder={active.placeholder}
-          aria-label={active.placeholder}
-          data-test-id="arena-search"
-          className="h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none"
-        />
+    <div className="space-y-1.5">
+      <label htmlFor="arena-search-input" className="block px-0.5 text-xs font-medium text-zinc-400">
+        Search
+      </label>
+      <div ref={rootRef} onBlur={onBlur} className="relative">
+        <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--product-primary)]">
+          <div className="relative flex h-full shrink-0 items-center">
+            <select
+              value={scope}
+              onChange={(e) => setScope(e.target.value)}
+              aria-label="Search scope"
+              data-test-id="search-scope"
+              className="h-full appearance-none rounded-l-lg border-0 bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-white focus-visible:outline-none"
+            >
+              {SEARCH_SCOPES.map((s) => (
+                <option key={s.id} value={s.id} className="bg-zinc-900 text-white">{s.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 size-3.5 text-zinc-500" />
+          </div>
+          <span className="h-5 w-px shrink-0 bg-white/10" aria-hidden="true" />
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+            <input
+              id="arena-search-input"
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              onFocus={() => setOpen(true)}
+              onKeyDown={onKeyDown}
+              placeholder={active.placeholder}
+              data-test-id="arena-search"
+              role={hasResults ? "combobox" : undefined}
+              aria-expanded={hasResults ? showDropdown : undefined}
+              aria-controls={hasResults ? "arena-search-listbox" : undefined}
+              aria-activedescendant={activeIndex >= 0 ? `arena-search-opt-${activeIndex}` : undefined}
+              aria-autocomplete={hasResults ? "list" : undefined}
+              autoComplete="off"
+              className="h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none"
+            />
+          </div>
+        </div>
+
+        {showDropdown && (
+          <ul
+            id="arena-search-listbox"
+            role="listbox"
+            aria-label="Search results"
+            data-test-id="arena-search-listbox"
+            className="absolute inset-x-0 top-[calc(100%+6px)] z-30 max-h-80 overflow-y-auto rounded-lg border border-white/10 bg-zinc-900 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.5)]"
+          >
+            {shown.length === 0 ? (
+              <li className="px-4 py-6 text-center" data-test-id="arena-search-zero">
+                <p className="text-sm text-zinc-400">No games match “{trimmed}”.</p>
+                <button
+                  type="button"
+                  onClick={() => { onBrowseAll?.(); setOpen(false); }}
+                  className="mt-2 text-sm font-semibold text-[var(--product-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Browse games
+                </button>
+              </li>
+            ) : (
+              shown.map((game, i) => (
+                <li
+                  key={game.favId}
+                  id={`arena-search-opt-${i}`}
+                  role="option"
+                  aria-selected={i === activeIndex}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectResult(game)}
+                  data-test-id={`arena-search-opt-${game.key}`}
+                  className={cn(
+                    "mx-1.5 flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm",
+                    i === activeIndex ? "bg-white/10 text-white" : "text-zinc-300"
+                  )}
+                >
+                  <img src={game.image} alt="" className="size-7 shrink-0 rounded object-cover" />
+                  <span className="truncate">{game.title}</span>
+                </li>
+              ))
+            )}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -277,7 +379,7 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino" }) {
 // Top-of-lobby strip: two promo tiles + a player glimpse as three equal-width,
 // equal-height cards (well under the old ~300-340px hero), with the scoped
 // search directly beneath sharing the same wrapper/width so both edges align.
-export function PromoStrip({ query, onQuery }) {
+export function PromoStrip({ query, onQuery, searchResults, onSelectResult, onBrowseAll, onZeroResults }) {
   const [p1, p2] = PROMOS;
   return (
     <div className="casino-content-column w-full space-y-3">
@@ -286,7 +388,14 @@ export function PromoStrip({ query, onQuery }) {
         <PromoTile promo={p1} />
         <PromoTile promo={p2} />
       </div>
-      <ScopedSearch query={query} onQuery={onQuery} />
+      <ScopedSearch
+        query={query}
+        onQuery={onQuery}
+        results={searchResults}
+        onSelectResult={onSelectResult}
+        onBrowseAll={onBrowseAll}
+        onZeroResults={onZeroResults}
+      />
     </div>
   );
 }

@@ -229,8 +229,14 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
           {favorites.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
         </div>
       ) : q ? (
-        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
-          No favorites match “{query}”.
+        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
+          <p className="text-sm text-zinc-500">No favorites match “{query}”.</p>
+          <button
+            onClick={onBrowseGames}
+            className="mt-3 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Browse games
+          </button>
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
@@ -271,8 +277,16 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 
   if (q && !yourGames.length && !onchain.length && !provider.length) {
     return (
-      <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-500">
-        No games match “{query}”.
+      <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
+        <p className="text-sm text-zinc-500">No games match “{query}”.</p>
+        {onBrowseGames && (
+          <button
+            onClick={onBrowseGames}
+            className="mt-3 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Browse games
+          </button>
+        )}
       </div>
     );
   }

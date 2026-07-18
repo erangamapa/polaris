@@ -12,7 +12,7 @@ import { DevPanel } from "./components/dev/DevPanel";
 import { PromoStrip } from "./components/casino/PromoStrip";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
-import { CasinoCatalog, gameHref, findGameByFavId } from "./components/casino/CasinoCatalog";
+import { CasinoCatalog, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
@@ -397,9 +397,24 @@ export default function App() {
 
 function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames }) {
   const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const searchResults = q ? ALL_GAMES.filter((g) => g.title.toLowerCase().includes(q)) : [];
+
+  const selectSearchResult = (game) => {
+    (game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider)(game);
+    setQuery("");
+  };
+  const browseAll = () => { setQuery(""); onBrowseGames?.(); };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <PromoStrip query={query} onQuery={setQuery} />
+      <PromoStrip
+        query={query}
+        onQuery={setQuery}
+        searchResults={searchResults}
+        onSelectResult={selectSearchResult}
+        onBrowseAll={browseAll}
+      />
       <CasinoCatalog
         category={category}
         query={query}
@@ -408,7 +423,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         isFav={isFav}
         onFav={onFav}
         recentIds={recentIds}
-        onBrowseGames={onBrowseGames}
+        onBrowseGames={browseAll}
       />
     </div>
   );
