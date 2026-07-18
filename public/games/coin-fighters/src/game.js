@@ -1,7 +1,7 @@
 /**
- * Hi-Lo Fighters — core game loop & coin-flip resolution.
+ * Coin Fighters — core game loop & coin-flip resolution.
  *
- * Flow: SELECT → BETTING → (HEADS or TAILS) → coin flip → RESOLVING (fight) → BETTING | GAME_OVER
+ * Flow: SELECT → BETTING → (HEADS or PAWS) → coin flip → RESOLVING (fight) → BETTING | GAME_OVER
  */
 
 import { GAME_PHASE, HEALTH, MULTIPLIER, STAGE, TIMING, WALLET } from './constants.js';
@@ -36,7 +36,7 @@ import {
 import { Fairness } from './fairness.js';
 
 const ROUND_HISTORY_MAX = 16;
-const SKIP_VIDEOS_KEY = 'hi-lo-fighters-skip-videos';
+const SKIP_VIDEOS_KEY = 'coin-fighters-skip-videos';
 
 export class Game {
   /**
@@ -143,7 +143,7 @@ export class Game {
 
     this.input = new InputHandler({
       onHi: () => this.placeBet('HEADS'),
-      onLo: () => this.placeBet('TAILS'),
+      onLo: () => this.placeBet('PAWS'),
       onRestart: () => this._onOverlayPrimary(),
     });
     /** @type {number | null} */
@@ -204,7 +204,7 @@ export class Game {
   }
 
   /**
-   * @param {'HEADS' | 'TAILS'} choice
+   * @param {'HEADS' | 'PAWS'} choice
    */
   async placeBet(choice) {
     if (this.phase !== GAME_PHASE.BETTING) return;
@@ -235,7 +235,7 @@ export class Game {
     this._lastCard = face;
     this._syncRtpUi();
 
-    // Landing still = RNG face (HEADS/cat or TAILS/paws), not merely the player's pick
+    // Landing still = RNG face (HEADS/cat or PAWS), not merely the player's pick
     await this._playCoinFlip(face);
 
     if (playerWon) {
@@ -246,9 +246,9 @@ export class Game {
   }
 
   /**
-   * 3s coin spin (fast → slow): heads → middle → tails → middle…
+   * 3s coin spin (fast → slow): heads → middle → paws → middle…
    * Lands on the RNG outcome face (cat head or paw). Skip jumps to that still.
-   * @param {'HEADS' | 'TAILS'} face — coin side that won this flip
+   * @param {'HEADS' | 'PAWS'} face — coin side that won this flip
    * @returns {Promise<void>}
    */
   _playCoinFlip(face) {
@@ -286,7 +286,7 @@ export class Game {
         // Force a paint of the outcome face (cat head / paw)
         img.removeAttribute('src');
         img.src = landUrl;
-        img.alt = face === 'HEADS' ? 'Heads' : 'Tails';
+        img.alt = face === 'HEADS' ? 'Heads' : 'Paws';
         img.classList.remove('is-flip');
         if (skipBtn) skipBtn.hidden = true;
         this._coinFlipLandTimer = setTimeout(() => {
@@ -375,7 +375,7 @@ export class Game {
   }
 
   /**
-   * @param {'HEADS' | 'TAILS'} choice
+   * @param {'HEADS' | 'PAWS'} choice
    */
   _resolveWin(choice) {
     this._pushRoundHistory('W');
@@ -770,7 +770,7 @@ export class Game {
     this.ui.overlay.classList.toggle('lose', !playerWon);
     this.ui.overlayTitle.textContent = playerWon ? 'YOU WIN!' : 'YOU LOSE';
     this.ui.overlaySub.textContent = playerWon
-      ? 'Opponent KO — Hi-Lo Fighters champion!'
+      ? 'Opponent KO — Coin Fighters champion!'
       : 'Your HP hit zero. Press Restart to fight again.';
     if (this.ui.btnRestart) {
       this.ui.btnRestart.hidden = false;
@@ -874,6 +874,7 @@ export class Game {
   _showCharacterSelect() {
     this.phase = GAME_PHASE.SELECT;
     this.input.setEnabled(false);
+    // HEADS/PAWS wait for FIGHT; bet amount stays editable via _syncWalletUi
     this._setButtonsDisabled(true);
     this.wigAttack = null;
     this.projectile = null;
@@ -882,6 +883,7 @@ export class Game {
       this.ui.charSelect.setAttribute('aria-hidden', 'false');
     }
     this._highlightCharacter(this.characterId);
+    this._syncWalletUi();
   }
 
   /** @param {'rookie' | 'trump'} id */
@@ -1003,9 +1005,12 @@ export class Game {
       this.phase === GAME_PHASE.BETTING && climbing && !this.cutsceneActive;
     if (this.ui.btnCashOut) this.ui.btnCashOut.disabled = !canCash;
 
+    // Bet amount (½ / input / 2× / MAX) stays editable any time a climb
+    // isn't already locked — including character select before FIGHT.
+    // Only freeze while stake is live, mid-resolve, or during a cutscene.
     const betLocked =
       this.activeStake > 0 ||
-      this.phase !== GAME_PHASE.BETTING ||
+      this.phase === GAME_PHASE.RESOLVING ||
       this.cutsceneActive;
     if (this.ui.betInput) this.ui.betInput.disabled = betLocked;
     if (this.ui.btnBetHalf) this.ui.btnBetHalf.disabled = betLocked;

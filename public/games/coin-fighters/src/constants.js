@@ -100,7 +100,7 @@ export const HUD = {
 export const MULTIPLIER = {
   START: 1,
   /**
-   * Growth per correct Heads/Tails. Was 2.0 (1→2→4→8→16→32), which hit huge mults too fast.
+   * Growth per correct Heads/Paws. Was 2.0 (1→2→4→8→16→32), which hit huge mults too fast.
    * 1.15 keeps typical cashouts around 1.0–1.8× (2× needs ~5 wins in a row).
    */
   WIN_FACTOR: 1.15,

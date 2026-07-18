@@ -1,5 +1,5 @@
 /**
- * Hi-Lo Fighters — entry point
+ * Coin Fighters — entry point
  */
 
 import { Game } from './game.js';

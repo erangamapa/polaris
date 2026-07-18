@@ -1,6 +1,6 @@
 /**
- * Keyboard + button input for HEADS / TAILS / restart.
- * Keys: 1 = HEADS, 2 = TAILS, R = restart (when game over)
+ * Keyboard + button input for HEADS / PAWS / restart.
+ * Keys: 1 = HEADS, 2 = PAWS, R = restart (when game over)
  */
 
 export class InputHandler {

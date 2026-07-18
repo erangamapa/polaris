@@ -22,7 +22,7 @@ export class Renderer {
     const aspect = CANVAS.WIDTH / CANVAS.HEIGHT;
     let w = cssW;
     let h = cssW / aspect;
-    // Leave room for wallet / HI-LO controls on phones and short iframes
+    // Leave room for wallet / Heads-Paws controls on phones and short iframes
     const maxFrac = window.innerWidth <= 560 || window.innerHeight < 640 ? 0.42 : 0.62;
     const maxH = window.innerHeight * maxFrac;
     if (h > maxH) {

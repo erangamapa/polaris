@@ -6,7 +6,7 @@
 
 import { HOUSE, MULTIPLIER } from './constants.js';
 
-const CLIENT_SEED_KEY = 'hi-lo-fighters-client-seed';
+const CLIENT_SEED_KEY = 'coin-fighters-client-seed';
 
 function randomSeed() {
   const arr = new Uint8Array(16);
@@ -60,8 +60,8 @@ export class Fairness {
    * Roll decides win/loss; landing face is the side that "won" the flip
    * (player's pick on a win, the opposite on a loss) so the still always
    * matches the bet outcome.
-   * @param {'HEADS' | 'TAILS'} choice — player's pick
-   * @returns {Promise<{ face: 'HEADS' | 'TAILS', isHeads: boolean, playerWon: boolean, roll: number }>}
+   * @param {'HEADS' | 'PAWS'} choice — player's pick
+   * @returns {Promise<{ face: 'HEADS' | 'PAWS', isHeads: boolean, playerWon: boolean, roll: number }>}
    */
   async nextCard(choice = 'HEADS') {
     const payload = `${this.serverSeed}:${this.clientSeed}:${this.nonce}`;
@@ -71,8 +71,8 @@ export class Fairness {
     // House edge: win window is smaller than 50%
     const playerWon = roll < HOUSE.WIN_CHANCE;
     // Face that won this flip — what the coin must land on
-    const face = /** @type {'HEADS' | 'TAILS'} */ (
-      playerWon ? choice : choice === 'HEADS' ? 'TAILS' : 'HEADS'
+    const face = /** @type {'HEADS' | 'PAWS'} */ (
+      playerWon ? choice : choice === 'HEADS' ? 'PAWS' : 'HEADS'
     );
     this.lastRoll = roll;
     this.lastOutcome = face;

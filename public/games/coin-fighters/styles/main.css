@@ -1,4 +1,4 @@
-/* Hi-Lo Fighters — arcade HUD */
+/* Coin Fighters — arcade HUD */
 
 :root {
   --bg: #0d0a14;
@@ -438,10 +438,13 @@ body {
 .btn-cashout {
   min-height: 40px;
   padding: 6px 12px;
-  background: linear-gradient(180deg, #ffe566 0%, #c9a227 100%);
-  color: #1a1200;
+  background: linear-gradient(180deg, #b8ff6a 0%, #39ff14 45%, #12c95a 100%);
+  color: #041a08;
   text-shadow: none;
-  box-shadow: 0 3px 0 #5a4508, inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 3px 0 #0a5c28,
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    0 0 14px rgba(57, 255, 20, 0.55);
 }
 
 .btn-cashout:disabled {
@@ -778,8 +781,9 @@ body {
 }
 
 .btn-lo {
-  background: linear-gradient(180deg, #6eb8e8 0%, #3a6fbf 100%);
-  box-shadow: 0 3px 0 #1e3f72, inset 0 2px 0 rgba(255, 255, 255, 0.25);
+  /* Pink to match the paw print on the coin */
+  background: linear-gradient(180deg, #ffb0d0 0%, #e85a9a 55%, #c23070 100%);
+  box-shadow: 0 3px 0 #6e1840, inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
 
 .btn-label {

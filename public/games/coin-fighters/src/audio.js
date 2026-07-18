@@ -1,5 +1,5 @@
 /**
- * Lightweight SFX + background music for Hi-Lo Fighters.
+ * Lightweight SFX + background music for Coin Fighters.
  */
 
 const MUSIC_VOL = 0.35;
@@ -7,8 +7,8 @@ const SFX_VOL = 0.85;
 const RESULT_VOL = 0.9;
 /** Win clip is quieter in the source file — nudge up to sit with you-lose. */
 const YOU_WIN_VOL = 1;
-const MUSIC_MUTE_KEY = 'hi-lo-fighters-music-muted';
-const SFX_MUTE_KEY = 'hi-lo-fighters-sfx-muted';
+const MUSIC_MUTE_KEY = 'coin-fighters-music-muted';
+const SFX_MUTE_KEY = 'coin-fighters-sfx-muted';
 
 /** @type {HTMLAudioElement | null} */
 let kickSound = null;
@@ -62,7 +62,7 @@ export async function loadAudio() {
       applyMusicMute();
     }
   } catch (err) {
-    console.warn('[Hi-Lo Fighters] Audio unavailable:', err);
+    console.warn('[Coin Fighters] Audio unavailable:', err);
     kickSound = kickSound ?? null;
     punchSound = punchSound ?? null;
     youWinSound = youWinSound ?? null;
