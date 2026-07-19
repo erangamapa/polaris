@@ -137,15 +137,6 @@ function MenuRow({ item, active, onClick }) {
         {item.count > 0 && (
           <StatusBadge variant="neutral" size="medium" count={item.count} ariaLabel={`${item.count} ${item.label}`} />
         )}
-        {item.live > 0 && (
-          <StatusBadge
-            variant="live"
-            size="medium"
-            icon="dot"
-            count={item.live}
-            ariaLabel={`${item.live} live ${item.label} event${item.live === 1 ? "" : "s"}`}
-          />
-        )}
       </button>
     </li>
   );

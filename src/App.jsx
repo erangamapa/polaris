@@ -445,8 +445,7 @@ export default function App() {
     // Sports Home / Live sit above the five-sport whitelist (never removed
     // for sparse inventory — see INVENTORY STABILITY); My Bets is a
     // separated utility destination below a divider, same convention as
-    // Casino's Favorites. Live counts come from the real merged inventory
-    // fetched above, not a hardcoded mock lookup.
+    // Casino's Favorites.
     const openSportsBets = activity.filter((a) => a.product === "sports" && a.status === "open").length;
     return {
       title: "Sports",
@@ -460,7 +459,7 @@ export default function App() {
       items: [
         { id: "home", label: "Sports Home", icon: LayoutGrid },
         { id: "live", label: "Live", icon: Radio },
-        ...MVP_SPORTS.map((s) => ({ id: s.id, label: s.name, icon: s.icon, live: sportsEvents.filter((e) => e.sport.id === s.id && e.status === "live").length })),
+        ...MVP_SPORTS.map((s) => ({ id: s.id, label: s.name, icon: s.icon })),
         { id: "sports-div", divider: true },
         { id: "my-bets", label: "My Bets", icon: ReceiptText, count: openSportsBets > 0 ? openSportsBets : undefined },
       ],

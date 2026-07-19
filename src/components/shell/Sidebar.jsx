@@ -108,17 +108,6 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
           accentColor={product}
           ariaCurrent={selected === it.id ? "page" : undefined}
           onClick={() => onSelect(it.id)}
-          badge={
-            it.live > 0 ? (
-              <StatusBadge
-                variant="live"
-                size="small"
-                icon="dot"
-                count={it.live}
-                ariaLabel={`${it.live} live ${it.label} event${it.live === 1 ? "" : "s"}`}
-              />
-            ) : null
-          }
         />
       ))}
 
@@ -208,16 +197,6 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
               {selected === it.id && <SideIndicator color={accent.bar} />}
               <ItemIcon icon={it.icon} />
               <span className="truncate">{it.label}</span>
-              {it.live > 0 && (
-                <StatusBadge
-                  variant="live"
-                  size="medium"
-                  icon="dot"
-                  count={it.live}
-                  ariaLabel={`${it.live} live ${it.label} event${it.live === 1 ? "" : "s"}`}
-                  className="ms-auto"
-                />
-              )}
               {it.count > 0 && (
                 <StatusBadge
                   data-test-id={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
