@@ -63,100 +63,315 @@ button,
 }
 
 .stage-wrap {
-  position: relative;
-  border: 2px solid rgba(232, 199, 106, 0.55);
-  border-radius: 12px;
+  border: 1px solid rgba(232, 199, 106, 0.5);
+  border-radius: 10px;
   overflow: hidden;
   background: #000;
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
   box-shadow:
     0 0 0 1px #000,
-    0 14px 40px rgba(0, 0, 0, 0.55),
-    inset 0 0 40px rgba(30, 200, 176, 0.08);
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    inset 0 0 28px rgba(30, 200, 176, 0.06);
 }
 
-#gameCanvas {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 16 / 9;
-  vertical-align: middle;
-  background: #06100c;
-}
-
-/* Title row — positioned onto the canvas top rail via syncHudToCanvas() */
-.stage-topbar {
+/* Title + balance overlay on a top scrim (does not reserve layout height) */
+.stage-brand {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 6;
+  right: 0;
+  z-index: 8;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 0 10px;
-  pointer-events: none;
+  gap: 12px;
+  min-height: 60px;
+  padding: 14px 16px 24px;
   box-sizing: border-box;
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 10, 8, 0.94) 0%,
+    rgba(5, 10, 8, 0.72) 45%,
+    rgba(5, 10, 8, 0.28) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
-.stage-topbar .wallet {
+.stage-brand .wallet {
   pointer-events: auto;
 }
 
-.brand {
+.stage-brand-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
 }
 
-.brand-mark {
-  font-size: clamp(0.85rem, 2.2vw, 1.15rem);
+.stage-brand .brand-mark {
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
   color: var(--gold);
   text-shadow: 0 0 12px rgba(232, 199, 106, 0.45);
   line-height: 1;
 }
 
-.brand h1 {
+.stage-brand-text {
+  min-width: 0;
+}
+
+.stage-brand h1 {
   margin: 0;
   font-family: "Cinzel", serif;
-  font-size: clamp(0.72rem, 1.9vw, 1.05rem);
+  font-size: clamp(1.15rem, 2.6vw, 1.45rem);
   letter-spacing: 0.04em;
   color: var(--gold);
   white-space: nowrap;
   text-shadow: 0 1px 4px #000;
+  line-height: 1.15;
 }
 
-.tagline {
-  display: none;
+.stage-brand .tagline {
+  margin: 3px 0 0;
+  font-size: clamp(0.72rem, 1.5vw, 0.88rem);
+  color: rgba(200, 210, 204, 0.95);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.stage-brand .wallet {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border-radius: 10px;
+}
+
+.stage-brand .wallet-label {
+  font-size: 0.7rem;
+  line-height: 1.15;
+}
+
+.stage-brand .wallet-value {
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+
+.stage-play {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+/* Full-bleed stage; clip inset leaves thin black bars top + bottom */
+.stage-canvas-box {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  --letterbox: 88px;
+}
+
+.stage-canvas-clip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--letterbox);
+  bottom: var(--letterbox);
+  overflow: hidden;
+  background: #000;
+}
+
+#gameCanvas {
+  position: absolute;
+  /* width/height/left/top set by syncCanvasCover() — uniform scale, no stretch */
+  display: block;
+  background: #06100c;
+}
+
+.next-round-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 8, 6, 0.35);
+  pointer-events: auto;
+}
+
+.next-round-overlay[hidden] {
+  display: none !important;
+}
+
+/* Temple fate tablet — cash-out result (replaces live multiplier overlay) */
+.crash-fate {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: max(56px, 10%);
+  pointer-events: none;
+}
+
+.crash-fate[hidden] {
+  display: none !important;
+}
+
+.crash-fate-tablet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 168px;
+  padding: 16px 28px 18px;
+  border-radius: 4px;
+  border: 3px solid #6a5a48;
+  background:
+    linear-gradient(180deg, #3a342c 0%, #2a2620 45%, #1e1a16 100%);
+  box-shadow:
+    0 0 0 2px #0a0806,
+    inset 0 1px 0 rgba(200, 180, 140, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45),
+    0 12px 32px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(-36px) scale(0.94);
+}
+
+.crash-fate-tablet--win {
+  border-color: #8a7040;
+  box-shadow:
+    0 0 0 2px #0a0806,
+    inset 0 1px 0 rgba(232, 199, 106, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45),
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(232, 199, 106, 0.2);
+}
+
+.crash-fate.is-in .crash-fate-tablet {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: fateDrop 0.4s cubic-bezier(0.22, 1.15, 0.36, 1) both;
+}
+
+.crash-fate.is-out .crash-fate-tablet {
+  animation: fateFade 0.28s ease-in forwards;
+}
+
+.crash-fate-label {
+  font-family: "Cinzel", serif;
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(200, 180, 140, 0.75);
+  text-shadow: 0 1px 0 #000;
+}
+
+.crash-fate-mult {
+  font-family: "Cinzel", serif;
+  font-size: clamp(1.85rem, 5.5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--win, #39ff9a);
+  text-shadow:
+    0 0 20px rgba(57, 255, 154, 0.4),
+    0 2px 0 #000,
+    0 0 1px #000;
+  line-height: 1.1;
+}
+
+.crash-fate-sub {
+  margin-top: 4px;
+  font-family: "Rajdhani", sans-serif;
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 140, 140, 0.9);
+  text-shadow: 0 1px 0 #000;
+}
+
+@keyframes fateDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-48px) scale(0.92);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fateFade {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+
+.btn-next-round {
+  appearance: none;
+  font-family: "Cinzel", serif;
+  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 14px 36px;
+  border-radius: 12px;
+  border: 2px solid rgba(120, 80, 10, 0.85);
+  background: linear-gradient(180deg, #f0d060 0%, #e8b020 55%, #c99210 100%);
+  color: #1a1208;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px #000,
+    0 8px 28px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(232, 199, 106, 0.35);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.45);
+}
+
+.btn-next-round:hover {
+  filter: brightness(1.08);
+  border-color: #8a6010;
+}
+
+.btn-next-round:active {
+  transform: translateY(1px);
 }
 
 .wallet {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 6px;
-  background: rgba(8, 18, 14, 0.75);
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(18, 32, 28, 0.9);
   border: 1px solid rgba(232, 199, 106, 0.35);
-  border-radius: 8px;
-  padding: 2px 8px;
+  border-radius: 10px;
+  padding: 6px 12px;
 }
 
 .wallet-label {
-  font-size: clamp(0.55rem, 1.2vw, 0.65rem);
+  font-size: 0.7rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .wallet-value {
-  font-size: clamp(0.8rem, 1.8vw, 1.05rem);
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--teal);
 }
@@ -164,23 +379,121 @@ button,
 .mult-overlay {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-content: start center;
-  /* Below canvas history rail, toward center of the playfield */
-  padding-top: 22%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Clear brand scrim + history at top of playfield */
+  padding-top: max(72px, 14%);
+  gap: 2px;
   pointer-events: none;
   text-align: center;
   box-sizing: border-box;
 }
 
-.audio-dock {
+.mult-overlay[hidden] {
+  display: none !important;
+}
+
+/* Dev safe toggle — boulder never hits when on */
+.safe-btn {
+  appearance: none;
   position: absolute;
-  left: 8px;
-  bottom: 8px;
-  z-index: 5;
+  top: 10px;
+  left: 10px;
+  z-index: 24;
+  font-family: "Rajdhani", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(232, 199, 106, 0.4);
+  background: rgba(8, 18, 14, 0.78);
+  color: var(--gold, #e8c76a);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.safe-btn:hover {
+  filter: brightness(1.12);
+}
+
+.safe-btn.is-on {
+  border-color: rgba(57, 255, 154, 0.65);
+  color: #39ff9a;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.45),
+    0 0 12px rgba(57, 255, 154, 0.25);
+}
+
+.help-btn {
+  appearance: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 24;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-family: "Cinzel", serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 199, 106, 0.4);
+  background: rgba(8, 18, 14, 0.78);
+  color: var(--gold, #e8c76a);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  padding: 0;
+}
+
+.help-btn:hover {
+  filter: brightness(1.12);
+  border-color: rgba(30, 200, 176, 0.55);
+}
+
+.help-list {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  font-family: "Rajdhani", sans-serif;
+  font-size: clamp(0.9rem, 2.4vw, 1.05rem);
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(244, 239, 226, 0.92);
+  text-align: left;
+}
+
+.help-list strong {
+  color: var(--gold, #e8c76a);
+  font-weight: 700;
+}
+
+.help-tip {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: rgba(200, 180, 140, 0.85);
+  font-style: italic;
+}
+
+.audio-dock {
+  position: absolute;
+  left: 12px;
+  bottom: 0;
+  z-index: 6;
+  height: var(--letterbox, 88px);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
 }
 
 .audio-btn {
@@ -229,9 +542,10 @@ button,
 
 .mult-value {
   font-family: "Cinzel", serif;
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  font-size: clamp(1.9rem, 5.5vw, 3.2rem);
   font-weight: 800;
   color: var(--gold);
+  line-height: 1;
   text-shadow:
     0 0 24px rgba(232, 199, 106, 0.55),
     0 3px 0 #000;
@@ -254,8 +568,8 @@ button,
 }
 
 .mult-status {
-  margin-top: 4px;
-  font-size: 0.85rem;
+  margin-top: 2px;
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -288,22 +602,25 @@ button,
 
 .fair-chip {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 12px;
+  z-index: 6;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   color: var(--muted);
-  background: rgba(0, 0, 0, 0.5);
+  max-width: 46%;
+  cursor: pointer;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(30, 200, 176, 0.3);
   border-radius: 999px;
-  padding: 4px 8px;
-  max-width: 40%;
+  padding: 0 12px;
+  height: 32px;
+  bottom: calc((var(--letterbox, 88px) - 32px) / 2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .fair-dot {
@@ -593,25 +910,25 @@ button,
     gap: 6px;
   }
 
-  .brand-mark {
-    font-size: clamp(0.75rem, 2.8vw, 1rem);
+  .stage-brand .tagline {
+    display: none;
   }
 
-  .brand h1 {
-    font-size: clamp(0.62rem, 2.6vw, 0.88rem);
+  .stage-brand h1 {
+    font-size: clamp(1rem, 3.4vw, 1.25rem);
   }
 
   .wallet {
-    padding: 1px 6px;
-    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 9px;
   }
 
   .wallet-label {
-    font-size: 0.55rem;
+    font-size: 0.68rem;
   }
 
   .wallet-value {
-    font-size: clamp(0.7rem, 2.4vw, 0.9rem);
+    font-size: 1.1rem;
   }
 
   .stage-wrap {
@@ -625,23 +942,13 @@ button,
       inset 0 0 28px rgba(30, 200, 176, 0.06);
   }
 
-  /* Clamp to stage so 16:9 never overflows / clips in the iframe */
-  #gameCanvas {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 16 / 9;
-  }
-
   .mult-overlay {
-    padding-top: clamp(88px, 26%, 130px);
+    padding-top: max(76px, 15%);
   }
 
   .audio-dock {
-    left: 6px;
-    bottom: 6px;
-    gap: 5px;
+    left: 10px;
+    gap: 6px;
   }
 
   .audio-btn {
@@ -660,11 +967,12 @@ button,
   }
 
   .fair-chip {
-    right: 6px;
-    bottom: 6px;
-    font-size: 0.55rem;
+    right: 10px;
+    font-size: 0.6rem;
     max-width: 48%;
-    padding: 3px 6px;
+    padding: 0 8px;
+    height: 28px;
+    bottom: calc((var(--letterbox, 88px) - 28px) / 2);
   }
 
   .controls {
@@ -757,14 +1065,19 @@ button,
     gap: 4px;
   }
 
-  .brand-mark,
+  .stage-brand .brand-mark,
+  .stage-brand .tagline,
   .help,
   .footer {
     display: none;
   }
 
-  .brand h1 {
-    font-size: 0.7rem;
+  .stage-brand h1 {
+    font-size: 0.8rem;
+  }
+
+  .wallet {
+    padding: 2px 6px;
   }
 
   .wallet-label {
@@ -772,7 +1085,7 @@ button,
   }
 
   .wallet-value {
-    font-size: 0.75rem;
+    font-size: 0.9rem;
   }
 
   .stage-wrap {
@@ -781,7 +1094,7 @@ button,
   }
 
   .mult-overlay {
-    padding-top: clamp(72px, 24%, 110px);
+    padding-top: max(76px, 15%);
   }
 
   .audio-btn {
@@ -823,7 +1136,7 @@ button,
 
 /* Ultra-short landscape: single-row controls priority */
 @media (max-height: 380px) and (orientation: landscape) {
-  .stage-topbar {
+  .stage-brand {
     display: none;
   }
 

@@ -6,22 +6,46 @@ export const assets = {
   loaded: false,
   jungle: /** @type {HTMLImageElement | null} */ (null),
   boulder: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Seamless ruins stone floor texture (PNG). */
+  floorTile: /** @type {HTMLImageElement | HTMLCanvasElement | null} */ (null),
   /** @type {HTMLCanvasElement[]} */
   runFrames: [],
   /** Horizontal sprite sheet (keyed + size-unified + foot-aligned). */
   runSheet: /** @type {HTMLCanvasElement | null} */ (null),
   /** Looping run footstep / chase bed. */
   runSfx: /** @type {HTMLAudioElement | null} */ (null),
+  /** One-shot gasp when the scared pose hits. */
+  scaredSfx: /** @type {HTMLAudioElement | null} */ (null),
+  /** One-shot rope stretch when climb starts. */
+  ropeClimbSfx: /** @type {HTMLAudioElement | null} */ (null),
+  /** One-shot coin collect on cash-out (same as Coin Fighters). */
+  cashOutSfx: /** @type {HTMLAudioElement | null} */ (null),
   /** Looping ambient / temple music bed. */
   music: /** @type {HTMLAudioElement | null} */ (null),
   /** Crash hit recoil pose (keyed + cropped). */
   scared: /** @type {HTMLCanvasElement | null} */ (null),
   /** Crash KO pose lying on floor (keyed + cropped). */
   die: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Idle / pre-run seated starting stance (keyed + cropped). */
+  start: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Scrolling ground prop — overgrown stone monolith. */
+  monolith: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Scrolling ground prop — mossy carved stone head. */
+  stoneHead: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Scrolling ground prop — circular eye stone. */
+  circleStone: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Scrolling ground prop — triangular mossy dolmen. */
+  triangleStone: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Scrolling ground prop — rectangular carved stele. */
+  rectangleStone: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Cash-out: back POV stop pose. */
+  escapeBack: /** @type {HTMLCanvasElement | null} */ (null),
+  /** Cash-out ending video (green screen keyed at draw time). */
+  escapeEnd: /** @type {HTMLVideoElement | null} */ (null),
 };
 
 /** Bust cache when frames are replaced. */
-const ASSET_VER = 'run-v19';
+const ASSET_VER = 'run-v39';
 /** Two-frame run loop (idle A ↔ idle B). */
 export const RUN_FRAME_COUNT = 2;
 
@@ -45,7 +69,7 @@ const KEY_B = 8;
 const KEY_DIST2 = 100 * 100;
 
 /**
- * Key out greenscreen OR near-white studio backgrounds (some gen frames).
+ * Key out greenscreen, near-white, OR near-black studio backgrounds.
  * @param {HTMLImageElement | HTMLCanvasElement} img
  * @returns {HTMLCanvasElement}
  */
@@ -72,7 +96,9 @@ function keyOutGreen(img) {
     const fringeKey = g > 150 && r < 110 && b < 110 && g > r * 1.7 && g > b * 1.7;
     const whiteKey =
       r > 215 && g > 215 && b > 215 && Math.abs(r - g) < 25 && Math.abs(g - b) < 25;
-    if (neonKey || fringeKey || whiteKey) {
+    // Pure black backdrops on escape frames (avoid eating dark boots: keep threshold tight)
+    const blackKey = r < 10 && g < 10 && b < 10;
+    if (neonKey || fringeKey || whiteKey || blackKey) {
       px[i + 3] = 0;
     }
   }
@@ -222,21 +248,65 @@ export async function loadAssets() {
     'assets/boulder.png',
     'assets/raider-scared.png',
     'assets/raider-die.png',
+    'assets/raider-start.png',
+    'assets/bg-monolith.png',
+    'assets/bg-head.png',
+    'assets/bg-circle.png',
+    'assets/bg-triangle.png',
+    'assets/bg-rectangle.png',
+    'assets/floor-ruins.png',
+    'assets/escape-back.png',
     ...runPaths,
   ];
-  const [jungle, boulderRaw, scaredRaw, dieRaw, ...runImgs] = await Promise.all(
-    paths.map((p) => loadImage(p)),
-  );
+  const loaded = await Promise.all(paths.map((p) => loadImage(p)));
+  const jungle = loaded[0];
+  const boulderRaw = loaded[1];
+  const scaredRaw = loaded[2];
+  const dieRaw = loaded[3];
+  const startRaw = loaded[4];
+  const monolithRaw = loaded[5];
+  const stoneHeadRaw = loaded[6];
+  const circleRaw = loaded[7];
+  const triangleRaw = loaded[8];
+  const rectangleRaw = loaded[9];
+  const floorRaw = loaded[10];
+  const escapeBackRaw = loaded[11];
+  const runImgs = loaded.slice(12, 12 + RUN_FRAME_COUNT);
 
   assets.jungle = jungle;
   assets.boulder = cropOpaque(keyOutGreen(boulderRaw));
   assets.scared = cropOpaque(keyOutGreen(scaredRaw));
   assets.die = cropOpaque(keyOutGreen(dieRaw));
+  assets.start = cropOpaque(keyOutGreen(startRaw));
+  assets.monolith = cropOpaque(keyOutGreen(monolithRaw));
+  assets.stoneHead = cropOpaque(keyOutGreen(stoneHeadRaw));
+  assets.circleStone = cropOpaque(keyOutGreen(circleRaw));
+  assets.triangleStone = cropOpaque(keyOutGreen(triangleRaw));
+  assets.rectangleStone = cropOpaque(keyOutGreen(rectangleRaw));
+  assets.floorTile = floorRaw;
+  assets.escapeBack = cropOpaque(keyOutGreen(escapeBackRaw));
 
   // Run cycle: key bg, unify size + pin feet, build sprite sheet
   const keyed = runImgs.map((img) => keyOutGreen(img));
   assets.runFrames = packRunFramesFootAligned(keyed);
   assets.runSheet = buildSpriteSheet(assets.runFrames);
+
+  // Cash-out ending video (green keyed at draw time)
+  const escapeEnd = document.createElement('video');
+  escapeEnd.preload = 'auto';
+  escapeEnd.muted = true;
+  escapeEnd.playsInline = true;
+  escapeEnd.loop = false;
+  escapeEnd.src = `assets/escape-end.mp4?v=${ASSET_VER}`;
+  assets.escapeEnd = escapeEnd;
+  await new Promise((resolve) => {
+    const done = () => resolve(undefined);
+    escapeEnd.addEventListener('canplaythrough', done, { once: true });
+    escapeEnd.addEventListener('error', done, { once: true });
+    // Kick load; resolve even if already buffered
+    escapeEnd.load();
+    if (escapeEnd.readyState >= 3) done();
+  });
 
   const runSfx = new Audio(`assets/raider-running.mp3?v=${ASSET_VER}`);
   runSfx.loop = true;
@@ -244,11 +314,32 @@ export async function loadAssets() {
   runSfx.volume = 0.55;
   assets.runSfx = runSfx;
 
+  const scaredSfx = new Audio(`assets/raider-scared.mp3?v=${ASSET_VER}`);
+  scaredSfx.preload = 'auto';
+  scaredSfx.volume = 0.75;
+  assets.scaredSfx = scaredSfx;
+
+  const ropeClimbSfx = new Audio(`assets/rope-climb.mp3?v=${ASSET_VER}`);
+  ropeClimbSfx.preload = 'auto';
+  ropeClimbSfx.volume = 0.392;
+  assets.ropeClimbSfx = ropeClimbSfx;
+
+  const cashOutSfx = new Audio(`assets/coins-collect.mp3?v=${ASSET_VER}`);
+  cashOutSfx.preload = 'auto';
+  cashOutSfx.volume = 0.75;
+  assets.cashOutSfx = cashOutSfx;
+
   const music = new Audio(`assets/music.mp3?v=${ASSET_VER}`);
-  music.loop = true;
+  music.loop = false;
   music.preload = 'auto';
   music.volume = 0.35;
   assets.music = music;
+  // Kick decode early so first play can seek past the quiet intro reliably
+  try {
+    music.load();
+  } catch {
+    /* ignore */
+  }
 
   assets.loaded = true;
 }
