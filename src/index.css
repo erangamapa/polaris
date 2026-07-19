@@ -7,11 +7,32 @@ body {
   margin: 0;
 }
 
-.pb-nav {
-  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+/* Mobile browsers (Android Chrome especially) paint a default tap-highlight
+   overlay on any tappable element, which can visually linger and read as a
+   "stuck" focused/selected tile after a touch — particularly on dark
+   surfaces like the bottom nav. Rely on explicit :active/:focus-visible
+   styling instead, never the browser default. */
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (min-width: 1024px) {
+/* Shared motion values (Apple-quality: gentle ease-out, small distance, short duration). */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Visual content height of MobileBottomNav (excludes the safe-area inset,
+     which is added on top by consumers) — one source of truth so page
+     content, footers and the full-screen menu never guess this number
+     independently. Keep in sync with MobileBottomNav's own row height. */
+  --mobile-nav-height: 64px;
+}
+
+/* Shared bottom clearance for any mobile scroll container that sits above
+   MobileBottomNav, so the last card/footer link is never crowded against
+   it. Desktop (md+) has no bottom nav, so this collapses to nothing there. */
+.pb-nav {
+  padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+}
+@media (min-width: 768px) {
   .pb-nav {
     padding-bottom: 2rem;
   }
@@ -19,11 +40,6 @@ body {
 
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* Shared motion values (Apple-quality: gentle ease-out, small distance, short duration). */
-:root {
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Hero artwork as a CSS background (never an <img>). Gradients (fallback slides)

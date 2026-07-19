@@ -15,11 +15,11 @@ import { StatusBadge } from "@/components/ui/status-badge";
 // motion timings, and (since the trigger lives outside this Root/Portal)
 // explicit focus-return.
 //
-// Covers the viewport at z-[70], but the bottom nav stacks *above* it at
-// z-[80] (see MobileBottomNav) and stays interactive the whole time, so
-// "tap Menu again" / "switch arena" both work as direct taps rather than
-// needing a separate close step first. The scroll area's bottom padding
-// clears the bar so the last utility row is never hidden under it.
+// Covers the viewport (100dvh, not 100vh, so browser address-bar expand/
+// collapse never clips the header or bottom nav) at z-[70], but the bottom
+// nav stacks *above* it at z-[80] (see MobileBottomNav) and stays
+// interactive the whole time, so "tap Menu again" / "switch arena" both
+// work as direct taps rather than needing a separate close step first.
 export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, selected, onSelect, onClose }) {
   const handleItemClick = (item) => {
     if (item.action) item.action();
@@ -31,11 +31,11 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
     <DialogPrimitive.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
-          className="fixed inset-0 z-[70] bg-background data-[state=open]:animate-[mobile-menu-backdrop-in_180ms_ease-out] data-[state=closed]:animate-[mobile-menu-backdrop-out_190ms_ease-in] motion-reduce:animate-none"
+          className="fixed inset-x-0 top-0 z-[70] h-dvh bg-background data-[state=open]:animate-[mobile-menu-backdrop-in_180ms_ease-out] data-[state=closed]:animate-[mobile-menu-backdrop-out_190ms_ease-in] motion-reduce:animate-none"
         />
         <DialogPrimitive.Content
           id="mobile-fullscreen-menu"
-          className="fixed inset-0 z-[70] flex flex-col bg-background outline-none data-[state=open]:animate-[mobile-menu-content-in_230ms_cubic-bezier(0.22,1,0.36,1)] data-[state=closed]:animate-[mobile-menu-content-out_190ms_cubic-bezier(0.4,0,1,1)] motion-reduce:animate-none"
+          className="fixed inset-x-0 top-0 z-[70] flex h-dvh flex-col bg-background outline-none data-[state=open]:animate-[mobile-menu-content-in_230ms_cubic-bezier(0.22,1,0.36,1)] data-[state=closed]:animate-[mobile-menu-content-out_190ms_cubic-bezier(0.4,0,1,1)] motion-reduce:animate-none"
           onCloseAutoFocus={(e) => {
             // Radix's default auto-focus-return tracks a <DialogTrigger>;
             // the trigger here is the bottom nav's Menu button, which sits
@@ -45,22 +45,39 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
             document.getElementById("mobile-menu-trigger")?.focus();
           }}
         >
+          {/* Header — the top-right X is the primary, clearest close
+              affordance (see MobileBottomNav's Menu item, which stays a
+              plain burger and never shows a second competing X). Sized as
+              a restrained icon button, not a dominant CTA. */}
           <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
             <DialogPrimitive.Title className="text-base font-bold">{title}</DialogPrimitive.Title>
             <DialogPrimitive.Close
               aria-label="Close menu"
-              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="grid size-12 place-items-center rounded-2xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <X className="size-5" aria-hidden="true" />
+              <X className="size-6" aria-hidden="true" />
             </DialogPrimitive.Close>
           </div>
 
-          <nav aria-label={`${title} sections`} className="flex-1 overflow-y-auto px-2 pb-24 pt-3">
+          {/* Vertical structure: primary list pinned to the top, a flexible
+              spacer absorbs any extra height so the utility group sits
+              near the bottom on tall screens without being absolutely
+              pinned (which would break short screens) — the whole nav
+              scrolls internally instead when content exceeds the viewport.
+              Bottom padding clears the bottom nav bar, which stacks above
+              this menu — see MobileBottomNav — using the same shared
+              --mobile-nav-height every other mobile scroll surface uses. */}
+          <nav
+            aria-label={`${title} sections`}
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+16px)] pt-3"
+          >
             <ul className="space-y-0.5">
               {primaryItems.map((item) => (
                 <MenuRow key={item.id} item={item} active={selected === item.id} onClick={() => handleItemClick(item)} />
               ))}
             </ul>
+
+            <div className="flex-1" aria-hidden="true" />
 
             {utilityItems.length > 0 && (
               <>
@@ -84,11 +101,17 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
 // (Sports, e.g. "⚽" — see lib/sportsData.js). Rendering a string directly
 // as `<Icon />` would try to mount an HTML element named "⚽", which is
 // invalid — branch on the type like the desktop sidebar's ItemIcon does.
+// Fixed-width slot so labels align regardless of which icon variant renders.
 function ItemIcon({ icon }) {
-  if (!icon) return null;
-  if (typeof icon === "string") return <span className="grid size-5 shrink-0 place-items-center text-base" aria-hidden="true">{icon}</span>;
-  const Icon = icon;
-  return <Icon className="size-5 shrink-0" aria-hidden="true" />;
+  return (
+    <span className="grid size-6 shrink-0 place-items-center" aria-hidden="true">
+      {!icon ? null : typeof icon === "string" ? (
+        <span className="text-base">{icon}</span>
+      ) : (
+        (() => { const Icon = icon; return <Icon className="size-5" />; })()
+      )}
+    </span>
+  );
 }
 
 function MenuRow({ item, active, onClick }) {
@@ -98,14 +121,14 @@ function MenuRow({ item, active, onClick }) {
         onClick={onClick}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "relative flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-[15px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          active ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+          "relative flex w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          active ? "min-h-[64px] bg-secondary/80 font-semibold text-foreground" : "min-h-[56px] text-muted-foreground active:bg-secondary/40 active:text-foreground"
         )}
       >
         {active && (
           <span
             aria-hidden="true"
-            className="absolute inset-y-2 start-0 w-[3px] rounded-full"
+            className="absolute inset-y-2.5 start-0 w-[2px] rounded-full"
             style={{ background: "var(--product-primary)" }}
           />
         )}

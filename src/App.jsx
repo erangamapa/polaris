@@ -532,7 +532,7 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 [scrollbar-gutter:stable]">
+        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable]">
           <ArenaErrorBoundary key={product}>
             <div className="animate-fade-in-up">
               {product === "casino" && (

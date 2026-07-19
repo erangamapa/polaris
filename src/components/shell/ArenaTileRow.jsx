@@ -17,10 +17,14 @@ export function ArenaTileRow({ arena, promos, query, onQuery, results, onSelectR
   const [promo1, promo2] = promos;
   return (
     <div className="w-full space-y-3">
-      <div className="grid grid-cols-3 gap-3">
-        <PlayerTile />
-        <ArenaPromoTile promo={promo1} />
-        <ArenaPromoTile promo={promo2} />
+      {/* Mobile: real snap-scroll carousel, matching Casino's PromoStrip
+          (see that component for the full rationale) — three equal grid
+          columns at mobile widths is what produced clipped/truncated promo
+          copy. Desktop/tablet (sm+): unchanged 3-column grid. */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PlayerTile /></div>
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><ArenaPromoTile promo={promo1} /></div>
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><ArenaPromoTile promo={promo2} /></div>
       </div>
       <ScopedSearch
         query={query}

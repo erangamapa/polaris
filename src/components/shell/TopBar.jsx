@@ -33,7 +33,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
       </button>
 
       <div
-        className="flex select-none items-center gap-2"
+        className="flex shrink-0 select-none items-center gap-2"
         onPointerDown={startPress}
         onPointerUp={cancelPress}
         onPointerLeave={cancelPress}
