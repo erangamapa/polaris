@@ -8,6 +8,7 @@ import { getWalletClient, getPublicClient, switchChain } from '@wagmi/core';
 import { parseUnits, erc20Abi } from 'viem';
 import { getConditionsByGameIds, getBetFee, getBetTypedData, createBet } from '@azuro-org/toolkit';
 import { azuro, SPORTS_CHAIN_ID } from '@shared/chains';
+import { normalizeAzuroGame } from '@/lib/sportsModel';
 
 const AFFILIATE = import.meta.env.VITE_AFFILIATE_ADDRESS;
 const USDT = azuro.betToken.address;
@@ -22,6 +23,18 @@ const usdtAbi = [
   ...erc20Abi,
 ];
 
+// A slow/unreachable RPC node can leave an SDK call pending forever rather
+// than rejecting — without a bound, that would hang `loading` indefinitely
+// and leave the customer-facing empty state ("provider temporarily
+// unavailable") unreachable. Reject after `ms` instead of waiting forever.
+const CONDITION_FETCH_TIMEOUT_MS = 6000;
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
 // Fetch games that have active markets. Each game is tagged `bettable` = its
 // kickoff is still in the future — only those can actually be bet (Azuro's
 // relayer rejects bets on games that have already started, "Game is not active").
@@ -35,13 +48,23 @@ export function useBettableGames() {
     const load = async () => {
       try {
         const now = Math.floor(Date.now() / 1000);
-        const q = { query: `{ games(first:40, orderBy: startsAt, orderDirection: desc){ gameId startsAt title sport{name} league{name} } }` };
+        const q = { query: `{ games(first:40, orderBy: startsAt, orderDirection: desc){ gameId startsAt title sport{name slug} league{name} country{name} participants{name image} } }` };
         const res = await fetch(FEED, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(q) });
         const feed = (await res.json()).data?.games ?? [];
+        // Fetched concurrently, not sequentially — a slow/unreachable RPC
+        // node must cost at most one timeout period total, not one timeout
+        // *per game* (which could otherwise multiply into minutes and leave
+        // `loading` stuck for the whole batch).
+        const settled = await Promise.allSettled(
+          feed.slice(0, 20).map((g) =>
+            withTimeout(getConditionsByGameIds({ chainId: SPORTS_CHAIN_ID, gameIds: [g.gameId], extended: true }), CONDITION_FETCH_TIMEOUT_MS)
+              .then((conds) => ({ g, arr: Array.isArray(conds) ? conds : conds.conditions ?? [] }))
+          )
+        );
         const out = [];
-        for (const g of feed.slice(0, 20)) {
-          const conds = await getConditionsByGameIds({ chainId: SPORTS_CHAIN_ID, gameIds: [g.gameId], extended: true });
-          const arr = Array.isArray(conds) ? conds : conds.conditions ?? [];
+        for (const s of settled) {
+          if (s.status !== 'fulfilled') continue;
+          const { g, arr } = s.value;
           const markets = arr.filter((c) => c.state === 'Active' && c.outcomes?.length);
           if (markets.length) out.push({ ...g, markets, bettable: Number(g.startsAt) > now });
           if (out.length >= 12) break;
@@ -59,6 +82,19 @@ export function useBettableGames() {
   }, []);
 
   return { games, loading, bettableCount: games.filter((g) => g.bettable).length };
+}
+
+// Normalized view of useBettableGames() for every customer-facing sports
+// page (Sports Home, sport landing, live, league, event detail) — the raw
+// `game` shape (and its raw markets/outcomes) stay attached via `.raw` on
+// each normalized event/market/outcome so AzuroBetSlip's existing
+// { game, market, outcome } contract can be reconstructed unchanged when an
+// odds button is clicked. Games outside the 5-sport MVP whitelist are
+// dropped (normalizeAzuroGame returns null for them), not shown as "Other".
+export function useNormalizedAzuroEvents() {
+  const { games, loading, bettableCount } = useBettableGames();
+  const events = games.map(normalizeAzuroGame).filter(Boolean);
+  return { events, loading, bettableCount };
 }
 
 export function useAzuroBet() {

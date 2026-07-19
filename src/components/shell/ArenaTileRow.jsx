@@ -10,7 +10,10 @@ import { ArenaPromoTile } from "./ArenaPromoTile";
 //
 // `promos` is a 2-item array shaped like the entries in src/lib/arenaPromos.js
 // ({ id, label, title, metadata?, ctaLabel, href, artwork, ariaLabel? }).
-export function ArenaTileRow({ arena, promos, query, onQuery }) {
+// `results`/`onSelectResult`/`onBrowseAll`/`onZeroResults` are optional
+// passthroughs to ScopedSearch's rich results dropdown — omitted entirely
+// by Predictions (unaffected), used by Sports for real result navigation.
+export function ArenaTileRow({ arena, promos, query, onQuery, results, onSelectResult, onBrowseAll, onZeroResults }) {
   const [promo1, promo2] = promos;
   return (
     <div className="w-full space-y-3">
@@ -19,7 +22,15 @@ export function ArenaTileRow({ arena, promos, query, onQuery }) {
         <ArenaPromoTile promo={promo1} />
         <ArenaPromoTile promo={promo2} />
       </div>
-      <ScopedSearch query={query} onQuery={onQuery} defaultScope={arena} />
+      <ScopedSearch
+        query={query}
+        onQuery={onQuery}
+        defaultScope={arena}
+        results={results}
+        onSelectResult={onSelectResult}
+        onBrowseAll={onBrowseAll}
+        onZeroResults={onZeroResults}
+      />
     </div>
   );
 }

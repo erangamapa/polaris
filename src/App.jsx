@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   LayoutGrid, Gem, Cherry, Radio, Tv, Sparkles, Star,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
@@ -22,13 +22,15 @@ import { useWallet } from "./web3/useWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
-import { AzuroMarkets } from "./components/sports/AzuroMarkets";
+import { SportsArena } from "./components/sports/SportsArena";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
 import { CATEGORIES } from "./lib/mockData";
 import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
-import { SPORTS, liveCountBySport } from "./lib/sportsData";
-import { SPORTS_PROMOS, PREDICTIONS_PROMOS } from "./lib/arenaPromos";
+import { MVP_SPORTS } from "./lib/sportsModel";
+import { getSportsInventory } from "./lib/sportsDemo";
+import { useNormalizedAzuroEvents } from "./web3/useAzuro";
+import { PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 import { NetworkBanner } from "./components/shell/NetworkBanner";
 import { GeoBlock } from "./components/shell/GeoBlock";
 import { ArenaErrorBoundary } from "./components/shell/ArenaErrorBoundary";
@@ -173,25 +175,51 @@ export default function App() {
 
   const [casinoCategory, setCasinoCategory] = useState(initialNav.casinoCategory);
   const [predSection, setPredSection] = useState(initialNav.predSection);
-  const [sportId, setSportId] = useState(initialNav.sportId);
+  // Sports nav is a deeper hierarchy than the other two arenas (sport ->
+  // country -> league -> event), so it's five fields instead of one — see
+  // lib/routing.js. `sportsView` is the one source of truth for which of
+  // the six Sports page types is showing; the other four are only ever
+  // populated for the views that need them.
+  const [sportsView, setSportsView] = useState(initialNav.sportsView);
+  const [sportsSport, setSportsSport] = useState(initialNav.sportsSport);
+  const [sportsCountry, setSportsCountry] = useState(initialNav.sportsCountry);
+  const [sportsLeague, setSportsLeague] = useState(initialNav.sportsLeague);
+  const [sportsEventId, setSportsEventId] = useState(initialNav.sportsEventId);
 
   // Keep the URL in sync with navigation, and restore state on back/forward.
   useEffect(() => {
-    const path = pathFor({ product, casinoCategory, predSection, sportId });
+    const path = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname !== path) window.history.pushState({}, "", path);
-  }, [product, casinoCategory, predSection, sportId]);
+  }, [product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId]);
   useEffect(() => {
     const onPop = () => {
       const nav = parsePath(window.location.pathname);
       setProduct(nav.product);
       setCasinoCategory(nav.casinoCategory);
       setPredSection(nav.predSection);
-      setSportId(nav.sportId);
+      setSportsView(nav.sportsView);
+      setSportsSport(nav.sportsSport);
+      setSportsCountry(nav.sportsCountry);
+      setSportsLeague(nav.sportsLeague);
+      setSportsEventId(nav.sportsEventId);
       syncGameFromUrl();
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // Sports inventory (real Azuro + demo-mode placeholders) — fetched once
+  // here, not inside SportsArena, since the sidebar/mobile-menu live-count
+  // badges need the same merged data.
+  const { events: sportsProviderEvents, loading: sportsLoading } = useNormalizedAzuroEvents();
+  const sportsEvents = useMemo(() => getSportsInventory({ providerEvents: sportsProviderEvents }), [sportsProviderEvents]);
+  const navigateSports = (patch) => {
+    if ("view" in patch) setSportsView(patch.view);
+    if ("sport" in patch) setSportsSport(patch.sport);
+    if ("country" in patch) setSportsCountry(patch.country);
+    if ("league" in patch) setSportsLeague(patch.league);
+    if ("eventId" in patch) setSportsEventId(patch.eventId);
+  };
 
   // Wallet connection replaces password login. Connecting (on the right network)
   // is the gate for placing bets; the Reown modal handles the connect flow.
@@ -270,7 +298,7 @@ export default function App() {
   const closeGame = () => {
     setOnchainGame(null);
     setProviderGame(null);
-    const bare = pathFor({ product, casinoCategory, predSection, sportId });
+    const bare = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
   };
   const syncGameFromUrl = () => {
@@ -407,11 +435,28 @@ export default function App() {
         ],
       };
     }
+    // Sports Home / Live sit above the five-sport whitelist (never removed
+    // for sparse inventory — see INVENTORY STABILITY); My Bets is a
+    // separated utility destination below a divider, same convention as
+    // Casino's Favorites. Live counts come from the real merged inventory
+    // fetched above, not a hardcoded mock lookup.
+    const openSportsBets = activity.filter((a) => a.product === "sports" && a.status === "open").length;
     return {
       title: "Sports",
-      selected: sportId,
-      onSelect: setSportId,
-      items: SPORTS.map((s) => ({ id: s.id, label: s.label, icon: s.icon, live: liveCountBySport(s.id) })),
+      selected: sportsView === "home" ? "home" : sportsView === "live" ? "live" : sportsView === "my-bets" ? "my-bets" : sportsSport,
+      onSelect: (id) => {
+        if (id === "home") navigateSports({ view: "home", sport: null, country: null, league: null, eventId: null });
+        else if (id === "live") navigateSports({ view: "live", sport: null, country: null, league: null, eventId: null });
+        else if (id === "my-bets") navigateSports({ view: "my-bets", sport: null, country: null, league: null, eventId: null });
+        else navigateSports({ view: "sport", sport: id, country: null, league: null, eventId: null });
+      },
+      items: [
+        { id: "home", label: "Sports Home", icon: LayoutGrid },
+        { id: "live", label: "Live", icon: Radio },
+        ...MVP_SPORTS.map((s) => ({ id: s.id, label: s.name, icon: s.icon, live: sportsEvents.filter((e) => e.sport.id === s.id && e.status === "live").length })),
+        { id: "sports-div", divider: true },
+        { id: "my-bets", label: "My Bets", icon: ReceiptText, count: openSportsBets > 0 ? openSportsBets : undefined },
+      ],
     };
   })();
 
@@ -424,25 +469,18 @@ export default function App() {
   // Mobile full-screen menu content — the exact same primary/utility item
   // data the desktop sidebar renders (split on the same divider convention),
   // so this is one data source with two presentations, not a second
-  // navigation model. Two mobile-only differences from desktop: Predictions'
+  // navigation model. One mobile-only difference from desktop: Predictions'
   // "Sports" category is relabelled "Sports markets" so it's never confused
-  // with the Sports arena tab right next to it in the bottom nav, and Sports
-  // gets a "My Bets" utility row desktop doesn't have (routes to the
-  // existing bet-history dialog — there's no dedicated My Bets page/count to
-  // link to yet, so it opens the real destination that already exists
-  // rather than a new one).
+  // with the Sports arena tab right next to it in the bottom nav. Sports'
+  // own item list (Sports Home / Live / five sports / My Bets) is already
+  // identical on both surfaces — no mobile-only additions needed there.
   const ARENA_TITLES = { casino: "Casino", predictions: "Predictions", sports: "Sports" };
   const mobileMenu = (() => {
     const dividerIndex = sidebar.items.findIndex((it) => it.divider);
     const rawPrimary = dividerIndex === -1 ? sidebar.items : sidebar.items.slice(0, dividerIndex);
     const rawUtility = dividerIndex === -1 ? [] : sidebar.items.slice(dividerIndex + 1);
     const relabel = (it) => (product === "predictions" && it.id === "Sports" ? { ...it, label: "Sports markets" } : it);
-    const primary = rawPrimary.map(relabel);
-    const utility = rawUtility.map(relabel);
-    if (product === "sports") {
-      utility.push({ id: "my-bets", label: "My Bets", icon: ReceiptText, action: openHistory });
-    }
-    return { title: ARENA_TITLES[product], primary, utility };
+    return { title: ARENA_TITLES[product], primary: rawPrimary.map(relabel), utility: rawUtility.map(relabel) };
   })();
   const handleMobileMenuSelect = (id) => {
     sidebar.onSelect(id);
@@ -458,7 +496,7 @@ export default function App() {
     setProduct(id);
     if (id === "casino") setCasinoCategory(DEFAULT_NAV.casinoCategory);
     else if (id === "predictions") setPredSection(DEFAULT_NAV.predSection);
-    else if (id === "sports") setSportId(DEFAULT_NAV.sportId);
+    else if (id === "sports") navigateSports({ view: DEFAULT_NAV.sportsView, sport: DEFAULT_NAV.sportsSport, country: DEFAULT_NAV.sportsCountry, league: DEFAULT_NAV.sportsLeague, eventId: DEFAULT_NAV.sportsEventId });
     track("mobile_bottom_nav_selected", { target: id });
     track("mobile_arena_selected", { arena: id });
   };
@@ -467,7 +505,7 @@ export default function App() {
   // it (browser Back, a deep link resolving, dev-panel actions) — force it
   // closed on any such change instead of trusting every call site to close
   // it explicitly.
-  useEffect(() => { setMobileMenuOpen(false); }, [product, casinoCategory, predSection, sportId]);
+  useEffect(() => { setMobileMenuOpen(false); }, [product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId]);
 
   // All hooks above run unconditionally either way — only the returned JSX
   // branches on the geo check, so this stays a valid conditional render.
@@ -517,7 +555,21 @@ export default function App() {
                   ensureAuth={ensureAuth}
                 />
               )}
-              {product === "sports" && <SportsSection onBetPlaced={logRound} />}
+              {product === "sports" && (
+                <SportsArena
+                  view={sportsView}
+                  sport={sportsSport}
+                  country={sportsCountry}
+                  league={sportsLeague}
+                  eventId={sportsEventId}
+                  events={sportsEvents}
+                  loading={sportsLoading}
+                  onNavigate={navigateSports}
+                  activity={activity}
+                  onBetPlaced={logRound}
+                  onDemoBetPlaced={placeBet}
+                />
+              )}
             </div>
           </ArenaErrorBoundary>
           <Footer
@@ -603,16 +655,6 @@ function PredictionsSection({ predSection, balance, setBalance, onBet, ensureAut
     <div className="mx-auto max-w-6xl space-y-6">
       <ArenaTileRow arena="predictions" promos={PREDICTIONS_PROMOS} query={query} onQuery={setQuery} />
       <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={onBet} ensureAuth={ensureAuth} query={query} />
-    </div>
-  );
-}
-
-function SportsSection({ onBetPlaced }) {
-  const [query, setQuery] = useState("");
-  return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <ArenaTileRow arena="sports" promos={SPORTS_PROMOS} query={query} onQuery={setQuery} />
-      <AzuroMarkets onBetPlaced={onBetPlaced} query={query} />
     </div>
   );
 }

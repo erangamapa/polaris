@@ -1,8 +1,14 @@
 // Lightweight URL <-> state sync (no router dependency).
-// Paths: /casino/:category · /predictions/:section · /sports/:sport
+// Paths:
+//   /casino/:category
+//   /predictions/:section
+//   /sports/home | /sports/live | /sports/my-bets | /sports/dev
+//   /sports/:sport
+//   /sports/:sport/:country/:league
+//   /sports/:sport/event/:eventId
 import { CATEGORIES } from "@/lib/mockData";
 import { PRED_CATEGORIES } from "@/lib/predictionsData";
-import { SPORTS } from "@/lib/sportsData";
+import { MVP_SPORT_IDS } from "@/lib/sportsModel";
 
 const slug = (s) => s.toLowerCase().replace(/\s+/g, "-");
 
@@ -10,26 +16,67 @@ export const DEFAULT_NAV = {
   product: "casino",
   casinoCategory: "Lobby",
   predSection: "Trending",
-  sportId: "soccer",
+  sportsView: "home",
+  sportsSport: null,
+  sportsCountry: null,
+  sportsLeague: null,
+  sportsEventId: null,
 };
 
+const SPORTS_DEFAULTS = {
+  sportsView: "home",
+  sportsSport: null,
+  sportsCountry: null,
+  sportsLeague: null,
+  sportsEventId: null,
+};
+
+function parseSportsPath(rest) {
+  const [seg1, seg2, seg3] = rest;
+  if (!seg1 || seg1 === "home") return { ...SPORTS_DEFAULTS, sportsView: "home" };
+  if (seg1 === "live") return { ...SPORTS_DEFAULTS, sportsView: "live" };
+  if (seg1 === "my-bets") return { ...SPORTS_DEFAULTS, sportsView: "my-bets" };
+  if (seg1 === "dev") return { ...SPORTS_DEFAULTS, sportsView: "dev" };
+
+  // Anything not on the 5-sport MVP whitelist (see sportsModel.js) falls
+  // back to Sports Home rather than crashing on an unknown route segment —
+  // "invalid routes show a useful fallback."
+  const sport = MVP_SPORT_IDS.includes(seg1) ? seg1 : null;
+  if (!sport) return { ...SPORTS_DEFAULTS, sportsView: "home" };
+
+  if (seg2 === "event" && seg3) return { ...SPORTS_DEFAULTS, sportsView: "event", sportsSport: sport, sportsEventId: seg3 };
+  if (seg2 && seg3) return { ...SPORTS_DEFAULTS, sportsView: "league", sportsSport: sport, sportsCountry: seg2, sportsLeague: seg3 };
+  return { ...SPORTS_DEFAULTS, sportsView: "sport", sportsSport: sport };
+}
+
 export function parsePath(pathname) {
-  const [p, sec] = pathname.replace(/^\/+/, "").split("/");
+  const parts = pathname.replace(/^\/+/, "").split("/").filter(Boolean);
+  const [p, ...rest] = parts;
   if (p === "casino") {
-    return { ...DEFAULT_NAV, product: "casino", casinoCategory: CATEGORIES.find((c) => slug(c) === sec) ?? "Lobby" };
+    return { ...DEFAULT_NAV, product: "casino", casinoCategory: CATEGORIES.find((c) => slug(c) === rest[0]) ?? "Lobby" };
   }
   if (p === "predictions") {
     const opts = [...PRED_CATEGORIES, "My Positions"];
-    return { ...DEFAULT_NAV, product: "predictions", predSection: opts.find((o) => slug(o) === sec) ?? "Trending" };
+    return { ...DEFAULT_NAV, product: "predictions", predSection: opts.find((o) => slug(o) === rest[0]) ?? "Trending" };
   }
   if (p === "sports") {
-    return { ...DEFAULT_NAV, product: "sports", sportId: SPORTS.find((s) => s.id === sec)?.id ?? "soccer" };
+    return { ...DEFAULT_NAV, product: "sports", ...parseSportsPath(rest) };
   }
   return { ...DEFAULT_NAV };
 }
 
-export function pathFor({ product, casinoCategory, predSection, sportId }) {
+function pathForSports({ sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId }) {
+  if (sportsView === "live") return "/sports/live";
+  if (sportsView === "my-bets") return "/sports/my-bets";
+  if (sportsView === "dev") return "/sports/dev";
+  if (sportsView === "event" && sportsSport && sportsEventId) return `/sports/${sportsSport}/event/${sportsEventId}`;
+  if (sportsView === "league" && sportsSport && sportsCountry && sportsLeague) return `/sports/${sportsSport}/${sportsCountry}/${sportsLeague}`;
+  if (sportsView === "sport" && sportsSport) return `/sports/${sportsSport}`;
+  return "/sports/home";
+}
+
+export function pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId }) {
   if (product === "predictions") return `/predictions/${slug(predSection)}`;
-  if (product === "sports") return `/sports/${sportId}`;
+  if (product === "sports") return pathForSports({ sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
   return `/casino/${slug(casinoCategory)}`;
 }

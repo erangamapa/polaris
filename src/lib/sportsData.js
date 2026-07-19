@@ -1,20 +1,24 @@
-// Sportsbook data v2 — multiple markets per event, a simulated final score,
-// and deterministic settlement (Stake-faithful: won / lost / void-returns-stake).
+// Curated placeholder/demo sports inventory — five MVP sports, several
+// markets per event, deterministic settlement (Stake-faithful: won / lost /
+// void-returns-stake). This is ONE of the two controlled data sources (see
+// src/lib/sportsDemo.js) — every event here is fully mocked end to end
+// (mock event + mock markets + mock odds), never mixed with real provider
+// data. Raw authoring shape here; src/lib/sportsModel.js's
+// normalizeMockEvent() is what presentation components actually consume.
+import { MVP_SPORTS } from "./sportsModel";
 
-export const SPORTS = [
-  { id: "soccer", label: "Soccer", icon: "⚽" },
-  { id: "basketball", label: "Basketball", icon: "🏀" },
-  { id: "tennis", label: "Tennis", icon: "🎾" },
-  { id: "mma", label: "MMA", icon: "🥊" },
-];
-
-// Market groups shown as tabs on the event detail.
-export const MARKET_GROUPS = ["Popular", "Totals", "Handicap", "Goals"];
+export const SPORTS = MVP_SPORTS;
 
 // outcome: { label, odds, pick }  · pick codes: H/D/A (result), O/U (totals),
 // HH/AH (handicap home/away), Y/N (both teams to score)
 const O = (label, odds, pick) => ({ label, odds, pick });
 const M = (key, group, name, type, line, outcomes) => ({ key, group, name, type, line, outcomes });
+
+// Fixture times are generated relative to "now" so Today/Tomorrow grouping
+// is always sensible regardless of when this runs, instead of hardcoding
+// dates that go stale.
+const HOUR = 3600_000;
+const at = (hoursFromNow) => new Date(Date.now() + hoursFromNow * HOUR).toISOString();
 
 const E = (o) => ({ ...o });
 
@@ -23,7 +27,7 @@ export const EVENTS = [
   E({
     id: "s1", sport: "soccer", region: "England", league: "Premier League",
     home: "Arsenal", away: "Chelsea", live: true, clock: "63'", score: [1, 1],
-    finalScore: [2, 1],
+    startsAt: at(-1), finalScore: [2, 1], featured: true, competitionPriority: 90,
     markets: [
       M("s1-1x2", "Popular", "Match Result", "1x2", null, [O("Arsenal", 2.10, "H"), O("Draw", 3.40, "D"), O("Chelsea", 3.25, "A")]),
       M("s1-ou25", "Popular", "Total Goals — Over/Under 2.5", "ou", 2.5, [O("Over 2.5", 1.90, "O"), O("Under 2.5", 1.90, "U")]),
@@ -34,8 +38,7 @@ export const EVENTS = [
   }),
   E({
     id: "s2", sport: "soccer", region: "England", league: "Premier League",
-    home: "Man City", away: "Liverpool", live: false, time: "Sat 17:30",
-    finalScore: [1, 1],
+    home: "Man City", away: "Liverpool", live: false, startsAt: at(28), finalScore: [1, 1], competitionPriority: 90,
     markets: [
       M("s2-1x2", "Popular", "Match Result", "1x2", null, [O("Man City", 1.95, "H"), O("Draw", 3.70, "D"), O("Liverpool", 3.80, "A")]),
       M("s2-ou25", "Popular", "Total Goals — Over/Under 2.5", "ou", 2.5, [O("Over 2.5", 1.80, "O"), O("Under 2.5", 2.00, "U")]),
@@ -45,12 +48,19 @@ export const EVENTS = [
   }),
   E({
     id: "s3", sport: "soccer", region: "Spain", league: "LaLiga",
-    home: "Real Madrid", away: "Barcelona", live: false, time: "Sun 21:00",
-    finalScore: [2, 2],
+    home: "Real Madrid", away: "Barcelona", live: false, startsAt: at(52), finalScore: [2, 2], competitionPriority: 88,
     markets: [
       M("s3-1x2", "Popular", "Match Result", "1x2", null, [O("Real Madrid", 2.45, "H"), O("Draw", 3.50, "D"), O("Barcelona", 2.70, "A")]),
       M("s3-ou3", "Popular", "Total Goals — Over/Under 3", "ou", 3, [O("Over 3", 2.10, "O"), O("Under 3", 1.72, "U")]),
       M("s3-btts", "Goals", "Both Teams To Score", "btts", null, [O("Yes", 1.50, "Y"), O("No", 2.50, "N")]),
+    ],
+  }),
+  E({
+    id: "s4", sport: "soccer", region: "International", league: "Champions League",
+    home: "Bayern Munich", away: "Inter Milan", live: false, startsAt: at(4), finalScore: [3, 1], featured: true, competitionPriority: 95,
+    markets: [
+      M("s4-1x2", "Popular", "Match Result", "1x2", null, [O("Bayern Munich", 1.65, "H"), O("Draw", 4.10, "D"), O("Inter Milan", 4.80, "A")]),
+      M("s4-ou25", "Popular", "Total Goals — Over/Under 2.5", "ou", 2.5, [O("Over 2.5", 1.75, "O"), O("Under 2.5", 2.05, "U")]),
     ],
   }),
 
@@ -58,7 +68,7 @@ export const EVENTS = [
   E({
     id: "b1", sport: "basketball", region: "USA", league: "NBA",
     home: "Lakers", away: "Celtics", live: true, clock: "Q3 04:12", score: [78, 81],
-    finalScore: [104, 108],
+    startsAt: at(-1.5), finalScore: [104, 108], featured: true, competitionPriority: 92,
     markets: [
       M("b1-ml", "Popular", "Moneyline", "ml", null, [O("Lakers", 2.05, "H"), O("Celtics", 1.80, "A")]),
       M("b1-ou", "Popular", "Total Points — Over/Under 210.5", "ou", 210.5, [O("Over 210.5", 1.90, "O"), O("Under 210.5", 1.90, "U")]),
@@ -67,8 +77,7 @@ export const EVENTS = [
   }),
   E({
     id: "b2", sport: "basketball", region: "USA", league: "NBA",
-    home: "Warriors", away: "Nuggets", live: false, time: "Today 22:00",
-    finalScore: [120, 115],
+    home: "Warriors", away: "Nuggets", live: false, startsAt: at(6), finalScore: [120, 115], competitionPriority: 92,
     markets: [
       M("b2-ml", "Popular", "Moneyline", "ml", null, [O("Warriors", 1.72, "H"), O("Nuggets", 2.15, "A")]),
       M("b2-ou", "Popular", "Total Points — Over/Under 229.5", "ou", 229.5, [O("Over 229.5", 1.90, "O"), O("Under 229.5", 1.90, "U")]),
@@ -80,7 +89,7 @@ export const EVENTS = [
   E({
     id: "t1", sport: "tennis", region: "International", league: "ATP Masters",
     home: "Alcaraz", away: "Sinner", live: true, clock: "Set 2", score: [1, 0],
-    finalScore: [2, 1], // sets
+    startsAt: at(-0.5), finalScore: [2, 1], featured: true, competitionPriority: 85,
     markets: [
       M("t1-ml", "Popular", "Match Winner", "ml", null, [O("Alcaraz", 1.85, "H"), O("Sinner", 1.95, "A")]),
       M("t1-ou", "Popular", "Total Games — Over/Under 22.5", "ou", 22.5, [O("Over 22.5", 1.90, "O"), O("Under 22.5", 1.90, "U")]),
@@ -88,29 +97,59 @@ export const EVENTS = [
   }),
   E({
     id: "t2", sport: "tennis", region: "International", league: "ATP Masters",
-    home: "Djokovic", away: "Medvedev", live: false, time: "Fri 14:00",
-    finalScore: [2, 0],
+    home: "Djokovic", away: "Medvedev", live: false, startsAt: at(20), finalScore: [2, 0], competitionPriority: 85,
     markets: [
       M("t2-ml", "Popular", "Match Winner", "ml", null, [O("Djokovic", 1.65, "H"), O("Medvedev", 2.25, "A")]),
       M("t2-ou", "Popular", "Total Sets — Over/Under 2.5", "ou", 2.5, [O("Over 2.5", 2.10, "O"), O("Under 2.5", 1.70, "U")]),
     ],
   }),
-
-  // ---------- MMA ----------
   E({
-    id: "m1", sport: "mma", region: "International", league: "UFC 320",
-    home: "Jones", away: "Aspinall", live: false, time: "Sat 04:00",
-    finalScore: [1, 0], // 1 = home wins, 0 = away wins
+    id: "t3", sport: "tennis", region: "USA", league: "WTA 1000",
+    home: "Swiatek", away: "Gauff", live: false, startsAt: at(30), finalScore: [2, 1], competitionPriority: 80,
     markets: [
-      M("m1-ml", "Popular", "Fight Winner", "ml", null, [O("Jones", 1.90, "H"), O("Aspinall", 1.90, "A")]),
+      M("t3-ml", "Popular", "Match Winner", "ml", null, [O("Swiatek", 1.55, "H"), O("Gauff", 2.55, "A")]),
+    ],
+  }),
+
+  // ---------- BASEBALL ----------
+  E({
+    id: "ba1", sport: "baseball", region: "USA", league: "MLB",
+    home: "Yankees", away: "Red Sox", live: true, clock: "Top 6th", score: [3, 2],
+    startsAt: at(-2), finalScore: [5, 4], featured: true, competitionPriority: 82,
+    markets: [
+      M("ba1-ml", "Popular", "Moneyline", "ml", null, [O("Yankees", 1.75, "H"), O("Red Sox", 2.10, "A")]),
+      M("ba1-rl", "Handicap", "Run Line ±1.5", "ah", -1.5, [O("Yankees −1.5", 2.20, "HH"), O("Red Sox +1.5", 1.68, "AH")]),
+      M("ba1-ou", "Popular", "Total Runs — Over/Under 8.5", "ou", 8.5, [O("Over 8.5", 1.90, "O"), O("Under 8.5", 1.90, "U")]),
     ],
   }),
   E({
-    id: "m2", sport: "mma", region: "International", league: "UFC 320",
-    home: "Makhachev", away: "Oliveira", live: false, time: "Sat 05:30",
-    finalScore: [1, 0],
+    id: "ba2", sport: "baseball", region: "USA", league: "MLB",
+    home: "Dodgers", away: "Giants", live: false, startsAt: at(9), finalScore: [4, 3], competitionPriority: 82,
     markets: [
-      M("m2-ml", "Popular", "Fight Winner", "ml", null, [O("Makhachev", 1.45, "H"), O("Oliveira", 2.75, "A")]),
+      M("ba2-ml", "Popular", "Moneyline", "ml", null, [O("Dodgers", 1.55, "H"), O("Giants", 2.50, "A")]),
+      M("ba2-rl", "Handicap", "Run Line ±1.5", "ah", -1.5, [O("Dodgers −1.5", 1.95, "HH"), O("Giants +1.5", 1.85, "AH")]),
+      M("ba2-ou", "Popular", "Total Runs — Over/Under 7.5", "ou", 7.5, [O("Over 7.5", 1.85, "O"), O("Under 7.5", 1.95, "U")]),
+    ],
+  }),
+
+  // ---------- AMERICAN FOOTBALL ----------
+  E({
+    id: "af1", sport: "american-football", region: "USA", league: "NFL",
+    home: "Chiefs", away: "Bills", live: true, clock: "Q2 08:41", score: [10, 7],
+    startsAt: at(-1), finalScore: [27, 24], featured: true, competitionPriority: 96,
+    markets: [
+      M("af1-ml", "Popular", "Moneyline", "ml", null, [O("Chiefs", 1.70, "H"), O("Bills", 2.15, "A")]),
+      M("af1-spread", "Handicap", "Spread ±3.5", "ah", -3.5, [O("Chiefs −3.5", 1.90, "HH"), O("Bills +3.5", 1.90, "AH")]),
+      M("af1-ou", "Popular", "Total Points — Over/Under 47.5", "ou", 47.5, [O("Over 47.5", 1.90, "O"), O("Under 47.5", 1.90, "U")]),
+    ],
+  }),
+  E({
+    id: "af2", sport: "american-football", region: "USA", league: "NFL",
+    home: "49ers", away: "Cowboys", live: false, startsAt: at(72), finalScore: [23, 20], competitionPriority: 96,
+    markets: [
+      M("af2-ml", "Popular", "Moneyline", "ml", null, [O("49ers", 1.60, "H"), O("Cowboys", 2.35, "A")]),
+      M("af2-spread", "Handicap", "Spread ±3", "ah", -3, [O("49ers −3", 1.95, "HH"), O("Cowboys +3", 1.85, "AH")]),
+      M("af2-ou", "Popular", "Total Points — Over/Under 44.5", "ou", 44.5, [O("Over 44.5", 1.90, "O"), O("Under 44.5", 1.90, "U")]),
     ],
   }),
 ];
@@ -127,23 +166,9 @@ export function getEvent(id) {
   return EVENTS.find((e) => e.id === id);
 }
 
-// The market shown inline on the event row (first Popular one = Match Result / Moneyline).
-export function mainMarket(event) {
-  return event.markets[0];
-}
-
-export function groupByCompetition(events) {
-  const map = new Map();
-  for (const e of events) {
-    const key = `${e.region} · ${e.league}`;
-    if (!map.has(key)) map.set(key, { region: e.region, league: e.league, label: key, events: [] });
-    map.get(key).events.push(e);
-  }
-  return [...map.values()];
-}
-
 // --- Settlement: resolve one selection against the event's final score. ---
-// Returns "won" | "lost" | "void".
+// Returns "won" | "lost" | "void". Used by the demo bet slip (mock events
+// only — real provider bets settle on-chain via Azuro, never through this).
 export function outcomeResult(market, pick, finalScore) {
   const [h, a] = finalScore;
   const total = h + a;
