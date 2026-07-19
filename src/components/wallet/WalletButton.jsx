@@ -18,10 +18,10 @@ export function WalletButton({ onManage }) {
       <button
         onClick={onManage}
         data-test-id="connect-wallet"
-        className="flex items-center gap-2 rounded-lg bg-[var(--global-cta)] px-4 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex shrink-0 items-center gap-2 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
       >
         <Wallet className="size-4" />
-        Connect Wallet
+        Connect<span className="hidden sm:inline"> Wallet</span>
       </button>
     );
   }

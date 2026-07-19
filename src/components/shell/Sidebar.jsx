@@ -108,17 +108,6 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
           accentColor={product}
           ariaCurrent={selected === it.id ? "page" : undefined}
           onClick={() => onSelect(it.id)}
-          badge={
-            it.live > 0 ? (
-              <StatusBadge
-                variant="live"
-                size="small"
-                icon="dot"
-                count={it.live}
-                ariaLabel={`${it.live} live ${it.label} event${it.live === 1 ? "" : "s"}`}
-              />
-            ) : null
-          }
         />
       ))}
 
@@ -208,16 +197,6 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
               {selected === it.id && <SideIndicator color={accent.bar} />}
               <ItemIcon icon={it.icon} />
               <span className="truncate">{it.label}</span>
-              {it.live > 0 && (
-                <StatusBadge
-                  variant="live"
-                  size="medium"
-                  icon="dot"
-                  count={it.live}
-                  ariaLabel={`${it.live} live ${it.label} event${it.live === 1 ? "" : "s"}`}
-                  className="ms-auto"
-                />
-              )}
               {it.count > 0 && (
                 <StatusBadge
                   data-test-id={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
@@ -236,12 +215,13 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
   );
 }
 
-// Sidebar is never fully hidden on desktop (≥768px) — burger toggles between
+// Desktop/tablet only (≥768px) — never fully hidden; burger toggles between
 // an expanded rail (~220px, full labels) and a collapsed icon rail (~60px),
-// per `railMode`. Below 768px it's still the original full-screen drawer
-// overlay, and mode/persistence don't apply there. Width/offset transitions
-// (180-220ms) respect prefers-reduced-motion via motion-reduce:transition-none.
-export function Sidebar({ railMode, mobileOpen, onCloseMobile, product, setProduct, items, selected, onSelect }) {
+// per `railMode`. Below 768px this renders nothing: mobile navigation is the
+// bottom nav + MobileFullScreenMenu (a dedicated mobile-first component, not
+// this desktop rail reused as an overlay). Width transitions (180-220ms)
+// respect prefers-reduced-motion via motion-reduce:transition-none.
+export function Sidebar({ railMode, product, setProduct, items, selected, onSelect }) {
   const expanded = railMode === "expanded";
 
   // Focus retention: collapsed <-> expanded swaps the entire rail's DOM
@@ -264,21 +244,16 @@ export function Sidebar({ railMode, mobileOpen, onCloseMobile, product, setProdu
   // the *next* action rather than the state just entered).
   const [announcement, setAnnouncement] = useState("");
   const prevExpanded = useRef(expanded);
-  const prevMobileOpen = useRef(mobileOpen);
   useEffect(() => {
     if (prevExpanded.current !== expanded) setAnnouncement(expanded ? "Navigation expanded" : "Navigation collapsed");
     prevExpanded.current = expanded;
   }, [expanded]);
-  useEffect(() => {
-    if (prevMobileOpen.current !== mobileOpen) setAnnouncement(mobileOpen ? "Navigation opened" : "Navigation closed");
-    prevMobileOpen.current = mobileOpen;
-  }, [mobileOpen]);
 
   return (
     <>
       <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
 
-      {/* desktop/tablet persistent rail — never fully hidden at md+ */}
+      {/* desktop/tablet persistent rail — never fully hidden at md+, never rendered below it */}
       <aside
         onFocusCapture={onFocusCapture}
         className={cn(
@@ -294,16 +269,6 @@ export function Sidebar({ railMode, mobileOpen, onCloseMobile, product, setProdu
           )}
         </div>
       </aside>
-
-      {/* mobile drawer — unchanged full overlay, < 768px only */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={onCloseMobile} />
-          <aside className="absolute start-0 top-0 h-full w-64 overflow-y-auto border-e bg-sidebar">
-            <ExpandedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
-          </aside>
-        </div>
-      )}
     </>
   );
 }

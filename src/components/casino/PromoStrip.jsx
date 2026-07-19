@@ -29,9 +29,14 @@ function PromoTile({ promo }) {
           <span className="inline-block rounded-full bg-[var(--casino-primary-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--casino-text-accent)]">
             {promo.eyebrow}
           </span>
-          <h3 className="mt-1.5 truncate text-base font-bold leading-tight text-[#F2F3F5]">{promo.title}</h3>
+          <h3
+            className="mt-1.5 text-base font-bold leading-tight text-[#F2F3F5]"
+            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+          >
+            {promo.title}
+          </h3>
         </div>
-        <button className="w-fit rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[var(--casino-primary-hover)] active:bg-[var(--casino-primary-active)]">
+        <button className="w-fit shrink-0 rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[var(--casino-primary-hover)] active:bg-[var(--casino-primary-active)]">
           {promo.cta}
         </button>
       </div>
@@ -224,10 +229,13 @@ export function PlayerTile() {
   );
 }
 
+// `mobilePlaceholder` is shorter — the full desktop copy ("Search prediction
+// markets") clips inside the narrower mobile input; desktop copy is
+// unchanged.
 const SEARCH_SCOPES = [
-  { id: "casino", label: "Casino", placeholder: "Search casino games" },
-  { id: "predictions", label: "Predictions", placeholder: "Search prediction markets" },
-  { id: "sports", label: "Sports", placeholder: "Search sports, leagues or teams" },
+  { id: "casino", label: "Casino", placeholder: "Search casino games", mobilePlaceholder: "Search games" },
+  { id: "predictions", label: "Predictions", placeholder: "Search prediction markets", mobilePlaceholder: "Search markets" },
+  { id: "sports", label: "Sports", placeholder: "Search sports, leagues or teams", mobilePlaceholder: "Search teams or leagues" },
 ];
 
 // One combined control — a borderless scope <select> and a borderless input
@@ -253,6 +261,17 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
   const rootRef = useRef(null);
   const zeroReportedFor = useRef(null);
   const active = SEARCH_SCOPES.find((s) => s.id === scope);
+
+  // Placeholder text only — matches the shared md: breakpoint the rest of
+  // the mobile shell uses (Sidebar/MobileBottomNav).
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mq.matches);
+    const onChange = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   const hasResults = results !== undefined;
   const trimmed = query.trim();
@@ -308,24 +327,24 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
               onChange={(e) => { setScope(e.target.value); track("casino_search_scope_changed", { searchScope: e.target.value }); }}
               aria-label="Search scope"
               data-test-id="search-scope"
-              className="h-full appearance-none rounded-l-lg border-0 bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-white focus-visible:outline-none"
+              className="h-full appearance-none rounded-l-lg border-0 bg-transparent py-0 pl-2.5 pr-6 text-sm font-medium text-white focus-visible:outline-none sm:pl-3 sm:pr-7"
             >
               {SEARCH_SCOPES.map((s) => (
                 <option key={s.id} value={s.id} className="bg-zinc-900 text-white">{s.label}</option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2 size-3.5 text-zinc-500" />
+            <ChevronDown className="pointer-events-none absolute right-1.5 size-3.5 text-zinc-500 sm:right-2" />
           </div>
           <span className="h-5 w-px shrink-0 bg-white/10" aria-hidden="true" />
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-zinc-500 sm:left-3" />
             <input
               id="arena-search-input"
               value={query}
               onChange={(e) => onQuery(e.target.value)}
               onFocus={() => { setOpen(true); track("casino_search_focused", { searchScope: scope }); }}
               onKeyDown={onKeyDown}
-              placeholder={active.placeholder}
+              placeholder={isMobile ? active.mobilePlaceholder : active.placeholder}
               data-test-id="arena-search"
               role={hasResults ? "combobox" : undefined}
               aria-expanded={hasResults ? showDropdown : undefined}
@@ -333,7 +352,7 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
               aria-activedescendant={activeIndex >= 0 ? `arena-search-opt-${activeIndex}` : undefined}
               aria-autocomplete={hasResults ? "list" : undefined}
               autoComplete="off"
-              className="h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none"
+              className="h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-8 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none sm:pl-9"
             />
           </div>
         </div>
@@ -385,17 +404,22 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
   );
 }
 
-// Top-of-lobby strip: two promo tiles + a player glimpse as three equal-width,
-// equal-height cards (well under the old ~300-340px hero), with the scoped
-// search directly beneath sharing the same wrapper/width so both edges align.
+// Top-of-lobby strip: two promo tiles + a player glimpse. Desktop/tablet
+// (sm+): three equal-width, equal-height cards in a grid (well under the
+// old ~300-340px hero). Mobile: a real horizontal snap-scroll carousel —
+// three equal columns at a 320-430px viewport left each card ~100-140px
+// wide, which is what produced the accidental "200% u…" / "$50,00…"
+// clipping; each card gets real width here instead, with an intentional
+// peek of the next card as the swipe affordance. Search sits directly
+// beneath, sharing the same wrapper/width so both edges align.
 export function PromoStrip({ query, onQuery, searchResults, onSelectResult, onBrowseAll, onZeroResults }) {
   const [p1, p2] = PROMOS;
   return (
     <div className="casino-content-column w-full space-y-3">
-      <div className="top-card-grid grid grid-cols-3 gap-3">
-        <PlayerTile />
-        <PromoTile promo={p1} />
-        <PromoTile promo={p2} />
+      <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PlayerTile /></div>
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PromoTile promo={p1} /></div>
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PromoTile promo={p2} /></div>
       </div>
       <ScopedSearch
         query={query}
