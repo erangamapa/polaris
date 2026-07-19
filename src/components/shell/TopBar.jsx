@@ -6,6 +6,12 @@ import { useWallet } from "@/web3/useWallet";
 
 // Wallet-first top bar: Connect Wallet replaces Login/Register (docs/architecture/10).
 // When connected, the wallet pill + Funds + activity controls appear.
+//
+// The burger is desktop-only (≥768px, matching the sidebar rail's own
+// breakpoint) — mobile navigation lives entirely in the bottom nav's Menu
+// item now (see MobileBottomNav/MobileFullScreenMenu). Hiding it via CSS
+// rather than not rendering it at all keeps the logo's left position stable
+// with no layout jump right at the breakpoint.
 export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, onFunds, onActivity }) {
   const { isConnected } = useWallet();
 
@@ -21,7 +27,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
       <button
         onClick={onBurger}
         aria-label={burgerLabel}
-        className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="hidden size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid"
       >
         <Menu className="size-5" />
       </button>

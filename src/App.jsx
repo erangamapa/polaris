@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import {
   LayoutGrid, Gem, Cherry, Radio, Tv, Sparkles, Star,
-  Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet,
+  Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
 } from "lucide-react";
 import { TopBar } from "./components/shell/TopBar";
 import { Sidebar } from "./components/shell/Sidebar";
-import { MobileProductBar } from "./components/shell/MobileProductBar";
+import { MobileBottomNav } from "./components/shell/MobileBottomNav";
+import { MobileFullScreenMenu } from "./components/shell/MobileFullScreenMenu";
 import { Footer } from "./components/shell/Footer";
 import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
@@ -19,7 +20,7 @@ import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblin
 import { SupportDialog } from "./components/trust/SupportDialog";
 import { useWallet } from "./web3/useWallet";
 import { toast } from "./lib/toast";
-import { parsePath, pathFor } from "./lib/routing";
+import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { AzuroMarkets } from "./components/sports/AzuroMarkets";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
@@ -99,20 +100,36 @@ export default function App() {
   const [product, setProduct] = useState(initialNav.product);
 
   // Desktop/tablet (≥768px): a persistent expanded/collapsed rail, never
-  // fully hidden. Mobile (<768px): the original full-screen drawer overlay —
-  // separate, ephemeral state, never persisted. Defaults (no stored
-  // preference): expanded ≥1280px, collapsed 768-1279px.
+  // fully hidden. Defaults (no stored preference): expanded ≥1280px,
+  // collapsed 768-1279px.
   const [railMode, setRailMode] = useState(() => {
     const stored = loadSidebarMode();
     if (stored === "expanded" || stored === "collapsed") return stored;
     if (typeof window === "undefined") return "expanded";
     return window.innerWidth >= 1280 ? "expanded" : "collapsed";
   });
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // Mobile (<768px): one explicit open/closed state for the full-screen
+  // section menu — never persisted, never carries over from desktop's
+  // expanded/collapsed preference (a genuinely different concept: this is
+  // "is the section menu open", not "how wide is the rail").
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // Scroll lock for the mobile menu targets <main> directly, not
+  // document.body — this app's root is a fixed h-dvh/overflow-hidden shell
+  // with <main> as the only scrollable region, so body was never
+  // scrollable to begin with (no scrollbar-compensation/gutter-shift logic
+  // needed). Toggling overflow never touches scrollTop, so the exact scroll
+  // position is preserved automatically with no jump on close.
+  const mainRef = useRef(null);
+  useEffect(() => {
+    const el = mainRef.current;
+    if (el) el.style.overflowY = mobileMenuOpen ? "hidden" : "";
+  }, [mobileMenuOpen]);
 
   // Cross-tab sync: another tab flipping the rail mode updates this one too.
   // Guarded so it never fires from our own write (storage events only reach
-  // *other* tabs) and never touches the mobile drawer, which is per-tab and
+  // *other* tabs) and never touches the mobile menu, which is per-tab and
   // ephemeral by design.
   useEffect(() => {
     const onStorage = (e) => {
@@ -124,13 +141,19 @@ export default function App() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  // Crossing into desktop width closes the mobile menu and drops its state
+  // cleanly; crossing back into mobile always starts closed (this state is
+  // never carried across the breakpoint in either direction).
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = (e) => { if (e.matches) setMobileMenuOpen(false); };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  // Desktop-only now — the mobile burger is CSS-hidden below 768px (see
+  // TopBar), so this never runs at mobile widths.
   const toggleSidebar = () => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      const opening = !mobileDrawerOpen;
-      setMobileDrawerOpen(opening);
-      if (opening) track("casino_nav_opened", { sidebarState: "mobile-drawer" });
-      return;
-    }
     setRailMode((m) => {
       const next = m === "expanded" ? "collapsed" : "expanded";
       saveSidebarMode(next);
@@ -138,9 +161,15 @@ export default function App() {
       return next;
     });
   };
-  const sidebarLabel = typeof window !== "undefined" && window.innerWidth < 768
-    ? (mobileDrawerOpen ? "Close menu" : "Open menu")
-    : (railMode === "expanded" ? "Collapse menu" : "Expand menu");
+  const sidebarLabel = railMode === "expanded" ? "Collapse menu" : "Expand menu";
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen((open) => {
+      const next = !open;
+      track(next ? "mobile_menu_opened" : "mobile_menu_closed", { arena: product });
+      return next;
+    });
+  };
 
   const [casinoCategory, setCasinoCategory] = useState(initialNav.casinoCategory);
   const [predSection, setPredSection] = useState(initialNav.predSection);
@@ -194,7 +223,7 @@ export default function App() {
 
   // Gate: require a connected wallet on Base Sepolia before betting.
   const ensureAuth = () => {
-    if (!wallet.isConnected) { setMobileDrawerOpen(false); wallet.connect(); return false; }
+    if (!wallet.isConnected) { setMobileMenuOpen(false); wallet.connect(); return false; }
     if (!wallet.onCasinoChain) { toast.warning("Switch to Base Sepolia to continue"); wallet.switchTo(CASINO_CHAIN_ID); return false; }
     return true;
   };
@@ -209,14 +238,19 @@ export default function App() {
 
   // Only one overlay owns focus/scroll-lock at a time — any dialog opening
   // closes the mobile drawer first so they never stack.
-  const openFunds = () => { setMobileDrawerOpen(false); if (!ensureAuth()) return; setFundsOpen(true); };
-  const openHistory = () => { setMobileDrawerOpen(false); if (!ensureAuth()) return; setHistoryOpen(true); };
+  const openFunds = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setFundsOpen(true); };
+  const openHistory = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setHistoryOpen(true); };
 
   // Game tiles are real links (`?play=<favId>`) so middle-click / cmd-click opens
   // a new tab, like on most sites. These helpers keep that URL in sync with the
   // modal state for the in-page (left-click) path, and resolve it back to a
   // modal on load / back-forward so the link actually works when followed.
   const openGame = (game) => {
+    // Full-screen games cover the whole viewport (z-50, fixed inset-0), but
+    // the mobile menu (z-70) would still sit on top of and stay interactive
+    // over a game otherwise — close it explicitly rather than rely on
+    // stacking order alone.
+    setMobileMenuOpen(false);
     if (game.kind === "onchain") {
       if (game.playable && ensureAuth()) {
         setOnchainGame(game);
@@ -381,11 +415,59 @@ export default function App() {
     };
   })();
 
+  // Desktop-only selection path (Sidebar's rail).
   const handleSelect = (id) => {
     sidebar.onSelect(id);
     track("casino_nav_item_selected", { category: id, sidebarState: railMode });
-    if (typeof window !== "undefined" && window.innerWidth < 768) setMobileDrawerOpen(false);
   };
+
+  // Mobile full-screen menu content — the exact same primary/utility item
+  // data the desktop sidebar renders (split on the same divider convention),
+  // so this is one data source with two presentations, not a second
+  // navigation model. Two mobile-only differences from desktop: Predictions'
+  // "Sports" category is relabelled "Sports markets" so it's never confused
+  // with the Sports arena tab right next to it in the bottom nav, and Sports
+  // gets a "My Bets" utility row desktop doesn't have (routes to the
+  // existing bet-history dialog — there's no dedicated My Bets page/count to
+  // link to yet, so it opens the real destination that already exists
+  // rather than a new one).
+  const ARENA_TITLES = { casino: "Casino", predictions: "Predictions", sports: "Sports" };
+  const mobileMenu = (() => {
+    const dividerIndex = sidebar.items.findIndex((it) => it.divider);
+    const rawPrimary = dividerIndex === -1 ? sidebar.items : sidebar.items.slice(0, dividerIndex);
+    const rawUtility = dividerIndex === -1 ? [] : sidebar.items.slice(dividerIndex + 1);
+    const relabel = (it) => (product === "predictions" && it.id === "Sports" ? { ...it, label: "Sports markets" } : it);
+    const primary = rawPrimary.map(relabel);
+    const utility = rawUtility.map(relabel);
+    if (product === "sports") {
+      utility.push({ id: "my-bets", label: "My Bets", icon: ReceiptText, action: openHistory });
+    }
+    return { title: ARENA_TITLES[product], primary, utility };
+  })();
+  const handleMobileMenuSelect = (id) => {
+    sidebar.onSelect(id);
+    track("mobile_menu_item_selected", { arena: product, section: id });
+  };
+
+  // Bottom-nav arena switch: always lands on that arena's default section
+  // (Stake-style "tap the tab, go home"), unlike the desktop arena tabs,
+  // which preserve whatever section was last viewed — an intentional,
+  // mobile-only difference, not a desktop behavior change.
+  const selectMobileArena = (id) => {
+    closeMobileMenu();
+    setProduct(id);
+    if (id === "casino") setCasinoCategory(DEFAULT_NAV.casinoCategory);
+    else if (id === "predictions") setPredSection(DEFAULT_NAV.predSection);
+    else if (id === "sports") setSportId(DEFAULT_NAV.sportId);
+    track("mobile_bottom_nav_selected", { target: id });
+    track("mobile_arena_selected", { arena: id });
+  };
+
+  // The menu can only ever be open on a route that's about to change under
+  // it (browser Back, a deep link resolving, dev-panel actions) — force it
+  // closed on any such change instead of trusting every call site to close
+  // it explicitly.
+  useEffect(() => { setMobileMenuOpen(false); }, [product, casinoCategory, predSection, sportId]);
 
   // All hooks above run unconditionally either way — only the returned JSX
   // branches on the geo check, so this stays a valid conditional render.
@@ -405,8 +487,6 @@ export default function App() {
       <div className="flex min-h-0 flex-1">
         <Sidebar
           railMode={railMode}
-          mobileOpen={mobileDrawerOpen}
-          onCloseMobile={() => setMobileDrawerOpen(false)}
           product={product}
           setProduct={setProduct}
           items={sidebar.items}
@@ -414,7 +494,7 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 [scrollbar-gutter:stable]">
+        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 [scrollbar-gutter:stable]">
           <ArenaErrorBoundary key={product}>
             <div className="animate-fade-in-up">
               {product === "casino" && (
@@ -441,13 +521,27 @@ export default function App() {
             </div>
           </ArenaErrorBoundary>
           <Footer
-        onResponsibleGambling={() => { setMobileDrawerOpen(false); setRgOpen(true); }}
-        onSupport={() => { setMobileDrawerOpen(false); setSupportOpen(true); }}
-      />
+            onResponsibleGambling={() => { setMobileMenuOpen(false); setRgOpen(true); }}
+            onSupport={() => { setMobileMenuOpen(false); setSupportOpen(true); }}
+          />
         </main>
       </div>
 
-      <MobileProductBar product={product} setProduct={setProduct} />
+      <MobileBottomNav
+        product={product}
+        onSelectArena={selectMobileArena}
+        menuOpen={mobileMenuOpen}
+        onToggleMenu={toggleMobileMenu}
+      />
+      <MobileFullScreenMenu
+        open={mobileMenuOpen}
+        title={mobileMenu.title}
+        primaryItems={mobileMenu.primary}
+        utilityItems={mobileMenu.utility}
+        selected={sidebar.selected}
+        onSelect={handleMobileMenuSelect}
+        onClose={closeMobileMenu}
+      />
       <Toaster />
       <DevPanel />
 

@@ -82,6 +82,26 @@ body {
   to { opacity: 1; transform: none; }
 }
 
+/* Mobile full-screen menu — full-screen fade + slight upward motion, never a
+   side-drawer slide. Open and close use deliberately different eases (fast
+   confident entry, quick exit) rather than a mirrored single curve. */
+@keyframes mobile-menu-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mobile-menu-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes mobile-menu-content-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes mobile-menu-content-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(6px); }
+}
+
 /* Subtle section/content enter. Never blocks clicks; opacity + transform only. */
 .animate-fade-in-up {
   animation: fade-in-up 220ms var(--ease-out) both;
