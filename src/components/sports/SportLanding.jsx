@@ -8,7 +8,7 @@ import { track } from "@/lib/telemetry";
 // cross-sport version, see SportsHome.jsx), a Live/Upcoming toggle, then
 // events grouped Country -> League. Empty leagues/countries are filtered
 // out entirely rather than rendered as empty headings.
-export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpenLeague, onPick, selection }) {
+export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpenLeague, onPick, isSelected }) {
   const sport = sportById(sportId);
   const [tab, setTab] = useState("live"); // "live" | "upcoming"
   const sportEvents = events.filter((e) => e.sport.id === sportId);
@@ -38,7 +38,7 @@ export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpe
           <h2 className="mb-2 text-sm font-bold">Top matches</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {topMatches.map((e) => (
-              <EventRow key={e.id} event={e} selection={selection} onOpen={onOpen} onPick={onPick} />
+              <EventRow key={e.id} event={e} isSelected={isSelected} onOpen={onOpen} onPick={onPick} />
             ))}
           </div>
         </section>
@@ -74,7 +74,7 @@ export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpe
             </button>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {g.events.map((e) => (
-                <EventRow key={e.id} event={e} selection={selection} onOpen={onOpen} onPick={onPick} />
+                <EventRow key={e.id} event={e} isSelected={isSelected} onOpen={onOpen} onPick={onPick} />
               ))}
             </div>
           </section>

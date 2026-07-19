@@ -11,19 +11,28 @@ import { MyBets } from "./MyBets";
 import { ProviderDiagnostics } from "./ProviderDiagnostics";
 import { track } from "@/lib/telemetry";
 
-// Owns the odds-pick -> betslip dispatch and view routing. `events`/
+// Owns view routing and the odds-pick -> shared betslip dispatch. `events`/
 // `loading` are the merged, normalized inventory (real Azuro + demo-mode
 // placeholders — see sportsDemo.js) fetched *once* in App.jsx, not here —
 // the sidebar/mobile-menu live-count badges need the same data, so it's
 // fetched at the one shared point rather than twice. Routes to one of six
 // page components based on `view` (derived from the URL in App.jsx); none
 // of those pages fetch or normalize data themselves.
+//
+// `betslip` is the shared SportsBetslipApi (see lib/sportsBetslip.js),
+// owned in App.jsx — NOT here — specifically so selections survive leaving
+// Sports for Casino/Predictions and coming back (this component remounts on
+// every arena switch; the betslip must not).
 export function SportsArena({
   view, sport, country, league, eventId,
-  events, loading,
+  events, loading, betslip,
   onNavigate, activity, onBetPlaced, onDemoBetPlaced,
 }) {
-  const [selection, setSelection] = useState(null); // { event, market, outcome }
+  // Whether the slip presentation is showing — UI-only, deliberately
+  // separate from betslip.selections so closing it never clears selections
+  // (see EMPTY AND CLEAR BEHAVIOUR: "closing or hiding a betslip
+  // presentation must not clear selections").
+  const [slipOpen, setSlipOpen] = useState(false);
 
   const openEvent = (event) => {
     track("sports_event_selected", { sport: event.sport.id, eventId: event.id, source: event.source, route: `/sports/${event.sport.id}/event/${event.id}` });
@@ -45,14 +54,20 @@ export function SportsArena({
   // Casino-chain switch for a Sports bet).
   const pick = (event, market, outcome) => {
     track("sports_market_selected", { sport: event.sport.id, eventId: event.id, source: event.source, marketGroup: market.group });
-    setSelection({ event, market, outcome });
+    betslip.toggleSelection(event, market, outcome);
+    setSlipOpen(true);
   };
-  const closeSlip = () => setSelection(null);
+  const closeSlip = () => setSlipOpen(false);
+  // Only the "Done" path (after a real/demo bet is actually accepted)
+  // clears the betslip — closing via X/backdrop must not (see above).
+  const finishSlip = () => { setSlipOpen(false); betslip.clearSelections(); };
+
+  const isSelected = betslip.isSelected;
 
   const body = (() => {
     switch (view) {
       case "live":
-        return <LivePage events={events} loading={loading} onOpen={openEvent} onPick={pick} selection={selectionFor(selection)} />;
+        return <LivePage events={events} loading={loading} onOpen={openEvent} onPick={pick} isSelected={isSelected} />;
       case "sport":
         return (
           <SportLanding
@@ -63,7 +78,7 @@ export function SportsArena({
             onOpen={openEvent}
             onOpenLeague={openLeague}
             onPick={pick}
-            selection={selectionFor(selection)}
+            isSelected={isSelected}
           />
         );
       case "league":
@@ -76,7 +91,7 @@ export function SportsArena({
             onOpen={openEvent}
             onOpenSport={openSport}
             onPick={pick}
-            selection={selectionFor(selection)}
+            isSelected={isSelected}
           />
         );
       case "event": {
@@ -89,7 +104,7 @@ export function SportsArena({
         return (
           <EventDetail
             event={event}
-            selection={selectionFor(selection)}
+            isSelected={isSelected}
             onBack={() => openSport(event.sport.id)}
             onPick={pick}
           />
@@ -110,32 +125,50 @@ export function SportsArena({
             onOpenSport={openSport}
             onOpenLeague={openLeague}
             onPick={pick}
-            selection={selectionFor(selection)}
+            isSelected={isSelected}
           />
         );
     }
   })();
 
+  // Mixed source is prevented at add-time (see useSportsBetslip), so
+  // `selections` is guaranteed single-source whenever non-empty — exactly
+  // one of these two ever renders, never both, never a merged list.
+  const source = betslip.selections[0]?.source;
+
   return (
     <>
       {body}
-      {selection && selection.event.source === "provider" && (
+      {slipOpen && source === "provider" && (
         <AzuroBetSlip
-          selection={{ game: selection.event.raw, market: selection.market.raw, outcome: selection.outcome.raw }}
+          selections={betslip.selections}
+          stake={betslip.stake}
+          setStake={betslip.setStake}
+          removeSelection={betslip.removeSelection}
+          combinedOdds={betslip.combinedOdds}
+          potentialReturn={betslip.potentialReturn}
+          validation={betslip.validation}
           onClose={closeSlip}
+          onDone={finishSlip}
           onBetPlaced={onBetPlaced}
         />
       )}
-      {selection && selection.event.source === "mock" && (
-        <DemoBetSlip selection={selection} onClose={closeSlip} onBetPlaced={onDemoBetPlaced} />
+      {slipOpen && source === "mock" && (
+        <DemoBetSlip
+          selections={betslip.selections}
+          stake={betslip.stake}
+          setStake={betslip.setStake}
+          removeSelection={betslip.removeSelection}
+          combinedOdds={betslip.combinedOdds}
+          potentialReturn={betslip.potentialReturn}
+          validation={betslip.validation}
+          onClose={closeSlip}
+          onDone={finishSlip}
+          onBetPlaced={onDemoBetPlaced}
+        />
       )}
     </>
   );
-}
-
-function selectionFor(selection) {
-  if (!selection) return null;
-  return { marketId: selection.market.id, outcomeId: selection.outcome.id };
 }
 
 function EmptyEventFallback({ sportId, onOpenSport }) {

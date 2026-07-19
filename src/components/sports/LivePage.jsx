@@ -5,7 +5,7 @@ import { track } from "@/lib/telemetry";
 
 // Live events across all five MVP sports, grouped by sport. A sport with no
 // live events simply doesn't get a heading — never a dead empty group.
-export function LivePage({ events, loading, onOpen, onPick, selection }) {
+export function LivePage({ events, loading, onOpen, onPick, isSelected }) {
   useEffect(() => { track("sports_live_viewed", { liveCount: events.filter((e) => e.status === "live").length }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const live = events.filter((e) => e.status === "live");
@@ -33,7 +33,7 @@ export function LivePage({ events, loading, onOpen, onPick, selection }) {
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {sportEvents.map((e) => (
-                  <EventRow key={e.id} event={e} selection={selection} onOpen={onOpen} onPick={onPick} />
+                  <EventRow key={e.id} event={e} isSelected={isSelected} onOpen={onOpen} onPick={onPick} />
                 ))}
               </div>
             </section>

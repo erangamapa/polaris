@@ -11,7 +11,7 @@ import { formatStartTime } from "./EventRow";
 // Sports" block used to dump every market inline; this is where that depth
 // moved to. Tab set is configurable per template family (see
 // eventTemplates.js), not five separate Event Detail components.
-export function EventDetail({ event, selection, onBack, onPick }) {
+export function EventDetail({ event, isSelected, onBack, onPick }) {
   const family = event.sport.templateFamily;
   const groups = groupAndOrderMarkets(event.markets, family);
   const [activeGroup, setActiveGroup] = useState(groups[0]?.group);
@@ -71,7 +71,7 @@ export function EventDetail({ event, selection, onBack, onPick }) {
 
           <div className="space-y-3">
             {active?.markets.map((m) => (
-              <MarketGroup key={m.id} event={event} market={m} selection={selection} onPick={onPick} />
+              <MarketGroup key={m.id} event={event} market={m} isSelected={isSelected} onPick={onPick} />
             ))}
           </div>
         </>

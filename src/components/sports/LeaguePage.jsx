@@ -7,7 +7,7 @@ import { track } from "@/lib/telemetry";
 // Breadcrumb -> league header -> date groups -> event rows. Preserves sport
 // and country context (breadcrumb links back up the hierarchy) and never
 // silently redirects on an empty league — it shows a real empty state.
-export function LeaguePage({ sportId, countrySlug, leagueSlug, events, onOpen, onOpenSport, onPick, selection }) {
+export function LeaguePage({ sportId, countrySlug, leagueSlug, events, onOpen, onOpenSport, onPick, isSelected }) {
   const sport = sportById(sportId);
   const leagueEvents = events.filter(
     (e) => e.sport.id === sportId && e.country.slug === countrySlug && e.league.slug === leagueSlug
@@ -44,7 +44,7 @@ export function LeaguePage({ sportId, countrySlug, leagueSlug, events, onOpen, o
             <h2 className="mb-2 text-sm font-bold">{label}</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {evs.map((e) => (
-                <EventRow key={e.id} event={e} selection={selection} onOpen={onOpen} onPick={onPick} />
+                <EventRow key={e.id} event={e} isSelected={isSelected} onOpen={onOpen} onPick={onPick} />
               ))}
             </div>
           </section>

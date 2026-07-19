@@ -29,6 +29,7 @@ import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { MVP_SPORTS } from "./lib/sportsModel";
 import { getSportsInventory } from "./lib/sportsDemo";
+import { useSportsBetslip } from "./lib/sportsBetslip";
 import { useNormalizedAzuroEvents } from "./web3/useAzuro";
 import { PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 import { NetworkBanner } from "./components/shell/NetworkBanner";
@@ -213,6 +214,12 @@ export default function App() {
   // badges need the same merged data.
   const { events: sportsProviderEvents, loading: sportsLoading } = useNormalizedAzuroEvents();
   const sportsEvents = useMemo(() => getSportsInventory({ providerEvents: sportsProviderEvents }), [sportsProviderEvents]);
+  // Lifted here (not owned inside SportsArena) for the same reason as favs/
+  // activity/recentIds above: SportsArena remounts on every arena switch
+  // (see the <ArenaErrorBoundary key={product}> below), so state that must
+  // survive leaving Sports for Casino/Predictions and coming back can't
+  // live inside it.
+  const sportsBetslip = useSportsBetslip();
   const navigateSports = (patch) => {
     if ("view" in patch) setSportsView(patch.view);
     if ("sport" in patch) setSportsSport(patch.sport);
@@ -564,6 +571,7 @@ export default function App() {
                   eventId={sportsEventId}
                   events={sportsEvents}
                   loading={sportsLoading}
+                  betslip={sportsBetslip}
                   onNavigate={navigateSports}
                   activity={activity}
                   onBetPlaced={logRound}

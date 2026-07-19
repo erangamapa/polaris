@@ -23,7 +23,7 @@ const ROW_LIMIT = 6;
 // events *within* one sport. Sections are deduplicated against each other
 // (an event never appears in two of Live now / Top matches / Starting
 // soon) and hidden entirely when empty rather than showing a dead box.
-export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onOpenLeague, onPick, selection }) {
+export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onOpenLeague, onPick, isSelected }) {
   const [query, setQuery] = useState("");
 
   useEffect(() => { track("sports_home_viewed", { eventCount: events.length }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -62,12 +62,12 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
       <ArenaTileRow arena="sports" promos={SPORTS_PROMOS} query={query} onQuery={setQuery} />
 
       {q ? (
-        <SearchResults query={query} matches={searchMatches} onOpen={onOpen} onPick={onPick} selection={selection} />
+        <SearchResults query={query} matches={searchMatches} onOpen={onOpen} onPick={onPick} isSelected={isSelected} />
       ) : (
         <>
-          <EventSection title="Live now" events={liveNow} onOpen={onOpen} onPick={onPick} selection={selection} />
-          <EventSection title="Starting soon" events={startingSoon} onOpen={onOpen} onPick={onPick} selection={selection} />
-          <EventSection title="Top matches" events={topMatches} onOpen={onOpen} onPick={onPick} selection={selection} />
+          <EventSection title="Live now" events={liveNow} onOpen={onOpen} onPick={onPick} isSelected={isSelected} />
+          <EventSection title="Starting soon" events={startingSoon} onOpen={onOpen} onPick={onPick} isSelected={isSelected} />
+          <EventSection title="Top matches" events={topMatches} onOpen={onOpen} onPick={onPick} isSelected={isSelected} />
 
           {popularCompetitions.length > 0 && (
             <section>
@@ -115,21 +115,21 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
   );
 }
 
-function EventSection({ title, events, onOpen, onPick, selection }) {
+function EventSection({ title, events, onOpen, onPick, isSelected }) {
   if (events.length === 0) return null;
   return (
     <section>
       <h2 className="mb-2 text-sm font-bold">{title}</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {events.map((e) => (
-          <EventRow key={e.id} event={e} selection={selection} onOpen={onOpen} onPick={onPick} />
+          <EventRow key={e.id} event={e} isSelected={isSelected} onOpen={onOpen} onPick={onPick} />
         ))}
       </div>
     </section>
   );
 }
 
-function SearchResults({ query, matches, onOpen, onPick, selection }) {
+function SearchResults({ query, matches, onOpen, onPick, isSelected }) {
   if (matches.length === 0) {
     return <p className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">No results for “{query}”.</p>;
   }
@@ -138,7 +138,7 @@ function SearchResults({ query, matches, onOpen, onPick, selection }) {
       <h2 className="mb-2 text-sm font-bold">Results for “{query}”</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {matches.slice(0, 12).map((e) => (
-          <EventRow key={e.id} event={e} selection={selection} onOpen={onOpen} onPick={onPick} />
+          <EventRow key={e.id} event={e} isSelected={isSelected} onOpen={onOpen} onPick={onPick} />
         ))}
       </div>
     </section>

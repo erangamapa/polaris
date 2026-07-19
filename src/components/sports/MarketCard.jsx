@@ -6,7 +6,7 @@ import { OddsButton } from "./OddsButton";
 // level suspension disables every outcome; an outcome can also be
 // individually suspended (e.g. a line pulled mid-match) without the whole
 // market disappearing.
-export function MarketGroup({ event, market, selection, onPick }) {
+export function MarketGroup({ event, market, isSelected, onPick }) {
   const cols = market.outcomes.length === 3 ? "grid-cols-3" : market.outcomes.length >= 4 ? "grid-cols-4" : "grid-cols-2";
   const marketSuspended = market.status === "suspended" || market.status === "closed";
   return (
@@ -23,7 +23,7 @@ export function MarketGroup({ event, market, selection, onPick }) {
               label={o.name}
               odds={o.odds}
               disabled={marketSuspended || o.status === "suspended"}
-              selected={selection?.marketId === market.id && selection?.outcomeId === o.id}
+              selected={isSelected(event.id, market.id, o.id)}
               onClick={() => onPick(event, market, o)}
             />
           ))}

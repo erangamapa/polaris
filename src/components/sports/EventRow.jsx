@@ -10,14 +10,17 @@ import { primaryMarket, teamQuickMarkets } from "./eventTemplates";
 // quick-bet markets exist for a given event, never in component identity.
 // Never renders every market — see COMPACT EVENT ROW / "detailed markets
 // exist only on Event Detail."
-export function EventRow({ event, selection, onOpen, onPick }) {
+export function EventRow({ event, isSelected, onOpen, onPick }) {
   const family = event.sport.templateFamily;
   const [p1, p2] = event.participants;
   const isLive = event.status === "live";
   const isSuspended = event.status === "suspended";
   const timeLabel = formatStartTime(event.startsAt, event.timeLabel);
 
-  const isPicked = (marketId, outcomeId) => selection?.marketId === marketId && selection?.outcomeId === outcomeId;
+  // Event-scoped — a market/outcome id pair is only unique *within* an
+  // event, not globally (see STABLE SELECTION IDENTITY), so this always
+  // checks against event.id too rather than trusting id uniqueness alone.
+  const isPicked = (marketId, outcomeId) => isSelected(event.id, marketId, outcomeId);
 
   return (
     <Card className="py-0">
