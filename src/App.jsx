@@ -313,11 +313,22 @@ export default function App() {
   const arenaChainId = product === "sports" ? SPORTS_CHAIN_ID : CASINO_CHAIN_ID;
   const wrongNetwork = wallet.isConnected && product !== "predictions" &&
     (product === "sports" ? !wallet.onSportsChain : !wallet.onCasinoChain);
+  // Real, existing data (same `activity` array the Sports sidebar's own
+  // My Bets badge already reads — see sidebar.items above) — never a fake/
+  // decorative unread dot (see ACTIVITY ACCESS: "no decorative unread dot
+  // without data").
+  const openPositionsCount = activity.filter((a) => a.status === "open").length;
 
   // Only one overlay owns focus/scroll-lock at a time — any dialog opening
   // closes the mobile drawer first so they never stack.
   const openFunds = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setFundsOpen(true); };
   const openHistory = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setHistoryOpen(true); };
+  // Not wallet-gated — Responsible Gambling/Support are reachable whether
+  // or not a wallet is connected. Hoisted out of Footer's own inline
+  // handlers so the new desktop ProfileMenu (see TopBar.jsx) can open the
+  // exact same dialogs rather than a second copy.
+  const openRg = () => { setMobileMenuOpen(false); setRgOpen(true); };
+  const openSupport = () => { setMobileMenuOpen(false); setSupportOpen(true); };
 
   // Game tiles are real links (`?play=<favId>`) so middle-click / cmd-click opens
   // a new tab, like on most sites. These helpers keep that URL in sync with the
@@ -566,8 +577,13 @@ export default function App() {
         onBurger={toggleSidebar}
         burgerLabel={sidebarLabel}
         onManageWallet={openFunds}
-        onFunds={openFunds}
+        onFund={openFunds}
         onActivity={openHistory}
+        onResponsibleGambling={openRg}
+        onSupport={openSupport}
+        wrongNetwork={wrongNetwork}
+        onSwitchNetwork={() => wallet.switchTo(arenaChainId)}
+        openPositionsCount={openPositionsCount}
       />
       <NetworkBanner show={wrongNetwork} switching={wallet.isSwitching} onSwitch={() => wallet.switchTo(arenaChainId)} />
 
@@ -624,8 +640,8 @@ export default function App() {
             </div>
           </ArenaErrorBoundary>
           <Footer
-            onResponsibleGambling={() => { setMobileMenuOpen(false); setRgOpen(true); }}
-            onSupport={() => { setMobileMenuOpen(false); setSupportOpen(true); }}
+            onResponsibleGambling={openRg}
+            onSupport={openSupport}
           />
         </main>
 

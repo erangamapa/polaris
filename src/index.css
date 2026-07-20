@@ -47,6 +47,11 @@ html {
   --z-fullscreen-menu: 70;
   --z-transaction-overlay: 90;
   --z-critical-alert: 100;
+  /* Desktop top-bar popovers (BalanceControl, ProfileMenu — see TopBar.jsx)
+     — lightweight, non-modal Popover/DropdownMenu content, same layer as
+     the existing Tooltip/ui-dialog z-50 convention, not the mobile
+     full-screen layers above. */
+  --z-header-popover: 50;
 }
 
 /* Shared bottom clearance for any mobile scroll container that sits above
