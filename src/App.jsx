@@ -40,6 +40,31 @@ import { ArenaErrorBoundary } from "./components/shell/ArenaErrorBoundary";
 import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
+import { useDevMockState } from "./lib/devMock";
+import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
+
+// Module-load-time, not inside the component — idempotent (see its own
+// `installed` guard) and needs to be active before BetHistoryDialog's
+// first /api/* call, not after some render has already happened. No-op in
+// production (see devFetchInterceptor.js).
+installDevFetchInterceptor();
+
+// Developer Panel -> Casino -> Game state: simulates the *outcome* of a
+// launch attempt (provider error, maintenance, region block, etc.) without
+// touching BetSwirlGame/ProviderGame's own real launch logic — the safest
+// way to exercise every error copy path without needing to fake a whole
+// in-game error UI inside those real iframes (see DO NOT ADD: "fake
+// backend"). Module scope (not recreated every render) and gated on the
+// build-time `import.meta.env.DEV` constant so these dev-only copy strings
+// don't ship in the production bundle at all — confirmed via a production
+// build grep (see DEV-ONLY REQUIREMENT: "tree-shake where practical").
+const DEV_GAME_STATE_COPY = import.meta.env.DEV ? {
+  loading: { type: "info", title: "Loading (dev simulation)", message: "Simulating a slow game launch." },
+  "provider-error": { type: "error", title: "Provider error (dev simulation)", message: "The game provider is unavailable right now." },
+  maintenance: { type: "warning", title: "Game under maintenance (dev simulation)", message: "This game is temporarily unavailable." },
+  "region-restricted": { type: "error", title: "Not available in your region (dev simulation)", message: "This game can't be played from your location." },
+  "insufficient-balance": { type: "error", title: "Insufficient balance (dev simulation)", message: "Add funds to play this game." },
+} : {};
 
 const CASINO_ICONS = {
   Lobby: LayoutGrid, Popular: Gem, Slots: Cherry, "Live Casino": Radio,
@@ -254,6 +279,34 @@ export default function App() {
   // Wallet connection replaces password login. Connecting (on the right network)
   // is the gate for placing bets; the Reown modal handles the connect flow.
   const wallet = useWallet();
+  // Developer Panel (Shift+D) mock state — a no-op object in production
+  // (useDevMockState always returns DEFAULT_DEV_MOCK_STATE there, and every
+  // field below reads as "default", so every override branch this file
+  // adds is inert). See INTEGRATION PRIORITY: Casino favorites/recently
+  // played/game state are wired here (App.jsx), not deeper inside
+  // CasinoLobby/CasinoCatalog, so those components stay untouched.
+  const devMock = useDevMockState();
+  // Developer Panel -> Transactions: no deposit/withdrawal system exists
+  // in this app at all (see DO NOT ADD: "fake backend") — rather than
+  // fabricate one, each selection fires the same customer-safe toast copy
+  // a real transaction of that kind would show, via the app's existing
+  // toast mechanism (see lib/toast.js), so every transaction-state's copy
+  // is reviewable without inventing backing data. Effect (not inline in the
+  // <select> handler) so it also fires correctly on session-restore.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const copy = {
+      "deposit-pending": { type: "info", title: "Deposit pending", message: "Waiting for confirmations." },
+      "deposit-confirmed": { type: "success", title: "Deposit confirmed", message: "Your balance has been updated." },
+      "withdrawal-pending": { type: "info", title: "Withdrawal pending", message: "Waiting for confirmations." },
+      "withdrawal-failed": { type: "error", title: "Withdrawal failed", message: "Please try again or contact support." },
+      "bet-won": { type: "success", title: "Bet won", message: "Winnings have been credited." },
+      "bet-lost": { type: "error", title: "Bet lost", message: "Better luck next time." },
+    }[devMock.transactionStatus];
+    if (copy) toast[copy.type](copy.title, { message: copy.message });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire only on
+    // an actual selection change, not on every unrelated devMock update.
+  }, [devMock.transactionStatus]);
 
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
@@ -335,6 +388,11 @@ export default function App() {
   // modal state for the in-page (left-click) path, and resolve it back to a
   // modal on load / back-forward so the link actually works when followed.
   const openGame = (game) => {
+    if (devMock.gameStatus !== "default") {
+      const copy = DEV_GAME_STATE_COPY[devMock.gameStatus];
+      if (copy) toast[copy.type](copy.title, { message: copy.message });
+      return;
+    }
     // Full-screen games cover the whole viewport (z-50, fixed inset-0), but
     // the mobile menu (z-70) would still sit on top of and stay interactive
     // over a game otherwise — close it explicitly rather than rely on
@@ -398,6 +456,17 @@ export default function App() {
     setActivity((list) => [{ id: `a${Date.now()}${Math.random().toString(36).slice(2, 5)}`, ref: betRef(), time: nowLabel(), ...e }, ...list]);
 
   const isFav = (game) => favs.has(game.favId);
+  // Developer Panel overrides — "populated" uses real games from the
+  // catalog (never invented ones), "empty" always reports false regardless
+  // of the real set. "default" (or prod, where devMock.favoritesPreset is
+  // always "default") defers to the real isFav above untouched.
+  const mockFavIds = ALL_GAMES.slice(0, 3).map((g) => g.favId);
+  const effectiveIsFav = devMock.favoritesPreset === "empty" ? () => false
+    : devMock.favoritesPreset === "populated" ? (game) => mockFavIds.includes(game.favId)
+    : isFav;
+  const effectiveRecentIds = devMock.recentlyPlayedPreset === "empty" ? []
+    : devMock.recentlyPlayedPreset === "populated" ? ALL_GAMES.slice(0, 4).map((g) => g.favId)
+    : recentIds;
   // Optimistic: the star fills / sidebar count updates immediately (setFavs is
   // synchronous). "Sync in background" has nothing real to sync against yet —
   // there's no favorites backend, only localStorage — so this always
@@ -605,9 +674,9 @@ export default function App() {
                   category={casinoCategory}
                   onLaunchOnchain={launchGame}
                   onLaunchProvider={launchGame}
-                  isFav={isFav}
+                  isFav={effectiveIsFav}
                   onFav={toggleFav}
-                  recentIds={recentIds}
+                  recentIds={effectiveRecentIds}
                   onBrowseGames={() => setCasinoCategory("Lobby")}
                 />
               )}

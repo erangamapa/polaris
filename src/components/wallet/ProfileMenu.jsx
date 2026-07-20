@@ -3,6 +3,20 @@ import { User, ChevronDown, Wallet as WalletIcon, ShieldCheck, LifeBuoy, LogOut 
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 import { shortAddress } from "@/web3/useWallet";
+import { StatusBadge } from "@/components/ui/status-badge";
+
+// accountStatus is a Developer-Panel-only concept today (see
+// lib/devMock.js) — the real app has no account-tier system yet, so
+// "normal" (the only real value in production) renders no badge at all;
+// the other two only ever appear while testing via the panel. Gated on the
+// build-time `import.meta.env.DEV` constant (not just left as a plain
+// object) so these dev-only strings don't ship in the production bundle at
+// all — confirmed via a production build grep (see DEV-ONLY REQUIREMENT:
+// "tree-shake where practical").
+const ACCOUNT_BADGE = import.meta.env.DEV ? {
+  vip: { label: "VIP", variant: "success" },
+  restricted: { label: "Restricted", variant: "attention" },
+} : {};
 
 // Profile control: "Profile = account/settings" (see TopBar.jsx's mental-
 // model comment) — kept intentionally basic per this task's own scope
@@ -17,8 +31,9 @@ import { shortAddress } from "@/web3/useWallet";
 //
 // `open`/`onOpenChange` are controlled by TopBar (one shared `activePopover`
 // state — see OVERLAY OWNERSHIP), not owned locally.
-export function ProfileMenu({ open, onOpenChange, address, onManageWallet, onResponsibleGambling, onSupport, onSignOut }) {
+export function ProfileMenu({ open, onOpenChange, address, accountStatus = "normal", onManageWallet, onResponsibleGambling, onSupport, onSignOut }) {
   const triggerRef = useRef(null);
+  const badge = ACCOUNT_BADGE[accountStatus];
 
   return (
     <DropdownMenuPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -43,7 +58,10 @@ export function ProfileMenu({ open, onOpenChange, address, onManageWallet, onRes
           onCloseAutoFocus={(e) => { e.preventDefault(); triggerRef.current?.focus(); }}
           className="z-[var(--z-header-popover)] w-56 rounded-lg border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
-          <div className="truncate px-2 py-1.5 font-mono text-xs text-muted-foreground">{shortAddress(address)}</div>
+          <div className="flex items-center gap-1.5 px-2 py-1.5">
+            <span className="truncate font-mono text-xs text-muted-foreground">{shortAddress(address)}</span>
+            {badge && <StatusBadge variant={badge.variant} size="small" label={badge.label} ariaLabel={`Account status: ${badge.label}`} />}
+          </div>
           <DropdownMenuPrimitive.Separator className="my-1 border-t" />
 
           <MenuItem icon={WalletIcon} label="Manage wallet" onSelect={onManageWallet} />

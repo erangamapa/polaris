@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
-import { Menu, ReceiptText } from "lucide-react";
+import { Menu, ReceiptText, Wallet as WalletIcon, ShieldAlert } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BalanceControl } from "@/components/wallet/BalanceControl";
 import { ProfileMenu } from "@/components/wallet/ProfileMenu";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BRAND_NAME } from "@/lib/brand";
-import { useWallet } from "@/web3/useWallet";
+import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
 import { TOP_BAR_MODE, getTopBarMode } from "@/lib/topBarState";
+import { toggleDevPanel } from "@/lib/devMock";
 
 // Authenticated desktop top bar — Stake-familiar composition (balance +
 // currency cluster, Fund, Activity, Profile grouped right), Tribet tokens
@@ -39,17 +40,28 @@ import { TOP_BAR_MODE, getTopBarMode } from "@/lib/topBarState";
 // pill only — Fund/Activity/Profile are reachable via the mobile menu's
 // utility section instead) rather than a second, separate component.
 export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, onFund, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
-  const wallet = useWallet();
-  const { isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, sportsBalance, sportsSymbol, disconnect } = wallet;
+  const wallet = useDevAwareWallet();
+  const {
+    isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, sportsBalance, sportsSymbol, disconnect,
+    loggedInNoWallet, sessionExpired, mockAccountStatus, wrongNetworkOverride,
+  } = wallet;
 
-  // Long-press the logo (~700ms) opens the dev panel on touch devices.
+  // Long-press the logo (~700ms) toggles the Developer Panel on touch
+  // devices, where Shift+D isn't practical — the one non-visible mobile
+  // entry point (see DO NOT ADD: "visible mobile dev trigger" — this is a
+  // hidden gesture, not an on-screen control). No-ops in production, same
+  // as the shortcut itself (see lib/devMock.js).
   const pressTimer = useRef(null);
-  const startPress = () => { pressTimer.current = setTimeout(() => window.dispatchEvent(new Event("polaris:dev")), 700); };
+  const startPress = () => { pressTimer.current = setTimeout(() => toggleDevPanel(), 700); };
   const cancelPress = () => clearTimeout(pressTimer.current);
 
   const [activePopover, setActivePopover] = useState(null); // null | "balance" | "profile"
 
-  const mode = getTopBarMode({ isConnected, wrongNetwork });
+  // Dev Panel's own wallet mock is derived from the REAL wallet App.jsx
+  // computed `wrongNetwork` from, so it can't see it — prefer the mock's
+  // verdict whenever one is active (see useDevAwareWallet.js).
+  const effectiveWrongNetwork = wrongNetworkOverride ?? wrongNetwork;
+  const mode = getTopBarMode({ isConnected, wrongNetwork: effectiveWrongNetwork });
   const showConnected = mode !== TOP_BAR_MODE.DISCONNECTED;
 
   return (
@@ -81,7 +93,70 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
           independently of this, never absolutely positioned (see PRIMARY
           GOAL). min-w-0 lets it compress before anything wraps. */}
       <div className="ms-auto flex min-w-0 shrink-0 items-center">
-        {showConnected ? (
+        {import.meta.env.DEV && sessionExpired ? (
+          // DEV-ONLY state (Developer Panel -> User -> Session expired).
+          // Gated on the build-time `import.meta.env.DEV` constant, not
+          // just the runtime `sessionExpired` flag: that flag is already
+          // always false in production (see useDevAwareWallet.js), but
+          // without this the branch's JSX would still ship as dead code in
+          // the production bundle — Rollup can only eliminate a branch
+          // whose condition folds to a compile-time constant, not one that
+          // merely evaluates false at runtime (see DEV-ONLY REQUIREMENT:
+          // "tree-shake where practical" / "no dev-only labels in
+          // production UI" — confirmed via a production build grep before
+          // adding this).
+          // wallet connection is preserved (per AUTH AND WALLET RULES —
+          // "preserve wallet connection state") but the account itself
+          // needs re-auth, so Balance/Fund are replaced with a distinct
+          // prompt while Activity/Profile stay reachable.
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--warning)]/40 px-3 text-sm font-semibold text-[var(--warning)]">
+              <ShieldAlert className="size-4 shrink-0" aria-hidden="true" /> Session expired
+            </span>
+            <button
+              onClick={onManageWallet}
+              data-test-id="reconnect"
+              className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-lg bg-[var(--global-cta)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Reconnect
+            </button>
+            <ProfileMenu
+              open={activePopover === "profile"}
+              onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
+              address={address}
+              accountStatus={mockAccountStatus}
+              onManageWallet={onManageWallet}
+              onResponsibleGambling={onResponsibleGambling}
+              onSupport={onSupport}
+              onSignOut={disconnect}
+            />
+          </div>
+        ) : import.meta.env.DEV && loggedInNoWallet ? (
+          // DEV-ONLY state (Developer Panel -> User -> Logged in, Wallet ->
+          // Disconnected): the one auth/wallet combination with no real
+          // backing system yet (see useDevAwareWallet.js's architecture
+          // note) — an authenticated Profile is reachable, but Balance/Fund
+          // need a real wallet connection first.
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={onManageWallet}
+              data-test-id="connect-wallet-authenticated"
+              className="flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-sm font-semibold text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <WalletIcon className="size-4 shrink-0" aria-hidden="true" /> Connect wallet
+            </button>
+            <ProfileMenu
+              open={activePopover === "profile"}
+              onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
+              address={address}
+              accountStatus={mockAccountStatus}
+              onManageWallet={onManageWallet}
+              onResponsibleGambling={onResponsibleGambling}
+              onSupport={onSupport}
+              onSignOut={disconnect}
+            />
+          </div>
+        ) : showConnected ? (
           <>
             {/* Desktop authenticated cluster (≥768px, matching the sidebar/
                 burger breakpoint) — the new Balance/Fund/Activity/Profile
@@ -147,6 +222,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
                 open={activePopover === "profile"}
                 onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
                 address={address}
+                accountStatus={mockAccountStatus}
                 onManageWallet={onManageWallet}
                 onResponsibleGambling={onResponsibleGambling}
                 onSupport={onSupport}
