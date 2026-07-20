@@ -30,6 +30,7 @@ export function SportsArena({
   view, sport, country, league, eventId,
   events, loading, betslip,
   onNavigate, activity, onBetPlaced, onDemoBetPlaced,
+  onBetslipWillOpen,
 }) {
   // Whether the slip presentation is showing — UI-only, deliberately
   // separate from betslip.selections so closing it never clears selections
@@ -69,6 +70,11 @@ export function SportsArena({
   const pick = (event, market, outcome) => {
     track("sports_market_selected", { sport: event.sport.id, eventId: event.id, source: event.source, marketGroup: market.group });
     if (document.activeElement instanceof HTMLElement) triggerRef.current = document.activeElement;
+    // OVERLAY OWNERSHIP: not reachable via normal UI today (odds buttons
+    // only exist on Sports pages, which the mobile menu / other App-level
+    // overlays already fully cover while open), but defensive rather than
+    // assumed — see App.jsx's closeOtherOverlays for the other direction.
+    onBetslipWillOpen?.();
     betslip.toggleSelection(event, market, outcome);
     setSlipOpen(true);
   };

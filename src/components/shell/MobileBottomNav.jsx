@@ -19,16 +19,18 @@ const PRODUCTS = [
 const INDICATOR = "pointer-events-none absolute top-0 left-1/2 h-[3px] w-[60%] -translate-x-1/2 rounded-full transition-opacity duration-200";
 
 // The complete primary mobile navigation — four equal-width items, Menu
-// first. Static bar (last item in the app's flex column) — never `fixed`,
-// so iOS Safari's collapsing toolbar can't make it float. `relative z-[80]`
-// keeps it stacked *above* the full-screen menu (z-[70], `fixed inset-0`) —
-// otherwise the menu would cover the Menu button itself, making "tap Menu
-// again" / "switch arena" (both listed close triggers) unreachable while
-// open. `pointer-events-auto` is required too: Radix's modal scroll lock
-// sets `pointer-events: none` on <body>, which this bar would otherwise
-// inherit (it's a body descendant) despite winning the z-index stack.
-// `md:hidden` matches the desktop rail's own breakpoint (see Sidebar.jsx)
-// so the two never both show in the 768–1023px range.
+// first. Pure shared presentation with exactly ONE live instance at any
+// moment (see App.jsx and MobileFullScreenMenu.jsx): the shell renders it
+// only while the menu is closed, and the menu's own Dialog Content renders
+// it internally while open — never both at once, and never via z-index/
+// pointer-events tricks to fake one interaction layer out of two DOM
+// copies. When rendered in the shell it's a plain static bar (last item in
+// the app's flex column, never `fixed`, so iOS Safari's collapsing toolbar
+// can't make it float); when rendered inside the menu it's just an
+// ordinary descendant of that dialog's own stacking context and focus
+// boundary — it needs no z-index or pointer-events override in either
+// case. `md:hidden` matches the desktop rail's own breakpoint (see
+// Sidebar.jsx) so the two never both show in the 768–1023px range.
 //
 // Menu switches the *section* menu for whichever arena is already active;
 // it never switches arenas itself, and stays visually generic (burger only
@@ -45,7 +47,7 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
   return (
     <nav
       aria-label="Main product navigation"
-      className="relative z-[80] shrink-0 border-t bg-background pointer-events-auto md:hidden"
+      className="relative shrink-0 border-t bg-background md:hidden"
     >
       {/* Fixed content height (--mobile-nav-height, kept in sync with the
           shared bottom-padding calc other mobile surfaces use) lives in its

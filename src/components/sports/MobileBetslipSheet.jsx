@@ -13,12 +13,12 @@ import { DemoBetSlip } from "./DemoBetSlip";
 //
 // Built on Radix Dialog exactly like MobileFullScreenMenu (see that file for
 // the precedent this mirrors): focus trap, Escape-to-close, and background
-// inert/aria-hidden come from the primitive for free. z-[90] — ABOVE
-// MobileBottomNav's z-[80] (unlike the full-screen Menu, which intentionally
-// stays *below* the nav so arena-switching works without an extra close
-// step) so the nav is fully covered and never competes with the Place Bet
-// CTA, per this task's own requirement. Reuses the exact
-// mobile-menu-content-in/out keyframes (already 220-240ms/180-200ms,
+// inert/aria-hidden come from the primitive for free.
+// --z-transaction-overlay sits ABOVE --z-fullscreen-menu (unlike the
+// full-screen Menu, whose own internal bottom-nav copy is just a normal
+// descendant of its own layer, not independently elevated) so this sheet's
+// CTA is never covered by anything else in the mobile shell. Reuses the
+// exact mobile-menu-content-in/out keyframes (already 220-240ms/180-200ms,
 // opacity+translateY, premium ease-out — precisely this task's own motion
 // spec) rather than inventing near-duplicate ones.
 //
@@ -39,11 +39,11 @@ export function MobileBetslipSheet({
     <DialogPrimitive.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
-          className="fixed inset-x-0 top-0 z-[90] h-dvh bg-background data-[state=open]:animate-[mobile-menu-backdrop-in_180ms_ease-out] data-[state=closed]:animate-[mobile-menu-backdrop-out_190ms_ease-in] motion-reduce:animate-none"
+          className="fixed inset-x-0 top-0 z-[var(--z-transaction-overlay)] h-dvh bg-background data-[state=open]:animate-[mobile-menu-backdrop-in_180ms_ease-out] data-[state=closed]:animate-[mobile-menu-backdrop-out_190ms_ease-in] motion-reduce:animate-none"
         />
         <DialogPrimitive.Content
           id="mobile-betslip-sheet"
-          className="fixed inset-x-0 top-0 z-[90] flex h-dvh flex-col bg-background outline-none data-[state=open]:animate-[mobile-menu-content-in_230ms_cubic-bezier(0.22,1,0.36,1)] data-[state=closed]:animate-[mobile-menu-content-out_190ms_cubic-bezier(0.4,0,1,1)] motion-reduce:animate-none"
+          className="fixed inset-x-0 top-0 z-[var(--z-transaction-overlay)] flex h-dvh flex-col bg-background outline-none data-[state=open]:animate-[mobile-menu-content-in_230ms_cubic-bezier(0.22,1,0.36,1)] data-[state=closed]:animate-[mobile-menu-content-out_190ms_cubic-bezier(0.4,0,1,1)] motion-reduce:animate-none"
           onOpenAutoFocus={(e) => {
             // First logical control gets focus (see ACCESSIBILITY: "close/
             // back button is first logical control"), not Radix's default

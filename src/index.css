@@ -28,6 +28,25 @@ html {
      of truth for its expanded width, kept within the 320-380px range. */
   --sports-betslip-width: 340px;
   --sports-betslip-collapsed-width: 60px;
+
+  /* Semantic mobile layer contract — the layers this task's full-screen
+     surfaces actually stack against, named by what they ARE rather than an
+     arbitrary number. Scoped to the mobile shell surfaces this task
+     touches (TopBar/tooltips/wallet dialogs elsewhere keep their own
+     existing z-50-class values — a full app-wide z-index token migration is
+     out of scope here). Mobile bottom nav no longer needs its own entry:
+     it now only ever renders as a normal in-flow sibling (shell, menu
+     closed) or as a plain descendant inside --z-fullscreen-menu's own
+     stacking context (inside the menu dialog, menu open) — see
+     MobileBottomNav.jsx / MobileFullScreenMenu.jsx.
+     Ordering: fullscreen-menu < transaction-overlay < critical-alert, so a
+     toast fired mid-transaction (e.g. "Bet accepted") is always visible
+     above the sheet that triggered it, and the sheet itself would still
+     outrank the arena menu if both were ever mounted at once (they aren't
+     today — see OVERLAY OWNERSHIP). */
+  --z-fullscreen-menu: 70;
+  --z-transaction-overlay: 90;
+  --z-critical-alert: 100;
 }
 
 /* Shared bottom clearance for any mobile scroll container that sits above

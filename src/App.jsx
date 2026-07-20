@@ -131,6 +131,14 @@ export default function App() {
     const el = mainRef.current;
     if (el) el.style.overflowY = mobileMenuOpen ? "hidden" : "";
   }, [mobileMenuOpen]);
+  // Focus target for "navigate" closes (arena/section selection — see
+  // MobileFullScreenMenu's action-specific focus restoration): <main> is
+  // the one stable landmark every destination page renders into, so
+  // focusing it directly (via tabIndex={-1} below) satisfies "focus
+  // destination page heading or main content" without needing a
+  // per-page heading ref — the standard, low-risk pattern for "route
+  // change moves focus to the main region."
+  const focusMainContent = () => mainRef.current?.focus();
 
   // Cross-tab sync: another tab flipping the rail mode updates this one too.
   // Guarded so it never fires from our own write (storage events only reach
@@ -171,6 +179,13 @@ export default function App() {
   const toggleMobileMenu = () => {
     setMobileMenuOpen((open) => {
       const next = !open;
+      // OVERLAY OWNERSHIP: only one primary modal/focus trap is ever active.
+      // The other direction (funds/history/rg/support/games -> close the
+      // menu first) was already true before this task; this is the
+      // missing reverse guard — opening the menu closes anything else that
+      // might currently hold focus/scroll-lock, so the menu never stacks
+      // on top of another dialog.
+      if (next) closeOtherOverlays();
       track(next ? "mobile_menu_opened" : "mobile_menu_closed", { arena: product });
       return next;
     });
@@ -263,6 +278,26 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+
+  // OVERLAY OWNERSHIP: the one place every other App-level overlay gets
+  // closed from, so opening any of them (including the mobile menu, see
+  // toggleMobileMenu) never stacks a second live focus trap/scroll lock on
+  // top of another. The Sports mobile betslip sheet isn't included here —
+  // its open state lives inside SportsArena (by design, so it can survive
+  // arena remounts — see lib/sportsBetslip.js), and in practice it can
+  // never collide with these: its own z-[var(--z-transaction-overlay)]
+  // already sits above the bottom nav, so none of these triggers are
+  // reachable while it's open. The one real collision risk — opening the
+  // betslip while ANY of these (including the menu) happen to be open — is
+  // guarded from the other side, in SportsArena's pick().
+  const closeOtherOverlays = () => {
+    setFundsOpen(false);
+    setHistoryOpen(false);
+    setRgOpen(false);
+    setSupportOpen(false);
+    setOnchainGame(null);
+    setProviderGame(null);
+  };
 
   // Gate: require a connected wallet on Base Sepolia before betting.
   const ensureAuth = () => {
@@ -546,7 +581,7 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main ref={mainRef} className="tribet-scrollbar min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable]">
+        <main ref={mainRef} tabIndex={-1} className="tribet-scrollbar min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable] focus:outline-none">
           <ArenaErrorBoundary key={product}>
             <div className="animate-fade-in-up">
               {product === "casino" && (
@@ -583,6 +618,7 @@ export default function App() {
                   activity={activity}
                   onBetPlaced={logRound}
                   onDemoBetPlaced={placeBet}
+                  onBetslipWillOpen={() => { setMobileMenuOpen(false); closeOtherOverlays(); }}
                 />
               )}
             </div>
@@ -611,12 +647,20 @@ export default function App() {
         )}
       </div>
 
-      <MobileBottomNav
-        product={product}
-        onSelectArena={selectMobileArena}
-        menuOpen={mobileMenuOpen}
-        onToggleMenu={toggleMobileMenu}
-      />
+      {/* Exactly one live MobileBottomNav at a time: the shell renders it
+          only while the menu is closed; MobileFullScreenMenu renders the
+          same component internally (as a real descendant of its own Dialog
+          Content, inside its focus boundary) while open. No z-index or
+          pointer-events trick makes two DOM copies act like one — there is
+          only ever one. */}
+      {!mobileMenuOpen && (
+        <MobileBottomNav
+          product={product}
+          onSelectArena={selectMobileArena}
+          menuOpen={mobileMenuOpen}
+          onToggleMenu={toggleMobileMenu}
+        />
+      )}
       <MobileFullScreenMenu
         open={mobileMenuOpen}
         title={mobileMenu.title}
@@ -625,6 +669,10 @@ export default function App() {
         selected={sidebar.selected}
         onSelect={handleMobileMenuSelect}
         onClose={closeMobileMenu}
+        product={product}
+        onSelectArena={selectMobileArena}
+        onToggleMenu={toggleMobileMenu}
+        onFocusMainContent={focusMainContent}
       />
       <Toaster />
       <DevPanel />
