@@ -60,51 +60,53 @@ export function DemoBetSlip({ selections, stake, setStake, removeSelection, comb
       </div>
 
       {phase === "placed" ? (
-        <div className="flex flex-col items-center gap-2 py-4 text-center">
+        <div className="flex shrink-0 flex-col items-center gap-2 border-t pt-4 text-center">
           <CheckCircle2 className="size-8 text-[var(--success)]" />
           <div className="text-sm font-semibold">Demo bet placed</div>
           <div className="text-xs text-muted-foreground">See it in My Bets.</div>
-          <button onClick={onDone} className="mt-2 rounded-lg bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/70">Done</button>
+          <button onClick={onDone} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/70">Done</button>
         </div>
       ) : (
         <div className={isPanel ? "shrink-0 space-y-3 border-t pt-3" : "space-y-3"}>
           <label className="block">
             <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">Stake (demo USDT)</span>
-            <div className="flex items-center rounded-lg border bg-background px-3">
+            <div className="flex items-center gap-1 rounded-lg border bg-background pe-1.5 ps-3">
               <input
                 type="text" inputMode="decimal" value={stake}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setStake(v); }}
-                className="w-full bg-transparent py-2.5 font-mono tabular-nums outline-none"
+                className="min-w-0 flex-1 bg-transparent py-2.5 font-mono tabular-nums outline-none"
                 placeholder="0"
               />
-              {[1, 5, 25].map((v) => (
-                <button key={v} onClick={() => setStake(String(v))} className="px-2 text-xs text-muted-foreground hover:text-foreground">{v}</button>
-              ))}
+              <div className="flex shrink-0 items-center gap-1">
+                {[1, 5, 25].map((v) => (
+                  <button key={v} onClick={() => setStake(String(v))} className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md px-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">{v}</button>
+                ))}
+              </div>
             </div>
           </label>
 
           {selections.length > 1 && (
-            <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
               <span>Combined odds (preview)</span>
-              <span className="font-mono">{combinedOdds != null ? combinedOdds.toFixed(2) : "—"}</span>
+              <span className="whitespace-nowrap text-right font-mono tabular-nums">{combinedOdds != null ? combinedOdds.toFixed(2) : "—"}</span>
             </div>
           )}
 
-          <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-secondary/50 px-3 py-2.5 text-sm">
             <span className="text-muted-foreground">Potential payout</span>
-            <span className="font-mono font-semibold">{potentialReturn != null ? potentialReturn.toFixed(2) : "0.00"} USDT</span>
+            <span className="whitespace-nowrap text-right font-mono text-base font-bold tabular-nums">{potentialReturn != null ? potentialReturn.toFixed(2) : "0.00"} USDT</span>
           </div>
 
           {!validation.canSubmit && (
-            <p id="demo-betslip-validation" role="status" className="rounded-lg border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">{validation.message}</p>
+            <p id="demo-betslip-validation" role="status" className="break-words rounded-lg border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">{validation.message}</p>
           )}
 
           <button
             onClick={submit}
             disabled={!validation.canSubmit}
             aria-describedby={!validation.canSubmit ? "demo-betslip-validation" : undefined}
-            className="rounded-lg bg-[var(--global-cta)] py-2.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] disabled:opacity-50"
+            className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
           >
             Place demo bet
           </button>

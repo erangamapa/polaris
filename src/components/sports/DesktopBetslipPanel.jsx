@@ -89,20 +89,20 @@ export function DesktopBetslipPanel({ betslip, uiState, onBetPlaced, onDemoBetPl
 
         {isOpen && !isCollapsed && (
           <div className="flex h-full min-h-0 flex-col">
-            <div className="flex shrink-0 items-center gap-2 border-b px-3 py-3">
-              <h2 className="text-sm font-semibold">Betslip</h2>
-              <StatusBadge variant="neutral" size="small" count={betslip.selectionCount} ariaLabel={label} />
+            <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3.5">
+              <h2 className="shrink-0 text-sm font-semibold leading-none">Betslip</h2>
+              <span className="shrink-0"><StatusBadge variant="neutral" size="small" count={betslip.selectionCount} ariaLabel={label} /></span>
               {betslip.selectionCount > 0 && (
-                <button onClick={betslip.clearSelections} aria-label="Clear all selections" className="ms-auto text-xs font-medium text-muted-foreground hover:text-foreground">
+                <button onClick={betslip.clearSelections} aria-label="Clear all selections" className="ms-auto shrink-0 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Clear all
                 </button>
               )}
-              <button onClick={handleCollapse} aria-label="Collapse betslip" className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <button onClick={handleCollapse} aria-label="Collapse betslip" className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <ChevronsRight className="size-4" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
+            <div className="flex min-h-0 flex-1 flex-col px-4 py-3.5">
               {source === "provider" && (
                 <AzuroBetSlip
                   presentation="panel"

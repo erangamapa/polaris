@@ -95,53 +95,55 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
       </div>
 
       {phase === "done" ? (
-        <div className="flex flex-col items-center gap-2 py-4 text-center">
+        <div className="flex shrink-0 flex-col items-center gap-2 border-t pt-4 text-center">
           <CheckCircle2 className="size-8 text-[var(--success)]" />
           <div className="text-sm font-semibold">Bet accepted by the relayer</div>
           <div className="font-mono text-xs text-muted-foreground">order {String(order?.id).slice(0, 10)}…</div>
-          <button onClick={onDone} className="mt-2 rounded-lg bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/70">Done</button>
+          <button onClick={onDone} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/70">Done</button>
         </div>
       ) : (
         <div className={isPanel ? "shrink-0 space-y-3 border-t pt-3" : "space-y-3"}>
           <label className="block">
-            <span className="mb-1 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
               <span>Stake (USDT)</span>
-              <span className="normal-case">Balance: <span className="font-mono">{sportsBalance.toFixed(2)}</span></span>
+              <span className="normal-case">Balance: <span className="font-mono tabular-nums">{sportsBalance.toFixed(2)}</span></span>
             </span>
-            <div className="flex items-center rounded-lg border bg-background px-3">
+            <div className="flex items-center gap-1 rounded-lg border bg-background pe-1.5 ps-3">
               <input
                 type="text" inputMode="decimal" value={stake} disabled={busy}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setStake(v); }}
-                className="w-full bg-transparent py-2.5 font-mono tabular-nums outline-none"
+                className="min-w-0 flex-1 bg-transparent py-2.5 font-mono tabular-nums outline-none"
                 placeholder="0"
                 data-test-id="betslip-stake"
               />
-              {[1, 5, 25].map((v) => (
-                <button key={v} onClick={() => setStake(String(v))} disabled={busy} className="px-2 text-xs text-muted-foreground hover:text-foreground">{v}</button>
-              ))}
+              <div className="flex shrink-0 items-center gap-1">
+                {[1, 5, 25].map((v) => (
+                  <button key={v} onClick={() => setStake(String(v))} disabled={busy} className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md px-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-40">{v}</button>
+                ))}
+              </div>
             </div>
           </label>
 
           {selections.length > 1 && (
-            <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
               <span>Combined odds (preview)</span>
-              <span className="font-mono">{combinedOdds != null ? combinedOdds.toFixed(2) : "—"}</span>
+              <span className="whitespace-nowrap text-right font-mono tabular-nums">{combinedOdds != null ? combinedOdds.toFixed(2) : "—"}</span>
             </div>
           )}
 
-          <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-secondary/50 px-3 py-2.5 text-sm">
             <span className="text-muted-foreground">Potential payout</span>
-            <span className="font-mono font-semibold">{potentialReturn != null ? potentialReturn.toFixed(2) : "0.00"} USDT</span>
+            <span className="whitespace-nowrap text-right font-mono text-base font-bold tabular-nums">{potentialReturn != null ? potentialReturn.toFixed(2) : "0.00"} USDT</span>
           </div>
 
           {!validation.canSubmit && (
-            <p id="azuro-betslip-validation" role="status" className="rounded-lg border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">{validation.message}</p>
+            <p id="azuro-betslip-validation" role="status" className="break-words rounded-lg border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">{validation.message}</p>
           )}
 
           {busy ? (
-            <div className="flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm text-[var(--global-cta)]" data-test-id="betslip-loader">
-              <Loader2 className="size-4 animate-spin" /> {STEP_LABEL[step] ?? "Placing bet…"}
+            <div className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg border text-sm text-[var(--global-cta)]" data-test-id="betslip-loader">
+              <Loader2 className="size-4 shrink-0 animate-spin" /> <span className="truncate">{STEP_LABEL[step] ?? "Placing bet…"}</span>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -150,20 +152,20 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
                 disabled={!ready || !validation.canSubmit}
                 aria-describedby={!validation.canSubmit ? "azuro-betslip-validation" : undefined}
                 data-test-id="betslip-submit"
-                className="rounded-lg bg-[var(--global-cta)] py-2.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] disabled:opacity-50"
+                className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
               >
                 Place bet
               </button>
               {insufficient && (
-                <button onClick={getUsdt} disabled={minting} data-test-id="betslip-mint" className="rounded-lg border py-2 text-xs font-medium hover:bg-secondary disabled:opacity-50">
+                <button onClick={getUsdt} disabled={minting} data-test-id="betslip-mint" className="flex min-h-11 w-full items-center justify-center rounded-lg border text-xs font-medium hover:bg-secondary disabled:opacity-50">
                   {minting ? "Minting…" : "Low balance — get 100 test USDT"}
                 </button>
               )}
             </div>
           )}
 
-          <p className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
-            <ExternalLink className="size-3" /> Gasless on Polygon Amoy — you sign, a relayer submits.
+          <p className="flex items-center justify-center gap-1 text-center text-[11px] text-muted-foreground">
+            <ExternalLink className="size-3 shrink-0" /> Gasless on Polygon Amoy — you sign, a relayer submits.
           </p>
         </div>
       )}
