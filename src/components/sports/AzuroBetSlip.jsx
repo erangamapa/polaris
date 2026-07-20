@@ -88,7 +88,7 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
 
   const body = (
     <>
-      <div className={isPanel ? "min-h-0 flex-1 space-y-2 overflow-y-auto" : "max-h-64 space-y-2 overflow-y-auto"}>
+      <div className={isPanel ? "tribet-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto" : "tribet-scrollbar max-h-64 space-y-2 overflow-y-auto"}>
         {selections.map((sel) => (
           <BetslipSelectionRow key={sel.id} selection={sel} onRemove={() => removeSelection(sel.id)} disabled={busy} />
         ))}

@@ -46,7 +46,7 @@ export function ProviderDiagnostics() {
       )}
 
       <DiagCard title="Raw normalized events">
-        <div className="max-h-96 overflow-y-auto rounded-lg bg-black/30 p-2">
+        <div className="tribet-scrollbar max-h-96 overflow-y-auto rounded-lg bg-black/30 p-2">
           <pre className="whitespace-pre-wrap break-all font-mono text-[10px] text-muted-foreground">
             {JSON.stringify(events.map((e) => ({ id: e.id, source: e.source, sport: e.sport.id, country: e.country.name, league: e.league.name, status: e.status, markets: e.markets.length })), null, 2)}
           </pre>

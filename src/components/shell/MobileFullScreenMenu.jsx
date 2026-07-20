@@ -69,7 +69,7 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
               --mobile-nav-height every other mobile scroll surface uses. */}
           <nav
             aria-label={`${title} sections`}
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+16px)] pt-3"
+            className="tribet-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+16px)] pt-3"
           >
             <ul className="space-y-0.5">
               {primaryItems.map((item) => (
