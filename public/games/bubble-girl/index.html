@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🫧 Bubble Girl · Gambling Casino</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a0a12 0%, #2d1522 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
+      padding: 16px;
+    }
+    .game-wrapper {
+      background: rgba(40, 18, 30, 0.95);
+      backdrop-filter: blur(4px);
+      border-radius: 48px 48px 32px 32px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 0 2px #ff6b9d inset, 0 0 30px rgba(255, 80, 140, 0.2);
+      max-width: 700px;
+      width: 100%;
+      border: 1px solid rgba(255, 100, 150, 0.3);
+    }
+    h1 {
+      font-weight: 700;
+      font-size: 2.4rem;
+      letter-spacing: 2px;
+      color: #ffb3d1;
+      margin: 0 0 4px 0;
+      text-shadow: 0 0 20px rgba(255, 80, 160, 0.5), 0 4px 8px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    h1 small {
+      font-size: 1rem;
+      background: linear-gradient(135deg, #ff6b9d, #c0396b);
+      color: #fff0f5;
+      padding: 4px 18px;
+      border-radius: 40px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 0 20px rgba(255, 80, 140, 0.3);
+    }
+    .canvas-container {
+      background: rgba(20, 8, 15, 0.8);
+      border-radius: 40px;
+      padding: 16px;
+      margin: 12px 0 16px;
+      box-shadow: 0 0 0 2px #ff6b9d, 0 10px 30px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      max-width: 450px;
+      background: radial-gradient(ellipse at center, #2a1520 0%, #140a10 100%);
+      border-radius: 28px;
+      cursor: pointer;
+      touch-action: none;
+      transition: 0.05s ease;
+      box-shadow: inset 0 0 40px rgba(255, 50, 100, 0.1);
+    }
+    canvas:active {
+      transform: scale(0.98);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin: 14px 0 12px;
+    }
+    .stat-box {
+      background: rgba(30, 12, 22, 0.9);
+      border-radius: 16px;
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid rgba(255, 100, 150, 0.25);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .stat-label {
+      color: #b38092;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+    .stat-value {
+      color: #ffd4e2;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-top: 2px;
+      text-shadow: 0 0 15px rgba(255, 100, 150, 0.3);
+    }
+    .stat-value.multiplier {
+      color: #ffd700;
+      font-size: 1.8rem;
+    }
+    .stat-value.balance {
+      color: #7dffb3;
+    }
+    .stat-value.bet {
+      color: #ff9fbf;
+    }
+    .control-bar {
+      display: flex;
+      gap: 10px;
+      margin: 14px 0 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ctrl-btn {
+      background: linear-gradient(135deg, #3d1a2e, #2a0f1e);
+      border: 2px solid #ff6b9d;
+      color: #ffd4e2;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 0 #1a0a12, 0 6px 20px rgba(255, 60, 120, 0.15);
+      flex: 1;
+      min-width: 100px;
+      text-transform: uppercase;
+    }
+    .ctrl-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #5c2a44, #3d1a2e);
+      border-color: #ff8ab3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #1a0a12, 0 10px 30px rgba(255, 60, 120, 0.25);
+    }
+    .ctrl-btn:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #1a0a12;
+    }
+    .ctrl-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #1a0a12;
+    }
+    .ctrl-btn.primary {
+      background: linear-gradient(135deg, #ff6b9d, #e0447a);
+      border-color: #ff8ab3;
+      color: white;
+      box-shadow: 0 4px 0 #a0305a, 0 6px 25px rgba(255, 60, 120, 0.3);
+    }
+    .ctrl-btn.primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff7fad, #e8558a);
+    }
+    .ctrl-btn.danger {
+      border-color: #ff4444;
+      color: #ff6b6b;
+    }
+    .ctrl-btn.danger:hover:not(:disabled) {
+      border-color: #ff6666;
+      background: linear-gradient(135deg, #4a1a1a, #2a0a0a);
+    }
+    .bet-control {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .bet-control label {
+      color: #b38092;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+    }
+    .bet-control input {
+      background: rgba(20, 8, 15, 0.9);
+      border: 2px solid #ff6b9d;
+      color: #ffd4e2;
+      padding: 8px 16px;
+      border-radius: 30px;
+      width: 120px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+    }
+    .bet-control input:focus {
+      border-color: #ff8ab3;
+      box-shadow: 0 0 20px rgba(255, 80, 140, 0.2);
+    }
+    .bet-control input::-webkit-inner-spin-button {
+      opacity: 0.5;
+    }
+    .prompt-bar {
+      background: rgba(255, 60, 120, 0.08);
+      border: 2px solid rgba(255, 60, 120, 0.3);
+      border-radius: 60px;
+      padding: 10px 20px;
+      margin: 10px 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .cursor-prompt {
+      background: linear-gradient(135deg, #ff6b9d, #c0396b);
+      color: white;
+      padding: 6px 22px 6px 18px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 0 30px rgba(255, 60, 120, 0.3);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .cursor-prompt i {
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+    .status-msg {
+      color: #ffb3d1;
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+    .history-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .history-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .history-dot.win {
+      background: rgba(0, 255, 100, 0.2);
+      border-color: rgba(0, 255, 100, 0.4);
+      color: #7dffb3;
+    }
+    .history-dot.bust {
+      background: rgba(255, 0, 50, 0.2);
+      border-color: rgba(255, 0, 50, 0.4);
+      color: #ff6b6b;
+    }
+    @media (max-width: 500px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stat-box:last-child { grid-column: span 2; }
+      .ctrl-btn { font-size: 0.85rem; padding: 10px 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="game-wrapper">
+  <h1>
+    🫧 Bubble Girl
+    <small>CASINO</small>
+  </h1>
+
+  <div class="canvas-container">
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-label">💰 Balance</div>
+      <div class="stat-value balance" id="balanceDisplay">1000</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">🎯 Bet</div>
+      <div class="stat-value bet" id="betDisplay">10</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">🚀 Multiplier</div>
+      <div class="stat-value multiplier" id="multiplierDisplay">1.00x</div>
+    </div>
+  </div>
+
+  <div class="bet-control">
+    <label>Bet Amount:</label>
+    <input type="number" id="betInput" value="10" min="1" step="1">
+    <button class="ctrl-btn" id="halfBetBtn" style="flex:0; padding:8px 16px; min-width:50px;">½</button>
+    <button class="ctrl-btn" id="doubleBetBtn" style="flex:0; padding:8px 16px; min-width:50px;">2×</button>
+  </div>
+
+  <div class="control-bar">
+    <button class="ctrl-btn primary" id="cashOutBtn" disabled>💎 Cash Out</button>
+    <button class="ctrl-btn" id="newRoundBtn">🔄 New Round</button>
+  </div>
+
+  <div class="prompt-bar">
+    <span class="cursor-prompt">
+      <i>👆</i> HOLD TO RISK
+    </span>
+    <span class="status-msg" id="statusMessage">Place your bet & hold!</span>
+  </div>
+
+  <div class="history-bar" id="historyBar">
+    <span style="color:#b38092; font-size:0.7rem; letter-spacing:1px;">HISTORY</span>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+    const betDisplay = document.getElementById('betDisplay');
+    const multiplierDisplay = document.getElementById('multiplierDisplay');
+    const betInput = document.getElementById('betInput');
+    const cashOutBtn = document.getElementById('cashOutBtn');
+    const newRoundBtn = document.getElementById('newRoundBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const historyBar = document.getElementById('historyBar');
+    const halfBetBtn = document.getElementById('halfBetBtn');
+    const doubleBetBtn = document.getElementById('doubleBetBtn');
+
+    // ----- GAME STATE -----
+    let balance = 1000;
+    let currentBet = 10;
+    let multiplier = 1.00;
+    let isHolding = false;
+    let isRoundActive = false;
+    let isBusted = false;
+    let size = 0; // 0 to 1
+    const GROWTH_RATE = 0.008;
+    const BURST_THRESHOLD = 1.0;
+    let history = []; // stores { result: 'win'|'bust', multiplier: number }
+    let animationId = null;
+    let winAmount = 0;
+
+    // ----- DOM UPDATES -----
+    function updateUI() {
+      balanceDisplay.textContent = Math.floor(balance);
+      betDisplay.textContent = currentBet;
+      multiplierDisplay.textContent = multiplier.toFixed(2) + 'x';
+
+      if (isBusted) {
+        statusMessage.textContent = '💥 BUSTED! You lost your bet!';
+        statusMessage.style.color = '#ff6b6b';
+      } else if (isRoundActive && isHolding) {
+        statusMessage.textContent = `🎈 Holding... ${multiplier.toFixed(2)}x`;
+        statusMessage.style.color = '#ffd700';
+      } else if (isRoundActive && !isHolding) {
+        statusMessage.textContent = '👆 Hold to inflate!';
+        statusMessage.style.color = '#ffb3d1';
+      } else {
+        statusMessage.textContent = '🔄 Place your bet & hold!';
+        statusMessage.style.color = '#ffb3d1';
+      }
+
+      cashOutBtn.disabled = !isRoundActive || isBusted || !isHolding;
+      newRoundBtn.disabled = isRoundActive && !isBusted;
+      betInput.disabled = isRoundActive;
+      halfBetBtn.disabled = isRoundActive;
+      doubleBetBtn.disabled = isRoundActive;
+    }
+
+    function updateHistory() {
+      historyBar.innerHTML = '<span style="color:#b38092; font-size:0.7rem; letter-spacing:1px;">HISTORY</span>';
+      history.slice(-10).forEach(item => {
+        const dot = document.createElement('div');
+        dot.className = `history-dot ${item.result}`;
+        dot.textContent = item.result === 'win' ? '✓' : '✗';
+        dot.title = `${item.result === 'win' ? 'Cashed out' : 'Busted'} at ${item.multiplier.toFixed(2)}x`;
+        historyBar.appendChild(dot);
+      });
+    }
+
+    // ----- GAME LOGIC -----
+    function startRound() {
+      const betValue = parseInt(betInput.value);
+      if (isNaN(betValue) || betValue <= 0) {
+        alert('Please enter a valid bet amount!');
+        return;
+      }
+      if (betValue > balance) {
+        alert('Insufficient balance!');
+        return;
+      }
+
+      // Deduct bet
+      balance -= betValue;
+      currentBet = betValue;
+      betInput.value = currentBet;
+
+      isRoundActive = true;
+      isBusted = false;
+      isHolding = false;
+      size = 0;
+      multiplier = 1.00;
+      winAmount = 0;
+
+      updateUI();
+      drawGame();
+    }
+
+    function cashOut() {
+      if (!isRoundActive || isBusted || !isHolding) return;
+
+      const won = Math.floor(currentBet * multiplier);
+      balance += won;
+
+      history.push({ result: 'win', multiplier: multiplier });
+      updateHistory();
+
+      isRoundActive = false;
+      isHolding = false;
+      isBusted = false;
+
+      statusMessage.textContent = `🎉 Won ${won}! (${multiplier.toFixed(2)}x)`;
+      statusMessage.style.color = '#7dffb3';
+
+      updateUI();
+      drawGame();
+    }
+
+    function bust() {
+      if (isBusted || !isRoundActive) return;
+
+      isBusted = true;
+      isHolding = false;
+
+      history.push({ result: 'bust', multiplier: multiplier });
+      updateHistory();
+
+      // Lose bet (already deducted)
+      statusMessage.textContent = `💥 BUSTED at ${multiplier.toFixed(2)}x!`;
+      statusMessage.style.color = '#ff6b6b';
+
+      updateUI();
+      drawGame();
+    }
+
+    function resetRound() {
+      if (isRoundActive && !isBusted) {
+        if (!confirm('Are you sure? You\'ll lose your current bet!')) return;
+      }
+
+      isRoundActive = false;
+      isHolding = false;
+      isBusted = false;
+      size = 0;
+      multiplier = 1.00;
+
+      updateUI();
+      drawGame();
+    }
+
+    // ----- CANVAS DRAWING -----
+    function drawGame() {
+      ctx.clearRect(0, 0, 500, 500);
+
+      // Background glow
+      const grad = ctx.createRadialGradient(250, 250, 50, 250, 250, 300);
+      grad.addColorStop(0, isBusted ? '#3a1520' : '#1a0a12');
+      grad.addColorStop(1, '#0a0508');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 500, 500);
+
+      // Grid lines for casino feel
+      ctx.strokeStyle = 'rgba(255, 60, 120, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 500; i += 25) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 500);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(500, i);
+        ctx.stroke();
+      }
+
+      // Draw Bubble Girl
+      ctx.save();
+
+      // Girl's face
+      ctx.shadowColor = 'rgba(255, 60, 120, 0.15)';
+      ctx.shadowBlur = 30;
+
+      // Body / shoulders
+      ctx.fillStyle = '#2a1520';
+      ctx.beginPath();
+      ctx.ellipse(250, 380, 80, 60, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Face
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = '#f5d0c0';
+      ctx.beginPath();
+      ctx.ellipse(250, 270, 60, 70, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes (gambling excitement)
+      ctx.shadowBlur = 5;
+      ctx.fillStyle = '#1a0a12';
+      ctx.beginPath();
+      ctx.arc(225, 255, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(275, 255, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eye sparkle
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(222, 250, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(272, 250, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Blush
+      ctx.fillStyle = 'rgba(255, 80, 120, 0.2)';
+      ctx.beginPath();
+      ctx.ellipse(205, 275, 15, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(295, 275, 15, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hair
+      ctx.fillStyle = '#3d1a2e';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.ellipse(250, 190, 65, 55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#5c2a44';
+      ctx.beginPath();
+      ctx.ellipse(235, 175, 30, 25, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(265, 175, 30, 25, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Smile (changes with multiplier)
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#a05060';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const smileSize = Math.min(1, multiplier / 3);
+      const arcStart = 0.1 * Math.PI + (1 - smileSize) * 0.3;
+      const arcEnd = 0.9 * Math.PI - (1 - smileSize) * 0.3;
+      ctx.arc(250, 285, 25 + smileSize * 15, arcStart, arcEnd);
+      ctx.stroke();
+
+      // Bubblegum bubble
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = 'rgba(255, 60, 120, 0.3)';
+
+      const baseRadius = 15;
+      const maxRadius = 130;
+      const radius = baseRadius + size * (maxRadius - baseRadius);
+      const bubbleX = 250;
+      const bubbleY = 290;
+
+      if (isBusted) {
+        // Explosion effect
+        ctx.shadowBlur = 60;
+        ctx.shadowColor = 'rgba(255, 0, 50, 0.6)';
+        ctx.fillStyle = '#ff3366';
+        for (let i = 0; i < 30; i++) {
+          const angle = i * 1.2 + 0.5;
+          const dist = 40 + Math.sin(i * 2.3) * 30 + size * 80;
+          ctx.beginPath();
+          ctx.arc(bubbleX + Math.cos(angle) * dist, bubbleY + Math.sin(angle) * dist,
+                  8 + Math.sin(i) * 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#ff6699';
+        for (let i = 0; i < 20; i++) {
+          const angle = i * 1.8 + 0.2;
+          const dist = 25 + Math.cos(i * 1.7) * 20 + size * 60;
+          ctx.beginPath();
+          ctx.arc(bubbleX + Math.cos(angle) * dist, bubbleY + Math.sin(angle) * dist,
+                  5 + Math.cos(i) * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.font = 'bold 60px sans-serif';
+        ctx.fillStyle = '#ffdae7';
+        ctx.shadowColor = '#ff0044';
+        ctx.shadowBlur = 50;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💥', 250, 220);
+
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillStyle = '#ff6b6b';
+        ctx.shadowBlur = 20;
+        ctx.fillText('BUSTED!', 250, 450);
+      } else if (isRoundActive || size > 0) {
+        // Growing bubble
+        const gradient = ctx.createRadialGradient(
+          bubbleX - 20, bubbleY - 20, 10,
+          bubbleX, bubbleY, radius + 10
+        );
+        const intensity = Math.min(1, size * 1.5);
+        gradient.addColorStop(0, `rgba(255, 200, 230, ${0.6 + intensity * 0.4})`);
+        gradient.addColorStop(0.4, `rgba(242, 123, 174, ${0.7 + intensity * 0.3})`);
+        gradient.addColorStop(0.8, `rgba(220, 78, 130, ${0.8 + intensity * 0.2})`);
+        gradient.addColorStop(1, 'rgba(166, 43, 90, 0.9)');
+
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = `rgba(255, 60, 120, ${0.2 + size * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(bubbleX, bubbleY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Highlight
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.ellipse(bubbleX - 20, bubbleY - 25, 20, 14, -0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fill();
+
+        // Warning cracks near burst
+        if (size > 0.7) {
+          ctx.shadowBlur = 10;
+          ctx.strokeStyle = `rgba(255, 50, 50, ${(size - 0.7) * 3})`;
+          ctx.lineWidth = 2.5;
+          for (let i = 0; i < 6; i++) {
+            const angle = i * 1.2 + 0.2;
+            const xOff = Math.cos(angle) * radius * 0.7;
+            const yOff = Math.sin(angle) * radius * 0.7;
+            ctx.beginPath();
+            ctx.moveTo(bubbleX + xOff - 8, bubbleY + yOff - 6);
+            ctx.lineTo(bubbleX + xOff + 14, bubbleY + yOff + 8);
+            ctx.stroke();
+          }
+        }
+
+        // Multiplier text on bubble
+        if (size > 0.1) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.font = 'bold 28px sans-serif';
+          ctx.fillStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${multiplier.toFixed(2)}x`, bubbleX, bubbleY);
+        }
+      }
+
+      ctx.restore();
+
+      // Status overlay
+      if (!isRoundActive && !isBusted && size === 0) {
+        ctx.fillStyle = 'rgba(255, 60, 120, 0.08)';
+        ctx.fillRect(0, 0, 500, 500);
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#ff6b9d';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(255, 60, 120, 0.3)';
+        ctx.shadowBlur = 20;
+        ctx.fillText('💰 Click "New Round" to start', 250, 100);
+      }
+    }
+
+    // ----- GAME LOOP -----
+    function gameLoop() {
+      if (isRoundActive && !isBusted && isHolding) {
+        // Grow
+        size = Math.min(BURST_THRESHOLD, size + GROWTH_RATE);
+        multiplier = 1 + size * 3; // 1x to 4x
+
+        if (size >= BURST_THRESHOLD) {
+          bust();
+        }
+
+        updateUI();
+        drawGame();
+      } else if (isRoundActive && !isBusted && !isHolding) {
+        // Waiting for hold
+        drawGame();
+      } else {
+        drawGame();
+      }
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // ----- EVENT HANDLERS -----
+    function handlePointerDown(e) {
+      e.preventDefault();
+      if (!isRoundActive || isBusted) return;
+      isHolding = true;
+      updateUI();
+    }
+
+    function handlePointerUp(e) {
+      e.preventDefault();
+      if (isHolding && isRoundActive && !isBusted) {
+        // Cash out on release
+        cashOut();
+      }
+      isHolding = false;
+      updateUI();
+    }
+
+    function handlePointerLeave(e) {
+      if (isHolding && isRoundActive && !isBusted) {
+        cashOut();
+      }
+      isHolding = false;
+      updateUI();
+    }
+
+    // ----- BET CONTROLS -----
+    halfBetBtn.addEventListener('click', () => {
+      if (isRoundActive) return;
+      const val = Math.max(1, Math.floor(currentBet / 2));
+      betInput.value = val;
+      currentBet = val;
+      updateUI();
+    });
+
+    doubleBetBtn.addEventListener('click', () => {
+      if (isRoundActive) return;
+      const val = Math.min(balance, currentBet * 2);
+      betInput.value = Math.floor(val);
+      currentBet = Math.floor(val);
+      updateUI();
+    });
+
+    betInput.addEventListener('change', () => {
+      if (isRoundActive) return;
+      let val = parseInt(betInput.value);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > balance) val = balance;
+      betInput.value = val;
+      currentBet = val;
+      updateUI();
+    });
+
+    // ----- BUTTON EVENTS -----
+    newRoundBtn.addEventListener('click', startRound);
+    cashOutBtn.addEventListener('click', cashOut);
+
+    // ----- CANVAS EVENTS -----
+    canvas.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('mouseup', handlePointerUp);
+    canvas.addEventListener('mouseleave', handlePointerLeave);
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handlePointerDown(e);
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handlePointerUp(e);
+    }, { passive: false });
+
+    canvas.addEventListener('touchcancel', (e) => {
+      e.preventDefault();
+      handlePointerUp(e);
+    }, { passive: false });
+
+    // ----- INIT -----
+    function init() {
+      updateHistory();
+      updateUI();
+      drawGame();
+      gameLoop();
+    }
+
+    init();
+
+    window.addEventListener('beforeunload', () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+
+  })();
+</script>
+</body>
+</html>

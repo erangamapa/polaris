@@ -18,6 +18,8 @@ export const PROVIDER_GAMES = [
   { key: "raiders-escape", title: "Raider's Escape", src: "/games/raiders-escape/index.html", badge: "TriBet Studio", image: "/img/games/raiders-escape.svg", tags: ["new", "popular"] },
   { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", badge: "TriBet Studio", image: "/img/games/keymines-v2.svg", tags: ["new"] },
   { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "TriBet Studio", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
+  // Self-contained crash-style bubble inflate (own mock economy).
+  { key: "bubble-girl", title: "Bubble Girl", src: "/games/bubble-girl/index.html", badge: "TriBet Studio", image: "/img/games/bubble-girl.svg", tags: ["new"] },
 ];
 
 // Provider games run inside a sandboxed iframe (loaded only when opened). Games
@@ -36,8 +38,8 @@ export function ProviderGame({ game, onClose }) {
   }, [loaded]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950/95 backdrop-blur">
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950/95 backdrop-blur pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-white">{game.title}</span>
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{game.badge ?? "Provider game"}</span>
@@ -50,7 +52,7 @@ export function ProviderGame({ game, onClose }) {
         </div>
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative min-h-0 flex-1">
         {!loaded && (
           <div className="absolute inset-0 grid place-items-center text-white/70">
             <div className="flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" /> Loading {game.title}…</div>
