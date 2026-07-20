@@ -5,6 +5,7 @@ import { useAzuroBet } from "@/web3/useAzuro";
 import { useWallet } from "@/web3/useWallet";
 import { toast } from "@/lib/toast";
 import { BetslipSelectionRow } from "./BetslipSelectionRow";
+import { BetslipSuccessState } from "./BetslipSuccessState";
 
 const STEP_LABEL = {
   switching: "Switching to Polygon Amoy…",
@@ -25,13 +26,16 @@ const STEP_LABEL = {
 // `validation.submittableSelection` (the one selection actually eligible
 // right now) is what gets submitted, never an invented combined bet.
 //
-// presentation: "modal" (mobile Dialog popup, default) | "panel" (desktop
-// persistent right-side panel — see DesktopBetslipPanel.jsx). Same
-// component, same hooks, same submit() — only the outer wrapper changes, so
-// the real transaction flow is never forked between the two surfaces. In
-// panel mode the header (title/count/collapse/clear) is owned by
-// DesktopBetslipPanel, so this renders only the list + stake/summary body.
-export function AzuroBetSlip({ selections, stake, setStake, removeSelection, combinedOdds, potentialReturn, validation, onClose, onDone, onBetPlaced, presentation = "modal" }) {
+// presentation: "modal" (mobile Dialog popup, legacy/unused below 1024px
+// once MobileBetslipSheet is active) | "panel" (desktop persistent
+// right-side panel — see DesktopBetslipPanel.jsx) | "sheet" (mobile
+// full-screen surface — see MobileBetslipSheet.jsx). Same component, same
+// hooks, same submit() in all three — only the outer wrapper and the
+// success-state richness change, so the real transaction flow is never
+// forked. In panel/sheet mode the header (title/count/collapse-or-back/
+// clear) is owned by the parent surface, so this renders only the list +
+// stake/summary body (+ the richer BetslipSuccessState in sheet mode).
+export function AzuroBetSlip({ selections, stake, setStake, removeSelection, combinedOdds, potentialReturn, validation, onClose, onDone, onContinueBetting, onViewMyBets, onBetPlaced, presentation = "modal" }) {
   const { ready, placeBet, mintUsdt } = useAzuroBet();
   const { sportsBalance } = useWallet();
   const [phase, setPhase] = useState("idle"); // idle | placing | done
@@ -45,6 +49,8 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
   const stakeNum = Number(stake) || 0;
   const insufficient = stakeNum > sportsBalance;
   const isPanel = presentation === "panel";
+  const isSheet = presentation === "sheet";
+  const isEmbedded = isPanel || isSheet; // no Dialog wrapper — the parent surface owns chrome
 
   const getUsdt = async () => {
     if (!ready) { toast.error("Connect your wallet first"); return; }
@@ -86,9 +92,31 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
     }
   };
 
+  // The sheet's success state fully replaces the list + stake body (a
+  // compact single-selection summary, not the whole list) — handled before
+  // `body` is built at all, since it renders BetslipSuccessState's own
+  // complete flex/scroll/footer structure rather than nesting inside it.
+  if (isSheet && phase === "done" && target) {
+    return (
+      <BetslipSuccessState
+        subtitle="Confirmed on Polygon Amoy · Azuro Protocol"
+        eventLabel={target.eventLabel}
+        marketLabel={target.marketLabel}
+        outcomeLabel={target.outcomeLabel}
+        odds={target.odds}
+        stake={stakeNum}
+        potentialReturn={+(stakeNum * target.odds).toFixed(2)}
+        currencyLabel="USDT"
+        reference={order?.id}
+        onContinueBetting={() => onContinueBetting?.(target.id)}
+        onViewMyBets={() => onViewMyBets?.(target.id)}
+      />
+    );
+  }
+
   const body = (
     <>
-      <div className={isPanel ? "tribet-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto" : "tribet-scrollbar max-h-64 space-y-2 overflow-y-auto"}>
+      <div className={isEmbedded ? "tribet-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto" : "tribet-scrollbar max-h-64 space-y-2 overflow-y-auto"}>
         {selections.map((sel) => (
           <BetslipSelectionRow key={sel.id} selection={sel} onRemove={() => removeSelection(sel.id)} disabled={busy} />
         ))}
@@ -102,7 +130,7 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
           <button onClick={onDone} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/70">Done</button>
         </div>
       ) : (
-        <div className={isPanel ? "shrink-0 space-y-3 border-t pt-3" : "space-y-3"}>
+        <div className={isEmbedded ? "shrink-0 space-y-3 border-t pt-3" : "space-y-3"}>
           <label className="block">
             <span className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
               <span>Stake (USDT)</span>
@@ -142,7 +170,7 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
           )}
 
           {busy ? (
-            <div className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg border text-sm text-[var(--global-cta)]" data-test-id="betslip-loader">
+            <div role="status" aria-live="polite" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg border text-sm text-[var(--global-cta)]" data-test-id="betslip-loader">
               <Loader2 className="size-4 shrink-0 animate-spin" /> <span className="truncate">{STEP_LABEL[step] ?? "Placing bet…"}</span>
             </div>
           ) : (
@@ -172,7 +200,7 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
     </>
   );
 
-  if (isPanel) {
+  if (isEmbedded) {
     return <div className="flex h-full min-h-0 flex-col gap-3">{body}</div>;
   }
 

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { outcomeResult } from "@/lib/sportsData";
 import { toast } from "@/lib/toast";
 import { BetslipSelectionRow } from "./BetslipSelectionRow";
+import { BetslipSuccessState } from "./BetslipSuccessState";
 
 // Bet slip for fully-mocked fixtures only — never touches the wallet or any
 // real transaction flow (see PLACEHOLDER ODDS / DEMO MODE). Visually mirrors
@@ -19,16 +20,21 @@ import { BetslipSelectionRow } from "./BetslipSelectionRow";
 // faking a combined-bet placement the real side could never support, so
 // switching between a demo and a live fixture feels like the same product.
 //
-// presentation: "modal" (mobile Dialog popup, default) | "panel" (desktop
-// persistent right-side panel — see DesktopBetslipPanel.jsx). Same
-// component/state, only the outer wrapper changes; in panel mode the header
-// (title/count/collapse/clear) is owned by DesktopBetslipPanel.
-export function DemoBetSlip({ selections, stake, setStake, removeSelection, combinedOdds, potentialReturn, validation, onClose, onDone, onBetPlaced, presentation = "modal" }) {
+// presentation: "modal" (mobile Dialog popup, legacy/unused below 1024px
+// once MobileBetslipSheet is active) | "panel" (desktop persistent
+// right-side panel — see DesktopBetslipPanel.jsx) | "sheet" (mobile
+// full-screen surface — see MobileBetslipSheet.jsx). Same component/state
+// in all three; only the outer wrapper and the success-state richness
+// change. In panel/sheet mode the header (title/count/collapse-or-back/
+// clear) is owned by the parent surface.
+export function DemoBetSlip({ selections, stake, setStake, removeSelection, combinedOdds, potentialReturn, validation, onClose, onDone, onContinueBetting, onViewMyBets, onBetPlaced, presentation = "modal" }) {
   const [phase, setPhase] = useState("idle"); // idle | placed
 
   if (selections.length === 0) return null;
   const target = validation.submittableSelection; // the one selection actually eligible to submit, if any
   const isPanel = presentation === "panel";
+  const isSheet = presentation === "sheet";
+  const isEmbedded = isPanel || isSheet;
 
   const submit = () => {
     if (!validation.canSubmit || !target) return;
@@ -51,9 +57,29 @@ export function DemoBetSlip({ selections, stake, setStake, removeSelection, comb
     });
   };
 
+  // Same early-return pattern as AzuroBetSlip: the sheet's success state
+  // fully replaces the list + stake body with a compact single-selection
+  // summary via the shared BetslipSuccessState component.
+  if (isSheet && phase === "placed" && target) {
+    return (
+      <BetslipSuccessState
+        subtitle="Demo bet — not real funds"
+        eventLabel={target.eventLabel}
+        marketLabel={target.marketLabel}
+        outcomeLabel={target.outcomeLabel}
+        odds={target.odds}
+        stake={Number(stake) || 0}
+        potentialReturn={potentialReturn ?? 0}
+        currencyLabel="USDT"
+        onContinueBetting={() => onContinueBetting?.(target.id)}
+        onViewMyBets={() => onViewMyBets?.(target.id)}
+      />
+    );
+  }
+
   const body = (
     <>
-      <div className={isPanel ? "tribet-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto" : "tribet-scrollbar max-h-64 space-y-2 overflow-y-auto"}>
+      <div className={isEmbedded ? "tribet-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto" : "tribet-scrollbar max-h-64 space-y-2 overflow-y-auto"}>
         {selections.map((sel) => (
           <BetslipSelectionRow key={sel.id} selection={sel} onRemove={() => removeSelection(sel.id)} />
         ))}
@@ -67,7 +93,7 @@ export function DemoBetSlip({ selections, stake, setStake, removeSelection, comb
           <button onClick={onDone} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/70">Done</button>
         </div>
       ) : (
-        <div className={isPanel ? "shrink-0 space-y-3 border-t pt-3" : "space-y-3"}>
+        <div className={isEmbedded ? "shrink-0 space-y-3 border-t pt-3" : "space-y-3"}>
           <label className="block">
             <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">Stake (demo USDT)</span>
             <div className="flex items-center gap-1 rounded-lg border bg-background pe-1.5 ps-3">
@@ -115,7 +141,7 @@ export function DemoBetSlip({ selections, stake, setStake, removeSelection, comb
     </>
   );
 
-  if (isPanel) {
+  if (isEmbedded) {
     return <div className="flex h-full min-h-0 flex-col gap-3">{body}</div>;
   }
 

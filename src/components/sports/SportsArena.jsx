@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Ticket } from "lucide-react";
 import { SPORTS_DEMO_MODE } from "@/lib/sportsDemo";
 import { useIsDesktopBetslipLayout } from "@/lib/sportsDesktopBetslipUi";
-import { AzuroBetSlip } from "./AzuroBetSlip";
-import { DemoBetSlip } from "./DemoBetSlip";
+import { shouldShowReopenPill } from "@/lib/sportsMobileBetslipUi";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { MobileBetslipSheet } from "./MobileBetslipSheet";
 import { SportsHome } from "./SportsHome";
 import { LivePage } from "./LivePage";
 import { SportLanding } from "./SportLanding";
@@ -39,6 +41,12 @@ export function SportsArena({
   // can never render at the same time.
   const [slipOpen, setSlipOpen] = useState(false);
   const isDesktopLayout = useIsDesktopBetslipLayout();
+  // Captured at the moment the sheet opens (the odds button the user just
+  // tapped) so MobileBetslipSheet can restore focus there on close — Radix
+  // has nothing to auto-return to here since this isn't opened via a
+  // <DialogTrigger> (see ACCESSIBILITY: "closing restores focus to the
+  // betslip trigger or selected odds control").
+  const triggerRef = useRef(null);
 
   const openEvent = (event) => {
     track("sports_event_selected", { sport: event.sport.id, eventId: event.id, source: event.source, route: `/sports/${event.sport.id}/event/${event.id}` });
@@ -60,13 +68,29 @@ export function SportsArena({
   // Casino-chain switch for a Sports bet).
   const pick = (event, market, outcome) => {
     track("sports_market_selected", { sport: event.sport.id, eventId: event.id, source: event.source, marketGroup: market.group });
+    if (document.activeElement instanceof HTMLElement) triggerRef.current = document.activeElement;
     betslip.toggleSelection(event, market, outcome);
     setSlipOpen(true);
   };
   const closeSlip = () => setSlipOpen(false);
-  // Only the "Done" path (after a real/demo bet is actually accepted)
-  // clears the betslip — closing via X/backdrop must not (see above).
-  const finishSlip = () => { setSlipOpen(false); betslip.clearSelections(); };
+
+  // "Continue betting" / "View My Bets" from the sheet's success screen —
+  // both remove only the just-submitted selection (never a blanket
+  // clearSelections()), so any other selection that happened to be present
+  // and blocking submission stays exactly where it was (see PLACE BET FLOW:
+  // "preserves unplaced or invalid selections where appropriate"). Today the
+  // provider's one-selection-at-a-time limit means a submission can only
+  // ever succeed when it's the sole selection, so this is equivalent in
+  // practice — but it's the architecturally correct call, not a shortcut.
+  const continueBetting = (selectionId) => {
+    betslip.removeSelection(selectionId);
+    setSlipOpen(false);
+  };
+  const viewMyBets = (selectionId) => {
+    betslip.removeSelection(selectionId);
+    setSlipOpen(false);
+    onNavigate({ view: "my-bets", sport: null, country: null, league: null, eventId: null });
+  };
 
   const isSelected = betslip.isSelected;
 
@@ -137,42 +161,42 @@ export function SportsArena({
     }
   })();
 
-  // Mixed source is prevented at add-time (see useSportsBetslip), so
-  // `selections` is guaranteed single-source whenever non-empty — exactly
-  // one of these two ever renders, never both, never a merged list.
-  const source = betslip.selections[0]?.source;
+  // Reopen affordance for when the user closed the sheet with selections
+  // still pending (see OPENING THE BETSLIP: "clearly expose the populated
+  // betslip access point, show the current selection count") — a
+  // contextual floating pill, not a fifth bottom-nav item: it only exists
+  // while there's something to review, and disappears the moment the
+  // betslip is opened or emptied.
+  const showReopenPill = shouldShowReopenPill({ isDesktopLayout, slipOpen, selectionCount: betslip.selectionCount });
 
   return (
     <>
       {body}
-      {slipOpen && !isDesktopLayout && source === "provider" && (
-        <AzuroBetSlip
-          selections={betslip.selections}
-          stake={betslip.stake}
-          setStake={betslip.setStake}
-          removeSelection={betslip.removeSelection}
-          combinedOdds={betslip.combinedOdds}
-          potentialReturn={betslip.potentialReturn}
-          validation={betslip.validation}
-          onClose={closeSlip}
-          onDone={finishSlip}
-          onBetPlaced={onBetPlaced}
-        />
+
+      {showReopenPill && (
+        <button
+          onClick={() => setSlipOpen(true)}
+          data-test-id="betslip-reopen-pill"
+          className="fixed inset-x-4 z-[85] flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--global-cta)] px-4 text-sm font-semibold text-[var(--global-cta-text)] shadow-lg shadow-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden"
+          style={{ bottom: "calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px)" }}
+        >
+          <Ticket className="size-4" aria-hidden="true" />
+          View betslip
+          <StatusBadge variant="neutral" size="small" count={betslip.selectionCount} ariaLabel={`${betslip.selectionCount} selection${betslip.selectionCount === 1 ? "" : "s"}`} />
+        </button>
       )}
-      {slipOpen && !isDesktopLayout && source === "mock" && (
-        <DemoBetSlip
-          selections={betslip.selections}
-          stake={betslip.stake}
-          setStake={betslip.setStake}
-          removeSelection={betslip.removeSelection}
-          combinedOdds={betslip.combinedOdds}
-          potentialReturn={betslip.potentialReturn}
-          validation={betslip.validation}
-          onClose={closeSlip}
-          onDone={finishSlip}
-          onBetPlaced={onDemoBetPlaced}
-        />
-      )}
+
+      <MobileBetslipSheet
+        open={slipOpen && !isDesktopLayout}
+        betslip={betslip}
+        onClose={closeSlip}
+        onBrowseSports={closeSlip}
+        onBetPlaced={onBetPlaced}
+        onDemoBetPlaced={onDemoBetPlaced}
+        onContinueBetting={continueBetting}
+        onViewMyBets={viewMyBets}
+        restoreFocusRef={triggerRef}
+      />
     </>
   );
 }
