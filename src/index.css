@@ -24,6 +24,10 @@ html {
      content, footers and the full-screen menu never guess this number
      independently. Keep in sync with MobileBottomNav's own row height. */
   --mobile-nav-height: 64px;
+  /* Desktop Sports betslip panel (see DesktopBetslipPanel.jsx) — one source
+     of truth for its expanded width, kept within the 320-380px range. */
+  --sports-betslip-width: 340px;
+  --sports-betslip-collapsed-width: 60px;
 }
 
 /* Shared bottom clearance for any mobile scroll container that sits above

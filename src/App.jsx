@@ -23,6 +23,8 @@ import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { SportsArena } from "./components/sports/SportsArena";
+import { DesktopBetslipPanel } from "./components/sports/DesktopBetslipPanel";
+import { useSportsDesktopBetslipUi, useIsDesktopBetslipLayout } from "./lib/sportsDesktopBetslipUi";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
 import { CATEGORIES } from "./lib/mockData";
 import { nowLabel } from "./lib/walletData";
@@ -220,6 +222,12 @@ export default function App() {
   // survive leaving Sports for Casino/Predictions and coming back can't
   // live inside it.
   const sportsBetslip = useSportsBetslip();
+  // Desktop betslip panel open/collapsed state — presentation-only, kept
+  // separate from sportsBetslip itself (see sportsDesktopBetslipUi.js).
+  // Lifted here for the same "must survive leaving Sports" reason as
+  // sportsBetslip above.
+  const sportsDesktopUi = useSportsDesktopBetslipUi(sportsBetslip.selectionCount);
+  const isDesktopBetslipLayout = useIsDesktopBetslipLayout();
   const navigateSports = (patch) => {
     if ("view" in patch) setSportsView(patch.view);
     if ("sport" in patch) setSportsSport(patch.sport);
@@ -584,6 +592,23 @@ export default function App() {
             onSupport={() => { setMobileMenuOpen(false); setSupportOpen(true); }}
           />
         </main>
+
+        {/* Desktop Sports betslip panel — a real flex sibling of Sidebar/
+            main (not an overlay), so it resizes Sports content instead of
+            covering it. Only mounted for Sports at >=1024px: below that,
+            SportsArena's own Dialog-based modal handles the betslip, and
+            outside Sports this never renders at all (state stays alive in
+            memory via sportsBetslip/sportsDesktopUi above, ready to restore
+            when the user returns to Sports). */}
+        {product === "sports" && isDesktopBetslipLayout && (
+          <DesktopBetslipPanel
+            betslip={sportsBetslip}
+            uiState={sportsDesktopUi}
+            onBetPlaced={logRound}
+            onDemoBetPlaced={placeBet}
+            onDone={sportsBetslip.clearSelections}
+          />
+        )}
       </div>
 
       <MobileBottomNav

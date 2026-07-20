@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SPORTS_DEMO_MODE } from "@/lib/sportsDemo";
+import { useIsDesktopBetslipLayout } from "@/lib/sportsDesktopBetslipUi";
 import { AzuroBetSlip } from "./AzuroBetSlip";
 import { DemoBetSlip } from "./DemoBetSlip";
 import { SportsHome } from "./SportsHome";
@@ -31,8 +32,13 @@ export function SportsArena({
   // Whether the slip presentation is showing — UI-only, deliberately
   // separate from betslip.selections so closing it never clears selections
   // (see EMPTY AND CLEAR BEHAVIOUR: "closing or hiding a betslip
-  // presentation must not clear selections").
+  // presentation must not clear selections"). Only meaningful below the
+  // desktop breakpoint — at >=1024px the persistent DesktopBetslipPanel
+  // (rendered in App.jsx, a flex sibling of this arena, not inside it)
+  // takes over and this modal is never mounted, so the two presentations
+  // can never render at the same time.
   const [slipOpen, setSlipOpen] = useState(false);
+  const isDesktopLayout = useIsDesktopBetslipLayout();
 
   const openEvent = (event) => {
     track("sports_event_selected", { sport: event.sport.id, eventId: event.id, source: event.source, route: `/sports/${event.sport.id}/event/${event.id}` });
@@ -139,7 +145,7 @@ export function SportsArena({
   return (
     <>
       {body}
-      {slipOpen && source === "provider" && (
+      {slipOpen && !isDesktopLayout && source === "provider" && (
         <AzuroBetSlip
           selections={betslip.selections}
           stake={betslip.stake}
@@ -153,7 +159,7 @@ export function SportsArena({
           onBetPlaced={onBetPlaced}
         />
       )}
-      {slipOpen && source === "mock" && (
+      {slipOpen && !isDesktopLayout && source === "mock" && (
         <DemoBetSlip
           selections={betslip.selections}
           stake={betslip.stake}
