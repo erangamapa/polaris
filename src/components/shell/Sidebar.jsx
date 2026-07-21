@@ -185,24 +185,28 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
                 disabled ? "cursor-default" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
-              {/* Icon + label dim together as one unit (not per-element) so
-                  the pairing still reads as a single dimmed tile rather than
-                  two independently-faded pieces. The SOON badge below is a
-                  sibling, not a child of this span, specifically so it never
-                  inherits this opacity and stays legible. */}
-              <span className={cn("flex flex-col items-center gap-1", disabled && "opacity-45")}>
-                <Icon className="size-4" aria-hidden="true" />
-                {p.label}
+              {/* The badge is anchored to the ICON specifically (a tight,
+                  icon-sized relative wrapper), not to the whole padded
+                  54px-tall button — anchoring to the button left the badge
+                  floating in the button's top padding, far above the icon
+                  itself, reading as a disconnected label rather than a
+                  corner badge. Icon and label dim independently (both
+                  opacity-45) so the badge — a sibling of the icon, not a
+                  child of it — never inherits that opacity and stays
+                  legible. */}
+              <span className="relative">
+                <Icon className={cn("size-4", disabled && "opacity-45")} aria-hidden="true" />
+                {import.meta.env.DEV && disabled && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-1 -end-2 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide"
+                    style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)", color: "var(--badge-muted-text)" }}
+                  >
+                    Soon
+                  </span>
+                )}
               </span>
-              {import.meta.env.DEV && disabled && (
-                <span
-                  aria-hidden="true"
-                  className="absolute -top-2 end-1.5 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide"
-                  style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)", color: "var(--badge-muted-text)" }}
-                >
-                  Soon
-                </span>
-              )}
+              <span className={disabled ? "opacity-45" : undefined}>{p.label}</span>
             </button>
           );
         })}
