@@ -97,10 +97,10 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
               style={!disabled && active ? { color: p.color } : undefined}
               className={cn(
                 "relative flex h-full min-h-11 flex-col items-center justify-center text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                // Disabled tiles fit a third text line (icon/label/"Coming
-                // soon") into the same fixed tile height, so only they get
-                // the tighter gap — enabled tiles (including Casino) keep
-                // their original two-line spacing untouched.
+                // Disabled tiles fit a third row (icon/label/Soon pill) into
+                // the same fixed tile height, so only they get the tighter
+                // gap — enabled tiles (including Casino) keep their
+                // original two-line spacing untouched.
                 disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-semibold" : "gap-1 font-medium text-muted-foreground"
               )}
             >
@@ -109,11 +109,15 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
                 className={cn(INDICATOR, !disabled && active && !menuOpen ? "opacity-100" : "opacity-0")}
                 style={{ background: p.color }}
               />
-              <Icon className={cn("size-5", disabled && "text-foreground/45")} aria-hidden="true" />
-              <span className={cn("max-w-full truncate px-0.5", disabled && "text-foreground/60")}>{p.label}</span>
+              <Icon className={cn("size-5", disabled && "opacity-50")} aria-hidden="true" />
+              <span className={cn("max-w-full truncate px-0.5", disabled && "opacity-60")}>{p.label}</span>
               {import.meta.env.DEV && disabled && (
-                <span className="max-w-full truncate px-0.5 text-[11px] font-normal text-muted-foreground/70">
-                  Coming soon
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-[18px] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium leading-none text-foreground/50"
+                  style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)" }}
+                >
+                  Soon
                 </span>
               )}
             </button>
