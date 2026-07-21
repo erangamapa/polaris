@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { Star } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Star, History, ChevronLeft, ChevronRight, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
 import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
 import { PROVIDER_GAMES } from "./ProviderGame";
 import { EmptyState } from "@/components/ui/empty-state";
+import { takeUnclaimed } from "@/lib/casinoDedup";
 
 // Sparkle burst angles (degrees) fired once when a game is favorited.
 const SPARKS = [0, 60, 120, 180, 240, 300];
@@ -148,24 +149,119 @@ function Tile({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav }) {
 }
 
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6";
-// Compact horizontal row for the 2-5 item tier of "Your games" — fixed-width
-// tiles in a single scrollable line, deliberately not the full wrapping grid
-// (which is what produced the old "giant empty row" look for a single item).
-const ROW = "flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]";
-const ROW_TILE = "w-[136px] shrink-0";
+// Fixed-width tile used by every horizontal Rail — same card size everywhere
+// a rail appears, so scanning across sections never looks inconsistent.
+const RAIL_TILE = "w-[136px] shrink-0";
 
 const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
 
-// A lobby row only drops games also shown in "Your games" if doing so still
-// leaves it with a reasonable amount of content — a row that would collapse
-// to 1-5 items from deduping is more useful showing the duplicate than
-// showing a half-empty row. Category *pages* (below) never dedup at all.
-const DEDUP_MIN = 6;
-const dedupAgainstYourGames = (games, yourGameIds) => {
-  if (yourGameIds.size === 0) return games;
-  const withoutDupes = games.filter((g) => !yourGameIds.has(g.favId));
-  return withoutDupes.length >= DEDUP_MIN ? withoutDupes : games;
-};
+// Tracks whether a Rail's scroll body has more content past either edge, so
+// the prev/next buttons can disable themselves at the real boundary instead
+// of just always being clickable. Re-measures on scroll and on resize (a
+// rail that fit unscrolled at desktop width may not once the viewport
+// shrinks).
+function useRailScroll(itemCount) {
+  const ref = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      setCanScrollLeft(el.scrollLeft > 4);
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    };
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      el.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [itemCount]);
+
+  const scrollByPage = (direction) => {
+    const el = ref.current;
+    if (!el) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: direction * Math.round(el.clientWidth * 0.9), behavior: reduceMotion ? "auto" : "smooth" });
+  };
+
+  return { ref, canScrollLeft, canScrollRight, scrollByPage };
+}
+
+// The one shared horizontal rail pattern used by every Lobby section:
+// title (+ optional trust badge) on the left, "See all" + prev/next arrows
+// on the right, a touch-scrollable row of fixed-width tiles below. Self-hides
+// when there's nothing to show unless an `emptyState` is supplied (used by
+// Recently Played, which wants to teach the feature rather than disappear).
+function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState }) {
+  const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
+
+  if (games.length === 0) {
+    if (!emptyState) return null;
+    return (
+      <section data-test-id={testId}>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold">{title}</h2>
+        </div>
+        {emptyState}
+      </section>
+    );
+  }
+
+  return (
+    <section data-test-id={testId} aria-label={title}>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold">{title}</h2>
+          {badge && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{badge}</span>}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {onSeeAll && (
+            <button
+              type="button"
+              onClick={onSeeAll}
+              data-test-id={testId ? `${testId}-see-all` : undefined}
+              className="mr-1 text-xs font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              See all
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label={`Scroll ${title} left`}
+            disabled={!canScrollLeft}
+            onClick={() => scrollByPage(-1)}
+            className="hidden size-7 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
+          >
+            <ChevronLeft className="size-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Scroll ${title} right`}
+            disabled={!canScrollRight}
+            onClick={() => scrollByPage(1)}
+            className="hidden size-7 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div
+        ref={ref}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 pr-4 [scrollbar-width:none] sm:snap-none [&::-webkit-scrollbar]:hidden"
+      >
+        {games.map((game) => (
+          <div key={game.favId} className={cn(RAIL_TILE, "snap-start")}>
+            <Tile game={game} {...tileProps} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 // Sidebar categories that get their own tag-filtered page (title + chips +
 // grid) instead of the multi-row Lobby dashboard. "Slots" has no games in
@@ -183,6 +279,49 @@ const KIND_CHIPS = [
   { id: "provider", label: "Provider" },
 ];
 
+// Display label for a category id where it differs from the routing/sidebar
+// id ("New" stays the URL slug and sidebar id; every place that shows it as
+// text reads "New Releases", matching the Lobby rail of the same name).
+// Exported so the Sidebar (built in App.jsx) can render the same text.
+export const CATEGORY_LABEL = { New: "New Releases" };
+const displayLabel = (category) => CATEGORY_LABEL[category] ?? category;
+
+// In-page horizontal category browser, shown on every Casino Home view
+// (Lobby and each category page share it) between search and content. Only
+// lists categories with real games behind them — "Slots" is deliberately
+// left out here (see CATEGORY_META) even though its route still works if
+// linked directly. This complements the persistent sidebar rather than
+// duplicating it: the sidebar is desktop-only chrome outside the page, while
+// mobile has no persistent category list at all today besides this bar.
+const NAV_CATEGORIES = ["Lobby", ...Object.keys(CATEGORY_META).filter((c) => c !== "Slots")];
+
+export function CategoryNav({ selected, onSelect }) {
+  return (
+    <nav aria-label="Casino categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {NAV_CATEGORIES.map((category) => {
+        const isSelected = selected === category;
+        return (
+          <button
+            key={category}
+            type="button"
+            onClick={() => onSelect(category)}
+            aria-current={isSelected ? "page" : undefined}
+            data-test-id={`category-nav-${category.toLowerCase().replace(/\s+/g, "-")}`}
+            className={cn(
+              "flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isSelected
+                ? "border-[var(--casino-primary-border)] bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]"
+                : "border-white/10 text-zinc-400 hover:text-white"
+            )}
+          >
+            {displayLabel(category)}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 // A category page (Popular/Slots/Live Casino/Game Shows/New): title,
 // description, kind filter chips, plain grid. Never the top promo tiles
 // (those are Lobby-only), never deduped against "Your games" — a full
@@ -194,7 +333,7 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
 
   return (
     <section className="animate-fade-in-up">
-      <h1 className="text-lg font-bold">{category}</h1>
+      <h1 className="text-lg font-bold">{displayLabel(category)}</h1>
       {meta.description && <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>}
 
       <div className="mb-4 mt-3 flex gap-2" role="group" aria-label="Filter by provider">
@@ -221,90 +360,12 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
           {games.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
-          <p className="text-sm text-zinc-500">No {category.toLowerCase()} games yet.</p>
-          <button
-            onClick={onBrowseGames}
-            className="mt-3 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Browse games
-          </button>
-        </div>
+        <EmptyState
+          icon={<Gamepad2 className="size-5 text-zinc-500" aria-hidden="true" />}
+          title={`No ${displayLabel(category).toLowerCase()} games yet`}
+          cta={<BrowseGamesButton onClick={onBrowseGames} />}
+        />
       )}
-    </section>
-  );
-}
-
-function LobbyRow({ title, badge, games, tileProps }) {
-  if (games.length === 0) return null;
-  return (
-    <section>
-      <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-sm font-bold">{title}</h2>
-        {badge && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{badge}</span>}
-      </div>
-      <div className={GRID}>
-        {games.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-      </div>
-    </section>
-  );
-}
-
-// "Your games": recently played first, then favorites not already covered by
-// recent play — never a lobby row just because a label exists elsewhere.
-// Sizing follows content, not a fixed layout: 0 → no section at all; exactly
-// 1 → shown inline (still the grid, so it's one small tile, never a
-// full-width row); 2-5 → compact horizontal row; 6+ → a preview with
-// "View all" expanding the rest in place.
-function YourGames({ games, tileProps }) {
-  const [expanded, setExpanded] = useState(false);
-  if (games.length === 0) return null;
-
-  const heading = (
-    <div className="mb-3 flex items-center gap-2">
-      <Star className="size-4 fill-amber-400 text-amber-400" />
-      <h2 className="text-sm font-bold">Your games</h2>
-    </div>
-  );
-
-  if (games.length <= 5) {
-    const cls = games.length === 1 ? "grid grid-cols-2 gap-3 sm:grid-cols-3" : ROW;
-    return (
-      <section data-test-id="your-games-section">
-        {heading}
-        <div className={cls}>
-          {games.map((game) => (
-            <div key={game.favId} className={games.length === 1 ? "w-[136px]" : ROW_TILE}>
-              <Tile game={game} {...tileProps} />
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  const PREVIEW = 6;
-  const shown = expanded ? games : games.slice(0, PREVIEW);
-  return (
-    <section data-test-id="your-games-section">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Star className="size-4 fill-amber-400 text-amber-400" />
-          <h2 className="text-sm font-bold">Your games</h2>
-        </div>
-        {!expanded && (
-          <button
-            onClick={() => { setExpanded(true); track("casino_view_all_selected", { sourceSection: "your-games" }); }}
-            data-test-id="your-games-view-all"
-            className="text-xs font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            View all ({games.length})
-          </button>
-        )}
-      </div>
-      <div className={GRID}>
-        {shown.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-      </div>
     </section>
   );
 }
@@ -362,20 +423,21 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
 //  - category === "Favorites" → the Favorites page.
 //  - category is a tag category (Popular/Slots/Live Casino/Game Shows/New)
 //    → its own page: title, chips, full grid, never deduped.
-//  - anything else (Lobby, default) → the lobby dashboard: Your games →
-//    On-chain Casino (always) → Popular → New → Provider games → Live Casino
-//    → Game Shows, each hidden if empty and deduped against Your games
-//    (never below DEDUP_MIN — see dedupAgainstYourGames).
-// `recentIds` (most-recent-first favIds) + favorites feed "Your games" —
-// content priority: recently played, then favorites. `query` (from the
+//  - anything else (Lobby, default) → the lobby dashboard: Favorites →
+//    Recently Played → Originals (always) → Popular → New Releases →
+//    Live Casino → Game Shows → Providers.
+// `recentIds` (most-recent-first favIds) and favorites are two distinct
+// personalized rails, not a merged "Your games" umbrella — they answer
+// different questions (what you saved vs. what you actually played) and the
+// same game legitimately appearing in both is fine. `query` (from the
 // search box above the catalog) filters every row/page by title.
-export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames }) {
+export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
   const tileProps = { onLaunchOnchain: onLaunch, onLaunchProvider, isFav, onFav };
   const q = query?.trim().toLowerCase() ?? "";
   const favorites = (isFav ? ALL_GAMES.filter((g) => isFav(g)) : []).filter((g) => matchesQuery(g, q));
-
-  const recentGames = (recentIds ?? []).map((id) => ALL_GAMES.find((g) => g.favId === id)).filter(Boolean);
-  const yourGames = [...recentGames, ...favorites.filter((g) => !recentGames.some((r) => r.favId === g.favId))]
+  const recentGames = (recentIds ?? [])
+    .map((id) => ALL_GAMES.find((g) => g.favId === id))
+    .filter(Boolean)
     .filter((g) => matchesQuery(g, q));
 
   if (category === "Favorites") {
@@ -388,7 +450,8 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 
   return (
     <LobbyDashboard
-      category={category} query={query} q={q} yourGames={yourGames} tileProps={tileProps} onBrowseGames={onBrowseGames}
+      category={category} query={query} q={q} favorites={favorites} recentGames={recentGames}
+      tileProps={tileProps} onBrowseGames={onBrowseGames} onSelectCategory={onSelectCategory}
     />
   );
 }
@@ -397,27 +460,40 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 // view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
 // itself returns early for Favorites/CategoryPage before this would ever be
 // reached, and hooks can't live after an early return in the same component.
-function LobbyDashboard({ category, query, q, yourGames, tileProps, onBrowseGames }) {
+function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory }) {
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
   const provider = PROVIDER.filter((g) => matchesQuery(g, q));
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
-  const yourGameIds = new Set(yourGames.map((g) => g.favId));
 
-  const popularRow = dedupAgainstYourGames(byTag("popular"), yourGameIds);
-  const newRow = dedupAgainstYourGames(byTag("new"), yourGameIds);
-  const providerRow = dedupAgainstYourGames(provider, yourGameIds);
-  const liveCasinoRow = dedupAgainstYourGames(byTag("live-casino"), yourGameIds);
-  const gameShowsRow = dedupAgainstYourGames(byTag("game-shows"), yourGameIds);
-  const isEmpty = q && !yourGames.length && !onchain.length && !popularRow.length && !newRow.length && !providerRow.length && !liveCasinoRow.length && !gameShowsRow.length;
+  // Discovery rails dedup sequentially against each other (and against the
+  // always-shown Originals row) so the same game never repeats across
+  // adjacent "what's hot" sections — e.g. Roulette is tagged both "popular"
+  // and "live-casino", so it now only ever shows once. Favorites/Recently
+  // Played are exempt: overlap between a personalized rail and a discovery
+  // rail is expected (a favorited game still belongs in Popular), as is
+  // Providers, which stays a stable, complete "browse the studio" catch-all
+  // rather than a rotating spotlight — deduping it against the tag rails
+  // above would collapse it to empty, since most provider games carry at
+  // least one of those tags.
+  const seen = new Set(onchain.map((g) => g.favId));
+  const popularRow = takeUnclaimed(byTag("popular"), seen);
+  const newReleasesRow = takeUnclaimed(byTag("new"), seen);
+  const liveCasinoRow = takeUnclaimed(byTag("live-casino"), seen);
+  const gameShowsRow = takeUnclaimed(byTag("game-shows"), seen);
+  const providerRow = provider;
+
+  const isEmpty = q && !favorites.length && !recentGames.length && !onchain.length
+    && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length && !providerRow.length;
 
   const visibleSections = [
-    yourGames.length > 0 && "your-games",
-    "on-chain-casino",
+    favorites.length > 0 && "favorites",
+    (recentGames.length > 0 || !q) && "recently-played",
+    "originals",
     popularRow.length > 0 && "popular",
-    newRow.length > 0 && "new",
-    providerRow.length > 0 && "provider-games",
+    newReleasesRow.length > 0 && "new-releases",
     liveCasinoRow.length > 0 && "live-casino",
     gameShowsRow.length > 0 && "game-shows",
+    providerRow.length > 0 && "providers",
   ].filter(Boolean).join(",");
   useEffect(() => {
     if (!isEmpty) track("casino_lobby_section_viewed", { sections: visibleSections.split(",") });
@@ -426,42 +502,54 @@ function LobbyDashboard({ category, query, q, yourGames, tileProps, onBrowseGame
 
   if (isEmpty) {
     return (
-      <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
-        <p className="text-sm text-zinc-500">No games match “{query}”.</p>
-        {onBrowseGames && (
-          <button
-            onClick={onBrowseGames}
-            className="mt-3 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Browse games
-          </button>
-        )}
-      </div>
+      <EmptyState
+        icon={<Gamepad2 className="size-5 text-zinc-500" aria-hidden="true" />}
+        title={`No games match "${query}"`}
+        cta={onBrowseGames ? <BrowseGamesButton onClick={onBrowseGames} /> : undefined}
+      />
     );
   }
 
+  const seeAll = (target) => () => {
+    onSelectCategory?.(target);
+    track("casino_view_all_selected", { sourceSection: target.toLowerCase().replace(/\s+/g, "-") });
+  };
+
   return (
     <div className="space-y-6">
-      <YourGames games={yourGames} tileProps={tileProps} />
+      <Rail testId="favorites-rail" title="Favorites" games={favorites} tileProps={tileProps} onSeeAll={seeAll("Favorites")} />
 
-      {/* On-chain Casino is always shown, unlike every row below it. */}
-      <section>
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="text-sm font-bold">On-chain casino</h2>
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
-            BetSwirl · Base Sepolia · Chainlink VRF
-          </span>
-        </div>
-        <div className={GRID}>
-          {onchain.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
-        </div>
-      </section>
+      <Rail
+        testId="recently-played-rail"
+        title="Recently played"
+        games={recentGames}
+        tileProps={tileProps}
+        emptyState={
+          !q ? (
+            <EmptyState
+              icon={<History className="size-5 text-zinc-500" aria-hidden="true" />}
+              title="No recently played games yet"
+              description="Games you open will show up here."
+              cta={<BrowseGamesButton onClick={onBrowseGames} testId="recently-played-browse-games" />}
+              className="py-6"
+            />
+          ) : undefined
+        }
+      />
 
-      <LobbyRow title="Popular" games={popularRow} tileProps={tileProps} />
-      <LobbyRow title="New" games={newRow} tileProps={tileProps} />
-      <LobbyRow title="Provider games" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} />
-      <LobbyRow title="Live Casino" games={liveCasinoRow} tileProps={tileProps} />
-      <LobbyRow title="Game Shows" games={gameShowsRow} tileProps={tileProps} />
+      <Rail
+        testId="originals-rail"
+        title="Originals"
+        badge="BetSwirl · Base Sepolia · Chainlink VRF"
+        games={onchain}
+        tileProps={tileProps}
+      />
+
+      <Rail testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} onSeeAll={seeAll("Popular")} />
+      <Rail testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} onSeeAll={seeAll("New")} />
+      <Rail testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} onSeeAll={seeAll("Live Casino")} />
+      <Rail testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} onSeeAll={seeAll("Game Shows")} />
+      <Rail testId="providers-rail" title="Providers" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} />
     </div>
   );
 }

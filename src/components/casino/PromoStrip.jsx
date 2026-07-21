@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, ChevronDown, Copy, Loader2 } from "lucide-react";
+import { Search, ChevronDown, Copy, Loader2, X } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
@@ -422,8 +422,22 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
               aria-activedescendant={activeIndex >= 0 ? `arena-search-opt-${activeIndex}` : undefined}
               aria-autocomplete={hasResults ? "list" : undefined}
               autoComplete="off"
-              className="h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-8 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none sm:pl-9"
+              className={cn(
+                "h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-8 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none sm:pl-9",
+                query && "pr-8 sm:pr-9"
+              )}
             />
+            {query && (
+              <button
+                type="button"
+                onClick={() => { onQuery(""); document.getElementById("arena-search-input")?.focus(); }}
+                aria-label="Clear search"
+                data-test-id="arena-search-clear"
+                className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-500 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:right-2.5"
+              >
+                <X className="size-3.5" aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
 

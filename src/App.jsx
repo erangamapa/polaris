@@ -14,7 +14,7 @@ import { DevPanel } from "./components/dev/DevPanel";
 import { PromoStrip } from "./components/casino/PromoStrip";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
-import { CasinoCatalog, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
+import { CasinoCatalog, CategoryNav, CATEGORY_LABEL, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
@@ -607,7 +607,7 @@ export default function App() {
         selected: casinoCategory,
         onSelect: setCasinoCategory,
         items: [
-          ...CATEGORIES.filter((c) => c !== "Favorites").map((c) => ({ id: c, label: c, icon: CASINO_ICONS[c] })),
+          ...CATEGORIES.filter((c) => c !== "Favorites").map((c) => ({ id: c, label: CATEGORY_LABEL[c] ?? c, icon: CASINO_ICONS[c] })),
           { id: "fav-divider", divider: true },
           { id: "Favorites", label: "Favorites", icon: CASINO_ICONS.Favorites, count: favs.size > 0 ? favs.size : undefined },
         ],
@@ -771,6 +771,7 @@ export default function App() {
                   onFav={toggleFav}
                   recentIds={effectiveRecentIds}
                   onBrowseGames={() => setCasinoCategory("Lobby")}
+                  onSelectCategory={setCasinoCategory}
                 />
               )}
               {product === "predictions" && (
@@ -870,7 +871,7 @@ export default function App() {
   );
 }
 
-function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames }) {
+function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const searchResults = q ? ALL_GAMES.filter((g) => g.title.toLowerCase().includes(q)) : [];
@@ -880,9 +881,16 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
     setQuery("");
   };
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
+  const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      {/* The default Lobby view has no visible title (the promo area already
+          sets the context) but every page needs exactly one <h1> — Favorites
+          and each category page render their own visible one; this covers
+          the one remaining case without adding visual chrome the design
+          doesn't call for. */}
+      {category === "Lobby" && <h1 className="sr-only">Casino Lobby</h1>}
       <PromoStrip
         query={query}
         onQuery={setQuery}
@@ -891,6 +899,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         onBrowseAll={browseAll}
         onZeroResults={(q) => track("casino_search_zero_results", { query: q, searchScope: "casino" })}
       />
+      <CategoryNav selected={category} onSelect={selectCategory} />
       <CasinoCatalog
         category={category}
         query={query}
@@ -900,6 +909,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         onFav={onFav}
         recentIds={recentIds}
         onBrowseGames={browseAll}
+        onSelectCategory={selectCategory}
       />
     </div>
   );
