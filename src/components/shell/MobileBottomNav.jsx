@@ -1,6 +1,5 @@
 import { Menu as MenuIcon, Dices, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { useDevMockState } from "@/lib/devMock";
 import { isArenaAllowed } from "@/lib/platformScope";
 
@@ -94,11 +93,15 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
               onClick={disabled ? undefined : () => onSelectArena(p.id)}
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
-              aria-label={import.meta.env.DEV && disabled ? `${p.label}, Coming soon` : undefined}
+              aria-label={import.meta.env.DEV && disabled ? `${p.label}, coming soon` : undefined}
               style={!disabled && active ? { color: p.color } : undefined}
               className={cn(
-                "relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                disabled ? "cursor-default text-muted-foreground/50" : active ? "font-semibold" : "font-medium text-muted-foreground"
+                "relative flex h-full min-h-11 flex-col items-center justify-center text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                // Disabled tiles fit a third text line (icon/label/"Coming
+                // soon") into the same fixed tile height, so only they get
+                // the tighter gap — enabled tiles (including Casino) keep
+                // their original two-line spacing untouched.
+                disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-semibold" : "gap-1 font-medium text-muted-foreground"
               )}
             >
               <span
@@ -106,13 +109,13 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
                 className={cn(INDICATOR, !disabled && active && !menuOpen ? "opacity-100" : "opacity-0")}
                 style={{ background: p.color }}
               />
+              <Icon className={cn("size-5", disabled && "text-foreground/45")} aria-hidden="true" />
+              <span className={cn("max-w-full truncate px-0.5", disabled && "text-foreground/60")}>{p.label}</span>
               {import.meta.env.DEV && disabled && (
-                <span className="absolute end-[18%] top-1">
-                  <StatusBadge variant="muted" size="small" label="Soon" ariaLabel="Coming soon" />
+                <span className="max-w-full truncate px-0.5 text-[11px] font-normal text-muted-foreground/70">
+                  Coming soon
                 </span>
               )}
-              <Icon className="size-5" aria-hidden="true" />
-              <span className="max-w-full truncate px-0.5">{p.label}</span>
             </button>
           );
         })}
