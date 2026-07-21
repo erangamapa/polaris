@@ -55,20 +55,21 @@
     .canvas-container {
       background: rgba(20, 8, 15, 0.8);
       border-radius: 40px;
-      padding: 16px;
+      padding: 0;
       margin: 12px 0 16px;
       box-shadow: 0 0 0 2px #ff6b9d, 0 10px 30px rgba(0,0,0,0.6);
       position: relative;
+      overflow: hidden;
+      width: 100%;
+      aspect-ratio: 650 / 482;
     }
     canvas {
       display: block;
-      margin: 0 auto;
       width: 100%;
-      height: auto;
-      aspect-ratio: 1 / 1;
-      max-width: 450px;
-      background: radial-gradient(ellipse at center, #2a1520 0%, #140a10 100%);
-      border-radius: 28px;
+      height: 100%;
+      max-width: none;
+      background: #140a10;
+      border-radius: 40px;
       cursor: pointer;
       touch-action: none;
       transition: 0.05s ease;
@@ -283,7 +284,7 @@
   </h1>
 
   <div class="canvas-container">
-    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <canvas id="gameCanvas" width="650" height="482"></canvas>
   </div>
 
   <div class="stats-grid">
@@ -354,7 +355,118 @@
     let animationId = null;
     let winAmount = 0;
 
-    // ----- DOM UPDATES -----
+    // Character art + bubble anchor (mouth on 650×482 frame)
+    const CW = 650;
+    const CH = 482;
+    const girlImg = new Image();
+    girlImg.src = 'assets/girl.png';
+    let imageReady = false;
+    const BUBBLE_ANCHOR = { x: CW / 2, y: 220 };
+
+    girlImg.onload = () => {
+      imageReady = true;
+      drawGame();
+    };
+
+    function drawCoverImage(img, w, h) {
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      const scale = Math.max(w / iw, h / ih);
+      const sw = w / scale;
+      const sh = h / scale;
+      const sx = (iw - sw) / 2;
+      const sy = (ih - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+    }
+
+    function drawBubbleEffects(bubbleX, bubbleY, radius) {
+      if (isBusted) {
+        ctx.shadowBlur = 60;
+        ctx.shadowColor = 'rgba(255, 0, 50, 0.6)';
+        ctx.fillStyle = '#ff3366';
+        for (let i = 0; i < 30; i++) {
+          const angle = i * 1.2 + 0.5;
+          const dist = 40 + Math.sin(i * 2.3) * 30 + size * 80;
+          ctx.beginPath();
+          ctx.arc(bubbleX + Math.cos(angle) * dist, bubbleY + Math.sin(angle) * dist,
+                  8 + Math.sin(i) * 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#ff6699';
+        for (let i = 0; i < 20; i++) {
+          const angle = i * 1.8 + 0.2;
+          const dist = 25 + Math.cos(i * 1.7) * 20 + size * 60;
+          ctx.beginPath();
+          ctx.arc(bubbleX + Math.cos(angle) * dist, bubbleY + Math.sin(angle) * dist,
+                  5 + Math.cos(i) * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.font = 'bold 60px sans-serif';
+        ctx.fillStyle = '#ffdae7';
+        ctx.shadowColor = '#ff0044';
+        ctx.shadowBlur = 50;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💥', bubbleX, bubbleY - 40);
+
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillStyle = '#ff6b6b';
+        ctx.shadowBlur = 20;
+        ctx.fillText('BUSTED!', CW / 2, CH - 28);
+        return;
+      }
+
+      if (!isRoundActive && size === 0) return;
+
+      const gradient = ctx.createRadialGradient(
+        bubbleX - 20, bubbleY - 20, 10,
+        bubbleX, bubbleY, radius + 10
+      );
+      const intensity = Math.min(1, size * 1.5);
+      gradient.addColorStop(0, `rgba(255, 200, 230, ${0.6 + intensity * 0.4})`);
+      gradient.addColorStop(0.4, `rgba(242, 123, 174, ${0.7 + intensity * 0.3})`);
+      gradient.addColorStop(0.8, `rgba(220, 78, 130, ${0.8 + intensity * 0.2})`);
+      gradient.addColorStop(1, 'rgba(166, 43, 90, 0.9)');
+
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = `rgba(255, 60, 120, ${0.2 + size * 0.3})`;
+      ctx.beginPath();
+      ctx.arc(bubbleX, bubbleY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.ellipse(bubbleX - 20, bubbleY - 25, 20, 14, -0.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fill();
+
+      if (size > 0.7) {
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = `rgba(255, 50, 50, ${(size - 0.7) * 3})`;
+        ctx.lineWidth = 2.5;
+        for (let i = 0; i < 6; i++) {
+          const angle = i * 1.2 + 0.2;
+          const xOff = Math.cos(angle) * radius * 0.7;
+          const yOff = Math.sin(angle) * radius * 0.7;
+          ctx.beginPath();
+          ctx.moveTo(bubbleX + xOff - 8, bubbleY + yOff - 6);
+          ctx.lineTo(bubbleX + xOff + 14, bubbleY + yOff + 8);
+          ctx.stroke();
+        }
+      }
+
+      if (size > 0.1) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${multiplier.toFixed(2)}x`, bubbleX, bubbleY);
+      }
+    }
+
     function updateUI() {
       balanceDisplay.textContent = Math.floor(balance);
       betDisplay.textContent = currentBet;
@@ -474,213 +586,48 @@
 
     // ----- CANVAS DRAWING -----
     function drawGame() {
-      ctx.clearRect(0, 0, 500, 500);
+      ctx.clearRect(0, 0, CW, CH);
 
-      // Background glow
-      const grad = ctx.createRadialGradient(250, 250, 50, 250, 250, 300);
-      grad.addColorStop(0, isBusted ? '#3a1520' : '#1a0a12');
-      grad.addColorStop(1, '#0a0508');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 500, 500);
-
-      // Grid lines for casino feel
-      ctx.strokeStyle = 'rgba(255, 60, 120, 0.05)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 500; i += 25) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, 500);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(500, i);
-        ctx.stroke();
+      if (imageReady) {
+        drawCoverImage(girlImg, CW, CH);
+      } else {
+        ctx.fillStyle = '#1a0a12';
+        ctx.fillRect(0, 0, CW, CH);
+        ctx.fillStyle = '#ffb3d1';
+        ctx.font = '600 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Loading…', CW / 2, CH / 2);
+        return;
       }
-
-      // Draw Bubble Girl
-      ctx.save();
-
-      // Girl's face
-      ctx.shadowColor = 'rgba(255, 60, 120, 0.15)';
-      ctx.shadowBlur = 30;
-
-      // Body / shoulders
-      ctx.fillStyle = '#2a1520';
-      ctx.beginPath();
-      ctx.ellipse(250, 380, 80, 60, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Face
-      ctx.shadowBlur = 20;
-      ctx.fillStyle = '#f5d0c0';
-      ctx.beginPath();
-      ctx.ellipse(250, 270, 60, 70, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eyes (gambling excitement)
-      ctx.shadowBlur = 5;
-      ctx.fillStyle = '#1a0a12';
-      ctx.beginPath();
-      ctx.arc(225, 255, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(275, 255, 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eye sparkle
-      ctx.fillStyle = 'white';
-      ctx.beginPath();
-      ctx.arc(222, 250, 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(272, 250, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Blush
-      ctx.fillStyle = 'rgba(255, 80, 120, 0.2)';
-      ctx.beginPath();
-      ctx.ellipse(205, 275, 15, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(295, 275, 15, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Hair
-      ctx.fillStyle = '#3d1a2e';
-      ctx.shadowBlur = 15;
-      ctx.beginPath();
-      ctx.ellipse(250, 190, 65, 55, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#5c2a44';
-      ctx.beginPath();
-      ctx.ellipse(235, 175, 30, 25, -0.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(265, 175, 30, 25, 0.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Smile (changes with multiplier)
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = '#a05060';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      const smileSize = Math.min(1, multiplier / 3);
-      const arcStart = 0.1 * Math.PI + (1 - smileSize) * 0.3;
-      const arcEnd = 0.9 * Math.PI - (1 - smileSize) * 0.3;
-      ctx.arc(250, 285, 25 + smileSize * 15, arcStart, arcEnd);
-      ctx.stroke();
-
-      // Bubblegum bubble
-      ctx.shadowBlur = 40;
-      ctx.shadowColor = 'rgba(255, 60, 120, 0.3)';
-
-      const baseRadius = 15;
-      const maxRadius = 130;
-      const radius = baseRadius + size * (maxRadius - baseRadius);
-      const bubbleX = 250;
-      const bubbleY = 290;
 
       if (isBusted) {
-        // Explosion effect
-        ctx.shadowBlur = 60;
-        ctx.shadowColor = 'rgba(255, 0, 50, 0.6)';
-        ctx.fillStyle = '#ff3366';
-        for (let i = 0; i < 30; i++) {
-          const angle = i * 1.2 + 0.5;
-          const dist = 40 + Math.sin(i * 2.3) * 30 + size * 80;
-          ctx.beginPath();
-          ctx.arc(bubbleX + Math.cos(angle) * dist, bubbleY + Math.sin(angle) * dist,
-                  8 + Math.sin(i) * 6, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.fillStyle = '#ff6699';
-        for (let i = 0; i < 20; i++) {
-          const angle = i * 1.8 + 0.2;
-          const dist = 25 + Math.cos(i * 1.7) * 20 + size * 60;
-          ctx.beginPath();
-          ctx.arc(bubbleX + Math.cos(angle) * dist, bubbleY + Math.sin(angle) * dist,
-                  5 + Math.cos(i) * 4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.font = 'bold 60px sans-serif';
-        ctx.fillStyle = '#ffdae7';
-        ctx.shadowColor = '#ff0044';
-        ctx.shadowBlur = 50;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('💥', 250, 220);
-
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillStyle = '#ff6b6b';
-        ctx.shadowBlur = 20;
-        ctx.fillText('BUSTED!', 250, 450);
-      } else if (isRoundActive || size > 0) {
-        // Growing bubble
-        const gradient = ctx.createRadialGradient(
-          bubbleX - 20, bubbleY - 20, 10,
-          bubbleX, bubbleY, radius + 10
-        );
-        const intensity = Math.min(1, size * 1.5);
-        gradient.addColorStop(0, `rgba(255, 200, 230, ${0.6 + intensity * 0.4})`);
-        gradient.addColorStop(0.4, `rgba(242, 123, 174, ${0.7 + intensity * 0.3})`);
-        gradient.addColorStop(0.8, `rgba(220, 78, 130, ${0.8 + intensity * 0.2})`);
-        gradient.addColorStop(1, 'rgba(166, 43, 90, 0.9)');
-
-        ctx.shadowBlur = 40;
-        ctx.shadowColor = `rgba(255, 60, 120, ${0.2 + size * 0.3})`;
-        ctx.beginPath();
-        ctx.arc(bubbleX, bubbleY, radius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Highlight
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.ellipse(bubbleX - 20, bubbleY - 25, 20, 14, -0.4, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.fill();
-
-        // Warning cracks near burst
-        if (size > 0.7) {
-          ctx.shadowBlur = 10;
-          ctx.strokeStyle = `rgba(255, 50, 50, ${(size - 0.7) * 3})`;
-          ctx.lineWidth = 2.5;
-          for (let i = 0; i < 6; i++) {
-            const angle = i * 1.2 + 0.2;
-            const xOff = Math.cos(angle) * radius * 0.7;
-            const yOff = Math.sin(angle) * radius * 0.7;
-            ctx.beginPath();
-            ctx.moveTo(bubbleX + xOff - 8, bubbleY + yOff - 6);
-            ctx.lineTo(bubbleX + xOff + 14, bubbleY + yOff + 8);
-            ctx.stroke();
-          }
-        }
-
-        // Multiplier text on bubble
-        if (size > 0.1) {
-          ctx.shadowBlur = 20;
-          ctx.shadowColor = 'rgba(0,0,0,0.5)';
-          ctx.font = 'bold 28px sans-serif';
-          ctx.fillStyle = 'white';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(`${multiplier.toFixed(2)}x`, bubbleX, bubbleY);
-        }
+        ctx.fillStyle = 'rgba(120, 20, 40, 0.25)';
+        ctx.fillRect(0, 0, CW, CH);
       }
 
+      const baseRadius = 12;
+      const maxRadius = 115;
+      const radius = baseRadius + size * (maxRadius - baseRadius);
+      const bubbleX = BUBBLE_ANCHOR.x;
+      const bubbleY = BUBBLE_ANCHOR.y + radius * 0.35;
+
+      ctx.save();
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = 'rgba(255, 60, 120, 0.3)';
+      drawBubbleEffects(bubbleX, bubbleY, radius);
       ctx.restore();
 
-      // Status overlay
       if (!isRoundActive && !isBusted && size === 0) {
-        ctx.fillStyle = 'rgba(255, 60, 120, 0.08)';
-        ctx.fillRect(0, 0, 500, 500);
+        ctx.fillStyle = 'rgba(20, 8, 15, 0.35)';
+        ctx.fillRect(0, 0, CW, CH);
         ctx.font = 'bold 22px sans-serif';
-        ctx.fillStyle = '#ff6b9d';
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.shadowColor = 'rgba(255, 60, 120, 0.3)';
-        ctx.shadowBlur = 20;
-        ctx.fillText('💰 Click "New Round" to start', 250, 100);
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowBlur = 12;
+        ctx.fillText('💰 Click "New Round" to start', CW / 2, 56);
       }
     }
 
