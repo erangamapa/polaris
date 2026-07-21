@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
 import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
 import { PROVIDER_GAMES } from "./ProviderGame";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // Sparkle burst angles (degrees) fired once when a game is favorited.
 const SPARKS = [0, 60, 120, 180, 240, 300];
@@ -308,6 +309,18 @@ function YourGames({ games, tileProps }) {
   );
 }
 
+function BrowseGamesButton({ onClick, testId }) {
+  return (
+    <button
+      onClick={onClick}
+      data-test-id={testId}
+      className="rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      Browse games
+    </button>
+  );
+}
+
 function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   // Fires once per navigation into this page (mount), not per re-render —
   // toggling a favorite while already here doesn't re-fire it.
@@ -328,27 +341,18 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
           {favorites.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
         </div>
       ) : q ? (
-        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
-          <p className="text-sm text-zinc-500">No favorites match “{query}”.</p>
-          <button
-            onClick={onBrowseGames}
-            className="mt-3 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Browse games
-          </button>
-        </div>
+        <EmptyState
+          icon={<Star className="size-5 text-zinc-500" aria-hidden="true" />}
+          title={`No favorites match "${query}"`}
+          cta={<BrowseGamesButton onClick={onBrowseGames} />}
+        />
       ) : (
-        <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
-          <p className="text-sm font-medium text-zinc-300">No favorites yet</p>
-          <p className="mt-1 text-sm text-zinc-500">Save games using the star icon to find them here.</p>
-          <button
-            onClick={onBrowseGames}
-            data-test-id="favorites-browse-games"
-            className="mt-4 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Browse games
-          </button>
-        </div>
+        <EmptyState
+          icon={<Star className="size-5 text-amber-400" aria-hidden="true" />}
+          title="No favorite games yet"
+          description="Tap the star on any game to save it here."
+          cta={<BrowseGamesButton onClick={onBrowseGames} testId="favorites-browse-games" />}
+        />
       )}
     </section>
   );
