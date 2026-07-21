@@ -310,13 +310,12 @@
   </div>
 
   <div class="control-bar">
-    <button class="ctrl-btn primary" id="cashOutBtn" disabled>💎 Cash Out</button>
-    <button class="ctrl-btn" id="newRoundBtn">🔄 New Round</button>
+    <button class="ctrl-btn primary" id="newRoundBtn">🔄 New Round</button>
   </div>
 
   <div class="prompt-bar">
     <span class="cursor-prompt">
-      <i>👆</i> HOLD TO RISK
+      <i>👆</i> HOLD · RELEASE TO WIN
     </span>
     <span class="status-msg" id="statusMessage">Place your bet & hold!</span>
   </div>
@@ -334,7 +333,6 @@
     const betDisplay = document.getElementById('betDisplay');
     const multiplierDisplay = document.getElementById('multiplierDisplay');
     const betInput = document.getElementById('betInput');
-    const cashOutBtn = document.getElementById('cashOutBtn');
     const newRoundBtn = document.getElementById('newRoundBtn');
     const statusMessage = document.getElementById('statusMessage');
     const historyBar = document.getElementById('historyBar');
@@ -476,17 +474,16 @@
         statusMessage.textContent = '💥 BUSTED! You lost your bet!';
         statusMessage.style.color = '#ff6b6b';
       } else if (isRoundActive && isHolding) {
-        statusMessage.textContent = `🎈 Holding... ${multiplier.toFixed(2)}x`;
+        statusMessage.textContent = `🎈 Holding... release to cash out ${multiplier.toFixed(2)}x`;
         statusMessage.style.color = '#ffd700';
       } else if (isRoundActive && !isHolding) {
-        statusMessage.textContent = '👆 Hold to inflate!';
+        statusMessage.textContent = '👆 Hold to inflate — release to cash out!';
         statusMessage.style.color = '#ffb3d1';
       } else {
         statusMessage.textContent = '🔄 Place your bet & hold!';
         statusMessage.style.color = '#ffb3d1';
       }
 
-      cashOutBtn.disabled = !isRoundActive || isBusted || !isHolding;
       newRoundBtn.disabled = isRoundActive && !isBusted;
       betInput.disabled = isRoundActive;
       halfBetBtn.disabled = isRoundActive;
@@ -709,7 +706,6 @@
 
     // ----- BUTTON EVENTS -----
     newRoundBtn.addEventListener('click', startRound);
-    cashOutBtn.addEventListener('click', cashOut);
 
     // ----- CANVAS EVENTS -----
     canvas.addEventListener('mousedown', handlePointerDown);
