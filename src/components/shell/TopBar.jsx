@@ -119,12 +119,28 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
               </button>
             </div>
           )
+        ) : centerVariant === HEADER_CENTER_VARIANT.DISCONNECTED || centerVariant === HEADER_CENTER_VARIANT.LOGGED_IN_NO_WALLET ? (
+          // No wallet connected — nothing real to show in a balance segment
+          // (see WALLET STATES: "do not show a fake balance"), so this is a
+          // single standalone CTA, not the grouped pill: no empty "Not
+          // connected" segment glued beside it, no unused width left behind
+          // (see PRIMARY GOAL). Same button — height/radius/type/hover/
+          // focus/turquoise — as the connected HUD's Wallet action, just
+          // fully rounded (`rounded-lg`, not `rounded-e-lg`) since there's
+          // no adjacent segment to seam against.
+          <button
+            onClick={onManageWallet}
+            aria-label="Connect Wallet"
+            data-test-id="wallet-hud-action"
+            className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg bg-[var(--global-cta)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Connect Wallet
+          </button>
         ) : (
           <div className="flex h-11 shrink-0 items-stretch">
             <BalanceControl
               open={activePopover === "balance"}
               onOpenChange={(next) => setActivePopover(next ? "balance" : null)}
-              isConnected={centerVariant !== HEADER_CENTER_VARIANT.DISCONNECTED && centerVariant !== HEADER_CENTER_VARIANT.LOGGED_IN_NO_WALLET}
               casinoBalance={casinoBalance}
               casinoSymbol={casinoSymbol}
               casinoLoading={casinoBalanceLoading}
@@ -150,7 +166,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
                 data-test-id="wallet-hud-action"
                 className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-e-lg bg-[var(--global-cta)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                {centerVariant === HEADER_CENTER_VARIANT.CONNECTED ? "Wallet" : "Connect Wallet"}
+                Wallet
               </button>
             )}
           </div>

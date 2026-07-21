@@ -25,28 +25,18 @@ import { baseSepolia, polygonAmoy } from "@shared/chains";
 // ever rendered inside that HUD today, so this grouped shape is hardcoded
 // rather than made prop-configurable for a second caller that doesn't exist.
 //
+// Only ever rendered while a wallet is connected — TopBar.jsx renders a
+// single standalone "Connect Wallet" CTA instead of this control entirely
+// while disconnected, so there is no empty/placeholder balance segment to
+// build or maintain here (see WALLET STATES: "do not show a fake balance").
+//
 // A fixed `min-w-[132px]` (not just `min-w-0` + content) is what actually
 // satisfies "no width jump between zero, normal, and large balance" — content
 // alone would make the trigger visibly grow/shrink as the digit count
 // changes; the min-width absorbs that, and `truncate` is the safety net for
 // values that still exceed it.
-export function BalanceControl({ open, onOpenChange, isConnected, casinoBalance, casinoSymbol, casinoLoading, casinoBalanceError, sportsBalance, sportsSymbol, wrongNetwork, onManageWallet }) {
+export function BalanceControl({ open, onOpenChange, casinoBalance, casinoSymbol, casinoLoading, casinoBalanceError, sportsBalance, sportsSymbol, wrongNetwork, onManageWallet }) {
   const triggerRef = useRef(null);
-
-  // Disconnected: no real balance to show, and nothing meaningful for the
-  // popover to list either — a plain non-interactive placeholder rather
-  // than a button that would open an empty/misleading dropdown (see WALLET
-  // STATES: "do not show a fake balance").
-  if (!isConnected) {
-    return (
-      <div
-        className="flex h-11 min-w-[132px] shrink-0 items-center gap-1.5 rounded-s-lg border border-e-0 border-border bg-secondary/40 px-3 text-sm font-medium text-muted-foreground"
-        aria-hidden="true"
-      >
-        <span className="truncate">Not connected</span>
-      </div>
-    );
-  }
 
   const fullValue = `${casinoBalance.toFixed(8)} ${casinoSymbol}`;
   const displayValue = `${casinoBalance.toFixed(4)} ${casinoSymbol}`;
