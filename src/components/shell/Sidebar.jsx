@@ -175,20 +175,19 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
               onClick={disabled ? undefined : () => setProduct(p.id)}
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
+              aria-label={import.meta.env.DEV && disabled ? `${p.label}, coming soon` : undefined}
               style={!disabled && active ? ACCENTS[p.id].tab : undefined}
               className={cn(
                 // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
-                "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                disabled ? "cursor-default text-muted-foreground/50" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
+                "relative flex h-[54px] flex-1 flex-col items-center justify-center whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-medium" : "gap-1 bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
+              <Icon className={cn("size-4", disabled && "text-foreground/45")} aria-hidden="true" />
+              <span className={disabled ? "text-foreground/60" : undefined}>{p.label}</span>
               {import.meta.env.DEV && disabled && (
-                <span className="absolute -end-1 -top-1">
-                  <StatusBadge variant="muted" size="small" label="Soon" ariaLabel="Coming soon" />
-                </span>
+                <span className="text-[11px] font-normal leading-none text-muted-foreground/70">Coming soon</span>
               )}
-              <Icon className="size-4" />
-              {p.label}
             </button>
           );
         })}
