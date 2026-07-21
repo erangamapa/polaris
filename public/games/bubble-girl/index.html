@@ -360,6 +360,17 @@
     girlImg.src = 'assets/girl.png';
     let imageReady = false;
     const BUBBLE_ANCHOR = { x: CW / 2, y: 220 };
+    const popSound = new Audio('assets/pop.mp3');
+    popSound.preload = 'auto';
+    popSound.volume = 0.85;
+
+    function playPopSound() {
+      try {
+        popSound.currentTime = 0;
+        const play = popSound.play();
+        if (play && typeof play.catch === 'function') play.catch(() => {});
+      } catch (_) {}
+    }
 
     girlImg.onload = () => {
       imageReady = true;
@@ -554,6 +565,7 @@
 
       isBusted = true;
       isHolding = false;
+      playPopSound();
 
       history.push({ result: 'bust', multiplier: multiplier });
       updateHistory();
