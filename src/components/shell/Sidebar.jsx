@@ -179,34 +179,24 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
               title={import.meta.env.DEV && disabled ? "Coming soon" : undefined}
               style={!disabled && active ? ACCENTS[p.id].tab : undefined}
               className={cn(
-                // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump) —
-                // disabled tiles share this exact same box (icon+label, gap-1), never a third row, so nothing reflows.
-                "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                disabled ? "cursor-default" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
+                // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
+                // Disabled tiles fit a third row (icon/label/Soon pill) into this same box, so only they get the
+                // tighter gap — matches MobileBottomNav.jsx's identical icon/label/pill treatment.
+                "relative flex h-[54px] flex-1 flex-col items-center justify-center whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-medium" : "gap-1 bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
-              {/* The badge is anchored to the ICON specifically (a tight,
-                  icon-sized relative wrapper), not to the whole padded
-                  54px-tall button — anchoring to the button left the badge
-                  floating in the button's top padding, far above the icon
-                  itself, reading as a disconnected label rather than a
-                  corner badge. Icon and label dim independently (both
-                  opacity-45) so the badge — a sibling of the icon, not a
-                  child of it — never inherits that opacity and stays
-                  legible. */}
-              <span className="relative">
-                <Icon className={cn("size-4", disabled && "opacity-45")} aria-hidden="true" />
-                {import.meta.env.DEV && disabled && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-1 -end-2 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide"
-                    style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)", color: "var(--badge-muted-text)" }}
-                  >
-                    Soon
-                  </span>
-                )}
-              </span>
-              <span className={disabled ? "opacity-45" : undefined}>{p.label}</span>
+              <Icon className={cn("size-4", disabled && "opacity-50")} aria-hidden="true" />
+              <span className={disabled ? "opacity-60" : undefined}>{p.label}</span>
+              {import.meta.env.DEV && disabled && (
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-[18px] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium leading-none text-foreground/50"
+                  style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)" }}
+                >
+                  Soon
+                </span>
+              )}
             </button>
           );
         })}
