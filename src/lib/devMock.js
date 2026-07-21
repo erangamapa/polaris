@@ -29,17 +29,20 @@
 import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "tribet-dev-panel-state";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 // "default" means "don't override — use the real app's own state." Reset
-// is just "every field back to its default."
+// is just "every field back to its default." `platformScope` is the one
+// exception: it isn't a "defer to real state" mock, it's a direct two-value
+// toggle (there's no independent real-app concept to defer to), so its
+// default is the literal starting value "mvp", not "default".
 export const DEFAULT_DEV_MOCK_STATE = {
   version: STORAGE_VERSION,
   panelOpen: false,
   authStatus: "default", // default | logged-out | logged-in | session-expired
   walletStatus: "default", // default | disconnected | connecting | connected | wrong-network | error
   balancePreset: "default", // default | zero | normal | large | loading | error
-  accountStatus: "default", // default | normal | vip | restricted
+  platformScope: "mvp", // mvp | full
   favoritesPreset: "default", // default | empty | populated
   recentlyPlayedPreset: "default", // default | empty | populated
   gameStatus: "default", // default | loading | provider-error | maintenance | region-restricted | insufficient-balance

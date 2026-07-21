@@ -119,18 +119,21 @@ export function DevPanel() {
           />
         </Section>
 
-        <Section title="Account">
+        <Section title="Platform Scope">
           <Segmented
-            value={mock.accountStatus}
-            onChange={(v) => set({ accountStatus: v })}
+            value={mock.platformScope}
+            onChange={(v) => set({ platformScope: v })}
             options={[
-              { value: "default", label: "Default" },
-              { value: "normal", label: "Normal" },
-              { value: "vip", label: "VIP" },
-              { value: "restricted", label: "Restricted" },
+              { value: "mvp", label: "MVP" },
+              { value: "full", label: "Full" },
             ]}
-            groupLabel="Account status"
+            groupLabel="Platform scope"
           />
+          <p className="text-xs text-muted-foreground">
+            {mock.platformScope === "mvp"
+              ? "Casino only. Sports and Predictions are marked Coming soon."
+              : "Casino, Predictions and Sports are available."}
+          </p>
         </Section>
 
         <Section title="Casino">

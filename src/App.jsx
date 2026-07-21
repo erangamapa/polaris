@@ -21,6 +21,7 @@ import { SupportDialog } from "./components/trust/SupportDialog";
 import { useWallet } from "./web3/useWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
+import { isArenaAllowed, resolveScopedProduct } from "./lib/platformScope";
 import { PredictionsApp } from "./components/predictions/PredictionsApp";
 import { SportsArena } from "./components/sports/SportsArena";
 import { DesktopBetslipPanel } from "./components/sports/DesktopBetslipPanel";
@@ -40,7 +41,7 @@ import { ArenaErrorBoundary } from "./components/shell/ArenaErrorBoundary";
 import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
-import { useDevMockState } from "./lib/devMock";
+import { useDevMockState, getDevMockState } from "./lib/devMock";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 
 // Module-load-time, not inside the component — idempotent (see its own
@@ -125,9 +126,15 @@ export default function App() {
   // allow for now (see useGeoCheck); the gate itself is real.
   const geo = useGeoCheck();
 
-  // Seed navigation from the URL so deep links work.
+  // Seed navigation from the URL so deep links work. Resolved against the
+  // Developer Panel's Platform Scope mock (see lib/platformScope.js) so a
+  // deep link straight into /sports or /predictions while in MVP mode lands
+  // on Casino instead — same as devMock everywhere else, this reads as
+  // "full" in production (getDevMockState() only ever returns a real
+  // platformScope value in dev; see devMock.js's safeLoad).
   const initialNav = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
-  const [product, setProduct] = useState(initialNav.product);
+  const initialPlatformScope = import.meta.env.DEV ? getDevMockState().platformScope : "full";
+  const [product, setProduct] = useState(resolveScopedProduct(initialNav.product, initialPlatformScope));
 
   // Desktop/tablet (≥768px): a persistent expanded/collapsed rail, never
   // fully hidden. Defaults (no stored preference): expanded ≥1280px,
@@ -237,7 +244,8 @@ export default function App() {
   useEffect(() => {
     const onPop = () => {
       const nav = parsePath(window.location.pathname);
-      setProduct(nav.product);
+      const scope = import.meta.env.DEV ? getDevMockState().platformScope : "full";
+      setProduct(resolveScopedProduct(nav.product, scope));
       setCasinoCategory(nav.casinoCategory);
       setPredSection(nav.predSection);
       setSportsView(nav.sportsView);
@@ -285,7 +293,25 @@ export default function App() {
   // adds is inert). See INTEGRATION PRIORITY: Casino favorites/recently
   // played/game state are wired here (App.jsx), not deeper inside
   // CasinoLobby/CasinoCatalog, so those components stay untouched.
+  // `platformScope` is the one exception to "default = inert": its default
+  // is the literal value "mvp", not "default" (see devMock.js), so every
+  // read of it below is explicitly gated on `import.meta.env.DEV` instead —
+  // production always behaves as "full" (unrestricted), matching every
+  // other Developer-Panel-mocked field's no-op-in-prod guarantee.
   const devMock = useDevMockState();
+  const platformScope = import.meta.env.DEV ? devMock.platformScope : "full";
+  // "Switching to MVP while inside Sports or Predictions immediately
+  // redirects to Casino" — also the safety net for the initial-load/popstate
+  // resolution above (resolveScopedProduct), in case of any other path that
+  // lands `product` on a disallowed arena.
+  useEffect(() => {
+    if (!isArenaAllowed(product, platformScope)) {
+      setProduct("casino");
+      setCasinoCategory(DEFAULT_NAV.casinoCategory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to
+    // scope flips and product changes, not every unrelated devMock field.
+  }, [platformScope, product]);
   // Developer Panel -> Transactions: no deposit/withdrawal system exists
   // in this app at all (see DO NOT ADD: "fake backend") — rather than
   // fabricate one, each selection fires the same customer-safe toast copy

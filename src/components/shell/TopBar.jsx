@@ -43,7 +43,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
   const wallet = useDevAwareWallet();
   const {
     isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, sportsBalance, sportsSymbol, disconnect,
-    loggedInNoWallet, sessionExpired, mockAccountStatus, wrongNetworkOverride,
+    loggedInNoWallet, sessionExpired, wrongNetworkOverride,
   } = wallet;
 
   // Long-press the logo (~700ms) toggles the Developer Panel on touch
@@ -124,7 +124,6 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
               open={activePopover === "profile"}
               onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
               address={address}
-              accountStatus={mockAccountStatus}
               onManageWallet={onManageWallet}
               onResponsibleGambling={onResponsibleGambling}
               onSupport={onSupport}
@@ -149,7 +148,6 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
               open={activePopover === "profile"}
               onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
               address={address}
-              accountStatus={mockAccountStatus}
               onManageWallet={onManageWallet}
               onResponsibleGambling={onResponsibleGambling}
               onSupport={onSupport}
@@ -222,8 +220,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
                 open={activePopover === "profile"}
                 onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
                 address={address}
-                accountStatus={mockAccountStatus}
-                onManageWallet={onManageWallet}
+                  onManageWallet={onManageWallet}
                 onResponsibleGambling={onResponsibleGambling}
                 onSupport={onSupport}
                 onSignOut={disconnect}

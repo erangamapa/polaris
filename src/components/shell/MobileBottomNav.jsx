@@ -1,5 +1,8 @@
 import { Menu as MenuIcon, Dices, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { useDevMockState } from "@/lib/devMock";
+import { isArenaAllowed } from "@/lib/platformScope";
 
 // Mobile-only icon choice — Trophy reads as a generic sports/competition
 // symbol rather than implying one specific sport (the previous Volleyball
@@ -44,6 +47,12 @@ const INDICATOR = "pointer-events-none absolute top-0 left-1/2 h-[3px] w-[60%] -
 // IS still active) but its own indicator fades out, so the two states read
 // as "menu open, over Casino" rather than two equally loud signals.
 export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu }) {
+  // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
+  // "full" (unrestricted) in production, same no-op-outside-dev guarantee
+  // as every other devMock-driven override in this app.
+  const mock = useDevMockState();
+  const platformScope = import.meta.env.DEV ? mock.platformScope : "full";
+
   return (
     <nav
       aria-label="Main product navigation"
@@ -73,22 +82,35 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
         {PRODUCTS.map((p) => {
           const Icon = p.icon;
           const active = product === p.id;
+          // See DEV-ONLY REQUIREMENT: `import.meta.env.DEV` leads the
+          // expression (build-time constant, literal `false` in production)
+          // so the "disabled"/"Coming soon" branch below is dead-code-
+          // eliminated from the production bundle entirely — same fix as
+          // TopBar.jsx's sessionExpired/loggedInNoWallet branches.
+          const disabled = import.meta.env.DEV && !isArenaAllowed(p.id, platformScope);
           return (
             <button
               key={p.id}
-              onClick={() => onSelectArena(p.id)}
+              onClick={disabled ? undefined : () => onSelectArena(p.id)}
               aria-current={active ? "page" : undefined}
-              style={active ? { color: p.color } : undefined}
+              aria-disabled={disabled || undefined}
+              aria-label={import.meta.env.DEV && disabled ? `${p.label}, Coming soon` : undefined}
+              style={!disabled && active ? { color: p.color } : undefined}
               className={cn(
                 "relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                active ? "font-semibold" : "font-medium text-muted-foreground"
+                disabled ? "cursor-default text-muted-foreground/50" : active ? "font-semibold" : "font-medium text-muted-foreground"
               )}
             >
               <span
                 aria-hidden="true"
-                className={cn(INDICATOR, active && !menuOpen ? "opacity-100" : "opacity-0")}
+                className={cn(INDICATOR, !disabled && active && !menuOpen ? "opacity-100" : "opacity-0")}
                 style={{ background: p.color }}
               />
+              {import.meta.env.DEV && disabled && (
+                <span className="absolute end-[18%] top-1">
+                  <StatusBadge variant="muted" size="small" label="Soon" ariaLabel="Coming soon" />
+                </span>
+              )}
               <Icon className="size-5" aria-hidden="true" />
               <span className="max-w-full truncate px-0.5">{p.label}</span>
             </button>

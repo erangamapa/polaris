@@ -26,7 +26,7 @@ const BALANCE_PRESET_VALUES = {
 
 export function useDevAwareWallet() {
   const real = useWallet();
-  if (!import.meta.env.DEV) return { ...real, loggedInNoWallet: false, sessionExpired: false, mockAccountStatus: "normal" };
+  if (!import.meta.env.DEV) return { ...real, loggedInNoWallet: false, sessionExpired: false };
 
   // eslint-disable-next-line react-hooks/rules-of-hooks -- import.meta.env.DEV
   // is a build-time constant; this branch never changes within a running
@@ -63,7 +63,6 @@ export function useDevAwareWallet() {
   // connected some other way.
   view.loggedInNoWallet = mock.authStatus === "logged-in" && !view.isConnected;
   view.sessionExpired = mock.authStatus === "session-expired";
-  view.mockAccountStatus = mock.accountStatus === "default" ? "normal" : mock.accountStatus;
 
   return view;
 }

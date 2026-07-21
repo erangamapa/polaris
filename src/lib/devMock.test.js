@@ -49,7 +49,7 @@ describe("devMock store", () => {
     let notified = 0;
     const unsubscribe = subscribeDevMockState(() => { notified += 1; });
     unsubscribe();
-    setDevMockState({ accountStatus: "vip" });
+    setDevMockState({ platformScope: "full" });
     expect(notified).toBe(0);
   });
 

@@ -3,6 +3,8 @@ import { Dices, TrendingUp, Volleyball as SoccerBall } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useDevMockState } from "@/lib/devMock";
+import { isArenaAllowed } from "@/lib/platformScope";
 
 const PRODUCTS = [
   { id: "casino", label: "Casino", icon: Dices },
@@ -49,50 +51,63 @@ function SideIndicator({ color }) {
 // is a ready-made <StatusBadge> element — RailIcon only anchors it top-right
 // (positioning is this container's job; the badge's own look/behavior is
 // entirely the shared component's).
-function RailIcon({ icon, label, active, accentColor, onClick, badge, ariaCurrent, testId, navId }) {
+function RailIcon({ icon, label, active, accentColor, onClick, badge, ariaCurrent, testId, navId, disabled, disabledLabel }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           id={navId}
-          onClick={onClick}
-          aria-label={label}
+          onClick={disabled ? undefined : onClick}
+          aria-label={disabled ? `${label}, ${disabledLabel}` : label}
           aria-current={ariaCurrent}
+          aria-disabled={disabled || undefined}
           data-test-id={testId}
           className={cn(
             "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            disabled ? "cursor-default text-muted-foreground/50" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
           )}
-          style={active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
+          style={!disabled && active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
         >
-          {active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
+          {!disabled && active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
           <ItemIcon icon={icon} />
           {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
         </button>
       </TooltipTrigger>
-      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{label}</TooltipContent>
+      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{disabled ? `${label} — ${disabledLabel}` : label}</TooltipContent>
     </Tooltip>
   );
 }
 
-function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
+function CollapsedRail({ product, setProduct, items, selected, onSelect, platformScope }) {
   const favItem = items.find((it) => it.id === "Favorites");
   const mainItems = items.filter((it) => !it.divider && it.id !== "Favorites");
 
   return (
     <div className="flex h-full flex-col items-center gap-1.5 overflow-y-auto py-3">
-      {PRODUCTS.map((p) => (
-        <RailIcon
-          key={p.id}
-          navId={`nav-arena-${p.id}`}
-          icon={p.icon}
-          label={p.label}
-          active={product === p.id}
-          accentColor={p.id}
-          ariaCurrent={product === p.id ? "page" : undefined}
-          onClick={() => setProduct(p.id)}
-        />
-      ))}
+      {PRODUCTS.map((p) => {
+        // See DEV-ONLY REQUIREMENT: `import.meta.env.DEV` leads the
+        // expression (a build-time constant Vite inlines as literal `false`
+        // in production) so the whole "disabled"/"Coming soon" branch below
+        // is dead-code-eliminated from the production bundle, not just
+        // runtime-inert — same fix as TopBar.jsx's sessionExpired/
+        // loggedInNoWallet branches.
+        const disabled = import.meta.env.DEV && !isArenaAllowed(p.id, platformScope);
+        return (
+          <RailIcon
+            key={p.id}
+            navId={`nav-arena-${p.id}`}
+            icon={p.icon}
+            label={p.label}
+            active={product === p.id}
+            accentColor={p.id}
+            ariaCurrent={product === p.id ? "page" : undefined}
+            onClick={() => setProduct(p.id)}
+            disabled={disabled}
+            disabledLabel={import.meta.env.DEV ? "Coming soon" : undefined}
+            badge={import.meta.env.DEV && disabled ? <StatusBadge variant="muted" size="small" label="Soon" ariaLabel="Coming soon" /> : undefined}
+          />
+        );
+      })}
 
       {/* Arena/section boundary — a full-width, more opaque rule so the two
           hierarchy levels (arena vs section) read as visually distinct. */}
@@ -142,7 +157,7 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect }) {
   );
 }
 
-function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
+function ExpandedRail({ product, setProduct, items, selected, onSelect, platformScope }) {
   const accent = ACCENTS[product];
   return (
     <div className="p-3">
@@ -151,19 +166,27 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
         {PRODUCTS.map((p) => {
           const Icon = p.icon;
           const active = product === p.id;
+          // See CollapsedRail's identical comment — DEV-ONLY REQUIREMENT.
+          const disabled = import.meta.env.DEV && !isArenaAllowed(p.id, platformScope);
           return (
             <button
               key={p.id}
               id={`nav-arena-${p.id}`}
-              onClick={() => setProduct(p.id)}
+              onClick={disabled ? undefined : () => setProduct(p.id)}
               aria-current={active ? "page" : undefined}
-              style={active ? ACCENTS[p.id].tab : undefined}
+              aria-disabled={disabled || undefined}
+              style={!disabled && active ? ACCENTS[p.id].tab : undefined}
               className={cn(
                 // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
-                "flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
+                "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                disabled ? "cursor-default text-muted-foreground/50" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
+              {import.meta.env.DEV && disabled && (
+                <span className="absolute -end-1 -top-1">
+                  <StatusBadge variant="muted" size="small" label="Soon" ariaLabel="Coming soon" />
+                </span>
+              )}
               <Icon className="size-4" />
               {p.label}
             </button>
@@ -223,6 +246,11 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect }) {
 // respect prefers-reduced-motion via motion-reduce:transition-none.
 export function Sidebar({ railMode, product, setProduct, items, selected, onSelect }) {
   const expanded = railMode === "expanded";
+  // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
+  // "full" (unrestricted) in production, same no-op-outside-dev guarantee
+  // as every other devMock-driven override in this app.
+  const mock = useDevMockState();
+  const platformScope = import.meta.env.DEV ? mock.platformScope : "full";
 
   // Focus retention: collapsed <-> expanded swaps the entire rail's DOM
   // (different components), which would otherwise drop focus to <body>.
@@ -263,9 +291,9 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
       >
         <div className={cn("h-full", expanded ? "overflow-y-auto" : "")}>
           {expanded ? (
-            <ExpandedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
+            <ExpandedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} platformScope={platformScope} />
           ) : (
-            <CollapsedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} />
+            <CollapsedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} platformScope={platformScope} />
           )}
         </div>
       </aside>
