@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Menu, ReceiptText, Wallet as WalletIcon, ShieldAlert } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BalanceControl } from "@/components/wallet/BalanceControl";
@@ -8,7 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
 import { TOP_BAR_MODE, getTopBarMode } from "@/lib/topBarState";
-import { toggleDevPanel } from "@/lib/devMock";
+import { useDevPanelLogoTap } from "@/lib/useDevPanelLogoTap";
 
 // Authenticated desktop top bar — Stake-familiar composition (balance +
 // currency cluster, Fund, Activity, Profile grouped right), Tribet tokens
@@ -46,14 +46,9 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
     loggedInNoWallet, sessionExpired, wrongNetworkOverride,
   } = wallet;
 
-  // Long-press the logo (~700ms) toggles the Developer Panel on touch
-  // devices, where Shift+D isn't practical — the one non-visible mobile
-  // entry point (see DO NOT ADD: "visible mobile dev trigger" — this is a
-  // hidden gesture, not an on-screen control). No-ops in production, same
-  // as the shortcut itself (see lib/devMock.js).
-  const pressTimer = useRef(null);
-  const startPress = () => { pressTimer.current = setTimeout(() => toggleDevPanel(), 700); };
-  const cancelPress = () => clearTimeout(pressTimer.current);
+  // Triple-tap the logo toggles the Developer Panel on touch devices, where
+  // Shift+D isn't practical (see lib/useDevPanelLogoTap.js).
+  const onLogoTap = useDevPanelLogoTap();
 
   const [activePopover, setActivePopover] = useState(null); // null | "balance" | "profile"
 
@@ -76,11 +71,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
 
       <div
         className="flex shrink-0 select-none items-center gap-2"
-        onPointerDown={startPress}
-        onPointerUp={cancelPress}
-        onPointerLeave={cancelPress}
-        onPointerCancel={cancelPress}
-        onContextMenu={(e) => e.preventDefault()}
+        onClick={onLogoTap}
       >
         <div className="grid size-8 place-items-center rounded-lg bg-[var(--brand-logo)] font-black text-[var(--brand-logo-text)]" aria-hidden="true">{BRAND_NAME[0]}</div>
         <span className="text-sm font-bold tracking-tight">
