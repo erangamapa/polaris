@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, ChevronDown, Copy, Loader2 } from "lucide-react";
+import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/telemetry";
 import { CASINO_CHAIN_ID } from "@shared/chains";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useDevMockState } from "@/lib/devMock";
+import { isArenaAllowed } from "@/lib/platformScope";
+import { ARENAS } from "@/lib/arenas";
 
 // All three top cards share this fixed height at every breakpoint — identical
 // width comes from the grid (grid-cols-3 = repeat(3, minmax(0, 1fr))), identical
@@ -231,12 +236,14 @@ export function PlayerTile() {
 
 // `mobilePlaceholder` is shorter — the full desktop copy ("Search prediction
 // markets") clips inside the narrower mobile input; desktop copy is
-// unchanged.
-const SEARCH_SCOPES = [
-  { id: "casino", label: "Casino", placeholder: "Search casino games", mobilePlaceholder: "Search games" },
-  { id: "predictions", label: "Predictions", placeholder: "Search prediction markets", mobilePlaceholder: "Search markets" },
-  { id: "sports", label: "Sports", placeholder: "Search sports, leagues or teams", mobilePlaceholder: "Search teams or leagues" },
-];
+// unchanged. Search-specific copy stays local (not "availability" data —
+// see lib/arenas.js); id/label come from the shared ARENAS list.
+const SEARCH_COPY = {
+  casino: { placeholder: "Search casino games", mobilePlaceholder: "Search games" },
+  predictions: { placeholder: "Search prediction markets", mobilePlaceholder: "Search markets" },
+  sports: { placeholder: "Search sports, leagues or teams", mobilePlaceholder: "Search teams or leagues" },
+};
+const SEARCH_SCOPES = ARENAS.map((a) => ({ ...a, ...SEARCH_COPY[a.id] }));
 
 // One combined control — a borderless scope <select> and a borderless input
 // sharing a single outer border/height/radius/focus ring, not two separate
@@ -261,6 +268,23 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
   const rootRef = useRef(null);
   const zeroReportedFor = useRef(null);
   const active = SEARCH_SCOPES.find((s) => s.id === scope);
+
+  // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
+  // "full" (unrestricted) in production, same no-op-outside-dev guarantee
+  // as every other devMock-driven override in this app. Casino is always
+  // selectable (see lib/platformScope.js's isArenaAllowed); Predictions/
+  // Sports are only disabled here while MVP-scoped.
+  const mock = useDevMockState();
+  const platformScope = import.meta.env.DEV ? mock.platformScope : "full";
+  // Mirrors App.jsx's "switching to MVP while inside a disabled arena
+  // immediately redirects" effect: if scope somehow points at a
+  // now-disallowed arena (e.g. Platform Scope flips to MVP live while
+  // "Sports" was selected here), snap back to Casino rather than leaving
+  // an impossible-to-search scope selected.
+  useEffect(() => {
+    if (!isArenaAllowed(scope, platformScope)) setScope("casino");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to scope-mode flips, not every scope change
+  }, [platformScope]);
 
   // Placeholder text only — matches the shared md: breakpoint the rest of
   // the mobile shell uses (Sidebar/MobileBottomNav).
@@ -322,17 +346,63 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
       <div ref={rootRef} onBlur={onBlur} className="relative">
         <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--product-primary)]">
           <div className="relative flex h-full shrink-0 items-center">
-            <select
-              value={scope}
-              onChange={(e) => { setScope(e.target.value); track("casino_search_scope_changed", { searchScope: e.target.value }); }}
-              aria-label="Search scope"
-              data-test-id="search-scope"
-              className="h-full appearance-none rounded-l-lg border-0 bg-transparent py-0 pl-2.5 pr-6 text-sm font-medium text-white focus-visible:outline-none sm:pl-3 sm:pr-7"
-            >
-              {SEARCH_SCOPES.map((s) => (
-                <option key={s.id} value={s.id} className="bg-zinc-900 text-white">{s.label}</option>
-              ))}
-            </select>
+            {/* A real <select> can't carry a Radix Tooltip or custom opacity
+                per <option> — the browser renders that native popup itself,
+                opaque to CSS/JS once open — so disabled-arena scope options
+                need a real (Radix) menu instead. Casino is never disabled
+                (see lib/platformScope.js's isArenaAllowed); Predictions/
+                Sports gate the same way the main arena nav does. */}
+            <DropdownMenuPrimitive.Root>
+              <DropdownMenuPrimitive.Trigger asChild>
+                <button
+                  type="button"
+                  aria-label="Search scope"
+                  data-test-id="search-scope"
+                  className="flex h-full items-center whitespace-nowrap rounded-l-lg border-0 bg-transparent py-0 pl-2.5 pr-6 text-sm font-medium text-white outline-none focus-visible:outline-none sm:pl-3 sm:pr-7"
+                >
+                  {active.label}
+                </button>
+              </DropdownMenuPrimitive.Trigger>
+              <DropdownMenuPrimitive.Portal>
+                <DropdownMenuPrimitive.Content
+                  align="start"
+                  sideOffset={8}
+                  className="z-[var(--z-header-popover)] min-w-[10rem] overflow-hidden rounded-lg border border-white/10 bg-zinc-900 p-1 text-white shadow-[0_12px_28px_rgba(0,0,0,0.5)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                >
+                  <DropdownMenuPrimitive.RadioGroup
+                    value={scope}
+                    onValueChange={(v) => { setScope(v); track("casino_search_scope_changed", { searchScope: v }); }}
+                  >
+                    {SEARCH_SCOPES.map((s) => {
+                      const scopeDisabled = import.meta.env.DEV && !isArenaAllowed(s.id, platformScope);
+                      const item = (
+                        <DropdownMenuPrimitive.RadioItem
+                          key={s.id}
+                          value={s.id}
+                          disabled={scopeDisabled}
+                          className={cn(
+                            "flex cursor-pointer items-center rounded-md px-2.5 py-1.5 text-sm outline-none transition-colors data-[highlighted]:bg-white/10",
+                            scopeDisabled && "cursor-not-allowed opacity-50 data-[highlighted]:bg-transparent"
+                          )}
+                        >
+                          {s.label}
+                        </DropdownMenuPrimitive.RadioItem>
+                      );
+                      // Tooltip only wraps disabled options — same "Coming
+                      // soon", hover/focus-only (never tap-triggered), no
+                      // layout shift pattern as the main arena nav (see
+                      // Sidebar.jsx).
+                      return import.meta.env.DEV && scopeDisabled ? (
+                        <Tooltip key={s.id}>
+                          <TooltipTrigger asChild>{item}</TooltipTrigger>
+                          <TooltipContent side="right">Coming soon</TooltipContent>
+                        </Tooltip>
+                      ) : item;
+                    })}
+                  </DropdownMenuPrimitive.RadioGroup>
+                </DropdownMenuPrimitive.Content>
+              </DropdownMenuPrimitive.Portal>
+            </DropdownMenuPrimitive.Root>
             <ChevronDown className="pointer-events-none absolute right-1.5 size-3.5 text-zinc-500 sm:right-2" />
           </div>
           <span className="h-5 w-px shrink-0 bg-white/10" aria-hidden="true" />

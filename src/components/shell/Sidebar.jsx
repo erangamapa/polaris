@@ -5,12 +5,12 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useDevMockState } from "@/lib/devMock";
 import { isArenaAllowed } from "@/lib/platformScope";
+import { ARENAS } from "@/lib/arenas";
 
-const PRODUCTS = [
-  { id: "casino", label: "Casino", icon: Dices },
-  { id: "predictions", label: "Predictions", icon: TrendingUp },
-  { id: "sports", label: "Sports", icon: SoccerBall },
-];
+// Icons are desktop-rail-specific presentation, not "availability" data —
+// see lib/arenas.js for why id/label live there instead of being retyped here.
+const ARENA_ICONS = { casino: Dices, predictions: TrendingUp, sports: SoccerBall };
+const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id] }));
 
 // Subtle per-product accents (no left bar) — tint + tinted text only.
 // Each product keeps its OWN colour even when another product is active.

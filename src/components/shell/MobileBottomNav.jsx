@@ -2,17 +2,17 @@ import { Menu as MenuIcon, Dices, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDevMockState } from "@/lib/devMock";
 import { isArenaAllowed } from "@/lib/platformScope";
+import { ARENAS } from "@/lib/arenas";
 
 // Mobile-only icon choice — Trophy reads as a generic sports/competition
 // symbol rather than implying one specific sport (the previous Volleyball
 // icon could be read as literally "volleyball"). Desktop's arena switcher
 // (Sidebar.jsx) keeps its own icon unchanged — this is a mobile-nav-only
-// polish, not a desktop navigation change.
-const PRODUCTS = [
-  { id: "casino", label: "Casino", icon: Dices, color: "#D99AB9" },
-  { id: "predictions", label: "Predictions", icon: TrendingUp, color: "#92D4DF" },
-  { id: "sports", label: "Sports", icon: Trophy, color: "#D7E78A" },
-];
+// polish, not a desktop navigation change. Icons/colors are presentation,
+// not "availability" data — see lib/arenas.js for why id/label live there.
+const ARENA_ICONS = { casino: Dices, predictions: TrendingUp, sports: Trophy };
+const ARENA_COLORS = { casino: "#D99AB9", predictions: "#92D4DF", sports: "#D7E78A" };
+const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id], color: ARENA_COLORS[a.id] }));
 
 // Shared indicator geometry — every item (Menu or arena) uses the exact
 // same width/height/radius/position/transition; only colour and opacity
