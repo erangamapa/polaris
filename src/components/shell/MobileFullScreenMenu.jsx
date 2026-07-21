@@ -24,7 +24,7 @@ import { CLOSE_TRIGGER, focusIntentForCloseTrigger } from "@/lib/mobileMenuFocus
 //
 // Covers the viewport (100dvh, not 100vh, so browser address-bar expand/
 // collapse never clips the header or bottom nav) at --z-fullscreen-menu.
-export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, selected, onSelect, onClose, product, onSelectArena, onToggleMenu, onFocusMainContent }) {
+export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, accountItems, selected, onSelect, onClose, product, onSelectArena, onToggleMenu, onFocusMainContent }) {
   const navRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -141,6 +141,27 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
                 <ul className="space-y-0.5">
                   {utilityItems.map((item) => (
                     <MenuRow key={item.id} item={item} active={selected === item.id} onClick={() => handleItemClick(item)} />
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {/* Account — the mobile "menu layer" entry point for
+                Wallet/Activity/Responsible Gaming/Support/Sign out (see
+                PLAYER PROFILE / ACCOUNT MENU: "reuse the current mobile
+                account trigger or place it in the mobile account/menu
+                layer"). A visually separate group (its own divider + label)
+                from the arena-specific utility items above — global account
+                actions, not tied to whichever arena tab is active — never
+                stacked as a second overlay: this is the SAME full-screen
+                surface/focus trap the arena menu already is. */}
+            {accountItems?.length > 0 && (
+              <>
+                <div className="my-3 border-t" aria-hidden="true" />
+                <div className="px-2.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Account</div>
+                <ul className="space-y-0.5">
+                  {accountItems.map((item) => (
+                    <MenuRow key={item.id} item={item} active={false} onClick={() => handleItemClick(item)} />
                   ))}
                 </ul>
               </>

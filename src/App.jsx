@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import {
   LayoutGrid, Gem, Cherry, Radio, Tv, Sparkles, Star,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
+  ShieldCheck, LifeBuoy, LogOut, LogIn,
 } from "lucide-react";
 import { TopBar } from "./components/shell/TopBar";
 import { Sidebar } from "./components/shell/Sidebar";
@@ -19,6 +20,7 @@ import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
 import { SupportDialog } from "./components/trust/SupportDialog";
 import { useWallet } from "./web3/useWallet";
+import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { isArenaAllowed, resolveScopedProduct } from "./lib/platformScope";
@@ -41,7 +43,8 @@ import { ArenaErrorBoundary } from "./components/shell/ArenaErrorBoundary";
 import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
-import { useDevMockState, getDevMockState } from "./lib/devMock";
+import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock";
+import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 
 // Module-load-time, not inside the component — idempotent (see its own
@@ -287,6 +290,14 @@ export default function App() {
   // Wallet connection replaces password login. Connecting (on the right network)
   // is the gate for placing bets; the Reown modal handles the connect flow.
   const wallet = useWallet();
+  // Dev-aware ONLY for the mobile account section's isConnected read below
+  // (see accountItems) — everything else in this file (ensureAuth, balance
+  // merging, chain tracking) deliberately keeps using the real `wallet`
+  // above, unchanged. Without this, the Developer Panel's Wallet preset
+  // would have no effect on the mobile menu's Account rows, since the real
+  // wallet.isConnected can't see the mock (see TopBar.jsx, which already
+  // reads this same hook for its own desktop ProfileMenu).
+  const devWallet = useDevAwareWallet();
   // Developer Panel (Shift+D) mock state — a no-op object in production
   // (useDevMockState always returns DEFAULT_DEV_MOCK_STATE there, and every
   // field below reads as "default", so every override branch this file
@@ -408,6 +419,29 @@ export default function App() {
   // exact same dialogs rather than a second copy.
   const openRg = () => { setMobileMenuOpen(false); setRgOpen(true); };
   const openSupport = () => { setMobileMenuOpen(false); setSupportOpen(true); };
+
+  // Player Profile / Account — same auth/wallet-independence model
+  // TopBar.jsx's desktop ProfileMenu uses (see lib/profileState.js),
+  // computed here too since the mobile account section (below, in
+  // mobileMenu) needs it for its own item list. `devMock.authStatus` reads
+  // as "default" outside dev (see devMock.js), so `profileVariant` always
+  // falls back to deriving from the real `wallet.isConnected` in
+  // production — no separate auth system, per this app's existing
+  // architecture (see devMock.js's own note on this).
+  const authStatus = import.meta.env.DEV ? devMock.authStatus : "default";
+  const profileVariant = getProfileVariant({ authStatus, isConnected: devWallet.isConnected });
+  // Mirrors TopBar.jsx's identical handleSignOut — see lib/profileState.js's
+  // getSignOutAction for why this never disconnects the real wallet just to
+  // clear a *mocked* auth state (see SIGN OUT: "preserve wallet connection
+  // unless current product logic explicitly disconnects it").
+  const signOut = () => {
+    setMobileMenuOpen(false);
+    if (import.meta.env.DEV && getSignOutAction(authStatus) === "reset-auth-mock") {
+      setDevMockState({ authStatus: "logged-out" });
+    } else {
+      wallet.disconnect();
+    }
+  };
 
   // Game tiles are real links (`?play=<favId>`) so middle-click / cmd-click opens
   // a new tab, like on most sites. These helpers keep that URL in sync with the
@@ -642,6 +676,39 @@ export default function App() {
     track("mobile_menu_item_selected", { arena: product, section: id });
   };
 
+  // Mobile's account/menu-layer entry point (see MobileFullScreenMenu's
+  // `accountItems` prop) — the same three PROFILE_VARIANT bodies desktop's
+  // ProfileMenu renders, just as plain menu rows instead of a popover.
+  // Support/Responsible Gaming are always reachable regardless of variant
+  // (see RESPONSIBLE GAMING: "must be easy to find... near Support"), never
+  // buried behind auth state.
+  // `profileVariant === SESSION_EXPIRED` can only be true in dev (see
+  // profileState.js's getProfileVariant — the session-expired mock has no
+  // real-world equivalent), so this leads with the build-time
+  // `import.meta.env.DEV` constant, not just the runtime variant check —
+  // same fix as ProfileMenu.jsx's identical branch (see DEV-ONLY
+  // REQUIREMENT).
+  const accountItems =
+    import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED
+      ? [
+          { id: "account-reconnect", label: "Log in again", icon: LogIn, action: openFunds },
+          { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
+          { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
+        ]
+      : profileVariant === PROFILE_VARIANT.LOGGED_IN
+        ? [
+            { id: "account-wallet", label: devWallet.isConnected ? "Wallet" : "Connect wallet", icon: Wallet, action: openFunds },
+            { id: "account-activity", label: "Activity", icon: ReceiptText, action: openHistory },
+            { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
+            { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
+            { id: "account-signout", label: "Sign out", icon: LogOut, action: signOut },
+          ]
+        : [
+            { id: "account-connect", label: "Connect wallet", icon: Wallet, action: openFunds },
+            { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
+            { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
+          ];
+
   // Bottom-nav arena switch: always lands on that arena's default section
   // (Stake-style "tap the tab, go home"), unlike the desktop arena tabs,
   // which preserve whatever section was last viewed — an intentional,
@@ -777,6 +844,7 @@ export default function App() {
         title={mobileMenu.title}
         primaryItems={mobileMenu.primary}
         utilityItems={mobileMenu.utility}
+        accountItems={accountItems}
         selected={sidebar.selected}
         onSelect={handleMobileMenuSelect}
         onClose={closeMobileMenu}

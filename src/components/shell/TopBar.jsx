@@ -8,6 +8,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
 import { getTopBarMode, HEADER_CENTER_VARIANT, getHeaderCenterVariant } from "@/lib/topBarState";
+import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "@/lib/profileState";
+import { setDevMockState } from "@/lib/devMock";
 import { useDevPanelLogoTap } from "@/lib/useDevPanelLogoTap";
 
 // Authenticated desktop top bar — a stable three-zone grid (see PRIMARY
@@ -25,11 +27,19 @@ import { useDevPanelLogoTap } from "@/lib/useDevPanelLogoTap";
 // Mental model this header enforces end to end (every control below maps to
 // exactly one of these, never two):
 //   Balance = what I have       -> BalanceControl (read-only glance + per-chain breakdown)
-//   Wallet  = manage money      -> the HUD's right half (same FundsDialog flow as before — Fund and
-//                                  "Manage wallet" already resolved to one identical handler, so this
-//                                  is a rename/merge, not a new control; see CENTER HUD STRUCTURE)
+//   Wallet  = manage money      -> the HUD's right half (same FundsDialog flow — Fund and
+//                                  "Manage wallet" already resolved to one identical handler)
 //   Activity = what happened    -> Activity button (opens BetHistoryDialog)
-//   Profile = account/settings  -> ProfileMenu (Manage wallet, Responsible gambling, Support, Sign out)
+//   Profile = account/auth      -> ProfileMenu (Wallet, Activity, Responsible Gaming, Support, Sign out)
+//
+// Profile vs Balance is the same "auth and wallet are independent axes"
+// split this whole task is about: `centerVariant` (below, unchanged from
+// the earlier HUD task — see DO NOT CHANGE) governs ONLY the Balance+Wallet
+// HUD; `profileVariant` (see lib/profileState.js) governs ONLY the Profile
+// trigger/menu, computed from the SAME underlying authStatus/isConnected
+// inputs but as a genuinely separate decision — the two can and do diverge
+// (e.g. "logged in" + "wrong network" shows a normal logged-in Profile menu
+// alongside a wrong-network HUD), which is exactly the point.
 //
 // activePopover is the ONE piece of state this component owns: which of
 // the two lightweight header popovers (Balance, Profile) is open. Both are
@@ -44,12 +54,16 @@ import { useDevPanelLogoTap } from "@/lib/useDevPanelLogoTap";
 // `md:`) and renders its existing compact mobile form (logo + wallet pill
 // only) — the centered HUD is `hidden md:flex`, so it never renders on
 // mobile at all (see RESPONSIVE COMPRESSION: "do not force the desktop
-// centered HUD onto mobile").
+// centered HUD onto mobile"). Mobile's own account/menu-layer entry points
+// (Responsible Gaming, Support, Sign out) live in App.jsx's mobileMenu
+// utility section instead (see MobileFullScreenMenu) — reusing that
+// existing full-screen surface rather than adding a second mobile account
+// sheet (see OVERLAY BEHAVIOR: "do not stack it with the mobile menu").
 export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, onFund, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
   const wallet = useDevAwareWallet();
   const {
     isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, sportsBalance, sportsSymbol, disconnect,
-    loggedInNoWallet, sessionExpired, wrongNetworkOverride,
+    loggedInNoWallet, sessionExpired, wrongNetworkOverride, authStatus,
   } = wallet;
 
   // Triple-tap the logo toggles the Developer Panel on touch devices, where
@@ -64,6 +78,24 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
   const effectiveWrongNetwork = wrongNetworkOverride ?? wrongNetwork;
   const mode = getTopBarMode({ isConnected, wrongNetwork: effectiveWrongNetwork });
   const centerVariant = getHeaderCenterVariant({ sessionExpired, loggedInNoWallet, mode });
+  const profileVariant = getProfileVariant({ authStatus, isConnected });
+
+  // Sign Out's one real decision (see lib/profileState.js's
+  // getSignOutAction): clear whichever devMock authStatus override is
+  // active without touching the real wallet connection, or — when no mock
+  // is active — fall back to this app's only real sign-out mechanism
+  // (disconnecting the wallet, since wallet.isConnected IS the login signal
+  // absent a real auth backend; see SIGN OUT: "use the current mocked auth
+  // layer honestly"). Never resets unrelated dev-panel state (balance
+  // preset, Platform Scope, etc.) — only the one `authStatus` field.
+  const handleSignOut = () => {
+    if (import.meta.env.DEV && getSignOutAction(authStatus) === "reset-auth-mock") {
+      setDevMockState({ authStatus: "logged-out" });
+    } else {
+      disconnect();
+    }
+    setActivePopover(null);
+  };
 
   return (
     <header className="relative z-40 flex min-h-14 shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:grid md:grid-cols-[1fr_auto_1fr] md:gap-3">
@@ -90,7 +122,8 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
       {/* CENTER ZONE: the Balance+Wallet transactional HUD — desktop only,
           `hidden md:flex` so it's excluded from both layout AND the a11y
           tree on mobile (same pattern the burger button above already
-          uses), never a second focusable copy at any width. */}
+          uses), never a second focusable copy at any width. Unchanged by
+          this task (see DO NOT CHANGE: "centered balance + Wallet HUD"). */}
       <div className="hidden min-w-0 items-center justify-center md:flex md:justify-self-center">
         {centerVariant === HEADER_CENTER_VARIANT.SESSION_EXPIRED ? (
           // DEV-ONLY state (Developer Panel -> User -> Session expired).
@@ -173,76 +206,61 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
         )}
       </div>
 
-      {/* RIGHT ZONE: Activity + Profile on desktop, the existing compact
-          mobile cluster below `md:`. `ms-auto` keeps it pinned right in
-          the mobile `flex` layout; `md:justify-self-end` takes over once
-          the header becomes a grid. */}
+      {/* RIGHT ZONE: Activity (logged in only) + Profile. Profile is the
+          final right-side control and is ALWAYS present on desktop — even
+          logged out it shows a guest-state trigger (see PRIMARY GOAL /
+          LOGGED-OUT STATE) — driven entirely by `profileVariant`,
+          independent of `centerVariant` above. `ms-auto` keeps it pinned
+          right in the mobile `flex` layout; `md:justify-self-end` takes
+          over once the header becomes a grid. */}
       <div className="ms-auto flex min-w-0 shrink-0 items-center md:justify-self-end">
-        {centerVariant === HEADER_CENTER_VARIANT.SESSION_EXPIRED ? (
-          import.meta.env.DEV && (
-            <ProfileMenu
-              open={activePopover === "profile"}
-              onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
-              address={address}
-              onManageWallet={onManageWallet}
-              onResponsibleGambling={onResponsibleGambling}
-              onSupport={onSupport}
-              onSignOut={disconnect}
-            />
-          )
-        ) : centerVariant === HEADER_CENTER_VARIANT.LOGGED_IN_NO_WALLET ? (
-          import.meta.env.DEV && (
-            <ProfileMenu
-              open={activePopover === "profile"}
-              onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
-              address={address}
-              onManageWallet={onManageWallet}
-              onResponsibleGambling={onResponsibleGambling}
-              onSupport={onSupport}
-              onSignOut={disconnect}
-            />
-          )
-        ) : centerVariant !== HEADER_CENTER_VARIANT.DISCONNECTED ? (
-          <>
-            {/* Desktop utilities (≥768px). `hidden md:flex` — same CSS-hide
-                pattern as everywhere else in this header, so there's never
-                a second focusable copy at any width. */}
-            <div className="hidden min-w-0 items-center gap-1.5 sm:gap-2 md:flex">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={onActivity}
-                    aria-label={openPositionsCount > 0 ? `Activity, ${openPositionsCount} open` : "Activity"}
-                    className="relative grid size-10 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <ReceiptText className="size-5" aria-hidden="true" />
-                    {openPositionsCount > 0 && (
-                      <span className="absolute -end-1 -top-1">
-                        <StatusBadge variant="attention" size="small" count={openPositionsCount} ariaLabel={`${openPositionsCount} open`} />
-                      </span>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Activity</TooltipContent>
-              </Tooltip>
+        {/* Desktop utilities (≥768px). `hidden md:flex` — same CSS-hide
+            pattern as everywhere else in this header, so there's never a
+            second focusable copy at any width (see RESPONSIVE TESTING:
+            "Desktop menu does not render on mobile"). */}
+        <div className="hidden min-w-0 items-center gap-1.5 sm:gap-2 md:flex">
+          {profileVariant === PROFILE_VARIANT.LOGGED_IN && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onActivity}
+                  aria-label={openPositionsCount > 0 ? `Activity, ${openPositionsCount} open` : "Activity"}
+                  className="relative grid size-10 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ReceiptText className="size-5" aria-hidden="true" />
+                  {openPositionsCount > 0 && (
+                    <span className="absolute -end-1 -top-1">
+                      <StatusBadge variant="attention" size="small" count={openPositionsCount} ariaLabel={`${openPositionsCount} open`} />
+                    </span>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Activity</TooltipContent>
+            </Tooltip>
+          )}
 
-              <ProfileMenu
-                open={activePopover === "profile"}
-                onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
-                address={address}
-                onManageWallet={onManageWallet}
-                onResponsibleGambling={onResponsibleGambling}
-                onSupport={onSupport}
-                onSignOut={disconnect}
-              />
-            </div>
+          <ProfileMenu
+            open={activePopover === "profile"}
+            onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
+            variant={profileVariant}
+            address={address}
+            isConnected={isConnected}
+            onManageWallet={onManageWallet}
+            onActivity={onActivity}
+            onResponsibleGambling={onResponsibleGambling}
+            onSupport={onSupport}
+            onSignOut={handleSignOut}
+          />
+        </div>
 
-            {/* Mobile authenticated cluster (<768px) — unchanged from
-                before: a text Fund button once there's room (sm/640px+),
-                an icon-only Activity button, and the wallet pill. Fuller
-                account/activity access lives in the mobile menu's utility
-                section (see MobileFullScreenMenu). */}
-            <div className="flex items-center gap-2 md:hidden">
+        {/* Mobile authenticated cluster (<768px) — the wallet pill always
+            reflects real wallet connection regardless of profileVariant
+            (see SESSION-EXPIRED: "preserve wallet connection state
+            separately"); Fund/Activity are authenticated-account actions,
+            so they're gated the same way Activity is on desktop. */}
+        <div className="flex items-center gap-2 md:hidden">
+          {profileVariant === PROFILE_VARIANT.LOGGED_IN && (
+            <>
               <button
                 onClick={onFund}
                 aria-label="Fund"
@@ -257,18 +275,10 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
               >
                 <ReceiptText className="size-5" />
               </button>
-              <WalletButton onManage={onManageWallet} />
-            </div>
-          </>
-        ) : (
-          // Pure logged-out/disconnected: mobile still needs its own
-          // Connect Wallet pill (the center HUD is desktop-only); desktop's
-          // Connect Wallet lives in the centered HUD above already, so
-          // nothing duplicates it here.
-          <div className="md:hidden">
-            <WalletButton onManage={onManageWallet} />
-          </div>
-        )}
+            </>
+          )}
+          <WalletButton onManage={onManageWallet} />
+        </div>
       </div>
     </header>
   );

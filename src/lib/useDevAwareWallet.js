@@ -26,7 +26,7 @@ const BALANCE_PRESET_VALUES = {
 
 export function useDevAwareWallet() {
   const real = useWallet();
-  if (!import.meta.env.DEV) return { ...real, loggedInNoWallet: false, sessionExpired: false };
+  if (!import.meta.env.DEV) return { ...real, loggedInNoWallet: false, sessionExpired: false, authStatus: "default" };
 
   // eslint-disable-next-line react-hooks/rules-of-hooks -- import.meta.env.DEV
   // is a build-time constant; this branch never changes within a running
@@ -63,6 +63,10 @@ export function useDevAwareWallet() {
   // connected some other way.
   view.loggedInNoWallet = mock.authStatus === "logged-in" && !view.isConnected;
   view.sessionExpired = mock.authStatus === "session-expired";
+  // Raw pass-through — lib/profileState.js's getProfileVariant needs the
+  // full three-way mock value (including "logged-out"), not just these two
+  // already-derived booleans.
+  view.authStatus = mock.authStatus;
 
   return view;
 }
