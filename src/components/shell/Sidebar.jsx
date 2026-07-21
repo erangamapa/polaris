@@ -47,10 +47,12 @@ function SideIndicator({ color }) {
 }
 
 // One rail item, icon-only, for the collapsed (60px) rail. Tooltip shows on
-// hover AND keyboard focus (Radix default) so nothing is hover-only. `badge`
-// is a ready-made <StatusBadge> element — RailIcon only anchors it top-right
-// (positioning is this container's job; the badge's own look/behavior is
-// entirely the shared component's).
+// hover AND keyboard focus (Radix default, and never on touch — Radix
+// Tooltip is pointer/focus driven, not tap-triggered) so nothing is
+// hover-only. Disabled items dim the icon to 50% opacity instead of a
+// badge/pill — the tooltip is the only "Coming soon" signal, and it reads
+// exactly that (not "label — Coming soon") since the icon-only trigger
+// already establishes which item this is.
 function RailIcon({ icon, label, active, accentColor, onClick, badge, ariaCurrent, testId, navId, disabled, disabledLabel }) {
   return (
     <Tooltip>
@@ -64,16 +66,16 @@ function RailIcon({ icon, label, active, accentColor, onClick, badge, ariaCurren
           data-test-id={testId}
           className={cn(
             "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            disabled ? "cursor-default text-muted-foreground/50" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            disabled ? "cursor-not-allowed" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
           )}
           style={!disabled && active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
         >
           {!disabled && active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
-          <ItemIcon icon={icon} />
+          <ItemIcon icon={icon} className={cn("size-4", disabled && "opacity-50")} />
           {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
         </button>
       </TooltipTrigger>
-      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{disabled ? `${label} — ${disabledLabel}` : label}</TooltipContent>
+      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{disabled ? disabledLabel : label}</TooltipContent>
     </Tooltip>
   );
 }
@@ -104,7 +106,6 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect, platfor
             onClick={() => setProduct(p.id)}
             disabled={disabled}
             disabledLabel={import.meta.env.DEV ? "Coming soon" : undefined}
-            badge={import.meta.env.DEV && disabled ? <StatusBadge variant="muted" size="small" label="Soon" ariaLabel="Coming soon" /> : undefined}
           />
         );
       })}
@@ -168,7 +169,14 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
           const active = product === p.id;
           // See CollapsedRail's identical comment — DEV-ONLY REQUIREMENT.
           const disabled = import.meta.env.DEV && !isArenaAllowed(p.id, platformScope);
-          return (
+
+          // Identical box for every state (active/inactive/disabled) — no
+          // extra row, no background/border override for disabled — so
+          // layout, spacing, and hit area never move relative to the
+          // active Casino tile (see PRIMARY GOAL). Icon + label just dim to
+          // 50% opacity; the ONLY other disabled-specific signal is the
+          // tooltip below, not a pill/badge/lock/status text.
+          const tile = (
             <button
               key={p.id}
               id={`nav-arena-${p.id}`}
@@ -176,29 +184,32 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
               aria-label={import.meta.env.DEV && disabled ? `${p.label}, coming soon` : undefined}
-              title={import.meta.env.DEV && disabled ? "Coming soon" : undefined}
               style={!disabled && active ? ACCENTS[p.id].tab : undefined}
               className={cn(
                 // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
-                // Disabled tiles fit a third row (icon/label/Soon pill) into this same box, so only they get the
-                // tighter gap — matches MobileBottomNav.jsx's identical icon/label/pill treatment.
-                "relative flex h-[54px] flex-1 flex-col items-center justify-center whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-medium" : "gap-1 bg-secondary/40 text-muted-foreground hover:text-foreground"
+                "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                disabled ? "cursor-not-allowed" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon className={cn("size-4", disabled && "opacity-50")} aria-hidden="true" />
-              <span className={disabled ? "opacity-60" : undefined}>{p.label}</span>
-              {import.meta.env.DEV && disabled && (
-                <span
-                  aria-hidden="true"
-                  className="inline-flex h-[18px] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium leading-none text-foreground/50"
-                  style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)" }}
-                >
-                  Soon
-                </span>
-              )}
+              <span className={disabled ? "opacity-50" : undefined}>{p.label}</span>
             </button>
           );
+
+          // Tooltip only wraps disabled tiles — Casino (and Predictions/
+          // Sports whenever Platform Scope is Full) stay exactly as before,
+          // no tooltip added. Radix Tooltip is hover/focus-driven, never
+          // tap-triggered, so this is silent on touch by construction (see
+          // MOBILE: "do not show a tooltip on touch devices").
+          if (import.meta.env.DEV && disabled) {
+            return (
+              <Tooltip key={p.id}>
+                <TooltipTrigger asChild>{tile}</TooltipTrigger>
+                <TooltipContent>Coming soon</TooltipContent>
+              </Tooltip>
+            );
+          }
+          return tile;
         })}
       </div>
 
