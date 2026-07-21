@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🫧 Bubble Girl · Gambling Casino</title>
+  <link rel="preload" href="assets/girl.webp" as="image" type="image/webp">
   <style>
     * {
       box-sizing: border-box;
@@ -357,17 +358,25 @@
     const CW = 650;
     const CH = 482;
     const girlImg = new Image();
-    girlImg.src = 'assets/girl.png';
+    girlImg.decoding = 'async';
+    girlImg.src = 'assets/girl.webp';
     let imageReady = false;
     const BUBBLE_ANCHOR = { x: CW / 2, y: 220 };
-    const popSound = new Audio('assets/pop.mp3');
-    popSound.preload = 'auto';
-    popSound.volume = 0.85;
+    let popSound = null;
+
+    function ensurePopSound() {
+      if (popSound) return popSound;
+      popSound = new Audio('assets/pop.mp3');
+      popSound.preload = 'auto';
+      popSound.volume = 0.85;
+      return popSound;
+    }
 
     function playPopSound() {
       try {
-        popSound.currentTime = 0;
-        const play = popSound.play();
+        const audio = ensurePopSound();
+        audio.currentTime = 0;
+        const play = audio.play();
         if (play && typeof play.catch === 'function') play.catch(() => {});
       } catch (_) {}
     }
@@ -376,6 +385,9 @@
       imageReady = true;
       drawGame();
     };
+    if (typeof girlImg.decode === 'function') {
+      girlImg.decode().catch(() => {});
+    }
 
     function drawCoverImage(img, w, h) {
       const iw = img.naturalWidth;
@@ -535,6 +547,7 @@
       size = 0;
       multiplier = 1.00;
       winAmount = 0;
+      ensurePopSound();
 
       updateUI();
       drawGame();
@@ -642,24 +655,23 @@
 
     // ----- GAME LOOP -----
     function gameLoop() {
+      animationId = null;
       if (isRoundActive && !isBusted && isHolding) {
-        // Grow
         size = Math.min(BURST_THRESHOLD, size + GROWTH_RATE);
-        multiplier = 1 + size * 3; // 1x to 4x
+        multiplier = 1 + size * 3;
 
         if (size >= BURST_THRESHOLD) {
           bust();
+        } else {
+          updateUI();
+          drawGame();
+          animationId = requestAnimationFrame(gameLoop);
         }
-
-        updateUI();
-        drawGame();
-      } else if (isRoundActive && !isBusted && !isHolding) {
-        // Waiting for hold
-        drawGame();
-      } else {
-        drawGame();
       }
+    }
 
+    function startHoldLoop() {
+      if (animationId) return;
       animationId = requestAnimationFrame(gameLoop);
     }
 
@@ -669,6 +681,7 @@
       if (!isRoundActive || isBusted) return;
       isHolding = true;
       updateUI();
+      startHoldLoop();
     }
 
     function handlePointerUp(e) {
@@ -744,7 +757,6 @@
       updateHistory();
       updateUI();
       drawGame();
-      gameLoop();
     }
 
     init();
