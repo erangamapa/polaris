@@ -1,39 +1,40 @@
 import { describe, it, expect } from "vitest";
-import { TOP_BAR_MODE, getTopBarMode } from "./topBarState";
+import { TOP_BAR_MODE, getTopBarMode, HEADER_CENTER_VARIANT, getHeaderCenterVariant } from "./topBarState";
 
-// This task's own AUTOMATED TESTS list (20 scenarios) is almost entirely
-// rendering/interaction behavior — popover open/close, focus restoration,
-// modal-closes-dropdown ownership, responsive compression, no double
-// render — none of which is a pure function to assert against without a
-// DOM. Per the project's established testing stack (vitest, no jsdom/React
-// Testing Library — same constraint noted in every prior UI task this
-// session), the one genuine piece of decision logic this task introduces
-// (getTopBarMode, replacing what would otherwise be two nested inline
-// ternaries) is unit-tested here; everything else was verified manually
-// via Playwright against the running dev server (a temporary URL-param
-// wallet mock was used to reach the connected/wrong-network states, since
-// no real wallet is reachable in this sandbox — see the FINAL RESPONSE):
+// CENTERED DESKTOP BALANCE + WALLET HUD — this task's own AUTOMATED TESTS
+// list (20 scenarios) is almost entirely rendering/layout/interaction
+// behavior — grid centering, popover open/close, focus restoration, modal-
+// closes-dropdown ownership, responsive compression — none of which is a
+// pure function to assert against without a DOM. Per the project's
+// established testing stack (vitest, no jsdom/React Testing Library — same
+// constraint noted in every prior UI task this session), the two genuine
+// pieces of decision logic this task touches (getTopBarMode, unchanged from
+// the prior header task, and the new getHeaderCenterVariant it's now
+// layered under) are unit-tested here; everything else was verified
+// manually via Playwright against the running dev server, driven through
+// the Developer Panel's Wallet/Balance presets (see the FINAL RESPONSE for
+// exactly what was checked and how):
 //
-//  1.  Authenticated header renders            -> Playwright (screenshot, mockWallet=1)
-//  2.  Balance and currency render              -> Playwright ("12430.2531 ETH" visible)
-//  3.  Balance selector opens                    -> Playwright (Popover content visible, keyboard Enter)
-//  4.  Currency selection updates shared state   -> N/A — no display-currency switcher exists (see BALANCE SELECTOR: real balances only, no fake currencies)
-//  5.  Fund opens existing Funds flow             -> Playwright ([role=dialog]:has-text("Funds"))
-//  6.  Activity opens existing Activity flow      -> Playwright (dialog count after click)
-//  7.  Profile opens menu                          -> Playwright (DropdownMenu content visible)
-//  8.  Only one popover opens at once              -> Playwright (opening Profile closes Balance)
-//  9.  Modal opening closes popovers               -> Playwright (Manage wallet -> Funds dialog, popover closes)
-//  10. Escape closes dropdown                       -> Playwright
-//  11. Focus restores correctly                     -> Playwright (Balance/Profile trigger refocused after Escape)
-//  12. Disconnected state renders                   -> Playwright (screenshot, no mockWallet param)
-//  13. Wrong-network state renders                   -> Playwright (screenshot, mockWrongNetwork=1 — Switch network replaces Fund)
-//  14. Loading state remains stable                  -> Playwright (screenshot, mockLoading=1 — Skeleton in place of balance, same control width)
-//  15. Large balance does not overflow                -> Playwright (10,000,000.00000000 ETH + long address, hOverflow=false)
-//  16. Sidebar expanded layout works                   -> Playwright (150% zoom screenshot, sidebar auto-expanded)
-//  17. Sidebar collapsed layout works                   -> Playwright (1024px screenshot, sidebar auto-collapsed)
-//  18. 1024px compact mode works                          -> Playwright (hOverflow=false, Fund visible, at all of 1024/1152/1280/1366/1440/1728/1920px)
-//  19. Desktop header does not render on mobile             -> Playwright (BalanceControl visible count 0 at 390px)
-//  20. Mobile header does not render on desktop               -> Playwright (visible Activity button count 1 at both 1440px and 390px — never 2)
+//  1.  Center HUD renders on desktop                    -> Playwright (BalanceControl + Wallet visible at 1440px)
+//  2.  Balance and Wallet are grouped                     -> Playwright (adjacent, shared border seam, no gap)
+//  3.  HUD uses the center grid column                     -> Playwright (offsetLeft/offsetRight symmetry check)
+//  4.  Sidebar expanded does not break centering             -> Playwright (screenshot, expanded rail)
+//  5.  Sidebar collapsed does not break centering              -> Playwright (screenshot, collapsed rail)
+//  6.  Normal balance renders                                   -> Playwright (Developer Panel -> Balance -> Normal)
+//  7.  Zero balance renders                                       -> Playwright (Developer Panel -> Balance -> Zero)
+//  8.  Large balance does not overflow                              -> Playwright (Developer Panel -> Balance -> Large, no hOverflow)
+//  9.  Loading state remains dimensionally stable                     -> Playwright (Skeleton, same trigger width as Normal)
+//  10. Balance error state renders                                      -> Playwright (Developer Panel -> Balance -> Error, "Unavailable")
+//  11. Connected wallet state renders                                     -> Playwright (Developer Panel -> Wallet -> Connected)
+//  12. Disconnected state renders                                           -> Playwright (Developer Panel -> Wallet -> Disconnected, "Not connected" + Connect Wallet)
+//  13. Wrong-network state renders                                           -> Playwright (Developer Panel -> Wallet -> Wrong network, Switch network)
+//  14. Balance selector opens                                                  -> Playwright (Popover content visible)
+//  15. Wallet flow opens                                                        -> Playwright ([role=dialog]:has-text("Funds"))
+//  16. Opening Wallet closes balance selector                                     -> Playwright (Balance popover closes on Wallet-adjacent modal open)
+//  17. Activity/profile do not shift center HUD                                    -> Playwright (HUD bounding box unchanged before/after opening Activity)
+//  18. 1024px compact state works                                                    -> Playwright (no horizontal scrollbar, HUD still grouped)
+//  19. Desktop HUD is absent on mobile                                                 -> Playwright (BalanceControl visible count 0 at 390px)
+//  20. Mobile header remains unchanged                                                  -> Playwright (wallet pill visible at 390px, unchanged markup)
 
 describe("getTopBarMode", () => {
   it("is disconnected when the wallet isn't connected, regardless of network", () => {
@@ -47,5 +48,26 @@ describe("getTopBarMode", () => {
 
   it("is connected when connected and on the right chain", () => {
     expect(getTopBarMode({ isConnected: true, wrongNetwork: false })).toBe(TOP_BAR_MODE.CONNECTED);
+  });
+});
+
+describe("getHeaderCenterVariant", () => {
+  it("is session-expired whenever sessionExpired is true, regardless of mode", () => {
+    expect(getHeaderCenterVariant({ sessionExpired: true, loggedInNoWallet: false, mode: TOP_BAR_MODE.CONNECTED })).toBe(HEADER_CENTER_VARIANT.SESSION_EXPIRED);
+    expect(getHeaderCenterVariant({ sessionExpired: true, loggedInNoWallet: false, mode: TOP_BAR_MODE.DISCONNECTED })).toBe(HEADER_CENTER_VARIANT.SESSION_EXPIRED);
+  });
+
+  it("session-expired takes priority over logged-in-no-wallet if both were somehow true", () => {
+    expect(getHeaderCenterVariant({ sessionExpired: true, loggedInNoWallet: true, mode: TOP_BAR_MODE.DISCONNECTED })).toBe(HEADER_CENTER_VARIANT.SESSION_EXPIRED);
+  });
+
+  it("is logged-in-no-wallet when set and session hasn't expired", () => {
+    expect(getHeaderCenterVariant({ sessionExpired: false, loggedInNoWallet: true, mode: TOP_BAR_MODE.DISCONNECTED })).toBe(HEADER_CENTER_VARIANT.LOGGED_IN_NO_WALLET);
+  });
+
+  it("falls through to the wallet mode when neither auth override is active", () => {
+    expect(getHeaderCenterVariant({ sessionExpired: false, loggedInNoWallet: false, mode: TOP_BAR_MODE.CONNECTED })).toBe(TOP_BAR_MODE.CONNECTED);
+    expect(getHeaderCenterVariant({ sessionExpired: false, loggedInNoWallet: false, mode: TOP_BAR_MODE.WRONG_NETWORK })).toBe(TOP_BAR_MODE.WRONG_NETWORK);
+    expect(getHeaderCenterVariant({ sessionExpired: false, loggedInNoWallet: false, mode: TOP_BAR_MODE.DISCONNECTED })).toBe(TOP_BAR_MODE.DISCONNECTED);
   });
 });

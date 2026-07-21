@@ -16,3 +16,22 @@ export function getTopBarMode({ isConnected, wrongNetwork }) {
   if (wrongNetwork) return TOP_BAR_MODE.WRONG_NETWORK;
   return TOP_BAR_MODE.CONNECTED;
 }
+
+// Which content the centered Balance/Wallet HUD shows — one more decision
+// layered on top of getTopBarMode's wallet-only read, folding in the two
+// dev-only auth states (Developer Panel -> User) that pre-empt it entirely.
+// Session expired is deliberately its OWN variant, never coerced into
+// "disconnected" or "connected": auth and wallet are independent axes (see
+// useDevAwareWallet.js's architecture note), so a session can expire while
+// the wallet itself stays connected underneath.
+export const HEADER_CENTER_VARIANT = {
+  ...TOP_BAR_MODE,
+  SESSION_EXPIRED: "session-expired",
+  LOGGED_IN_NO_WALLET: "logged-in-no-wallet",
+};
+
+export function getHeaderCenterVariant({ sessionExpired, loggedInNoWallet, mode }) {
+  if (sessionExpired) return HEADER_CENTER_VARIANT.SESSION_EXPIRED;
+  if (loggedInNoWallet) return HEADER_CENTER_VARIANT.LOGGED_IN_NO_WALLET;
+  return mode;
+}
