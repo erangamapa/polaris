@@ -176,17 +176,32 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
               aria-label={import.meta.env.DEV && disabled ? `${p.label}, coming soon` : undefined}
+              title={import.meta.env.DEV && disabled ? "Coming soon" : undefined}
               style={!disabled && active ? ACCENTS[p.id].tab : undefined}
               className={cn(
-                // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
-                "relative flex h-[54px] flex-1 flex-col items-center justify-center whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-medium" : "gap-1 bg-secondary/40 text-muted-foreground hover:text-foreground"
+                // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump) —
+                // disabled tiles share this exact same box (icon+label, gap-1), never a third row, so nothing reflows.
+                "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                disabled ? "cursor-default" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("size-4", disabled && "text-foreground/45")} aria-hidden="true" />
-              <span className={disabled ? "text-foreground/60" : undefined}>{p.label}</span>
+              {/* Icon + label dim together as one unit (not per-element) so
+                  the pairing still reads as a single dimmed tile rather than
+                  two independently-faded pieces. The SOON badge below is a
+                  sibling, not a child of this span, specifically so it never
+                  inherits this opacity and stays legible. */}
+              <span className={cn("flex flex-col items-center gap-1", disabled && "opacity-45")}>
+                <Icon className="size-4" aria-hidden="true" />
+                {p.label}
+              </span>
               {import.meta.env.DEV && disabled && (
-                <span className="text-[11px] font-normal leading-none text-muted-foreground/70">Coming soon</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-2 end-1.5 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide"
+                  style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)", color: "var(--badge-muted-text)" }}
+                >
+                  Soon
+                </span>
               )}
             </button>
           );
