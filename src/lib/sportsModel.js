@@ -181,8 +181,14 @@ export function normalizeSxGame(game) {
   const sport = mvp && MVP_SPORTS.find((s) => s.id === mvp);
   if (!sport) return null; // outside the 5-sport MVP whitelist — never shown
 
+  // Unlike Azuro (whose relayer rejects started games), an SX market is
+  // bettable whenever it has an open order — so a game is never hidden for
+  // having started. Future kickoff -> "upcoming"; already started -> "live"
+  // if SX has in-play enabled, otherwise still "upcoming" so it stays visible
+  // and bettable (never "started", which no listing tab renders).
   const now = Math.floor(Date.now() / 1000);
-  const status = Number(game.startsAt) > now ? "upcoming" : "started";
+  const started = Number(game.startsAt) <= now;
+  const status = !started ? "upcoming" : game.liveEnabled ? "live" : "upcoming";
 
   return {
     id: `sx-${game.eventId}`,

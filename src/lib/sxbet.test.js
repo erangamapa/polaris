@@ -9,6 +9,7 @@ import {
   ODDS_SCALE,
 } from "./sxbet";
 import { normalizeSxGame } from "./sportsModel";
+import { primaryMarket, teamQuickMarkets } from "../components/sports/eventTemplates";
 
 // A maker order helper (percentageOdds in 1e20 units).
 const order = (percentageOdds, isMakerBettingOutcomeOne, size = "1000000000") => ({
@@ -108,6 +109,20 @@ describe("buildSxEvents + normalizeSxGame", () => {
 
   it("drops sports outside the MVP whitelist", () => {
     expect(normalizeSxGame({ sportId: 2, markets: [] })).toBeNull(); // Hockey
+  });
+
+  it("never hides a started game — future=upcoming, started+live=live, started=upcoming", () => {
+    const now = Math.floor(Date.now() / 1000);
+    const [game] = buildSxEvents([market], ordersByHash);
+    expect(normalizeSxGame({ ...game, startsAt: now + 3600 }).status).toBe("upcoming");
+    expect(normalizeSxGame({ ...game, startsAt: now - 3600, liveEnabled: true }).status).toBe("live");
+    expect(normalizeSxGame({ ...game, startsAt: now - 3600, liveEnabled: false }).status).toBe("upcoming");
+  });
+
+  it("SX 'Match Winner' is recognized as the primary/moneyline market", () => {
+    const norm = normalizeSxGame(buildSxEvents([market], ordersByHash)[0]);
+    expect(primaryMarket(norm)?.name).toBe("Match Winner");
+    expect(teamQuickMarkets(norm).moneyline?.name).toBe("Match Winner");
   });
 });
 

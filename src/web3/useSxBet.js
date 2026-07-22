@@ -8,7 +8,7 @@ import { useAccount, useConfig } from "wagmi";
 import { getWalletClient, getPublicClient, switchChain } from "@wagmi/core";
 import { parseUnits, formatUnits, erc20Abi, zeroAddress, maxUint256 } from "viem";
 import { sxbet } from "@shared/chains";
-import { loadSxEvents, fetchSxMetadata, SX_API_BASE } from "@/lib/sxbet";
+import { loadSxEvents, fetchSxMetadata, sxUrl } from "@/lib/sxbet";
 import { normalizeSxGame } from "@/lib/sportsModel";
 
 const SX_CHAIN_ID = sxbet.chainId;
@@ -155,7 +155,7 @@ export function useSxBet() {
       const takerSig = await walletClient.signTypedData({ account, domain, types: FILL_TYPES, primaryType: "Details", message });
 
       onStep?.("submitting");
-      const res = await fetch(`${SX_API_BASE}/orders/fill/v2`, {
+      const res = await fetch(sxUrl("orders/fill/v2"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

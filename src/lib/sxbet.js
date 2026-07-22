@@ -5,10 +5,23 @@
 // SX Bet is an order book: each market has maker "orders" quoting a price. A
 // bettor (taker) FILLS the best maker order on the side they want. Everything
 // here reads the public API — no key, no wallet.
-// Browser calls go through our own same-origin proxy (api/sx/[...path].js) —
-// SX's API sends no Access-Control-Allow-Origin header, so a direct fetch from
-// the app is blocked by CORS. The proxy forwards to sxbet.api server-side.
-export const SX_API_BASE = "/api/sx";
+// Browser calls go through our own same-origin proxy (api/sx.js) — SX's API
+// sends no Access-Control-Allow-Origin header, so a direct fetch from the app
+// is blocked by CORS. Server-side callers (tests, the proxy itself) pass an
+// absolute `base` to hit SX directly.
+export const SX_PROXY_BASE = "/api/sx";
+
+// Build a URL for an SX endpoint. With `base` (absolute) → hit SX directly.
+// Without → go through the same-origin proxy as /api/sx?endpoint=<path>&...
+export function sxUrl(endpoint, params = {}, base) {
+  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ""));
+  if (base) {
+    const qs = new URLSearchParams(clean).toString();
+    return `${base}/${endpoint}${qs ? `?${qs}` : ""}`;
+  }
+  const qs = new URLSearchParams({ endpoint, ...clean }).toString();
+  return `${SX_PROXY_BASE}?${qs}`;
+}
 
 // SX sportId → our five-sport MVP slug. Anything else is dropped from the UI
 // (never shown as "Other"), matching the Azuro provider's whitelist behaviour.
@@ -148,8 +161,8 @@ async function getJson(url) {
 // drive discovery off the orders rather than the (much larger, mostly
 // unpriced) active-markets catalogue. `GET /orders` returns the active orders
 // (one page is ample inventory for the MVP).
-export async function fetchSxOrderBook(base = SX_API_BASE) {
-  const orders = (await getJson(`${base}/orders`).then((d) => d?.data ?? []).catch(() => [])) ?? [];
+export async function fetchSxOrderBook(base) {
+  const orders = (await getJson(sxUrl("orders", {}, base)).then((d) => d?.data ?? []).catch(() => [])) ?? [];
   const map = new Map();
   for (const o of orders) {
     if (!map.has(o.marketHash)) map.set(o.marketHash, []);
@@ -161,12 +174,12 @@ export async function fetchSxOrderBook(base = SX_API_BASE) {
 // Resolve exact market hashes to their full details. `/markets/find` is the
 // only endpoint that filters by hash (`/markets/active` ignores the filter).
 // Chunked to keep the URL length sane.
-export async function fetchSxMarketsByHash(hashes, base = SX_API_BASE) {
+export async function fetchSxMarketsByHash(hashes, base) {
   const chunks = [];
   for (let i = 0; i < hashes.length; i += 25) chunks.push(hashes.slice(i, i + 25));
   const results = await Promise.all(
     chunks.map((c) =>
-      getJson(`${base}/markets/find?marketHashes=${c.join(",")}`)
+      getJson(sxUrl("markets/find", { marketHashes: c.join(",") }, base))
         .then((d) => d?.data ?? [])
         .catch(() => [])
     )
@@ -175,7 +188,7 @@ export async function fetchSxMarketsByHash(hashes, base = SX_API_BASE) {
 }
 
 // One-shot: live orders → the markets they price → folded into events.
-export async function loadSxEvents({ base = SX_API_BASE } = {}) {
+export async function loadSxEvents({ base } = {}) {
   const ordersByHash = await fetchSxOrderBook(base);
   const hashes = [...ordersByHash.keys()];
   if (!hashes.length) return [];
@@ -184,7 +197,7 @@ export async function loadSxEvents({ base = SX_API_BASE } = {}) {
 }
 
 // GET /metadata — signing addresses (rotated per env, read at runtime).
-export async function fetchSxMetadata(base = SX_API_BASE) {
-  const d = await getJson(`${base}/metadata`);
+export async function fetchSxMetadata(base) {
+  const d = await getJson(sxUrl("metadata", {}, base));
   return d?.data ?? d;
 }

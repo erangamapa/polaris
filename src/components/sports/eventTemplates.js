@@ -59,10 +59,13 @@ export function groupAndOrderMarkets(markets, templateFamily) {
 
 // The single market shown inline on a compact row / event header. Falls
 // back to whatever market exists first rather than showing nothing.
+// "Match winner" / "moneyline" / "winner" are synonyms across providers (Azuro
+// titles vs SX's two-way "Match Winner") — match them all so the headline
+// market is always found, not just the first market as a fallback.
 const PRIMARY_MATCHERS = {
-  soccer: /1x2|match result/i,
-  tennis: /match winner/i,
-  team: /moneyline/i,
+  soccer: /1x2|match result|match winner|moneyline/i,
+  tennis: /match winner|winner|moneyline/i,
+  team: /moneyline|match winner|winner/i,
 };
 export function primaryMarket(event) {
   const re = PRIMARY_MATCHERS[event.sport.templateFamily];
@@ -76,7 +79,7 @@ export function primaryMarket(event) {
 // unavailable."
 export function teamQuickMarkets(event) {
   return {
-    moneyline: event.markets.find((m) => /moneyline/i.test(m.name)),
+    moneyline: event.markets.find((m) => /moneyline|match winner|winner/i.test(m.name)),
     spread: event.markets.find((m) => /spread|handicap|run line/i.test(m.name)),
     total: event.markets.find((m) => /total/i.test(m.name)),
   };
