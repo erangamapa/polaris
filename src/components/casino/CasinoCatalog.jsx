@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Star, History, ChevronLeft, ChevronRight, Gamepad2 } from "lucide-react";
+import { Star, History, ChevronLeft, ChevronRight, Gamepad2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
 import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
@@ -7,6 +7,8 @@ import { PROVIDER_GAMES } from "./ProviderGame";
 import { EmptyState } from "@/components/ui/empty-state";
 import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
+import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS, scrollToRail } from "@/lib/casinoCategories";
+import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from "@/lib/casinoLobbyScroll";
 
 // Onchain games carry no provider field of their own (BETSWIRL_GAMES has
 // none — see useBetSwirl.js); provider-kind games carry an identical
@@ -128,9 +130,10 @@ const STATUS_LABEL = { "coming-soon": "Coming soon" };
 // useBrokenImage, and FavStar itself (see CasinoSearch.jsx).
 //
 // `context` ("home" | "favorites" | "recent" | "category" | "search") is
-// analytics-only — forwarded through onLaunch to App.jsx's launchGame so
-// casino_game_opened can report which section a launch came from (see
-// ANALYTICS: "source/context"). Never changes rendering.
+// analytics-only — forwarded through onLaunch to App.jsx's launchGame as the
+// launch's `source`, so casino_game_launch_requested/ready/failed can report
+// which section a launch came from (see useCasinoGameLaunch.js). Never
+// changes rendering.
 export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context }) {
   const faved = isFav?.(game);
   const onLaunch = game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider;
@@ -302,12 +305,12 @@ function useRailScroll(itemCount) {
 // there's nothing that stays "loading" long enough to show it (same
 // reasoning as CasinoGameCardSkeleton's own doc comment). Kept ready rather
 // than left unbuilt for the day a real async source exists.
-export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, context, isLoading }) {
+export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testId, sectionId, emptyState, context, isLoading }) {
   const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
 
   if (isLoading) {
     return (
-      <section data-test-id={testId} aria-label={title}>
+      <section id={sectionId} data-test-id={testId} aria-label={title}>
         <div className="mb-3 flex min-w-0 items-center gap-2">
           <h2 className="text-sm font-bold">{title}</h2>
         </div>
@@ -325,7 +328,7 @@ export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testI
   if (games.length === 0) {
     if (!emptyState) return null;
     return (
-      <section data-test-id={testId}>
+      <section id={sectionId} data-test-id={testId}>
         <div className="mb-3 flex items-center gap-2">
           <h2 className="text-sm font-bold">{title}</h2>
         </div>
@@ -340,7 +343,7 @@ export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testI
   };
 
   return (
-    <section data-test-id={testId} aria-label={title}>
+    <section id={sectionId} data-test-id={testId} aria-label={title}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="shrink-0 text-sm font-bold">{title}</h2>
@@ -426,6 +429,15 @@ function RailEmptyCard({ icon: Icon, title, description, actionLabel, actionAria
 // visitor understands why history is missing instead of assuming the
 // feature is empty/broken.
 //
+// CASINO LOBBY HIERARCHY CORRECTION: the default Lobby dashboard no longer
+// renders this — Recently Played now hides entirely when empty rather than
+// showing a placeholder above the fold (see LOBBY HIERARCHY: "do not show a
+// large or compact empty placeholder at the top of the default Lobby").
+// Retained and exported (not deleted) per that same task's explicit
+// instruction to keep the dedicated empty-state component available for a
+// destination or context where it remains useful, even though no current
+// call site in this file uses it.
+//
 // RECENTLY PLAYED EMPTY STATE — scenario coverage. This component is pure
 // presentation with no new decision logic of its own (it only consumes
 // `profileVariant`, already unit-tested end to end in profileState.test.js
@@ -451,7 +463,12 @@ function RailEmptyCard({ icon: Icon, title, description, actionLabel, actionAria
 //  13. Mobile layout does not overflow                                     -> Playwright (320-1920px, scrollWidth === clientWidth at every width)
 //  14. Placeholder is not exposed as a game card                            -> code review (plain <div>, not a Tile/<a href> — structurally can't collide with real game semantics)
 //  15. Keyboard focus is visible                                             -> Playwright (real Tab navigation, not .focus() — computed box-shadow ring confirmed non-empty)
-function RecentlyPlayedEmptyCard({ profileVariant, onBrowseGames, onLogin }) {
+// Pure copy selection, extracted so both the compact rail card below AND
+// the full Recently Played page (see RecentlyPlayedPage further down) show
+// identical auth-aware copy without duplicating the branching — the only
+// thing that differs between the two call sites is presentation (a small
+// rail-sized card vs a full-page centered EmptyState), never the message.
+export function recentlyPlayedEmptyCopy(profileVariant) {
   // Session-expired has no real-world equivalent (see profileState.js —
   // authStatus is hardcoded "default" outside dev, so profileVariant can
   // never actually equal SESSION_EXPIRED in production). The literal
@@ -462,42 +479,49 @@ function RecentlyPlayedEmptyCard({ profileVariant, onBrowseGames, onLogin }) {
   const isExpired = import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED;
   const isLoggedOut = profileVariant === PROFILE_VARIANT.LOGGED_OUT;
 
-  const copy = isExpired
-    ? {
-        title: "Session expired",
-        description: "Log in again to restore your history",
-        actionLabel: "Log in again",
-        actionAria: "Log in again to restore recently played games",
-        onAction: onLogin,
-        testId: "recently-played-login-again",
-      }
-    : isLoggedOut
-      ? {
-          title: "No recent games",
-          description: "Log in to sync your play history",
-          actionLabel: "Log in",
-          actionAria: "Log in to view recently played games",
-          onAction: onLogin,
-          testId: "recently-played-login",
-        }
-      : {
-          title: "No games yet",
-          description: "Played games appear here",
-          actionLabel: "Browse games",
-          actionAria: "Browse Casino games",
-          onAction: onBrowseGames,
-          testId: "recently-played-browse",
-        };
+  if (isExpired) {
+    return {
+      title: "Session expired",
+      description: "Log in again to restore your history",
+      actionLabel: "Log in again",
+      actionAria: "Log in again to restore recently played games",
+      needsLogin: true,
+      testId: "recently-played-login-again",
+    };
+  }
+  if (isLoggedOut) {
+    return {
+      title: "No recent games",
+      description: "Log in to sync your play history",
+      actionLabel: "Log in",
+      actionAria: "Log in to view recently played games",
+      needsLogin: true,
+      testId: "recently-played-login",
+    };
+  }
+  return {
+    title: "No games yet",
+    description: "Played games appear here",
+    actionLabel: "Browse games",
+    actionAria: "Browse Casino games",
+    needsLogin: false,
+    testId: "recently-played-browse",
+  };
+}
 
-  return <RailEmptyCard icon={History} {...copy} />;
+export function RecentlyPlayedEmptyCard({ profileVariant, onBrowseGames, onLogin }) {
+  const copy = recentlyPlayedEmptyCopy(profileVariant);
+  const { needsLogin, ...cardCopy } = copy;
+  return <RailEmptyCard icon={History} {...cardCopy} onAction={needsLogin ? onLogin : onBrowseGames} />;
 }
 
 // Favorites rail's empty state — a single, fixed copy set regardless of
 // auth state: unlike Recently Played, favoriting itself never requires
 // login (see App.jsx's toggleFav — it works fully offline/local-first), so
 // there's no "log in to see this" story to tell here, only "you haven't
-// curated anything yet."
-function FavoritesEmptyCard({ onBrowseGames }) {
+// curated anything yet." Retained and exported, unused in the default Lobby
+// — see RecentlyPlayedEmptyCard's comment above for why.
+export function FavoritesEmptyCard({ onBrowseGames }) {
   return (
     <RailEmptyCard
       icon={Star}
@@ -511,89 +535,12 @@ function FavoritesEmptyCard({ onBrowseGames }) {
   );
 }
 
-// Sidebar categories that get their own tag-filtered page (title + chips +
-// grid) instead of the multi-row Lobby dashboard. "Slots" has no games in
-// this catalog yet — it's a real, working empty category page, not a fake row.
-const CATEGORY_META = {
-  Popular: { tag: "popular", description: "What players are choosing most right now." },
-  New: { tag: "new", description: "Just added to the lobby." },
-  "Live Casino": { tag: "live-casino", description: "Real-format, live-style games." },
-  "Game Shows": { tag: "game-shows", description: "TV-style games with big multipliers." },
-  Slots: { tag: "slots", description: "Reel games." },
-};
 const KIND_CHIPS = [
   { id: "all", label: "All" },
   { id: "onchain", label: "On-chain" },
   { id: "provider", label: "Provider" },
 ];
-// Display label for a category id where it differs from the routing/
-// sidebar id ("New" stays the URL slug; every place that shows it as text
-// reads "New Releases"). Folded into CASINO_CATEGORIES below.
-const CATEGORY_LABEL_OVERRIDE = { New: "New Releases" };
-
-// THE one shared Casino category-navigation config — every nav surface
-// (this in-page bar, Casino search's category results in casinoSearch.js,
-// the Sidebar/mobile menu's Casino section in App.jsx) derives from this
-// array instead of keeping its own list. Built from CATEGORY_META so a
-// routed category can never drift out of sync between "has a real page"
-// and "appears in navigation" — add a tag there and it shows up here
-// automatically. "Slots" is deliberately excluded: zero games today (see
-// CATEGORY_META's own comment), so its route still works for a direct/
-// bookmarked link but it's never offered as a destination anywhere ("Do
-// not render unsupported or empty categories"). "Table Games" doesn't
-// exist in this catalog's tag system at all, so it isn't invented just to
-// match another platform's taxonomy.
-//
-// "Originals" and "Providers" have no dedicated route — see
-// scrollToRail/activateCasinoCategory below — selecting them scrolls the
-// Lobby to that rail (which already shows the complete, real list) instead
-// of a fake page ("If a dedicated route does not exist: use the current
-// filter behavior; do not create fake routes just for visual completeness").
-export const CASINO_CATEGORIES = [
-  { id: "Lobby", label: "Lobby", kind: "lobby" },
-  ...Object.keys(CATEGORY_META)
-    .filter((id) => id !== "Slots")
-    .map((id) => ({ id, label: CATEGORY_LABEL_OVERRIDE[id] ?? id, kind: "routed" })),
-  { id: "Originals", label: "Originals", kind: "rail", railTarget: "originals-rail" },
-  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail" },
-];
-
-// Backward-compatible id -> label lookup, derived from CASINO_CATEGORIES
-// rather than hand-maintained a second time (App.jsx's Sidebar item labels
-// and CategoryPage's own title both read from this).
-export const CATEGORY_LABEL = Object.fromEntries(CASINO_CATEGORIES.map((c) => [c.id, c.label]));
 const displayLabel = (category) => CATEGORY_LABEL[category] ?? category;
-
-// Routed category ids only (excludes Lobby and the two rail-only entries) —
-// exactly the set CasinoCatalog's `CATEGORY_META[category]` branch below
-// renders as a full page. Exported for casinoSearch.js.
-export const ROUTED_CATEGORIES = CASINO_CATEGORIES.filter((c) => c.kind === "routed").map((c) => c.id);
-
-// Scrolls the Lobby to a rail rather than opening a dedicated page — the
-// real, working destination for "Originals"/"Providers" category
-// selections (see CASINO_CATEGORIES above). Exported so both this bar and
-// Casino search's category results (CasinoSearch.jsx) share one
-// implementation instead of two.
-export function scrollToRail(railTestId) {
-  requestAnimationFrame(() => {
-    document.querySelector(`[data-test-id="${railTestId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-}
-
-// The one shared "what happens when this category is chosen" behavior —
-// routed categories (and Lobby) change casinoCategory; rail-only categories
-// instead ensure Lobby is showing and scroll to that rail. Used by both
-// CategoryNav below and Casino search's category results, so selecting
-// "Providers" behaves identically everywhere (see SEARCH INTEGRATION: "Do
-// not create search-only category IDs... avoid duplicate category logic").
-export function activateCasinoCategory(category, onSelectCategory) {
-  if (category.kind === "rail") {
-    onSelectCategory?.("Lobby");
-    scrollToRail(category.railTarget);
-    return;
-  }
-  onSelectCategory?.(category.id);
-}
 
 // Casino's one in-page category-navigation bar — non-sticky (the global
 // TopBar already consumes a fixed, persistent header slot; stacking a
@@ -601,29 +548,82 @@ export function activateCasinoCategory(category, onSelectCategory) {
 // scroll-offset to account for, without a page long enough here to justify
 // it — see STICKY BEHAVIOR: "non-sticky on Casino Home if the global
 // header already consumes significant space"). Real navigation-link
-// semantics (a route or rail-scroll actually happens on selection), not
+// semantics for anything NOT reached from the Lobby (a route actually
+// changes on selection when `selected !== "Lobby"` — reaching this bar from
+// Favorites/a standalone category page still works exactly as before), not
 // ARIA tabs — this isn't an in-place tab panel.
-export function CategoryNav({ selected, onSelect }) {
+//
+// PILL NAVIGATION CONSISTENCY: every pill now behaves identically while on
+// the Lobby — smoothly scroll to that category's real Lobby section,
+// updating the active pill as you go, never opening a standalone category
+// page (see lib/casinoLobbyScroll.js's activateLobbyPill/
+// useLobbyActiveSection, which own the actual scroll/scroll-spy mechanics).
+// This is a deliberately different interaction model from Search/Sidebar
+// (which still open a full category destination for routed categories) —
+// scoped specifically to this pill bar, per that task's own instruction.
+export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
   const activeRef = useRef(null);
+  const isOnLobby = selected === "Lobby";
+  const [activeSectionId, setActiveSectionId] = useLobbyActiveSection(isOnLobby);
+
+  // Restores a valid `#section` hash left by a previous visit/share, once,
+  // on first mount — see restoreSectionFromHash's own comment for why this
+  // is instant (not animated) and why an unrecognized hash is a silent
+  // no-op rather than an error.
+  useEffect(() => {
+    if (isOnLobby) restoreSectionFromHash(setActiveSectionId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately once, on mount only; see comment above.
+  }, []);
+
   useEffect(() => {
     // Keeps the active pill in view on mobile after a direct link/back-
-    // forward navigation lands on a category the horizontal scroll
-    // position doesn't already show — never fires for rail-only selections
-    // (Originals/Providers never become `selected`, see
-    // activateCasinoCategory: those stay on the Lobby route).
-    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [selected]);
+    // forward navigation, a search selection, or manual Lobby scrolling
+    // lands on a category the horizontal scroll position doesn't already
+    // show. Deliberately NOT scrollIntoView: that API can reach past this
+    // bar's own horizontal scrollbox and nudge an ANCESTOR's vertical
+    // scroll too (block: "nearest" is only a hint, not a hard axis lock) —
+    // which fought the Lobby's own section-scroll every time a pill click
+    // changed `activeSectionId` a moment after the click itself already
+    // started scrolling <main> (see PILL NAVIGATION CONSISTENCY: "prevent
+    // competing animations"). Plain scrollLeft arithmetic only ever touches
+    // this nav's own horizontal position.
+    const btn = activeRef.current;
+    const nav = btn?.parentElement;
+    if (!btn || !nav) return;
+    const btnLeft = btn.offsetLeft;
+    const btnRight = btnLeft + btn.offsetWidth;
+    const visibleLeft = nav.scrollLeft;
+    const visibleRight = visibleLeft + nav.clientWidth;
+    if (btnLeft < visibleLeft) nav.scrollLeft = btnLeft;
+    else if (btnRight > visibleRight) nav.scrollLeft = btnRight - nav.clientWidth;
+  }, [selected, activeSectionId]);
+
+  const handleClick = (category) => {
+    onPillActivated?.(category);
+    activateLobbyPill(category, { currentCategory: selected, onNavigateToLobby, setActiveSectionId });
+  };
 
   return (
     <nav aria-label="Casino categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {CASINO_CATEGORIES.map((category) => {
-        const isSelected = selected === category.id;
+        // While on the Lobby, active state tracks the scroll-spy (which
+        // section is actually in view) instead of the route — every pill
+        // click keeps `selected` pinned at "Lobby", so a plain string
+        // comparison against it would leave every pill permanently
+        // inactive. Off the Lobby (Favorites, a standalone category page
+        // reached via Search/Sidebar/a direct URL), this falls back to the
+        // original simple comparison, unchanged — see PILL NAVIGATION
+        // CONSISTENCY: "do not accidentally break... Search result
+        // destinations."
+        const isSelected = isOnLobby
+          ? (category.id === "Lobby" ? activeSectionId === null : activeSectionId === category.id)
+          : selected === category.id;
         return (
           <button
             key={category.id}
             ref={isSelected ? activeRef : undefined}
             type="button"
-            onClick={() => onSelect(category)}
+            onClick={() => handleClick(category)}
             aria-current={isSelected ? "page" : undefined}
             data-test-id={`category-nav-${category.id.toLowerCase().replace(/\s+/g, "-")}`}
             className={cn(
@@ -738,13 +738,64 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   );
 }
 
-// Casino catalog. Three destinations share this one component:
+// Recently Played's dedicated destination — the Sidebar/mobile-menu item
+// needs a real page to navigate to (not just the Lobby's conditional rail,
+// which hides entirely once empty — see CASINO SIDEBAR RESTORATION: "do not
+// remove it simply because Lobby hides the empty row... Navigation
+// availability and Lobby-row visibility are separate concerns"). Structured
+// identically to FavoritesPage on purpose: same header shape, same shared
+// grid, same game-card component, same EmptyState primitive — the only new
+// thing here is recentlyPlayedEmptyCopy's auth-aware copy (shared with the
+// Lobby rail's own compact empty card, see that function's own comment).
+function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, profileVariant, onLogin }) {
+  useEffect(() => { track("casino_recently_played_opened", {}); }, []);
+  const copy = recentlyPlayedEmptyCopy(profileVariant);
+  return (
+    <section className="animate-fade-in-up">
+      <div className="mb-4 flex items-center gap-2">
+        <History className="size-5 text-zinc-300" />
+        <h1 className="text-lg font-bold">Recently Played</h1>
+        {recentGames.length > 0 && (
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+            {recentGames.length} game{recentGames.length === 1 ? "" : "s"}
+          </span>
+        )}
+      </div>
+      {recentGames.length ? (
+        <div className={GRID}>
+          {recentGames.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="recent" />)}
+        </div>
+      ) : q ? (
+        <EmptyState
+          icon={<History className="size-5 text-zinc-500" aria-hidden="true" />}
+          title={`No recently played games match "${query}"`}
+          cta={<BrowseGamesButton onClick={onBrowseGames} />}
+        />
+      ) : (
+        <EmptyState
+          icon={<History className="size-5 text-zinc-500" aria-hidden="true" />}
+          title={copy.title}
+          description={copy.description}
+          cta={
+            <BrowseGamesButton
+              onClick={copy.needsLogin ? onLogin : onBrowseGames}
+              testId={`${copy.testId}-page`}
+            />
+          }
+        />
+      )}
+    </section>
+  );
+}
+
+// Casino catalog. Four destinations share this one component:
 //  - category === "Favorites" → the Favorites page.
+//  - category === "Recently Played" → the Recently Played page.
 //  - category is a tag category (Popular/Slots/Live Casino/Game Shows/New)
 //    → its own page: title, chips, full grid, never deduped.
-//  - anything else (Lobby, default) → the lobby dashboard: Favorites →
-//    Recently Played → Originals (always) → Popular → New Releases →
-//    Live Casino → Game Shows → Providers.
+//  - anything else (Lobby, default) → the lobby dashboard: Recently Played →
+//    Favorites → Originals (always) → Popular → New Releases → Live Casino
+//    → Game Shows → Providers.
 // `recentIds` (most-recent-first favIds) and favorites are two distinct
 // personalized rails, not a merged "Your games" umbrella — they answer
 // different questions (what you saved vs. what you actually played) and the
@@ -763,6 +814,15 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     return <FavoritesPage favorites={favorites} q={q} query={query} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
+  if (category === "Recently Played") {
+    return (
+      <RecentlyPlayedPage
+        recentGames={recentGames} q={q} query={query} tileProps={tileProps}
+        onBrowseGames={onBrowseGames} profileVariant={profileVariant} onLogin={onLogin}
+      />
+    );
+  }
+
   if (CATEGORY_META[category]) {
     return <CategoryPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
@@ -771,8 +831,50 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     <LobbyDashboard
       category={category} query={query} q={q} favorites={favorites} recentGames={recentGames}
       tileProps={tileProps} onBrowseGames={onBrowseGames} onSelectCategory={onSelectCategory}
-      profileVariant={profileVariant} onLogin={onLogin}
     />
+  );
+}
+
+// Compact provider-browsing tiles — the real destination for the "Providers"
+// category (see CASINO_PROVIDERS in lib/casinoCategories.js): exactly the
+// two real studios behind this catalog, not a generic mixed game rail
+// wearing that label (see PROVIDER MODEL: "the current row titled Providers
+// must not remain a normal game rail"). Selecting a tile scrolls to that
+// studio's own rail — the same scrollToRail behavior CategoryNav and Casino
+// search's provider results use (see casinoSearch.js's SEARCH_PROVIDERS),
+// so all three entry points land in the same place. No real per-studio logo
+// assets exist in this app, so every tile uses the same neutral icon rather
+// than a fabricated brand mark ("real logo where available, neutral
+// fallback where unavailable" — neither has one available today).
+function ProviderTiles() {
+  return (
+    <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-bold">Providers</h2>
+      </div>
+      <div className="flex gap-3 overflow-x-auto p-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {CASINO_PROVIDERS.map((provider) => {
+          const count = ALL_GAMES.filter((g) => g.kind === provider.kind).length;
+          return (
+            <button
+              key={provider.id}
+              type="button"
+              onClick={() => scrollToRail(provider.railTarget)}
+              aria-label={`Browse ${provider.name} games`}
+              data-test-id={`provider-tile-${provider.id}`}
+              className={cn(
+                RAIL_TILE,
+                "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-zinc-900 px-3 py-4 text-center ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              )}
+            >
+              <Building2 className="size-5 text-zinc-500" aria-hidden="true" />
+              <span className="text-xs font-bold text-white">{provider.name}</span>
+              <span className="text-[10px] text-zinc-500">{count} game{count === 1 ? "" : "s"}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -780,9 +882,14 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 // view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
 // itself returns early for Favorites/CategoryPage before this would ever be
 // reached, and hooks can't live after an early return in the same component.
-function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory, profileVariant, onLogin }) {
+function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory }) {
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
-  const provider = PROVIDER.filter((g) => matchesQuery(g, q));
+  // The full TriBet Studio catalog — the "Providers" nav category no longer
+  // points at this rail directly (see ProviderTiles above); it's now this
+  // specific studio's own real, complete collection, named for what it
+  // actually is rather than the generic "Providers" label a mixed rail
+  // wore before.
+  const tribetStudio = PROVIDER.filter((g) => matchesQuery(g, q));
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
 
   // Discovery rails dedup sequentially against each other (and against the
@@ -791,10 +898,10 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   // and "live-casino", so it now only ever shows once. Favorites/Recently
   // Played are exempt: overlap between a personalized rail and a discovery
   // rail is expected (a favorited game still belongs in Popular), as is
-  // Providers, which stays a stable, complete "browse the studio" catch-all
-  // rather than a rotating spotlight — deduping it against the tag rails
-  // above would collapse it to empty, since most provider games carry at
-  // least one of those tags.
+  // TriBet Studio, which stays a stable, complete "browse the studio"
+  // catch-all rather than a rotating spotlight — deduping it against the
+  // tag rails above would collapse it to empty, since most of its games
+  // carry at least one of those tags.
   const seen = new Set(onchain.map((g) => g.favId));
   const popularCandidates = byTag("popular");
   const newReleasesCandidates = byTag("new");
@@ -804,7 +911,6 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   const newReleasesRow = takeUnclaimed(newReleasesCandidates, seen);
   const liveCasinoRow = takeUnclaimed(liveCasinoCandidates, seen);
   const gameShowsRow = takeUnclaimed(gameShowsCandidates, seen);
-  const providerRow = provider;
   // See all is only worth showing when its destination (the category's own
   // full, undeduped page) actually reveals more than this rail already
   // does — true whenever dedup removed anything. A rail that happens to
@@ -814,19 +920,33 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   const newReleasesHasMore = newReleasesRow.length < newReleasesCandidates.length;
   const liveCasinoHasMore = liveCasinoRow.length < liveCasinoCandidates.length;
   const gameShowsHasMore = gameShowsRow.length < gameShowsCandidates.length;
+  // Favorites' rail already shows the exact same complete list the
+  // Favorites page renders (no dedup, nothing hidden) — See all only earns
+  // its place once there are enough favorites that the destination's grid
+  // view genuinely helps (see SEE ALL: "the rail contains only 1-3 items
+  // with no added destination value" — literally true below that count).
+  const favoritesHasMore = favorites.length > 3;
 
   const isEmpty = q && !favorites.length && !recentGames.length && !onchain.length
-    && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length && !providerRow.length;
+    && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length && !tribetStudio.length;
 
+  // Personalized rows only count as "visible" once populated — they no
+  // longer render an empty placeholder that would otherwise count as shown
+  // (see LOBBY HIERARCHY: "personalized rows are conditional"). Providers
+  // is excluded from `q` results (see the tile row below); "tribet-studio"
+  // is its own distinct id now, never reported as "providers" (see
+  // ANALYTICS: "do not keep misleading analytics names such as Providers
+  // for a generic game rail").
   const visibleSections = [
-    (favorites.length > 0 || !q) && "favorites",
-    (recentGames.length > 0 || !q) && "recently-played",
+    recentGames.length > 0 && "recently-played",
+    favorites.length > 0 && "favorites",
     "originals",
     popularRow.length > 0 && "popular",
     newReleasesRow.length > 0 && "new-releases",
     liveCasinoRow.length > 0 && "live-casino",
     gameShowsRow.length > 0 && "game-shows",
-    providerRow.length > 0 && "providers",
+    !q && "providers",
+    tribetStudio.length > 0 && "tribet-studio",
   ].filter(Boolean).join(",");
   useEffect(() => {
     if (!isEmpty) track("casino_lobby_section_viewed", { sections: visibleSections.split(",") });
@@ -848,45 +968,49 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
     track("casino_view_all_selected", { sourceSection: target.toLowerCase().replace(/\s+/g, "-") });
   };
 
+  // Player-first hierarchy (see LOBBY HIERARCHY): Recently Played, then
+  // Favorites — each conditional, hidden entirely (not a placeholder) when
+  // empty, via CasinoGameRail's own self-hide (no emptyState passed) — then
+  // the stable discovery base every player sees regardless of history:
+  // Tribet Originals, Popular, New Releases, Live Casino, Game Shows,
+  // Providers, TriBet Studio. Slots/Table Games are omitted — no supported
+  // inventory exists for either (see FINAL RESPONSE: Slots-inventory
+  // findings).
   return (
     <div className="space-y-6">
-      <CasinoGameRail
-        testId="favorites-rail"
-        title="Favorites"
-        games={favorites}
-        tileProps={tileProps}
-        context="favorites"
-        onSeeAll={seeAll("Favorites")}
-        emptyState={!q ? <FavoritesEmptyCard onBrowseGames={onBrowseGames} /> : undefined}
-      />
-
       <CasinoGameRail
         testId="recently-played-rail"
         title="Recently played"
         games={recentGames}
         tileProps={tileProps}
         context="recent"
-        emptyState={
-          !q ? (
-            <RecentlyPlayedEmptyCard profileVariant={profileVariant} onBrowseGames={onBrowseGames} onLogin={onLogin} />
-          ) : undefined
-        }
       />
 
       <CasinoGameRail
+        testId="favorites-rail"
+        title="Favorites"
+        games={favorites}
+        tileProps={tileProps}
+        context="favorites"
+        onSeeAll={favoritesHasMore ? seeAll("Favorites") : undefined}
+      />
+
+      <CasinoGameRail
+        sectionId="casino-section-originals"
         testId="originals-rail"
-        title="Originals"
-        badge="BetSwirl · Base Sepolia · Chainlink VRF"
+        title={CATEGORY_LABEL.Originals}
+        badge="Provably fair"
         games={onchain}
         tileProps={tileProps}
         context="home"
       />
 
-      <CasinoGameRail testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} context="home" onSeeAll={popularHasMore ? seeAll("Popular") : undefined} />
-      <CasinoGameRail testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={newReleasesHasMore ? seeAll("New") : undefined} />
-      <CasinoGameRail testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined} />
-      <CasinoGameRail testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined} />
-      <CasinoGameRail testId="providers-rail" title="Providers" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} context="home" />
+      <CasinoGameRail sectionId="casino-section-popular" testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} context="home" onSeeAll={popularHasMore ? seeAll("Popular") : undefined} />
+      <CasinoGameRail sectionId="casino-section-new-releases" testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={newReleasesHasMore ? seeAll("New") : undefined} />
+      <CasinoGameRail sectionId="casino-section-live-casino" testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined} />
+      <CasinoGameRail sectionId="casino-section-game-shows" testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined} />
+      {!q && <ProviderTiles />}
+      <CasinoGameRail testId="tribet-studio-rail" title="TriBet Studio" games={tribetStudio} tileProps={tileProps} context="home" />
     </div>
   );
 }

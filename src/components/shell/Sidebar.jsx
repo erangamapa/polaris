@@ -80,10 +80,15 @@ function RailIcon({ icon, label, active, accentColor, onClick, badge, ariaCurren
   );
 }
 
+// Collapsed rail renders every non-divider/non-label item in the same order
+// the expanded rail does — `sectionLabel` pseudo-items are skipped entirely
+// (collapsed mode has no room for text, see COLLAPSED DESKTOP SIDEBAR: "hide
+// section labels") while `divider` pseudo-items still render a thin rule,
+// so grouping survives as spacing even without the label text (see "preserve
+// grouping with dividers or spacing"). One generic loop rather than a
+// Favorites-specific carve-out — this now has to scale to a full Personal +
+// Games structure, not just a single pinned utility item.
 function CollapsedRail({ product, setProduct, items, selected, onSelect, platformScope }) {
-  const favItem = items.find((it) => it.id === "Favorites");
-  const mainItems = items.filter((it) => !it.divider && it.id !== "Favorites");
-
   return (
     <div className="flex h-full flex-col items-center gap-1.5 overflow-y-auto py-3">
       {PRODUCTS.map((p) => {
@@ -114,46 +119,33 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect, platfor
           hierarchy levels (arena vs section) read as visually distinct. */}
       <div className="my-1 h-px w-8 bg-white/25" aria-hidden="true" />
 
-      {mainItems.map((it) => (
-        <RailIcon
-          key={it.id}
-          navId={`nav-item-${it.id}`}
-          icon={it.icon}
-          label={it.label}
-          active={selected === it.id}
-          accentColor={product}
-          ariaCurrent={selected === it.id ? "page" : undefined}
-          onClick={() => onSelect(it.id)}
-        />
-      ))}
-
-      {favItem && (
-        <>
-          {/* Favorites is a separated utility destination, not just another
-              section — a lighter inset rule, distinct from the rule above. */}
-          <div className="my-1 h-px w-5 bg-white/10" aria-hidden="true" />
+      {items.map((it) => {
+        if (it.sectionLabel) return null;
+        if (it.divider) return <div key={it.id} className="my-1 h-px w-5 bg-white/10" aria-hidden="true" />;
+        return (
           <RailIcon
-            navId={`nav-item-${favItem.id}`}
-            icon={favItem.icon}
-            label="Favorites"
-            active={selected === favItem.id}
+            key={it.id}
+            navId={`nav-item-${it.id}`}
+            icon={it.icon}
+            label={it.label}
+            active={selected === it.id}
             accentColor={product}
-            ariaCurrent={selected === favItem.id ? "page" : undefined}
-            onClick={() => onSelect(favItem.id)}
-            testId="sidebar-favorites-collapsed"
+            ariaCurrent={selected === it.id ? "page" : undefined}
+            onClick={() => (it.action ? it.action() : onSelect(it.id))}
+            testId={it.id === "Favorites" ? "sidebar-favorites-collapsed" : undefined}
             badge={
-              favItem.count > 0 ? (
+              it.count > 0 ? (
                 <StatusBadge
                   variant="neutral"
                   size="small"
-                  count={favItem.count}
-                  ariaLabel={`${favItem.count} favorite${favItem.count === 1 ? "" : "s"}`}
+                  count={it.count}
+                  ariaLabel={it.id === "Favorites" ? `${it.count} favorite${it.count === 1 ? "" : "s"}` : `${it.count} ${it.label}`}
                 />
               ) : null
             }
           />
-        </>
-      )}
+        );
+      })}
     </div>
   );
 }
@@ -222,11 +214,19 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
         {items.map((it) =>
           it.divider ? (
             <div key={it.id} className="my-2 border-t border-white/10" />
+          ) : it.sectionLabel ? (
+            // Restrained, quiet group heading (Personal/Games) — same
+            // typography the mobile menu's own section labels use (see
+            // MobileFullScreenMenu.jsx), so the two surfaces read as one
+            // consistent hierarchy rather than two different label styles.
+            <div key={it.id} className="px-2.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {it.sectionLabel}
+            </div>
           ) : (
             <button
               key={it.id}
               id={`nav-item-${it.id}`}
-              onClick={() => onSelect(it.id)}
+              onClick={() => (it.action ? it.action() : onSelect(it.id))}
               aria-current={selected === it.id ? "page" : undefined}
               style={selected === it.id ? accent.item : undefined}
               className={cn(

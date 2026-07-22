@@ -3,16 +3,20 @@
 // ranking and grouping. No network, no fuzzy-search dependency — the whole
 // catalog is small and already in memory, so a plain tiered string match is
 // both correct and fast enough to run on every keystroke.
-import { ALL_GAMES, CASINO_CATEGORIES } from "@/components/casino/CasinoCatalog";
+import { ALL_GAMES } from "@/components/casino/CasinoCatalog";
+import { CASINO_CATEGORIES, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
-// `railTarget` is a Lobby rail's data-test-id — there's no dedicated
-// provider page (see ProviderGame.jsx / CasinoCatalog.jsx), so selecting a
-// provider result is a real, working destination (scroll the Lobby to that
-// rail) rather than a dead link or an invented page.
-export const SEARCH_PROVIDERS = [
-  { id: "betswirl", name: "BetSwirl", count: ALL_GAMES.filter((g) => g.kind === "onchain").length, railTarget: "originals-rail" },
-  { id: "tribet-studio", name: "TriBet Studio", count: ALL_GAMES.filter((g) => g.kind === "provider").length, railTarget: "providers-rail" },
-];
+// Exactly CASINO_PROVIDERS (the shared provider taxonomy — see
+// lib/casinoCategories.js) plus a live count computed against ALL_GAMES,
+// not a second hand-maintained provider list. `railTarget` is a Lobby
+// rail's data-test-id — there's no dedicated provider page (see
+// ProviderGame.jsx), so selecting a provider result is a real, working
+// destination (scroll the Lobby to that provider's rail) rather than a
+// dead link or an invented page.
+export const SEARCH_PROVIDERS = CASINO_PROVIDERS.map((p) => ({
+  ...p,
+  count: ALL_GAMES.filter((g) => g.kind === p.kind).length,
+}));
 
 // Exactly CASINO_CATEGORIES minus Lobby — the same shared config the
 // in-page CategoryNav bar renders from (see CasinoCatalog.jsx), not a

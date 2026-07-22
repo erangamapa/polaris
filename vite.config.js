@@ -46,4 +46,9 @@ export default defineConfig({
       '@shared': fileURLToPath(new URL('./packages/shared', import.meta.url)),
     },
   },
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+  },
 })

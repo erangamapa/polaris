@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
-  LayoutGrid, Radio, Star,
+  LayoutGrid, Radio,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
   ShieldCheck, LifeBuoy, LogOut, LogIn,
 } from "lucide-react";
@@ -14,7 +14,8 @@ import { DevPanel } from "./components/dev/DevPanel";
 import { PromoStrip } from "./components/casino/PromoStrip";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
-import { CasinoCatalog, CategoryNav, CATEGORY_LABEL, activateCasinoCategory, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
+import { CasinoCatalog, CategoryNav, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
+import { CASINO_CATEGORIES, CASINO_PERSONAL_DESTINATIONS, activateCasinoCategory } from "./lib/casinoCategories";
 import { useCasinoSearch } from "./components/casino/CasinoSearch";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
@@ -47,6 +48,9 @@ import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
 import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
+import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
+import { GAME_LAUNCH_STATUS } from "./lib/casinoGameLaunch";
+import { GameLaunchSurface } from "./components/casino/GameLaunchSurface";
 
 // Module-load-time, not inside the component — idempotent (see its own
 // `installed` guard) and needs to be active before BetHistoryDialog's
@@ -55,27 +59,19 @@ import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 installDevFetchInterceptor();
 
 // Developer Panel -> Casino -> Game state: simulates the *outcome* of a
-// launch attempt (provider error, maintenance, region block, etc.) without
-// touching BetSwirlGame/ProviderGame's own real launch logic — the safest
-// way to exercise every error copy path without needing to fake a whole
-// in-game error UI inside those real iframes (see DO NOT ADD: "fake
-// backend"). Module scope (not recreated every render) and gated on the
-// build-time `import.meta.env.DEV` constant so these dev-only copy strings
-// don't ship in the production bundle at all — confirmed via a production
-// build grep (see DEV-ONLY REQUIREMENT: "tree-shake where practical").
-const DEV_GAME_STATE_COPY = import.meta.env.DEV ? {
-  loading: { type: "info", title: "Loading (dev simulation)", message: "Simulating a slow game launch." },
-  "provider-error": { type: "error", title: "Provider error (dev simulation)", message: "The game provider is unavailable right now." },
-  maintenance: { type: "warning", title: "Game under maintenance (dev simulation)", message: "This game is temporarily unavailable." },
-  "region-restricted": { type: "error", title: "Not available in your region (dev simulation)", message: "This game can't be played from your location." },
-  "insufficient-balance": { type: "error", title: "Insufficient balance (dev simulation)", message: "Add funds to play this game." },
-} : {};
-
-// Only Lobby and Favorites remain sidebar destinations — the rest of the
-// Casino category taxonomy lives exclusively in the in-page CategoryNav bar
-// now (see the sidebar-building comment below and CasinoCatalog.jsx's
-// CASINO_CATEGORIES).
-const CASINO_ICONS = { Lobby: LayoutGrid, Favorites: Star };
+// launch attempt (provider error, maintenance, region block, insufficient
+// balance) by routing it through the real launch state machine as a genuine
+// UNAVAILABLE result (see useCasinoGameLaunch's checkAvailability) instead of
+// a one-off toast — the game-launch surface now owns every one of these copy
+// paths (see GameLaunchSurface.jsx), so there is nothing left for a separate
+// dev-only copy table to do. The specific reason below is never shown to the
+// player (see UNAVAILABLE GAME STATE: "do not fake a maintenance reason") —
+// it only decides *whether* checkGameAvailability blocks the launch.
+// "loading" is deliberately excluded: it isn't an unavailable reason, it's a
+// stuck-forever real REQUESTED/LOADING launch (see the ProviderGame onReady
+// wiring below), so delayed/timeout states can be exercised through the real
+// timers instead of being faked.
+const DEV_UNAVAILABLE_GAME_STATUSES = new Set(["provider-error", "maintenance", "region-restricted", "insufficient-balance"]);
 
 // Favorites persist across sessions in localStorage, keyed by the game's favId.
 const FAVS_KEY = "tribet_favs";
@@ -259,7 +255,7 @@ export default function App() {
       setSportsCountry(nav.sportsCountry);
       setSportsLeague(nav.sportsLeague);
       setSportsEventId(nav.sportsEventId);
-      syncGameFromUrl();
+      resolveLaunchFromUrl();
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -365,8 +361,32 @@ export default function App() {
   const trackRecent = (game) => {
     setRecentIds((list) => [game.favId, ...list.filter((id) => id !== game.favId)].slice(0, RECENT_CAP));
   };
-  const [onchainGame, setOnchainGame] = useState(null);
-  const [providerGame, setProviderGame] = useState(null);
+
+  // Known-unavailable before any init is attempted: a real non-playable
+  // onchain game (see BETSWIRL_GAMES' own `playable` flag — Wheel/Plinko
+  // revert on this testnet), or a Developer Panel simulation of a
+  // provider-side outage. Returning any truthy reason here is what makes
+  // useCasinoGameLaunch skip straight to UNAVAILABLE instead of ever opening
+  // the launch surface's loading state (see UNAVAILABLE GAME STATE: "do not
+  // open a loading state first when availability is already known").
+  const checkGameAvailability = (game) =>
+    (game.kind === "onchain" && !game.playable ? "coming-soon" : null) ||
+    (import.meta.env.DEV && DEV_UNAVAILABLE_GAME_STATUSES.has(devMock.gameStatus) ? devMock.gameStatus : null);
+
+  // The one shared Casino game-launch state machine — every entry point
+  // (Lobby rail, category page, search, Favorites, Recently Played, a direct
+  // `?play=` link) drives this through launchGame below rather than each
+  // owning its own isLoading/showGame/launchFailed booleans (see PRIMARY
+  // GOAL). `onReady` is the single, real "this launch actually succeeded"
+  // signal Recently Played is keyed on — never the click itself (see
+  // RECENTLY PLAYED RULES).
+  const launch = useCasinoGameLaunch({
+    resolveGame: findGameByFavId,
+    checkAvailability: checkGameAvailability,
+    onReady: (game) => { if (game) trackRecent(game); },
+  });
+  const launchedGame = findGameByFavId(launch.state.gameId);
+
   const [fundsOpen, setFundsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [rgOpen, setRgOpen] = useState(false);
@@ -388,8 +408,7 @@ export default function App() {
     setHistoryOpen(false);
     setRgOpen(false);
     setSupportOpen(false);
-    setOnchainGame(null);
-    setProviderGame(null);
+    closeGame();
   };
 
   // Gate: require a connected wallet on Base Sepolia before betting.
@@ -448,55 +467,52 @@ export default function App() {
 
   // Game tiles are real links (`?play=<favId>`) so middle-click / cmd-click opens
   // a new tab, like on most sites. These helpers keep that URL in sync with the
-  // modal state for the in-page (left-click) path, and resolve it back to a
-  // modal on load / back-forward so the link actually works when followed.
-  // `context` ("home" | "favorites" | "recent" | "category" | "search") is
-  // analytics-only, forwarded from CasinoGameCard/search's own launch calls
-  // — see CasinoCatalog.jsx's CasinoGameCard — so casino_game_opened can
-  // report which section a launch actually came from, never used for any
-  // gating/behavior decision here.
-  const openGame = (game, context) => {
-    if (devMock.gameStatus !== "default") {
-      const copy = DEV_GAME_STATE_COPY[devMock.gameStatus];
-      if (copy) toast[copy.type](copy.title, { message: copy.message });
-      return;
-    }
+  // launch state for the in-page (left-click) path, and resolve it back to a
+  // launch on load / back-forward so the link actually works when followed.
+  // `context` ("home" | "favorites" | "recent" | "category" | "search" |
+  // "direct-link") is the launch's `source` — forwarded from CasinoGameCard/
+  // search's own launch calls (see CasinoCatalog.jsx's CasinoGameCard) into
+  // useCasinoGameLaunch's analytics, never used for any gating/behavior
+  // decision here.
+  //
+  // ensureAuth gates onchain games behind a connected wallet on the right
+  // chain (see AUTH AND WALLET INDEPENDENCE — provider games need neither;
+  // they run on a mock economy, not a wallet). This is the one place both a
+  // card click and a direct `?play=` link apply that same gate, so a
+  // bookmarked/shared onchain-game URL can't bypass it.
+  const attemptLaunch = (game, source, categoryId) => {
+    if (game && game.kind === "onchain" && game.playable && !ensureAuth()) return;
+    launch.launchCasinoGame({ gameId: game ? game.favId : null, source, categoryId });
+  };
+  const launchGame = (game, context) => {
     // Full-screen games cover the whole viewport (z-50, fixed inset-0), but
     // the mobile menu (z-70) would still sit on top of and stay interactive
     // over a game otherwise — close it explicitly rather than rely on
     // stacking order alone.
     setMobileMenuOpen(false);
-    if (game.kind === "onchain") {
-      if (game.playable && ensureAuth()) {
-        setOnchainGame(game);
-        trackRecent(game);
-        track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected", sourceContext: context });
-      }
-      return;
-    }
-    setProviderGame(game);
-    trackRecent(game);
-    track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected", sourceContext: context });
-  };
-  const launchGame = (game, context) => {
     window.history.pushState({}, "", gameHref(game));
-    openGame(game, context);
+    attemptLaunch(game, context, casinoCategory);
   };
   const closeGame = () => {
-    setOnchainGame(null);
-    setProviderGame(null);
+    launch.closeLaunch();
     const bare = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
   };
-  const syncGameFromUrl = () => {
+  // A `?play=<favId>` on load or browser Back/forward drives the SAME shared
+  // launch action every other entry point uses — an unknown/malformed favId
+  // now surfaces the real "Game not found" state (see INVALID GAME STATE)
+  // instead of silently doing nothing, and a known-but-unplayable favId
+  // surfaces "Game unavailable" instead of a silent redirect (see
+  // UNAVAILABLE GAME STATE: "do not silently redirect without explanation")
+  // — both were gaps in the previous silent syncGameFromUrl behavior.
+  const resolveLaunchFromUrl = () => {
     const favId = new URLSearchParams(window.location.search).get("play");
-    const game = favId ? findGameByFavId(favId) : null;
-    const openable = game && (game.kind !== "onchain" || game.playable);
-    if (openable) openGame(game);
-    else { setOnchainGame(null); setProviderGame(null); if (favId) closeGame(); }
+    if (!favId) { if (launch.state.status !== GAME_LAUNCH_STATUS.IDLE) launch.closeLaunch(); return; }
+    if (launch.state.gameId === favId && launch.state.status !== GAME_LAUNCH_STATUS.IDLE) return;
+    attemptLaunch(findGameByFavId(favId), "direct-link", casinoCategory);
   };
   // Resolve a deep link on first load (e.g. a game opened in a new tab).
-  useEffect(() => { syncGameFromUrl(); }, []);
+  useEffect(() => { resolveLaunchFromUrl(); }, []);
 
   const activityRef = useRef([]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
@@ -624,25 +640,52 @@ export default function App() {
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
     if (product === "casino") {
-      // Broad Casino destinations/utilities only — Popular/New Releases/
-      // Live Casino/Game Shows/Originals/Providers used to be duplicated
-      // here AND in the in-page CategoryNav bar shown on every Casino page
-      // (see CasinoCatalog.jsx's CASINO_CATEGORIES), two controls doing the
-      // same job at once. The category bar is the one place that now owns
-      // Casino content taxonomy (it's contextual, always visible, and
-      // works identically on mobile where this sidebar doesn't even
-      // render); this list shrinks to exactly the two things that aren't
-      // content categories: Home, and Favorites as a separated utility
-      // destination below a divider (Architecture rules: "Favorites as a
-      // separated utility item at the bottom").
+      // The full Casino discovery/navigation map — Lobby, then Personal
+      // (Favorites/Recently Played/My Bets), then Games (the shared
+      // CASINO_CATEGORIES taxonomy, same array the in-page CategoryNav bar
+      // and Casino search already render from — see lib/casinoCategories.js
+      // — no second hand-rolled category list). Icons/labels/order all come
+      // from that shared config; this builder only attaches the things that
+      // must be App-level closures (Favorites' live count, My Bets' dialog
+      // handler, the active id derived from dialog-open state).
+      const lobbyEntry = CASINO_CATEGORIES.find((c) => c.id === "Lobby");
+      const gamesItems = CASINO_CATEGORIES.filter((c) => c.kind !== "lobby")
+        .map((c) => ({ id: c.id, label: c.label, icon: c.icon }));
+      const personalItems = CASINO_PERSONAL_DESTINATIONS.map((d) =>
+        d.kind === "action"
+          ? { id: d.id, label: d.label, icon: d.icon, action: openHistory }
+          : { id: d.id, label: d.label, icon: d.icon, count: d.id === "Favorites" && favs.size > 0 ? favs.size : undefined }
+      );
       return {
         title: "Casino",
-        selected: casinoCategory,
-        onSelect: setCasinoCategory,
+        // My Bets opens BetHistoryDialog rather than changing casinoCategory
+        // (see PERSONAL DESTINATIONS: "no second history store") — its
+        // active state is derived from whether that dialog is actually
+        // open, not a fake route, so it never disagrees with the real URL.
+        selected: historyOpen ? "My Bets" : casinoCategory,
+        onSelect: (id) => {
+          // Games items keep opening a real destination (see PILL
+          // NAVIGATION CONSISTENCY: "Sidebar items = open category
+          // destination") — rail-kind categories (Originals/Providers) have
+          // no dedicated route, so they still scroll to their Lobby rail
+          // via the existing activateCasinoCategory, same as Search's
+          // category results. This is deliberately NOT the Lobby pill bar's
+          // own scroll-every-category behavior (see
+          // lib/casinoLobbyScroll.js) — looked up here by id rather than
+          // changing Sidebar.jsx's onSelect contract to pass a whole
+          // object, so Predictions/Sports' own onSelect stays untouched.
+          const category = CASINO_CATEGORIES.find((c) => c.id === id);
+          if (category?.kind === "rail") activateCasinoCategory(category, setCasinoCategory);
+          else setCasinoCategory(id);
+        },
         items: [
-          { id: "Lobby", label: CATEGORY_LABEL.Lobby, icon: CASINO_ICONS.Lobby },
-          { id: "fav-divider", divider: true },
-          { id: "Favorites", label: "Favorites", icon: CASINO_ICONS.Favorites, count: favs.size > 0 ? favs.size : undefined },
+          { id: "Lobby", label: lobbyEntry.label, icon: lobbyEntry.icon },
+          { id: "personal-divider", divider: true },
+          { id: "personal-label", sectionLabel: "Personal" },
+          ...personalItems,
+          { id: "games-divider", divider: true },
+          { id: "games-label", sectionLabel: "Games" },
+          ...gamesItems,
         ],
       };
     }
@@ -805,8 +848,6 @@ export default function App() {
                   recentIds={effectiveRecentIds}
                   onBrowseGames={() => setCasinoCategory("Lobby")}
                   onSelectCategory={setCasinoCategory}
-                  profileVariant={profileVariant}
-                  onLogin={openFunds}
                 />
               )}
               {product === "predictions" && (
@@ -892,11 +933,35 @@ export default function App() {
       <Toaster />
       <DevPanel />
 
-      {onchainGame && (
-        <BetSwirlGame game={onchainGame} onRound={logRound} onClose={closeGame} />
-      )}
-      {providerGame && (
-        <ProviderGame game={providerGame} onClose={closeGame} />
+      {launch.state.status !== GAME_LAUNCH_STATUS.IDLE && (
+        <GameLaunchSurface
+          launch={launch.state}
+          game={launchedGame}
+          onClose={closeGame}
+          onRetry={launch.retryLaunch}
+          onBrowseGames={() => { closeGame(); setCasinoCategory("Lobby"); }}
+        >
+          {launchedGame?.kind === "onchain" ? (
+            <BetSwirlGame
+              key={`${launchedGame.favId}:${launch.state.attempt}`}
+              game={launchedGame}
+              onRound={logRound}
+              onClose={closeGame}
+            />
+          ) : launchedGame ? (
+            <ProviderGame
+              key={`${launchedGame.favId}:${launch.state.attempt}`}
+              game={launchedGame}
+              onClose={closeGame}
+              onReady={
+                import.meta.env.DEV && devMock.gameStatus === "loading"
+                  ? undefined
+                  : () => launch.markReady(launchedGame.favId)
+              }
+              onFailed={() => launch.markFailed(launchedGame.favId)}
+            />
+          ) : null}
+        </GameLaunchSurface>
       )}
       <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
@@ -906,23 +971,24 @@ export default function App() {
   );
 }
 
-function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, profileVariant, onLogin }) {
+function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
   const [query, setQuery] = useState("");
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
   const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
-  // CategoryNav passes the full CASINO_CATEGORIES entry (not just an id) —
-  // activateCasinoCategory is the one shared "what happens when this
-  // category is chosen" behavior (route change vs scroll-to-rail), also
-  // used by Casino search's own category results (see CasinoSearch.jsx),
-  // so "Providers"/"Originals" behave identically from either entry point.
-  const selectCategoryFromNav = (categoryConfig) => {
-    setQuery("");
-    activateCasinoCategory(categoryConfig, onSelectCategory);
+  // CategoryNav now owns its own click behavior (see
+  // lib/casinoLobbyScroll.js's activateLobbyPill — every pill scrolls the
+  // Lobby to its section instead of navigating away, see PILL NAVIGATION
+  // CONSISTENCY). It only needs a way to actually switch to the Lobby route
+  // when clicked from somewhere else (Favorites, a standalone category
+  // page), and a place to report analytics — this file keeps owning both,
+  // same as every other Casino selection handler here.
+  const navigateToLobby = () => { setQuery(""); onSelectCategory?.("Lobby"); };
+  const onPillActivated = (categoryConfig) => {
     track("casino_category_selected", {
       categoryId: categoryConfig.id,
       source: "category-nav",
       previousCategory: category,
-      destination: categoryConfig.kind === "rail" ? "rail" : "route",
+      destination: categoryConfig.id === "Lobby" ? "lobby-top" : "lobby-scroll",
     });
   };
 
@@ -945,7 +1011,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
       {category === "Lobby" && <h1 className="sr-only">Casino Lobby</h1>}
       <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
       {mobileOverlay}
-      <CategoryNav selected={category} onSelect={selectCategoryFromNav} />
+      <CategoryNav selected={category} onNavigateToLobby={navigateToLobby} onPillActivated={onPillActivated} />
       <CasinoCatalog
         category={category}
         query={query}
@@ -956,8 +1022,6 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         recentIds={recentIds}
         onBrowseGames={browseAll}
         onSelectCategory={selectCategory}
-        profileVariant={profileVariant}
-        onLogin={onLogin}
       />
     </div>
   );

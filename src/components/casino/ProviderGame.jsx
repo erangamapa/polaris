@@ -26,7 +26,7 @@ export const PROVIDER_GAMES = [
 // that speak the TriBet Game Bridge (src/lib/gameBridge) get a MOCK balance host
 // wired here automatically. To settle on-chain instead, pass a `settle` handler
 // to attachMockHost (see skills/build-casino-game/reference/on-chain-extension.md).
-export function ProviderGame({ game, onClose }) {
+export function ProviderGame({ game, onClose, onReady, onFailed }) {
   const iframeRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [balance, setBalance] = useState(null);
@@ -62,7 +62,16 @@ export function ProviderGame({ game, onClose }) {
           ref={iframeRef}
           title={game.title}
           src={game.src}
-          onLoad={() => setLoaded(true)}
+          onLoad={() => { setLoaded(true); onReady?.(); }}
+          // Real browsers rarely fire iframe onError for content-level
+          // failures (a 404 still resolves to a same-origin document, so
+          // onLoad fires regardless of what the game actually rendered) —
+          // the launch surface's own timeout is the one reliable failure
+          // signal for provider games (see useCasinoGameLaunch.js's
+          // hasAsyncInit/TIMEOUT_MS). This is kept as defense in depth for
+          // the genuine network-level failures a browser does report this
+          // way, not the primary detection path.
+          onError={() => onFailed?.()}
           sandbox="allow-scripts allow-same-origin allow-pointer-lock"
           className="h-full w-full border-0"
           data-test-id={`provider-iframe-${game.key}`}

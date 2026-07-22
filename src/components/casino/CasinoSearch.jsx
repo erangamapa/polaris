@@ -3,7 +3,8 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { Search, X, ArrowLeft, Clock, Building2, Compass, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
-import { gameHref, gameProviderName, useBrokenImage, FavStar, scrollToRail, activateCasinoCategory } from "./CasinoCatalog";
+import { gameHref, gameProviderName, useBrokenImage, FavStar } from "./CasinoCatalog";
+import { scrollToRail, activateCasinoCategory } from "@/lib/casinoCategories";
 import { searchCasino, hasAnyResults, SEARCH_CATEGORIES } from "@/lib/casinoSearch";
 import { loadRecentSearches, addRecentSearch, clearRecentSearches } from "@/lib/casinoRecentSearches";
 

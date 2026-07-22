@@ -6,9 +6,22 @@
 //   /sports/:sport
 //   /sports/:sport/:country/:league
 //   /sports/:sport/event/:eventId
-import { CATEGORIES } from "@/lib/mockData";
+import { ROUTED_CATEGORIES } from "@/lib/casinoCategories";
 import { PRED_CATEGORIES } from "@/lib/predictionsData";
 import { MVP_SPORT_IDS } from "@/lib/sportsModel";
+
+// Every casinoCategory value routing.js accepts from a URL — the shared
+// taxonomy's ROUTED_CATEGORIES (Popular/New/Live Casino/Game Shows/Slots,
+// see lib/casinoCategories.js) plus the three destinations that aren't
+// content-tag categories at all: Lobby (the default), and Favorites/
+// Recently Played (personal destinations — see CASINO_PERSONAL_DESTINATIONS
+// in that same module). Previously validated against a separate, stale
+// `CATEGORIES` array in lib/mockData.js that had drifted out of sync with
+// the real taxonomy (missing "Recently Played" entirely, still listing
+// "Favorites" but not deriving from the same source) — this is the one
+// place route validity is decided now, matching every other Casino
+// navigation surface's "no independent category array" rule.
+const VALID_CASINO_CATEGORIES = ["Lobby", "Favorites", "Recently Played", ...ROUTED_CATEGORIES];
 
 const slug = (s) => s.toLowerCase().replace(/\s+/g, "-");
 
@@ -53,7 +66,7 @@ export function parsePath(pathname) {
   const parts = pathname.replace(/^\/+/, "").split("/").filter(Boolean);
   const [p, ...rest] = parts;
   if (p === "casino") {
-    return { ...DEFAULT_NAV, product: "casino", casinoCategory: CATEGORIES.find((c) => slug(c) === rest[0]) ?? "Lobby" };
+    return { ...DEFAULT_NAV, product: "casino", casinoCategory: VALID_CASINO_CATEGORIES.find((c) => slug(c) === rest[0]) ?? "Lobby" };
   }
   if (p === "predictions") {
     const opts = [...PRED_CATEGORIES, "My Positions"];

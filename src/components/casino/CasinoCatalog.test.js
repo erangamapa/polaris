@@ -1,12 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import {
-  gameProviderName,
-  ALL_GAMES,
-  railCardsPerPage,
-  CASINO_CATEGORIES,
-  ROUTED_CATEGORIES,
-  activateCasinoCategory,
-} from "./CasinoCatalog";
+import { describe, it, expect } from "vitest";
+import { gameProviderName, ALL_GAMES, railCardsPerPage } from "./CasinoCatalog";
 
 // CASINO GAME-CARD SYSTEM AUDIT AND CLEANUP — scenario coverage. The only
 // genuinely pure logic this task introduces is gameProviderName (relocated
@@ -116,75 +109,42 @@ describe("gameProviderName", () => {
 //  18. Sidebar/mobile menu no longer duplicates the full category list    -> Playwright (desktop sidebar + mobile menu Casino section show only Lobby/Favorites, not all 7)
 //  19. Keyboard: every category reachable, Enter/Space activates            -> Playwright (Tab traversal + Enter on a pill navigates)
 //  20. Accessibility: nav has an accessible label, aria-current on active   -> code review (aria-label="Casino categories"; aria-current="page" only on the selected pill)
+//
+// CASINO_CATEGORIES/ROUTED_CATEGORIES/activateCasinoCategory themselves now
+// live in lib/casinoCategories.js (see CASINO LOBBY CORRECTION below) — see
+// casinoCategories.test.js for their unit tests.
 
-describe("CASINO_CATEGORIES", () => {
-  it("has exactly seven entries, matching the catalog's real taxonomy", () => {
-    expect(CASINO_CATEGORIES).toHaveLength(7);
-    expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
-      "Lobby",
-      "Popular",
-      "New",
-      "Live Casino",
-      "Game Shows",
-      "Originals",
-      "Providers",
-    ]);
-  });
-
-  it("never includes Slots (zero real games in the catalog)", () => {
-    expect(CASINO_CATEGORIES.some((c) => c.id === "Slots")).toBe(false);
-  });
-
-  it("gives every entry a non-empty label", () => {
-    for (const c of CASINO_CATEGORIES) expect(c.label).toBeTruthy();
-  });
-
-  it("gives every rail-kind entry a railTarget, and no other kind one", () => {
-    for (const c of CASINO_CATEGORIES) {
-      if (c.kind === "rail") expect(c.railTarget).toBeTruthy();
-      else expect(c.railTarget).toBeUndefined();
-    }
-  });
-
-  it("keeps ROUTED_CATEGORIES as the exact subset with kind: routed", () => {
-    expect(ROUTED_CATEGORIES).toEqual(
-      CASINO_CATEGORIES.filter((c) => c.kind === "routed").map((c) => c.id)
-    );
-  });
-});
-
-describe("activateCasinoCategory", () => {
-  it("selects the category directly for lobby/routed kinds", () => {
-    const onSelectCategory = vi.fn();
-    const popular = CASINO_CATEGORIES.find((c) => c.id === "Popular");
-    activateCasinoCategory(popular, onSelectCategory);
-    expect(onSelectCategory).toHaveBeenCalledWith("Popular");
-    expect(onSelectCategory).toHaveBeenCalledTimes(1);
-  });
-
-  it("routes rail-kind categories back to Lobby instead of a dead route", () => {
-    // scrollToRail defers its DOM query via requestAnimationFrame, which this
-    // no-jsdom test environment doesn't provide — stub it like the browser
-    // would (immediate callback) since only activateCasinoCategory's own
-    // synchronous behavior (the onSelectCategory call) is under test here.
-    vi.stubGlobal("requestAnimationFrame", (cb) => cb());
-    vi.stubGlobal("document", { querySelector: () => null });
-    const onSelectCategory = vi.fn();
-    const providers = CASINO_CATEGORIES.find((c) => c.id === "Providers");
-    activateCasinoCategory(providers, onSelectCategory);
-    expect(onSelectCategory).toHaveBeenCalledWith("Lobby");
-    expect(onSelectCategory).toHaveBeenCalledTimes(1);
-    vi.unstubAllGlobals();
-  });
-
-  it("does not throw when onSelectCategory is omitted", () => {
-    vi.stubGlobal("requestAnimationFrame", (cb) => cb());
-    vi.stubGlobal("document", { querySelector: () => null });
-    const originals = CASINO_CATEGORIES.find((c) => c.id === "Originals");
-    expect(() => activateCasinoCategory(originals, undefined)).not.toThrow();
-    vi.unstubAllGlobals();
-  });
-});
+// CASINO LOBBY CORRECTION — scenario coverage. This task reorders/re-gates
+// LobbyDashboard's rows and reworks the Providers row's identity; it
+// introduces no new pure logic of its own in this file (CASINO_PROVIDERS
+// and the taxonomy it renders live in lib/casinoCategories.js — see that
+// module's own test file). Row order/visibility/naming are all verified
+// manually via Playwright against the running dev server, driven through
+// the Developer Panel's Favorites/Recently Played presets:
+//
+//  1.  Both populated personalized rows appear first, Recently Played before Favorites -> Playwright (Dev Panel: both populated -> rail order top to bottom)
+//  2.  Empty Recently Played is hidden on Lobby                                          -> Playwright (Dev Panel: Recently Played empty -> 0 recently-played-rail nodes, no placeholder)
+//  3.  Empty Favorites is hidden on Lobby                                                 -> Playwright (Dev Panel: Favorites empty -> 0 favorites-rail nodes, no placeholder)
+//  4.  Both empty begins with Tribet Originals                                             -> Playwright (Dev Panel: both empty -> first visible section is originals-rail)
+//  5.  Only the populated personalized row appears                                          -> Playwright (Dev Panel: one populated, one empty -> exactly one personalized rail renders)
+//  6.  Tribet Originals naming is correct everywhere                                         -> unit test (lib/casinoCategories.test.js: CATEGORY_LABEL.Originals) + Playwright (rail heading text)
+//  7.  Technical Originals badge is removed                                                   -> Playwright (originals-rail badge reads "Provably fair", never "BetSwirl"/"Base Sepolia"/"Chainlink VRF")
+//  8.  Discovery row order is Originals -> Popular -> New Releases -> Live Casino -> Game Shows -> Providers -> code review (LobbyDashboard JSX order) + Playwright (rail order top to bottom)
+//  9.  Slots row does not render (no supported inventory)                                       -> code review (no "slots" tag exists anywhere in BETSWIRL_GAMES/PROVIDER_GAMES; CASINO_CATEGORIES already excludes it)
+//  10. Table Games row does not render (no supported inventory)                                  -> code review (no "table-games" tag exists anywhere in the catalog)
+//  11. Empty generic rows do not render                                                            -> code review (CasinoGameRail returns null when games.length === 0 and no emptyState is passed — Recently Played/Favorites no longer pass one)
+//  12. Providers is a true provider-browsing row, not a mislabeled game rail                        -> Playwright (providers-rail renders exactly 2 provider tiles, not game cards) + unit test (lib/casinoCategories.test.js: CASINO_PROVIDERS)
+//  13. Selecting a provider tile opens a real destination                                            -> Playwright (BetSwirl tile scrolls to originals-rail, TriBet Studio tile scrolls to tribet-studio-rail)
+//  14. Search category results use the shared taxonomy                                                -> code review (casinoSearch.js's SEARCH_CATEGORIES/SEARCH_PROVIDERS both derive from lib/casinoCategories.js)
+//  15. See all hides when it adds no value                                                             -> code review (Originals/Providers/TriBet Studio never pass onSeeAll; Popular/New Releases/Live Casino/Game Shows only when dedup removed something)
+//  16. Favorites See all rule is correct                                                                -> Playwright (3 or fewer favorites -> no See all; 4+ -> See all appears)
+//  17. Arrows hide when all items fit                                                                    -> Playwright (unchanged CasinoGameRail behavior — canScrollLeft/Right both false, arrows disabled)
+//  18. Mobile row order matches desktop                                                                  -> Playwright (390px, same top-to-bottom rail order as 1440px)
+//  19. 320px does not overflow                                                                            -> Playwright (scrollWidth === clientWidth)
+//  20. MVP remains Casino-only                                                                             -> Playwright (Dev Panel Platform Scope MVP -> no Sports/Predictions content in Lobby)
+//  21. Sports/Predictions-specific code remains untouched                                                   -> code review (no files under components/sports or components/predictions touched)
+//  22. Centered top HUD, Casino search, game cards/rails, mobile bottom nav are unchanged                    -> code review (no edits to TopBar.jsx, CasinoSearch.jsx's rendering, CasinoGameCard, MobileBottomNav.jsx)
+//  23. No console errors                                                                                      -> Playwright (page.on("pageerror") empty across every verification script)
 
 describe("railCardsPerPage", () => {
   it("returns how many whole cards fit in the visible width", () => {

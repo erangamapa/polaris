@@ -1,5 +1,3 @@
-export const CATEGORIES = ["Lobby", "Popular", "Slots", "Live Casino", "Game Shows", "New", "Favorites"];
-
 // Promo hero carousel slides.
 export const PROMOS = [
   {

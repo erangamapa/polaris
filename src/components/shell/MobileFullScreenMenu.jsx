@@ -135,16 +135,29 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
 
             <div className="flex-1" aria-hidden="true" />
 
-            {utilityItems.length > 0 && (
-              <>
+            {/* utilityItems may contain embedded divider/sectionLabel
+                pseudo-items (see Sidebar.jsx's identical convention for the
+                desktop rail — one shared items array, two presentations).
+                segmentUtilityItems splits them into real groups so each one
+                gets its own valid <ul>, with an optional quiet group
+                heading (Personal/Games) — same label styling the Account
+                group below already uses. Arenas whose utilityItems are a
+                flat list with no embedded pseudo-items (Sports/Predictions,
+                unchanged by this) collapse to exactly one unlabeled group —
+                identical output to before this existed. */}
+            {segmentUtilityItems(utilityItems).map((group, i) => (
+              <div key={i}>
                 <div className="my-3 border-t" aria-hidden="true" />
+                {group.label && (
+                  <div className="px-2.5 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</div>
+                )}
                 <ul className="space-y-0.5">
-                  {utilityItems.map((item) => (
+                  {group.rows.map((item) => (
                     <MenuRow key={item.id} item={item} active={selected === item.id} onClick={() => handleItemClick(item)} />
                   ))}
                 </ul>
-              </>
-            )}
+              </div>
+            ))}
 
             {/* Account — the mobile "menu layer" entry point for
                 Wallet/Activity/Responsible Gaming/Support/Sign out (see
@@ -191,6 +204,29 @@ function ItemIcon({ icon }) {
       )}
     </span>
   );
+}
+
+// Splits a flat items array into groups at `divider` pseudo-items, capturing
+// any `sectionLabel` pseudo-item that immediately precedes a group as that
+// group's heading. Groups with zero real rows are dropped (a lone trailing
+// divider produces nothing). Mirrors Sidebar.jsx's ExpandedRail handling of
+// the exact same pseudo-item convention, just producing discrete groups
+// instead of one continuous list, since each group needs its own <ul>.
+function segmentUtilityItems(items) {
+  const groups = [];
+  let current = { label: null, rows: [] };
+  for (const it of items) {
+    if (it.divider) {
+      groups.push(current);
+      current = { label: null, rows: [] };
+    } else if (it.sectionLabel) {
+      current.label = it.sectionLabel;
+    } else {
+      current.rows.push(it);
+    }
+  }
+  groups.push(current);
+  return groups.filter((g) => g.rows.length > 0);
 }
 
 function MenuRow({ item, active, onClick }) {
