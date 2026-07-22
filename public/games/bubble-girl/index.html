@@ -12,57 +12,64 @@
     }
     body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 100dvh;
       background: linear-gradient(145deg, #1a0a12 0%, #2d1522 100%);
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: stretch;
       font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
-      padding: 16px;
+      padding: 8px;
     }
     .game-wrapper {
       background: rgba(40, 18, 30, 0.95);
       backdrop-filter: blur(4px);
-      border-radius: 48px 48px 32px 32px;
-      padding: 28px 24px 32px;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 0 2px #ff6b9d inset, 0 0 30px rgba(255, 80, 140, 0.2);
+      border-radius: 28px;
+      padding: 12px 12px 14px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.8), 0 0 0 2px #ff6b9d inset, 0 0 24px rgba(255, 80, 140, 0.2);
       max-width: 700px;
       width: 100%;
       border: 1px solid rgba(255, 100, 150, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: calc(100dvh - 16px);
+      overflow: hidden;
     }
     h1 {
       font-weight: 700;
-      font-size: 2.4rem;
-      letter-spacing: 2px;
+      font-size: 1.35rem;
+      letter-spacing: 1px;
       color: #ffb3d1;
-      margin: 0 0 4px 0;
-      text-shadow: 0 0 20px rgba(255, 80, 160, 0.5), 0 4px 8px rgba(0,0,0,0.5);
+      margin: 0;
+      text-shadow: 0 0 16px rgba(255, 80, 160, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 8px;
+      flex-shrink: 0;
     }
     h1 small {
-      font-size: 1rem;
+      font-size: 0.65rem;
       background: linear-gradient(135deg, #ff6b9d, #c0396b);
       color: #fff0f5;
-      padding: 4px 18px;
+      padding: 2px 10px;
       border-radius: 40px;
       font-weight: 600;
       letter-spacing: 1px;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
-      box-shadow: 0 0 20px rgba(255, 80, 140, 0.3);
     }
     .canvas-container {
       background: rgba(20, 8, 15, 0.8);
-      border-radius: 40px;
+      border-radius: 22px;
       padding: 0;
-      margin: 12px 0 16px;
-      box-shadow: 0 0 0 2px #ff6b9d, 0 10px 30px rgba(0,0,0,0.6);
+      margin: 0;
+      box-shadow: 0 0 0 2px #ff6b9d, 0 8px 20px rgba(0,0,0,0.5);
       position: relative;
       overflow: hidden;
       width: 100%;
       aspect-ratio: 650 / 482;
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: min(52dvh, 420px);
     }
     canvas {
       display: block;
@@ -70,193 +77,143 @@
       height: 100%;
       max-width: none;
       background: #140a10;
-      border-radius: 40px;
+      border-radius: 22px;
       cursor: pointer;
       touch-action: none;
-      transition: 0.05s ease;
       box-shadow: inset 0 0 40px rgba(255, 50, 100, 0.1);
     }
-    canvas:active {
-      transform: scale(0.98);
+    .hud {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .stats-grid {
+    .stats-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin: 14px 0 12px;
+      grid-template-columns: 1fr 1.1fr 1fr;
+      gap: 6px;
     }
     .stat-box {
       background: rgba(30, 12, 22, 0.9);
-      border-radius: 16px;
-      padding: 10px 8px;
+      border-radius: 12px;
+      padding: 4px 6px;
       text-align: center;
       border: 1px solid rgba(255, 100, 150, 0.25);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .stat-label {
       color: #b38092;
-      font-size: 0.7rem;
+      font-size: 0.55rem;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
       font-weight: 600;
     }
     .stat-value {
       color: #ffd4e2;
-      font-size: 1.6rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      margin-top: 2px;
-      text-shadow: 0 0 15px rgba(255, 100, 150, 0.3);
+      line-height: 1.2;
     }
-    .stat-value.multiplier {
-      color: #ffd700;
-      font-size: 1.8rem;
-    }
-    .stat-value.balance {
-      color: #7dffb3;
-    }
-    .stat-value.bet {
-      color: #ff9fbf;
-    }
-    .control-bar {
+    .stat-value.multiplier { color: #ffd700; font-size: 1.15rem; }
+    .stat-value.balance { color: #7dffb3; }
+    .stat-value.bet { color: #ff9fbf; }
+    .bet-row {
       display: flex;
-      gap: 10px;
-      margin: 14px 0 10px;
-      flex-wrap: wrap;
-      justify-content: center;
+      gap: 6px;
+      align-items: center;
+    }
+    .bet-row input {
+      flex: 1;
+      min-width: 0;
+      background: rgba(20, 8, 15, 0.9);
+      border: 1.5px solid #ff6b9d;
+      color: #ffd4e2;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+    }
+    .chip-btn {
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, #3d1a2e, #2a0f1e);
+      border: 1.5px solid #ff6b9d;
+      color: #ffd4e2;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      min-width: 40px;
+    }
+    .chip-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .action-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 6px;
     }
     .ctrl-btn {
       background: linear-gradient(135deg, #3d1a2e, #2a0f1e);
-      border: 2px solid #ff6b9d;
+      border: 1.5px solid #ff6b9d;
       color: #ffd4e2;
-      font-size: 1rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      padding: 12px 24px;
-      border-radius: 60px;
+      padding: 9px 10px;
+      border-radius: 22px;
       cursor: pointer;
-      transition: all 0.1s ease;
-      letter-spacing: 1px;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-      box-shadow: 0 4px 0 #1a0a12, 0 6px 20px rgba(255, 60, 120, 0.15);
-      flex: 1;
-      min-width: 100px;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
-    }
-    .ctrl-btn:hover:not(:disabled) {
-      background: linear-gradient(135deg, #5c2a44, #3d1a2e);
-      border-color: #ff8ab3;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 0 #1a0a12, 0 10px 30px rgba(255, 60, 120, 0.25);
-    }
-    .ctrl-btn:active:not(:disabled) {
-      transform: translateY(4px);
-      box-shadow: 0 2px 0 #1a0a12;
     }
     .ctrl-btn:disabled {
       opacity: 0.4;
       cursor: not-allowed;
-      transform: translateY(2px);
-      box-shadow: 0 2px 0 #1a0a12;
     }
     .ctrl-btn.primary {
       background: linear-gradient(135deg, #ff6b9d, #e0447a);
       border-color: #ff8ab3;
       color: white;
-      box-shadow: 0 4px 0 #a0305a, 0 6px 25px rgba(255, 60, 120, 0.3);
     }
-    .ctrl-btn.primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #ff7fad, #e8558a);
-    }
-    .ctrl-btn.danger {
-      border-color: #ff4444;
-      color: #ff6b6b;
-    }
-    .ctrl-btn.danger:hover:not(:disabled) {
-      border-color: #ff6666;
-      background: linear-gradient(135deg, #4a1a1a, #2a0a0a);
-    }
-    .bet-control {
+    .status-line {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
-      align-items: center;
-      justify-content: center;
-      margin: 8px 0;
-      flex-wrap: wrap;
-    }
-    .bet-control label {
-      color: #b38092;
-      font-weight: 600;
-      font-size: 0.9rem;
-      letter-spacing: 1px;
-    }
-    .bet-control input {
-      background: rgba(20, 8, 15, 0.9);
-      border: 2px solid #ff6b9d;
-      color: #ffd4e2;
-      padding: 8px 16px;
-      border-radius: 30px;
-      width: 120px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      text-align: center;
-      outline: none;
-    }
-    .bet-control input:focus {
-      border-color: #ff8ab3;
-      box-shadow: 0 0 20px rgba(255, 80, 140, 0.2);
-    }
-    .bet-control input::-webkit-inner-spin-button {
-      opacity: 0.5;
-    }
-    .prompt-bar {
-      background: rgba(255, 60, 120, 0.08);
-      border: 2px solid rgba(255, 60, 120, 0.3);
-      border-radius: 60px;
-      padding: 10px 20px;
-      margin: 10px 0 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .cursor-prompt {
-      background: linear-gradient(135deg, #ff6b9d, #c0396b);
-      color: white;
-      padding: 6px 22px 6px 18px;
-      border-radius: 60px;
-      font-weight: 700;
-      font-size: 1rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 0 30px rgba(255, 60, 120, 0.3);
-      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    }
-    .cursor-prompt i {
-      font-size: 1.8rem;
-      line-height: 1;
+      min-height: 1.2rem;
+      padding: 0 2px;
     }
     .status-msg {
       color: #ffb3d1;
       font-weight: 600;
-      font-size: 1rem;
-      letter-spacing: 0.5px;
+      font-size: 0.75rem;
+      letter-spacing: 0.3px;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .history-bar {
       display: flex;
-      gap: 6px;
-      justify-content: center;
-      margin-top: 10px;
-      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .history-bar .hist-label {
+      color: #b38092;
+      font-size: 0.55rem;
+      letter-spacing: 1px;
     }
     .history-dot {
-      width: 28px;
-      height: 28px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.6rem;
+      font-size: 0.5rem;
       font-weight: 700;
       border: 1px solid rgba(255,255,255,0.1);
     }
@@ -270,10 +227,25 @@
       border-color: rgba(255, 0, 50, 0.4);
       color: #ff6b6b;
     }
-    @media (max-width: 500px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .stat-box:last-child { grid-column: span 2; }
-      .ctrl-btn { font-size: 0.85rem; padding: 10px 16px; }
+    @media (min-width: 560px) {
+      body { padding: 16px; align-items: center; }
+      .game-wrapper {
+        padding: 18px 18px 20px;
+        border-radius: 36px;
+        gap: 10px;
+        max-height: none;
+      }
+      h1 { font-size: 1.9rem; }
+      h1 small { font-size: 0.85rem; padding: 3px 14px; }
+      .canvas-container {
+        max-height: none;
+        border-radius: 28px;
+      }
+      canvas { border-radius: 28px; }
+      .stat-value { font-size: 1.35rem; }
+      .stat-value.multiplier { font-size: 1.5rem; }
+      .ctrl-btn { font-size: 0.9rem; padding: 11px 14px; }
+      .status-msg { font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -288,41 +260,39 @@
     <canvas id="gameCanvas" width="650" height="482"></canvas>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-box">
-      <div class="stat-label">💰 Balance</div>
-      <div class="stat-value balance" id="balanceDisplay">1000</div>
+  <div class="hud">
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">Balance</div>
+        <div class="stat-value balance" id="balanceDisplay">1000</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Multiplier</div>
+        <div class="stat-value multiplier" id="multiplierDisplay">1.00x</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Bet</div>
+        <div class="stat-value bet" id="betDisplay">10</div>
+      </div>
     </div>
-    <div class="stat-box">
-      <div class="stat-label">🎯 Bet</div>
-      <div class="stat-value bet" id="betDisplay">10</div>
+
+    <div class="bet-row">
+      <input type="number" id="betInput" value="10" min="1" step="1" aria-label="Bet amount">
+      <button class="chip-btn" id="halfBetBtn" type="button">½</button>
+      <button class="chip-btn" id="doubleBetBtn" type="button">2×</button>
     </div>
-    <div class="stat-box">
-      <div class="stat-label">🚀 Multiplier</div>
-      <div class="stat-value multiplier" id="multiplierDisplay">1.00x</div>
+
+    <div class="action-row">
+      <button class="ctrl-btn primary" id="cashOutBtn" type="button" disabled>💎 Cash Out</button>
+      <button class="ctrl-btn" id="newRoundBtn" type="button">🔄 New Round</button>
     </div>
-  </div>
 
-  <div class="bet-control">
-    <label>Bet Amount:</label>
-    <input type="number" id="betInput" value="10" min="1" step="1">
-    <button class="ctrl-btn" id="halfBetBtn" style="flex:0; padding:8px 16px; min-width:50px;">½</button>
-    <button class="ctrl-btn" id="doubleBetBtn" style="flex:0; padding:8px 16px; min-width:50px;">2×</button>
-  </div>
-
-  <div class="control-bar">
-    <button class="ctrl-btn primary" id="newRoundBtn">🔄 New Round</button>
-  </div>
-
-  <div class="prompt-bar">
-    <span class="cursor-prompt">
-      <i>👆</i> HOLD · RELEASE TO WIN
-    </span>
-    <span class="status-msg" id="statusMessage">Place your bet & hold!</span>
-  </div>
-
-  <div class="history-bar" id="historyBar">
-    <span style="color:#b38092; font-size:0.7rem; letter-spacing:1px;">HISTORY</span>
+    <div class="status-line">
+      <span class="status-msg" id="statusMessage">New Round, then hold to inflate</span>
+      <div class="history-bar" id="historyBar">
+        <span class="hist-label">H</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -334,6 +304,7 @@
     const betDisplay = document.getElementById('betDisplay');
     const multiplierDisplay = document.getElementById('multiplierDisplay');
     const betInput = document.getElementById('betInput');
+    const cashOutBtn = document.getElementById('cashOutBtn');
     const newRoundBtn = document.getElementById('newRoundBtn');
     const statusMessage = document.getElementById('statusMessage');
     const historyBar = document.getElementById('historyBar');
@@ -494,19 +465,23 @@
       multiplierDisplay.textContent = multiplier.toFixed(2) + 'x';
 
       if (isBusted) {
-        statusMessage.textContent = '💥 BUSTED! You lost your bet!';
+        statusMessage.textContent = '💥 BUSTED — lost your bet';
         statusMessage.style.color = '#ff6b6b';
       } else if (isRoundActive && isHolding) {
-        statusMessage.textContent = `🎈 Holding... release to cash out ${multiplier.toFixed(2)}x`;
+        statusMessage.textContent = `🎈 Inflating… ${multiplier.toFixed(2)}x — release to pause`;
         statusMessage.style.color = '#ffd700';
-      } else if (isRoundActive && !isHolding) {
-        statusMessage.textContent = '👆 Hold to inflate — release to cash out!';
+      } else if (isRoundActive && !isHolding && size > 0) {
+        statusMessage.textContent = `⏸ Paused at ${multiplier.toFixed(2)}x — hold again or Cash Out`;
+        statusMessage.style.color = '#ffb3d1';
+      } else if (isRoundActive) {
+        statusMessage.textContent = '👆 Hold to inflate — Cash Out to bank';
         statusMessage.style.color = '#ffb3d1';
       } else {
-        statusMessage.textContent = '🔄 Place your bet & hold!';
+        statusMessage.textContent = 'New Round, then hold to inflate';
         statusMessage.style.color = '#ffb3d1';
       }
 
+      cashOutBtn.disabled = !isRoundActive || isBusted;
       newRoundBtn.disabled = isRoundActive && !isBusted;
       betInput.disabled = isRoundActive;
       halfBetBtn.disabled = isRoundActive;
@@ -514,8 +489,8 @@
     }
 
     function updateHistory() {
-      historyBar.innerHTML = '<span style="color:#b38092; font-size:0.7rem; letter-spacing:1px;">HISTORY</span>';
-      history.slice(-10).forEach(item => {
+      historyBar.innerHTML = '<span class="hist-label">H</span>';
+      history.slice(-8).forEach(item => {
         const dot = document.createElement('div');
         dot.className = `history-dot ${item.result}`;
         dot.textContent = item.result === 'win' ? '✓' : '✗';
@@ -554,7 +529,7 @@
     }
 
     function cashOut() {
-      if (!isRoundActive || isBusted || !isHolding) return;
+      if (!isRoundActive || isBusted) return;
 
       const won = Math.floor(currentBet * multiplier);
       balance += won;
@@ -649,7 +624,7 @@
         ctx.textBaseline = 'middle';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
         ctx.shadowBlur = 12;
-        ctx.fillText('💰 Click "New Round" to start', CW / 2, 56);
+        ctx.fillText('💰 New Round to start · hold to inflate', CW / 2, 56);
       }
     }
 
@@ -686,20 +661,17 @@
 
     function handlePointerUp(e) {
       e.preventDefault();
-      if (isHolding && isRoundActive && !isBusted) {
-        // Cash out on release
-        cashOut();
-      }
+      // Release pauses inflation — keep size & multiplier
       isHolding = false;
       updateUI();
+      drawGame();
     }
 
     function handlePointerLeave(e) {
-      if (isHolding && isRoundActive && !isBusted) {
-        cashOut();
-      }
+      if (!isHolding) return;
       isHolding = false;
       updateUI();
+      drawGame();
     }
 
     // ----- BET CONTROLS -----
@@ -731,6 +703,7 @@
 
     // ----- BUTTON EVENTS -----
     newRoundBtn.addEventListener('click', startRound);
+    cashOutBtn.addEventListener('click', cashOut);
 
     // ----- CANVAS EVENTS -----
     canvas.addEventListener('mousedown', handlePointerDown);
