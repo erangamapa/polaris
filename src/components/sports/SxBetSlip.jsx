@@ -162,7 +162,7 @@ export function SxBetSlip({ selections, stake, setStake, removeSelection, combin
                 data-test-id="betslip-submit"
                 className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
               >
-                {isConnected ? "Place bet" : "Connect wallet to bet"}
+                Place bet
               </button>
               {isConnected && insufficient && (
                 <a href={sxbet.faucet} target="_blank" rel="noreferrer" data-test-id="betslip-faucet" className="flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border text-xs font-medium hover:bg-secondary">
