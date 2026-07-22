@@ -1,12 +1,9 @@
 /**
- * Provably-fair crash point — Bustabit base at ~97% RTP, with a compressed
- * high-multiplier tail so jackpots stay rare.
+ * Provably-fair crash point — Bustabit base at ~97% RTP, with a hard cap
+ * so rounds stay short (no runaway multipliers).
  *
  * At/below TAIL_KINK (2×): classic curve → cashout EV ≈ 97%.
- * Above the kink: excess multiplier is scaled down (TAIL_SCALE), so
- * greedier targets (3×, 10×, …) are much rarer and pay a steeper house edge.
- *
- * Progressive odds still apply: longer you stay, less likely you survive.
+ * Above the kink: excess is compressed, then clamped to MAX_CRASH.
  */
 
 const CLIENT_SEED_KEY = 'raiders-escape-client-seed';
@@ -16,9 +13,10 @@ export const HOUSE_EDGE = 0.03;
 export const TARGET_RTP = 1 - HOUSE_EDGE;
 /** Multipliers above this are compressed (rarer highs). */
 const TAIL_KINK = 2;
-/** Keep this fraction of (crash − kink); lower → rarer jackpots. */
+/** Keep this fraction of (crash − kink); lower → rarer highs. */
 const TAIL_SCALE = 0.25;
-const MAX_CRASH = 50;
+/** Hard ceiling — boulder always hits by this mult. */
+export const MAX_CRASH = 3.5;
 
 function randomSeed(bytes = 16) {
   const arr = new Uint8Array(bytes);

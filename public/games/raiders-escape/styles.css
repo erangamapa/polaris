@@ -20,8 +20,9 @@
 html,
 body {
   margin: 0;
+  /* Use % so we fill the iframe (vh/dvh ignore iframe bounds and clip controls). */
   height: 100%;
-  height: 100dvh;
+  max-height: 100%;
   overflow: hidden;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(30, 200, 176, 0.12), transparent 50%),
@@ -52,6 +53,7 @@ body {
   gap: 8px;
   margin: 0 auto;
   min-height: 0;
+  overflow: hidden;
 }
 
 button,
@@ -67,7 +69,8 @@ button,
   border-radius: 10px;
   overflow: hidden;
   background: #000;
-  flex: 1 1 auto;
+  /* Shrink so bet/run/cash controls always stay on-screen */
+  flex: 1 1 0;
   min-height: 0;
   width: 100%;
   display: flex;
@@ -197,7 +200,7 @@ button,
 .next-round-overlay {
   position: absolute;
   inset: 0;
-  z-index: 12;
+  z-index: 30;
   display: grid;
   place-items: center;
   background: rgba(4, 8, 6, 0.35);
@@ -229,9 +232,11 @@ button,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 168px;
-  padding: 16px 28px 18px;
+  gap: 2px;
+  min-width: 0;
+  width: min(148px, 42%);
+  max-width: 168px;
+  padding: 10px 14px 12px;
   border-radius: 4px;
   border: 3px solid #6a5a48;
   background:
@@ -267,9 +272,9 @@ button,
 
 .crash-fate-label {
   font-family: "Cinzel", serif;
-  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  font-size: clamp(0.58rem, 1.6vw, 0.72rem);
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgba(200, 180, 140, 0.75);
   text-shadow: 0 1px 0 #000;
@@ -277,7 +282,7 @@ button,
 
 .crash-fate-mult {
   font-family: "Cinzel", serif;
-  font-size: clamp(1.85rem, 5.5vw, 2.6rem);
+  font-size: clamp(1.15rem, 3.6vw, 1.65rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--win, #39ff9a);
@@ -289,9 +294,9 @@ button,
 }
 
 .crash-fate-sub {
-  margin-top: 4px;
+  margin-top: 2px;
   font-family: "Rajdhani", sans-serif;
-  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  font-size: clamp(0.62rem, 1.6vw, 0.78rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -641,6 +646,7 @@ button,
   flex-direction: column;
   gap: 8px;
   flex: 0 0 auto;
+  flex-shrink: 0;
 }
 
 .bet-panel {
@@ -730,6 +736,11 @@ button,
   padding: 10px 12px;
   cursor: pointer;
   min-height: 44px;
+}
+
+.btn-kbd {
+  font-weight: 700;
+  opacity: 0.85;
 }
 
 .btn:disabled {
@@ -932,8 +943,8 @@ button,
   }
 
   .stage-wrap {
-    flex: 1 1 auto;
-    min-height: 150px;
+    flex: 1 1 0;
+    min-height: 120px;
     border-width: 1.5px;
     border-radius: 10px;
     box-shadow:
@@ -958,12 +969,12 @@ button,
   }
 
   .mult-value {
-    font-size: clamp(1.55rem, 9vw, 2.5rem);
+    font-size: clamp(1.85rem, 11vw, 2.9rem);
   }
 
   .mult-status {
-    font-size: 0.68rem;
-    letter-spacing: 0.04em;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
   }
 
   .fair-chip {
@@ -1017,6 +1028,39 @@ button,
     padding: 10px 8px;
     font-size: 0.95rem;
     border-radius: 9px;
+  }
+
+  .btn-kbd {
+    display: none;
+  }
+
+  .crash-fate {
+    padding-top: max(48px, 8%);
+    /* Keep tablet in the upper band — clear of character + Next Round */
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .crash-fate-tablet {
+    width: min(118px, 36%);
+    max-width: 128px;
+    padding: 7px 10px 8px;
+    gap: 1px;
+    border-width: 2px;
+  }
+
+  .crash-fate-label {
+    font-size: 0.52rem;
+    letter-spacing: 0.16em;
+  }
+
+  .crash-fate-mult {
+    font-size: clamp(0.95rem, 4.5vw, 1.2rem);
+  }
+
+  .crash-fate-sub {
+    font-size: 0.58rem;
+    margin-top: 0;
   }
 
   .help {
@@ -1103,11 +1147,11 @@ button,
   }
 
   .mult-value {
-    font-size: clamp(1.2rem, 6vh, 1.8rem);
+    font-size: clamp(1.45rem, 7.5vh, 2.15rem);
   }
 
   .mult-status {
-    font-size: 0.6rem;
+    font-size: 0.68rem;
   }
 
   .fair-chip {

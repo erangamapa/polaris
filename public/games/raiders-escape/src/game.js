@@ -3,7 +3,7 @@
  */
 
 import { assets } from './assets.js';
-import { Fairness } from './fairness.js';
+import { Fairness, MAX_CRASH } from './fairness.js';
 
 const WALLET_KEY = 'raiders-escape-balance';
 const MUSIC_MUTE_KEY = 'raiders-escape-music-muted';
@@ -229,7 +229,7 @@ export class Game {
       this._syncWalletUi();
     });
     autoCashInput?.addEventListener('change', () => {
-      this.autoCashAt = Math.max(1.01, Math.min(1000, Number(autoCashInput.value) || 2));
+      this.autoCashAt = Math.max(1.01, Math.min(MAX_CRASH, Number(autoCashInput.value) || 2));
       if (autoCashInput) autoCashInput.value = this.autoCashAt.toFixed(2);
     });
     btnHalf?.addEventListener('click', () => {
@@ -725,6 +725,8 @@ export class Game {
     if (this.phase === PHASE.RUNNING) {
       this.runTime += dt;
       this.multiplier = Math.exp(GROWTH * this.runTime);
+      // Never display / pay above the hard crash ceiling
+      if (this.multiplier > MAX_CRASH) this.multiplier = MAX_CRASH;
       if (this.multiplier >= this.crashPoint) {
         if (this.safeMode) {
           // Safe mode: boulder never hits — keep running past the crash point

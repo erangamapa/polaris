@@ -84,15 +84,15 @@
         <label class="field">
           <span>Auto cashout</span>
           <div class="bet-row">
-            <input type="number" id="autoCashInput" min="1.01" max="1000" step="0.01" value="2.00" inputmode="decimal" enterkeyhint="done" autocomplete="off" />
+            <input type="number" id="autoCashInput" min="1.01" max="3.5" step="0.01" value="2.00" inputmode="decimal" enterkeyhint="done" autocomplete="off" />
             <button type="button" class="chip toggle" id="btnAutoToggle" aria-pressed="false">OFF</button>
           </div>
         </label>
       </div>
 
       <div class="action-row">
-        <button type="button" class="btn btn-run" id="btnRun" title="Shift">Run (Shift)</button>
-        <button type="button" class="btn btn-cash" id="btnCash" disabled title="Space">Cash out (Space)</button>
+        <button type="button" class="btn btn-run" id="btnRun" title="Run (Shift)">Run<span class="btn-kbd"> (Shift)</span></button>
+        <button type="button" class="btn btn-cash" id="btnCash" disabled title="Cash out (Space)">Cash out<span class="btn-kbd"> (Space)</span></button>
       </div>
 
       <p class="help">
@@ -103,14 +103,14 @@
 
     <footer class="footer">
       <button type="button" class="link" id="btnFairness">Provably fair</button>
-      <span>97% RTP to 2× · High mults rare</span>
+      <span>97% RTP to 2× · Caps at 3.5×</span>
     </footer>
   </div>
 
   <div class="modal" id="fairModal" hidden>
     <div class="modal-card" role="dialog" aria-labelledby="fairTitle">
       <h2 id="fairTitle">Provably Fair</h2>
-      <p>Crash point = HMAC-SHA256(serverSeed, serverSeed-clientSeed-nonce) → Bustabit curve (~97% RTP up to 2×), then a compressed tail so higher multipliers get rarer fast. Longer you stay, harder it gets.</p>
+      <p>Crash point = HMAC-SHA256(serverSeed, serverSeed-clientSeed-nonce) → Bustabit curve (~97% RTP up to 2×), then a compressed tail hard-capped at 3.5×. Longer you stay, harder it gets.</p>
       <dl class="fair-dl">
         <dt>Server hash</dt><dd id="dlgServerHash">—</dd>
         <dt>Client seed</dt><dd id="dlgClientSeed">—</dd>
