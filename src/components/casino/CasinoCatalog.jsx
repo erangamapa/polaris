@@ -227,7 +227,24 @@ const RAIL_TILE = "w-[136px] shrink-0";
 
 const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
 
-// Tracks whether a Rail's scroll body has more content past either edge, so
+// Matches the scroll body's own `gap-3` below — the arrow step calculation
+// needs the real inter-card gap, not just each card's own width.
+const RAIL_GAP_PX = 12;
+const RAIL_SKELETON_COUNT = 6;
+
+// How many whole cards fit in one arrow-click "page" of a rail's visible
+// width — the one piece of the scroll math worth pulling out as a pure,
+// unit-testable function: get this wrong and arrow clicks land mid-card
+// (see SEE ALL/DESKTOP SCROLLING: "no partial random offsets after arrow
+// clicks"). Always at least 1, so a card wider than the whole viewport
+// still advances by exactly that one card rather than not moving at all.
+export function railCardsPerPage(clientWidth, cardWidth, gap) {
+  const step = cardWidth + gap;
+  if (step <= 0) return 1;
+  return Math.max(1, Math.floor(clientWidth / step));
+}
+
+// Tracks whether a rail's scroll body has more content past either edge, so
 // the prev/next buttons can disable themselves at the real boundary instead
 // of just always being clickable. Re-measures on scroll and on resize (a
 // rail that fit unscrolled at desktop width may not once the viewport
@@ -253,23 +270,57 @@ function useRailScroll(itemCount) {
     };
   }, [itemCount]);
 
+  // Steps by however many WHOLE cards fit in one viewport segment (never a
+  // fractional card), so every arrow click lands cleanly on a card boundary
+  // instead of stopping partway through the next one.
   const scrollByPage = (direction) => {
     const el = ref.current;
     if (!el) return;
+    const firstCard = el.firstElementChild;
+    const cardWidth = firstCard?.getBoundingClientRect().width ?? el.clientWidth;
+    const cardStep = cardWidth + RAIL_GAP_PX;
+    const cardsPerPage = railCardsPerPage(el.clientWidth, cardWidth, RAIL_GAP_PX);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollBy({ left: direction * Math.round(el.clientWidth * 0.9), behavior: reduceMotion ? "auto" : "smooth" });
+    el.scrollBy({ left: direction * cardsPerPage * cardStep, behavior: reduceMotion ? "auto" : "smooth" });
   };
 
   return { ref, canScrollLeft, canScrollRight, scrollByPage };
 }
 
-// The one shared horizontal rail pattern used by every Lobby section:
-// title (+ optional trust badge) on the left, "See all" + prev/next arrows
-// on the right, a touch-scrollable row of fixed-width tiles below. Self-hides
-// when there's nothing to show unless an `emptyState` is supplied (used by
-// Recently Played, which wants to teach the feature rather than disappear).
-function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, context }) {
+// The one shared horizontal rail pattern used by every Lobby section
+// (Favorites, Recently Played, Originals, Popular, New Releases, Live
+// Casino, Game Shows, Providers — see LobbyDashboard below): title (+
+// optional trust badge) on the left, "See all" + prev/next arrows on the
+// right, a touch-scrollable row of fixed-width tiles below. Self-hides when
+// there's nothing to show unless an `emptyState` is supplied (used by
+// Recently Played/Favorites, which want to teach the feature rather than
+// disappear).
+//
+// `isLoading` is accepted for API completeness (see the task's suggested
+// CasinoGameRailProps shape) but nothing in this app currently triggers it —
+// every game source here is a static import, never an async fetch, so
+// there's nothing that stays "loading" long enough to show it (same
+// reasoning as CasinoGameCardSkeleton's own doc comment). Kept ready rather
+// than left unbuilt for the day a real async source exists.
+export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, context, isLoading }) {
   const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
+
+  if (isLoading) {
+    return (
+      <section data-test-id={testId} aria-label={title}>
+        <div className="mb-3 flex min-w-0 items-center gap-2">
+          <h2 className="text-sm font-bold">{title}</h2>
+        </div>
+        <div className="flex gap-3 overflow-hidden pb-1 pl-1 pt-1">
+          {Array.from({ length: RAIL_SKELETON_COUNT }, (_, i) => (
+            <div key={i} className={RAIL_TILE}>
+              <CasinoGameCardSkeleton />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   if (games.length === 0) {
     if (!emptyState) return null;
@@ -283,12 +334,17 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, co
     );
   }
 
+  const scroll = (direction) => {
+    scrollByPage(direction);
+    track("casino_rail_scrolled", { railTitle: title, direction: direction < 0 ? "previous" : "next" });
+  };
+
   return (
     <section data-test-id={testId} aria-label={title}>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold">{title}</h2>
-          {badge && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{badge}</span>}
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="shrink-0 text-sm font-bold">{title}</h2>
+          {badge && <span className="min-w-0 truncate rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{badge}</span>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {onSeeAll && (
@@ -303,18 +359,18 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, co
           )}
           <button
             type="button"
-            aria-label={`Scroll ${title} left`}
+            aria-label={`Previous ${title}`}
             disabled={!canScrollLeft}
-            onClick={() => scrollByPage(-1)}
+            onClick={() => scroll(-1)}
             className="hidden size-7 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
           </button>
           <button
             type="button"
-            aria-label={`Scroll ${title} right`}
+            aria-label={`Next ${title}`}
             disabled={!canScrollRight}
-            onClick={() => scrollByPage(1)}
+            onClick={() => scroll(1)}
             className="hidden size-7 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
           >
             <ChevronRight className="size-4" aria-hidden="true" />
@@ -323,7 +379,8 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, co
       </div>
       <div
         ref={ref}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 pr-4 [scrollbar-width:none] sm:snap-none [&::-webkit-scrollbar]:hidden"
+        aria-label={`${title} carousel`}
+        className="flex snap-x snap-proximity gap-3 overflow-x-auto p-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {games.map((game) => (
           <div key={game.favId} className={cn(RAIL_TILE, "snap-start")}>
@@ -666,11 +723,24 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   // above would collapse it to empty, since most provider games carry at
   // least one of those tags.
   const seen = new Set(onchain.map((g) => g.favId));
-  const popularRow = takeUnclaimed(byTag("popular"), seen);
-  const newReleasesRow = takeUnclaimed(byTag("new"), seen);
-  const liveCasinoRow = takeUnclaimed(byTag("live-casino"), seen);
-  const gameShowsRow = takeUnclaimed(byTag("game-shows"), seen);
+  const popularCandidates = byTag("popular");
+  const newReleasesCandidates = byTag("new");
+  const liveCasinoCandidates = byTag("live-casino");
+  const gameShowsCandidates = byTag("game-shows");
+  const popularRow = takeUnclaimed(popularCandidates, seen);
+  const newReleasesRow = takeUnclaimed(newReleasesCandidates, seen);
+  const liveCasinoRow = takeUnclaimed(liveCasinoCandidates, seen);
+  const gameShowsRow = takeUnclaimed(gameShowsCandidates, seen);
   const providerRow = provider;
+  // See all is only worth showing when its destination (the category's own
+  // full, undeduped page) actually reveals more than this rail already
+  // does — true whenever dedup removed anything. A rail that happens to
+  // equal its own category's complete list has nothing further to reveal
+  // (see SEE ALL: "there are more items than shown in the rail").
+  const popularHasMore = popularRow.length < popularCandidates.length;
+  const newReleasesHasMore = newReleasesRow.length < newReleasesCandidates.length;
+  const liveCasinoHasMore = liveCasinoRow.length < liveCasinoCandidates.length;
+  const gameShowsHasMore = gameShowsRow.length < gameShowsCandidates.length;
 
   const isEmpty = q && !favorites.length && !recentGames.length && !onchain.length
     && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length && !providerRow.length;
@@ -707,7 +777,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
 
   return (
     <div className="space-y-6">
-      <Rail
+      <CasinoGameRail
         testId="favorites-rail"
         title="Favorites"
         games={favorites}
@@ -717,7 +787,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         emptyState={!q ? <FavoritesEmptyCard onBrowseGames={onBrowseGames} /> : undefined}
       />
 
-      <Rail
+      <CasinoGameRail
         testId="recently-played-rail"
         title="Recently played"
         games={recentGames}
@@ -730,7 +800,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         }
       />
 
-      <Rail
+      <CasinoGameRail
         testId="originals-rail"
         title="Originals"
         badge="BetSwirl · Base Sepolia · Chainlink VRF"
@@ -739,11 +809,11 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         context="home"
       />
 
-      <Rail testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} context="home" onSeeAll={seeAll("Popular")} />
-      <Rail testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={seeAll("New")} />
-      <Rail testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={seeAll("Live Casino")} />
-      <Rail testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={seeAll("Game Shows")} />
-      <Rail testId="providers-rail" title="Providers" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} context="home" />
+      <CasinoGameRail testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} context="home" onSeeAll={popularHasMore ? seeAll("Popular") : undefined} />
+      <CasinoGameRail testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={newReleasesHasMore ? seeAll("New") : undefined} />
+      <CasinoGameRail testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined} />
+      <CasinoGameRail testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined} />
+      <CasinoGameRail testId="providers-rail" title="Providers" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} context="home" />
     </div>
   );
 }
