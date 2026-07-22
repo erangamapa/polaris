@@ -5,9 +5,10 @@
 // SX Bet is an order book: each market has maker "orders" quoting a price. A
 // bettor (taker) FILLS the best maker order on the side they want. Everything
 // here reads the public API — no key, no wallet.
-import { sxbet } from "@shared/chains";
-
-export const SX_API_BASE = sxbet.api;
+// Browser calls go through our own same-origin proxy (api/sx/[...path].js) —
+// SX's API sends no Access-Control-Allow-Origin header, so a direct fetch from
+// the app is blocked by CORS. The proxy forwards to sxbet.api server-side.
+export const SX_API_BASE = "/api/sx";
 
 // SX sportId → our five-sport MVP slug. Anything else is dropped from the UI
 // (never shown as "Other"), matching the Azuro provider's whitelist behaviour.

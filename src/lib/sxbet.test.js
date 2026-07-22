@@ -115,7 +115,8 @@ describe("buildSxEvents + normalizeSxGame", () => {
 // in CI. Run manually with: SX_LIVE=1 npx vitest run sxbet
 describe.runIf(process.env.SX_LIVE)("live SX Toronto testnet", () => {
   it("loads real events with priced outcomes", async () => {
-    const games = await loadSxEvents();
+    // Node has no same-origin proxy — hit the SX API directly here.
+    const games = await loadSxEvents({ base: "https://api.toronto.sx.bet" });
     expect(games.length).toBeGreaterThan(0);
     const normalized = games.map(normalizeSxGame).filter(Boolean);
     expect(normalized.length).toBeGreaterThan(0);
