@@ -773,6 +773,8 @@ export default function App() {
                   recentIds={effectiveRecentIds}
                   onBrowseGames={() => setCasinoCategory("Lobby")}
                   onSelectCategory={setCasinoCategory}
+                  profileVariant={profileVariant}
+                  onLogin={openFunds}
                 />
               )}
               {product === "predictions" && (
@@ -872,7 +874,7 @@ export default function App() {
   );
 }
 
-function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
+function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, profileVariant, onLogin }) {
   const [query, setQuery] = useState("");
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
   const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
@@ -907,6 +909,8 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         recentIds={recentIds}
         onBrowseGames={browseAll}
         onSelectCategory={selectCategory}
+        profileVariant={profileVariant}
+        onLogin={onLogin}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
 import { PROVIDER_GAMES } from "./ProviderGame";
 import { EmptyState } from "@/components/ui/empty-state";
 import { takeUnclaimed } from "@/lib/casinoDedup";
+import { PROFILE_VARIANT } from "@/lib/profileState";
 
 // Sparkle burst angles (degrees) fired once when a game is favorited.
 const SPARKS = [0, 60, 120, 180, 240, 300];
@@ -263,6 +264,98 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState }) 
   );
 }
 
+// Recently Played's empty state: one quiet placeholder card, sized exactly
+// like a real rail tile (RAIL_TILE + the same aspect-[3/4] tile silhouette),
+// not a large centered panel — Rail's own empty branch already omits
+// arrows/See-all, so this only ever needs to supply the card itself. Copy
+// varies by auth state (never by wallet connection, see profileState.js) so
+// a logged-out/session-expired visitor understands why history is missing
+// instead of assuming the feature is empty/broken.
+//
+// RECENTLY PLAYED EMPTY STATE — scenario coverage. This component is pure
+// presentation with no new decision logic of its own (it only consumes
+// `profileVariant`, already unit-tested end to end in profileState.test.js
+// — see "is session-expired whenever authStatus says so" / "falls back to
+// deriving from wallet connection only when no auth override is active",
+// which is exactly the invariant this component's DEV-only gate below
+// depends on), so everything here was verified manually via Playwright
+// against the running dev server, driven through the Developer Panel's
+// User/Recently Played presets:
+//
+//  1.  Empty Recently Played renders one placeholder      -> Playwright (recently-played-empty-card, exactly one)
+//  2.  Placeholder matches standard game-card layout       -> Playwright (136x181px, same as a RAIL_TILE game tile; left-aligned with the Originals rail below it)
+//  3.  Large centered empty panel is removed                -> code review (old <EmptyState> usage replaced entirely)
+//  4.  Empty state has no rail arrows                         -> Playwright (0 "Scroll ..." buttons while empty)
+//  5.  Empty state has no View all                             -> Playwright (0 recently-played-rail-see-all while empty)
+//  6.  Logged-in copy is correct                                 -> Playwright ("No games yet" / "Played games appear here" / "Browse games ->")
+//  7.  Logged-out copy is correct                                 -> Playwright ("No recent games" / "Log in to sync your play history" / "Log in ->")
+//  8.  Session-expired copy is correct                             -> Playwright (Developer Panel -> User -> Expired) + dist grep (string absent from production build)
+//  9.  Browse games action works                                     -> Playwright (calls onBrowseGames, same handler the old empty state used)
+//  10. Log in action works                                             -> Playwright (calls onLogin/openFunds, same handler ProfileMenu's Connect wallet/Log in again use; no crash)
+//  11. Populated state removes placeholder                              -> Playwright (Developer Panel -> Recently Played -> Populated)
+//  12. Populated state renders normal games                              -> Playwright (real <a> tiles + rail arrows return)
+//  13. Mobile layout does not overflow                                     -> Playwright (320-1920px, scrollWidth === clientWidth at every width)
+//  14. Placeholder is not exposed as a game card                            -> code review (plain <div>, not a Tile/<a href> — structurally can't collide with real game semantics)
+//  15. Keyboard focus is visible                                             -> Playwright (real Tab navigation, not .focus() — computed box-shadow ring confirmed non-empty)
+function RecentlyPlayedEmptyCard({ profileVariant, onBrowseGames, onLogin }) {
+  // Session-expired has no real-world equivalent (see profileState.js —
+  // authStatus is hardcoded "default" outside dev, so profileVariant can
+  // never actually equal SESSION_EXPIRED in production). The literal
+  // `import.meta.env.DEV &&` here is still what lets Rollup drop this copy
+  // from the production bundle — profileVariant alone provably never taking
+  // that value doesn't reliably tree-shake it (same guard ProfileMenu.jsx
+  // uses for its own session-expired block).
+  const isExpired = import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED;
+  const isLoggedOut = profileVariant === PROFILE_VARIANT.LOGGED_OUT;
+
+  const copy = isExpired
+    ? {
+        title: "Session expired",
+        description: "Log in again to restore your history",
+        actionLabel: "Log in again",
+        actionAria: "Log in again to restore recently played games",
+        onAction: onLogin,
+        testId: "recently-played-login-again",
+      }
+    : isLoggedOut
+      ? {
+          title: "No recent games",
+          description: "Log in to sync your play history",
+          actionLabel: "Log in",
+          actionAria: "Log in to view recently played games",
+          onAction: onLogin,
+          testId: "recently-played-login",
+        }
+      : {
+          title: "No games yet",
+          description: "Played games appear here",
+          actionLabel: "Browse games",
+          actionAria: "Browse Casino games",
+          onAction: onBrowseGames,
+          testId: "recently-played-browse",
+        };
+
+  return (
+    <div
+      data-test-id="recently-played-empty-card"
+      className={cn(RAIL_TILE, "flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-3 text-center")}
+    >
+      <History className="size-4 shrink-0 text-zinc-500 opacity-60" aria-hidden="true" />
+      <p className="text-[11px] font-semibold leading-snug text-zinc-300">{copy.title}</p>
+      <p className="line-clamp-2 text-[10px] leading-snug text-zinc-500">{copy.description}</p>
+      <button
+        type="button"
+        onClick={copy.onAction}
+        aria-label={copy.actionAria}
+        data-test-id={copy.testId}
+        className="-my-1 py-1 text-[10px] font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {copy.actionLabel} →
+      </button>
+    </div>
+  );
+}
+
 // Sidebar categories that get their own tag-filtered page (title + chips +
 // grid) instead of the multi-row Lobby dashboard. "Slots" has no games in
 // this catalog yet — it's a real, working empty category page, not a fake row.
@@ -429,7 +522,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
 // different questions (what you saved vs. what you actually played) and the
 // same game legitimately appearing in both is fine. `query` (from the
 // search box above the catalog) filters every row/page by title.
-export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
+export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, profileVariant, onLogin }) {
   const tileProps = { onLaunchOnchain: onLaunch, onLaunchProvider, isFav, onFav };
   const q = query?.trim().toLowerCase() ?? "";
   const favorites = (isFav ? ALL_GAMES.filter((g) => isFav(g)) : []).filter((g) => matchesQuery(g, q));
@@ -450,6 +543,7 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     <LobbyDashboard
       category={category} query={query} q={q} favorites={favorites} recentGames={recentGames}
       tileProps={tileProps} onBrowseGames={onBrowseGames} onSelectCategory={onSelectCategory}
+      profileVariant={profileVariant} onLogin={onLogin}
     />
   );
 }
@@ -458,7 +552,7 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 // view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
 // itself returns early for Favorites/CategoryPage before this would ever be
 // reached, and hooks can't live after an early return in the same component.
-function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory }) {
+function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory, profileVariant, onLogin }) {
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
   const provider = PROVIDER.filter((g) => matchesQuery(g, q));
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
@@ -524,13 +618,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         tileProps={tileProps}
         emptyState={
           !q ? (
-            <EmptyState
-              icon={<History className="size-5 text-zinc-500" aria-hidden="true" />}
-              title="No recently played games yet"
-              description="Games you open will show up here."
-              cta={<BrowseGamesButton onClick={onBrowseGames} testId="recently-played-browse-games" />}
-              className="py-6"
-            />
+            <RecentlyPlayedEmptyCard profileVariant={profileVariant} onBrowseGames={onBrowseGames} onLogin={onLogin} />
           ) : undefined
         }
       />
