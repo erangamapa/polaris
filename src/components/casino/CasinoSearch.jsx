@@ -89,7 +89,7 @@ function GameRow({ id, game, active, onHover, onSelect, isFav, onFav }) {
             data-test-id={`casino-search-fav-${testKey}`}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onFav(game); }}
             onMouseDown={(e) => e.preventDefault()}
-            className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-md text-zinc-500 transition hover:bg-white/10 hover:text-white"
+            className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-md text-zinc-500 transition hover:bg-white/10 hover:text-white"
           >
             <Star className={cn("size-4", faved && "fill-amber-400 text-amber-400")} aria-hidden="true" />
           </span>

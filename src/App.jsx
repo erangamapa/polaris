@@ -46,6 +46,7 @@ import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
 import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
+import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 
 // Module-load-time, not inside the component — idempotent (see its own
@@ -86,8 +87,9 @@ const saveFavs = (set) => {
   try { localStorage.setItem(FAVS_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
 };
 
-// Recently-played games (most-recent-first), capped — feeds "Your games"
-// content priority (recently played > favorites). Persisted like favorites.
+// Recently-played games (most-recent-first), capped — feeds the Recently
+// Played rail, a distinct personalized section from Favorites (see
+// CasinoCatalog.jsx). Persisted like favorites.
 const RECENT_KEY = "tribet_recent";
 const RECENT_CAP = 12;
 const loadRecent = () => {
@@ -535,10 +537,30 @@ export default function App() {
   // real API can slot in later without changing the calling code or the
   // never-navigate/never-a-modal contract.
   const syncFavorite = () => Promise.resolve(true);
+  // Coalesces rapid toggling into one visible toast instead of stacking one
+  // per click — dismissing whatever favorite-toggle toast is still showing
+  // before adding the next one, so mashing a star only ever leaves the
+  // latest state's message on screen (see FEEDBACK: "no repeated noisy
+  // toast spam during rapid toggling").
+  const lastFavToastRef = useRef(null);
+  const showFavoriteToast = (type, title, opts) => {
+    if (lastFavToastRef.current != null) toast.dismiss(lastFavToastRef.current);
+    lastFavToastRef.current = toast[type](title, opts);
+  };
   const toggleFav = (game) => {
-    const adding = !favs.has(game.favId);
-    const next = new Set(favs);
-    if (adding) next.add(game.favId); else next.delete(game.favId);
+    // Session-expired is dev-only (see profileState.js — authStatus is
+    // hardcoded "default" outside dev, so profileVariant can never actually
+    // equal SESSION_EXPIRED in production); the literal `import.meta.env.DEV
+    // &&` here is what actually keeps this branch (and its string) out of
+    // the production bundle, not the variant check alone (see DEV-ONLY
+    // REQUIREMENT — same fix as every other session-expired branch in this
+    // file). Nothing is mutated: the real `favs` value is untouched, so the
+    // visible favorite state is preserved rather than silently discarded.
+    if (import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED) {
+      showFavoriteToast("warning", "Log in again to update Favorites", { action: { label: "Log in again", onClick: openFunds } });
+      return;
+    }
+    const { next, adding } = toggleFavorite(favs, game.favId);
     setFavs(next);
     // Once connected, favorites are account-scoped — persist to that
     // account's own bucket so a different account connecting later on this
@@ -546,16 +568,15 @@ export default function App() {
     if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, next);
     syncFavorite(game, adding).then((ok) => {
       if (ok) {
-        toast.success(adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
+        showFavoriteToast("success", adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
           action: { label: "View favorites", onClick: () => { setCasinoCategory("Favorites"); } },
         } : undefined);
         track(adding ? "casino_favorite_added" : "casino_favorite_removed", { gameId: game.favId, category: casinoCategory });
       } else {
-        const reverted = new Set(favs);
-        if (adding) reverted.delete(game.favId); else reverted.add(game.favId);
+        const { next: reverted } = toggleFavorite(next, game.favId);
         setFavs(reverted);
         if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, reverted);
-        toast.error("Couldn't update Favorites — Try again");
+        showFavoriteToast("error", "Couldn't update Favorites. Try again.");
       }
     });
   };
@@ -577,8 +598,7 @@ export default function App() {
     mergedForAddress.current = wallet.address;
     track("wallet_connected", { walletState: "connected" });
     const account = loadAccountFavs(wallet.address);
-    const merged = new Set([...deviceBaselineRef.current, ...account]);
-    const added = merged.size - deviceBaselineRef.current.size;
+    const { merged, added } = mergeAccountFavorites(deviceBaselineRef.current, account);
     setFavs(merged);
     if (added > 0) toast.success(`Synced ${added} favorite${added === 1 ? "" : "s"} from your wallet`);
     saveAccountFavs(wallet.address, merged);

@@ -45,7 +45,7 @@ function FavStar({ faved, onToggle, title }) {
       aria-pressed={faved}
       onClick={handle}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handle(e); }}
-      className="group/fav absolute right-1.5 top-1.5 z-20 grid size-8 cursor-pointer place-items-center rounded-md bg-black/40 text-white/90 transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+      className="group/fav absolute right-1 top-1 z-20 grid size-11 cursor-pointer place-items-center rounded-md bg-black/40 text-white/90 transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
     >
       <span className="relative grid place-items-center">
         {burst > 0 && (
@@ -264,13 +264,39 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState }) 
   );
 }
 
-// Recently Played's empty state: one quiet placeholder card, sized exactly
-// like a real rail tile (RAIL_TILE + the same aspect-[3/4] tile silhouette),
-// not a large centered panel — Rail's own empty branch already omits
-// arrows/See-all, so this only ever needs to supply the card itself. Copy
-// varies by auth state (never by wallet connection, see profileState.js) so
-// a logged-out/session-expired visitor understands why history is missing
-// instead of assuming the feature is empty/broken.
+// Shared quiet-placeholder card for any personalized rail's empty state —
+// one quiet card, sized exactly like a real rail tile (RAIL_TILE + the same
+// aspect-[3/4] tile silhouette), not a large centered panel. Rail's own
+// empty branch already omits arrows/See-all, so this only ever needs to
+// supply the card itself. Introduced for Recently Played, reused as-is for
+// Favorites (see FavoritesEmptyCard below) rather than hand-rolling a second
+// near-identical card — same rhythm everywhere a personalized rail is empty.
+function RailEmptyCard({ icon: Icon, title, description, actionLabel, actionAria, onAction, testId }) {
+  return (
+    <div
+      data-test-id={testId ? `${testId}-card` : undefined}
+      className={cn(RAIL_TILE, "flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-3 text-center")}
+    >
+      <Icon className="size-4 shrink-0 text-zinc-500 opacity-60" aria-hidden="true" />
+      <p className="text-[11px] font-semibold leading-snug text-zinc-300">{title}</p>
+      <p className="line-clamp-2 text-[10px] leading-snug text-zinc-500">{description}</p>
+      <button
+        type="button"
+        onClick={onAction}
+        aria-label={actionAria}
+        data-test-id={testId}
+        className="-my-1 py-1 text-[10px] font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {actionLabel} →
+      </button>
+    </div>
+  );
+}
+
+// Recently Played's empty state — copy varies by auth state (never by
+// wallet connection, see profileState.js) so a logged-out/session-expired
+// visitor understands why history is missing instead of assuming the
+// feature is empty/broken.
 //
 // RECENTLY PLAYED EMPTY STATE — scenario coverage. This component is pure
 // presentation with no new decision logic of its own (it only consumes
@@ -282,7 +308,7 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState }) 
 // against the running dev server, driven through the Developer Panel's
 // User/Recently Played presets:
 //
-//  1.  Empty Recently Played renders one placeholder      -> Playwright (recently-played-empty-card, exactly one)
+//  1.  Empty Recently Played renders one placeholder      -> Playwright (recently-played-browse-card, exactly one)
 //  2.  Placeholder matches standard game-card layout       -> Playwright (136x181px, same as a RAIL_TILE game tile; left-aligned with the Originals rail below it)
 //  3.  Large centered empty panel is removed                -> code review (old <EmptyState> usage replaced entirely)
 //  4.  Empty state has no rail arrows                         -> Playwright (0 "Scroll ..." buttons while empty)
@@ -335,24 +361,25 @@ function RecentlyPlayedEmptyCard({ profileVariant, onBrowseGames, onLogin }) {
           testId: "recently-played-browse",
         };
 
+  return <RailEmptyCard icon={History} {...copy} />;
+}
+
+// Favorites rail's empty state — a single, fixed copy set regardless of
+// auth state: unlike Recently Played, favoriting itself never requires
+// login (see App.jsx's toggleFav — it works fully offline/local-first), so
+// there's no "log in to see this" story to tell here, only "you haven't
+// curated anything yet."
+function FavoritesEmptyCard({ onBrowseGames }) {
   return (
-    <div
-      data-test-id="recently-played-empty-card"
-      className={cn(RAIL_TILE, "flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-3 text-center")}
-    >
-      <History className="size-4 shrink-0 text-zinc-500 opacity-60" aria-hidden="true" />
-      <p className="text-[11px] font-semibold leading-snug text-zinc-300">{copy.title}</p>
-      <p className="line-clamp-2 text-[10px] leading-snug text-zinc-500">{copy.description}</p>
-      <button
-        type="button"
-        onClick={copy.onAction}
-        aria-label={copy.actionAria}
-        data-test-id={copy.testId}
-        className="-my-1 py-1 text-[10px] font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {copy.actionLabel} →
-      </button>
-    </div>
+    <RailEmptyCard
+      icon={Star}
+      title="No favorites yet"
+      description="Save games to find them quickly"
+      actionLabel="Browse games"
+      actionAria="Browse Casino games"
+      onAction={onBrowseGames}
+      testId="favorites-rail-browse"
+    />
   );
 }
 
@@ -578,7 +605,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
     && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length && !providerRow.length;
 
   const visibleSections = [
-    favorites.length > 0 && "favorites",
+    (favorites.length > 0 || !q) && "favorites",
     (recentGames.length > 0 || !q) && "recently-played",
     "originals",
     popularRow.length > 0 && "popular",
@@ -609,7 +636,14 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
 
   return (
     <div className="space-y-6">
-      <Rail testId="favorites-rail" title="Favorites" games={favorites} tileProps={tileProps} onSeeAll={seeAll("Favorites")} />
+      <Rail
+        testId="favorites-rail"
+        title="Favorites"
+        games={favorites}
+        tileProps={tileProps}
+        onSeeAll={seeAll("Favorites")}
+        emptyState={!q ? <FavoritesEmptyCard onBrowseGames={onBrowseGames} /> : undefined}
+      />
 
       <Rail
         testId="recently-played-rail"
