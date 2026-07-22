@@ -450,7 +450,12 @@ export default function App() {
   // a new tab, like on most sites. These helpers keep that URL in sync with the
   // modal state for the in-page (left-click) path, and resolve it back to a
   // modal on load / back-forward so the link actually works when followed.
-  const openGame = (game) => {
+  // `context` ("home" | "favorites" | "recent" | "category" | "search") is
+  // analytics-only, forwarded from CasinoGameCard/search's own launch calls
+  // — see CasinoCatalog.jsx's CasinoGameCard — so casino_game_opened can
+  // report which section a launch actually came from, never used for any
+  // gating/behavior decision here.
+  const openGame = (game, context) => {
     if (devMock.gameStatus !== "default") {
       const copy = DEV_GAME_STATE_COPY[devMock.gameStatus];
       if (copy) toast[copy.type](copy.title, { message: copy.message });
@@ -465,17 +470,17 @@ export default function App() {
       if (game.playable && ensureAuth()) {
         setOnchainGame(game);
         trackRecent(game);
-        track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected" });
+        track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected", sourceContext: context });
       }
       return;
     }
     setProviderGame(game);
     trackRecent(game);
-    track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected" });
+    track("casino_game_opened", { gameId: game.favId, category: casinoCategory, walletState: wallet.isConnected ? "connected" : "disconnected", sourceContext: context });
   };
-  const launchGame = (game) => {
+  const launchGame = (game, context) => {
     window.history.pushState({}, "", gameHref(game));
-    openGame(game);
+    openGame(game, context);
   };
   const closeGame = () => {
     setOnchainGame(null);

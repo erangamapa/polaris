@@ -5,13 +5,6 @@
 // both correct and fast enough to run on every keystroke.
 import { ALL_GAMES, CATEGORY_LABEL, ROUTED_CATEGORIES } from "@/components/casino/CasinoCatalog";
 
-// Onchain games carry no provider field of their own (BETSWIRL_GAMES has
-// none — see useBetSwirl.js); provider-kind games carry an identical
-// "TriBet Studio" `badge` on every entry. Two real studios exist in this
-// catalog today, not eleven — deriving anything more granular would be
-// inventing providers that don't exist.
-export const gameProviderName = (game) => (game.kind === "onchain" ? "BetSwirl" : (game.badge ?? "TriBet Studio"));
-
 // `railTarget` is a Lobby rail's data-test-id — there's no dedicated
 // provider page (see ProviderGame.jsx / CasinoCatalog.jsx), so selecting a
 // provider result is a real, working destination (scroll the Lobby to that

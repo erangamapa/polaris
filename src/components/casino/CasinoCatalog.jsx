@@ -8,6 +8,24 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
 
+// Onchain games carry no provider field of their own (BETSWIRL_GAMES has
+// none — see useBetSwirl.js); provider-kind games carry an identical
+// "TriBet Studio" `badge` on every entry. Two real studios exist in this
+// catalog today, not eleven — deriving anything more granular would be
+// inventing providers that don't exist. Lives here (not in casinoSearch.js,
+// which already imports FROM this file) so both CasinoGameCard and search
+// can use the exact same label without a circular import.
+export const gameProviderName = (game) => (game.kind === "onchain" ? "BetSwirl" : (game.badge ?? "TriBet Studio"));
+
+// Shared broken-image detection — one `onError` state machine, reused by
+// every place a game's artwork renders (full cards here, the compact search
+// result row in CasinoSearch.jsx) so "what counts as a fallback" never
+// diverges between surfaces.
+export function useBrokenImage() {
+  const [broken, setBroken] = useState(false);
+  return { broken, onError: () => setBroken(true) };
+}
+
 // Sparkle burst angles (degrees) fired once when a game is favorited.
 const SPARKS = [0, 60, 120, 180, 240, 300];
 
@@ -23,10 +41,18 @@ export const ALL_GAMES = [...ONCHAIN, ...PROVIDER];
 export const gameHref = (game) => `/casino/lobby?play=${encodeURIComponent(game.favId)}`;
 export const findGameByFavId = (favId) => ALL_GAMES.find((g) => g.favId === favId) ?? null;
 
-// Favorite star overlay: pop animation on toggle + a one-shot sparkle burst on add.
-// Sits above the launch button (z-20) and stops propagation so favoriting never
-// launches the game. Animations reuse the fav-pop / fav-spark keyframes in index.css.
-function FavStar({ faved, onToggle, title }) {
+// Favorite control — one shared icon/behavior for every surface it appears
+// on (cards here, the compact search result row in CasinoSearch.jsx): pop
+// animation on toggle + a one-shot sparkle burst on add, stops propagation
+// so favoriting never launches the game, aria-pressed + a game-name label.
+// `className` is the only visual thing that varies by context — this
+// component owns the icon/interaction, callers own their own chrome (an
+// absolute overlay pinned to artwork here, a plain flex sibling in a search
+// row). `tabIndex` defaults to a real, independent tab stop (correct for a
+// card sitting in a grid/rail); search overrides it to -1, since search
+// results are navigated by ArrowUp/Down within one combobox listbox, and a
+// second real tab stop per row would break that linear keyboard model.
+export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, ...rest }) {
   const [burst, setBurst] = useState(0);
 
   const handle = (e) => {
@@ -39,13 +65,15 @@ function FavStar({ faved, onToggle, title }) {
   return (
     <span
       role="button"
-      tabIndex={0}
+      tabIndex={tabIndex}
       data-fav
       aria-label={faved ? `Remove ${title} from Favorites` : `Add ${title} to Favorites`}
       aria-pressed={faved}
       onClick={handle}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handle(e); }}
-      className="group/fav absolute right-1 top-1 z-20 grid size-11 cursor-pointer place-items-center rounded-md bg-black/40 text-white/90 transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+      onMouseDown={onMouseDown}
+      {...rest}
+      className={cn("group/fav z-20 grid size-11 cursor-pointer place-items-center rounded-md text-white/90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50", className)}
     >
       <span className="relative grid place-items-center">
         {burst > 0 && (
@@ -67,85 +95,128 @@ function FavStar({ faved, onToggle, title }) {
     </span>
   );
 }
+// Chrome for FavStar when it overlays game artwork (every card below) —
+// search's compact row supplies its own (see CasinoSearch.jsx's GameRow).
+const FAV_STAR_OVERLAY = "absolute right-1 top-1 bg-black/40 hover:bg-black/70";
 
-// A tile is a real <a href> so the browser's native middle-click / cmd-click /
-// ctrl-click "open in new tab" behaviour works, like on most sites. A plain left
-// click is intercepted to open the game in-place (no full page reload); modified
-// clicks are left alone so the browser opens the target URL itself.
-const linkClick = (onLaunch, game) => (e) => {
+// A card is a real <a href> so the browser's native middle-click / cmd-click
+// / ctrl-click "open in new tab" behaviour works, like on most sites. A
+// plain left click is intercepted to open the game in-place (no full page
+// reload); modified clicks are left alone so the browser opens the target
+// URL itself.
+const linkClick = (onLaunch, game, context) => (e) => {
   if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   e.preventDefault();
-  onLaunch(game);
+  onLaunch(game, context);
 };
 
 // Per-card status: only for card-specific conditions (this game isn't wired
 // up yet), never network state — a disconnected/wrong-network wallet doesn't
 // change whether Wheel/Plinko show this. Always a plain-language label, never
 // jargon, and never colour/greyscale alone — the label is the real signal.
+// Provider-kind games have no such concept in this catalog (PROVIDER_GAMES
+// carries no `playable` field — every provider game is always launchable),
+// so this only ever applies to onchain games; CasinoGameCard derives
+// `playable` per-kind below rather than assuming every game has the field.
 const STATUS_LABEL = { "coming-soon": "Coming soon" };
 
-function OnchainTile({ game, onLaunch, faved, onFav }) {
-  const status = game.playable ? null : (game.status ?? "coming-soon");
+// The one shared game-card surface used everywhere a game appears as a full
+// card (Lobby rails, Favorites, Recently Played, category/provider grids —
+// see GRID/RAIL_TILE below for how callers size it). Search's compact
+// result row is deliberately NOT this component (a different DOM shape for
+// a dense list), but reuses its underlying pieces: gameProviderName,
+// useBrokenImage, and FavStar itself (see CasinoSearch.jsx).
+//
+// `context` ("home" | "favorites" | "recent" | "category" | "search") is
+// analytics-only — forwarded through onLaunch to App.jsx's launchGame so
+// casino_game_opened can report which section a launch came from (see
+// ANALYTICS: "source/context"). Never changes rendering.
+export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context }) {
+  const faved = isFav?.(game);
+  const onLaunch = game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider;
+  // Only onchain games can be non-playable in this catalog (see STATUS_LABEL
+  // above) — provider games have no such field, so `playable` defaults true.
+  const playable = game.kind === "onchain" ? game.playable : true;
+  const status = playable ? null : (game.status ?? "coming-soon");
   const statusLabel = status ? STATUS_LABEL[status] ?? status : null;
+  const { broken, onError } = useBrokenImage();
+  const testKey = game.favId.replace(":", "-");
+
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)]">
+    <div
+      className={cn(
+        "group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition",
+        playable && "hover:ring-[var(--casino-primary)]"
+      )}
+    >
       <a
         href={gameHref(game)}
-        onClick={game.playable ? linkClick(onLaunch, game) : (e) => e.preventDefault()}
-        aria-disabled={!game.playable}
-        data-test-id={`onchain-${game.key}`}
-        aria-label={game.playable ? `Play ${game.title}` : `${game.title} — ${statusLabel}`}
-        className={`absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${game.playable ? "" : "pointer-events-none cursor-not-allowed"}`}
+        onClick={playable ? linkClick(onLaunch, game, context) : (e) => e.preventDefault()}
+        aria-disabled={!playable || undefined}
+        data-test-id={`game-card-${testKey}`}
+        aria-label={playable ? `Play ${game.title}` : `${game.title} — ${statusLabel}`}
+        className={cn(
+          "absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          !playable && "pointer-events-none cursor-not-allowed"
+        )}
       >
-        <img
-          src={game.image}
-          alt={game.title}
-          loading="lazy"
-          className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${game.playable ? "" : "opacity-40 grayscale"}`}
-        />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-          <div className="text-xs font-bold text-white">{game.title}</div>
+        {broken ? (
+          <div className="grid h-full w-full place-items-center bg-zinc-800">
+            <Gamepad2 className="size-6 text-zinc-600" aria-hidden="true" />
+          </div>
+        ) : (
+          <img
+            src={game.image}
+            alt=""
+            loading="lazy"
+            onError={onError}
+            className={cn(
+              "h-full w-full object-cover transition duration-300",
+              playable ? "group-hover:scale-105" : "opacity-40 grayscale"
+            )}
+          />
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-2 pt-6">
+          <div className="line-clamp-2 text-xs font-bold leading-snug text-white">{game.title}</div>
+          {showProvider && <div className="truncate text-[10px] leading-snug text-zinc-400">{gameProviderName(game)}</div>}
         </div>
       </a>
       {statusLabel && (
-        <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white"
+        >
           {statusLabel}
         </span>
       )}
-      {onFav && <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} />}
+      {/* Favorite is hidden (not just disabled) on an unavailable card — a
+          consistent single rule rather than the previous unconditional
+          render, which let you favorite a game you can't play yet. */}
+      {showFavorite && onFav && playable && (
+        <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} className={FAV_STAR_OVERLAY} />
+      )}
     </div>
   );
 }
 
-function ProviderTile({ game, onLaunch, faved, onFav }) {
+// Dimension-matching skeleton for CasinoGameCard — not currently wired to
+// any real trigger (every Casino data source here is a static import, never
+// an async fetch, so there's nothing that actually stays "loading" long
+// enough to show one; see LOADING SKELETON: "use skeletons only while real
+// data is loading"). Kept as a ready-made, correctly-sized primitive for
+// the day a real async game source exists, rather than left unbuilt.
+export function CasinoGameCardSkeleton() {
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)]">
-      <a
-        href={gameHref(game)}
-        onClick={linkClick(onLaunch, game)}
-        data-test-id={`provider-${game.key}`}
-        aria-label={`Play ${game.title}`}
-        className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <img
-          src={game.image}
-          alt={game.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-        />
-      </a>
-      {onFav && <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} />}
+    <div
+      data-test-id="game-card-skeleton"
+      aria-hidden="true"
+      className="aspect-[3/4] animate-pulse rounded-xl bg-zinc-900 ring-1 ring-white/5 motion-reduce:animate-none"
+    >
+      <div className="flex h-full flex-col justify-end gap-1.5 p-2">
+        <div className="h-3 w-3/4 rounded bg-white/10" />
+        <div className="h-2.5 w-1/2 rounded bg-white/5" />
+      </div>
     </div>
-  );
-}
-
-// Renders a game with the tile that matches its kind, wiring favorites through.
-function Tile({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav }) {
-  const faved = isFav?.(game);
-  return game.kind === "onchain" ? (
-    <OnchainTile game={game} onLaunch={onLaunchOnchain} faved={faved} onFav={onFav} />
-  ) : (
-    <ProviderTile game={game} onLaunch={onLaunchProvider} faved={faved} onFav={onFav} />
   );
 }
 
@@ -197,7 +268,7 @@ function useRailScroll(itemCount) {
 // on the right, a touch-scrollable row of fixed-width tiles below. Self-hides
 // when there's nothing to show unless an `emptyState` is supplied (used by
 // Recently Played, which wants to teach the feature rather than disappear).
-function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState }) {
+function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState, context }) {
   const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
 
   if (games.length === 0) {
@@ -256,7 +327,7 @@ function Rail({ title, badge, games, tileProps, onSeeAll, testId, emptyState }) 
       >
         {games.map((game) => (
           <div key={game.favId} className={cn(RAIL_TILE, "snap-start")}>
-            <Tile game={game} {...tileProps} />
+            <CasinoGameCard game={game} {...tileProps} context={context} />
           </div>
         ))}
       </div>
@@ -475,7 +546,7 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
 
       {games.length ? (
         <div className={GRID}>
-          {games.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+          {games.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="category" />)}
         </div>
       ) : (
         <EmptyState
@@ -517,7 +588,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
       </div>
       {favorites.length ? (
         <div className={GRID}>
-          {favorites.map((game) => <Tile key={game.favId} game={game} {...tileProps} />)}
+          {favorites.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="favorites" />)}
         </div>
       ) : q ? (
         <EmptyState
@@ -641,6 +712,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         title="Favorites"
         games={favorites}
         tileProps={tileProps}
+        context="favorites"
         onSeeAll={seeAll("Favorites")}
         emptyState={!q ? <FavoritesEmptyCard onBrowseGames={onBrowseGames} /> : undefined}
       />
@@ -650,6 +722,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         title="Recently played"
         games={recentGames}
         tileProps={tileProps}
+        context="recent"
         emptyState={
           !q ? (
             <RecentlyPlayedEmptyCard profileVariant={profileVariant} onBrowseGames={onBrowseGames} onLogin={onLogin} />
@@ -663,13 +736,14 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         badge="BetSwirl · Base Sepolia · Chainlink VRF"
         games={onchain}
         tileProps={tileProps}
+        context="home"
       />
 
-      <Rail testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} onSeeAll={seeAll("Popular")} />
-      <Rail testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} onSeeAll={seeAll("New")} />
-      <Rail testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} onSeeAll={seeAll("Live Casino")} />
-      <Rail testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} onSeeAll={seeAll("Game Shows")} />
-      <Rail testId="providers-rail" title="Providers" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} />
+      <Rail testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} context="home" onSeeAll={seeAll("Popular")} />
+      <Rail testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={seeAll("New")} />
+      <Rail testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={seeAll("Live Casino")} />
+      <Rail testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={seeAll("Game Shows")} />
+      <Rail testId="providers-rail" title="Providers" badge="embedded · loads on open" games={providerRow} tileProps={tileProps} context="home" />
     </div>
   );
 }

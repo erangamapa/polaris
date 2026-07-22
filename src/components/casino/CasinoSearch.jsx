@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { Search, Star, X, ArrowLeft, Clock, Building2, Compass, Gamepad2 } from "lucide-react";
+import { Search, X, ArrowLeft, Clock, Building2, Compass, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
-import { gameHref } from "./CasinoCatalog";
-import { searchCasino, hasAnyResults, gameProviderName, SEARCH_CATEGORIES } from "@/lib/casinoSearch";
+import { gameHref, gameProviderName, useBrokenImage, FavStar } from "./CasinoCatalog";
+import { searchCasino, hasAnyResults, SEARCH_CATEGORIES } from "@/lib/casinoSearch";
 import { loadRecentSearches, addRecentSearch, clearRecentSearches } from "@/lib/casinoRecentSearches";
 
 // Debounce only the filter computation, never the input's own value — typing
@@ -33,7 +33,7 @@ function scrollToRail(railTestId) {
 }
 
 function GameThumb({ game }) {
-  const [broken, setBroken] = useState(false);
+  const { broken, onError } = useBrokenImage();
   if (broken) {
     return (
       <span className="grid size-9 shrink-0 place-items-center rounded bg-zinc-800 text-zinc-600">
@@ -46,7 +46,7 @@ function GameThumb({ game }) {
       src={game.image}
       alt=""
       loading="lazy"
-      onError={() => setBroken(true)}
+      onError={onError}
       className="size-9 shrink-0 rounded bg-zinc-800 object-cover"
     />
   );
@@ -81,18 +81,15 @@ function GameRow({ id, game, active, onHover, onSelect, isFav, onFav }) {
           <span className="block truncate text-xs text-zinc-500">{gameProviderName(game)}</span>
         </span>
         {onFav && (
-          <span
-            role="button"
+          <FavStar
+            faved={faved}
+            onToggle={() => onFav(game)}
+            title={game.title}
             tabIndex={-1}
-            aria-label={faved ? `Remove ${game.title} from Favorites` : `Add ${game.title} to Favorites`}
-            aria-pressed={faved}
-            data-test-id={`casino-search-fav-${testKey}`}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onFav(game); }}
             onMouseDown={(e) => e.preventDefault()}
-            className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-md text-zinc-500 transition hover:bg-white/10 hover:text-white"
-          >
-            <Star className={cn("size-4", faved && "fill-amber-400 text-amber-400")} aria-hidden="true" />
-          </span>
+            data-test-id={`casino-search-fav-${testKey}`}
+            className="shrink-0 text-zinc-500 hover:bg-white/10 hover:text-white"
+          />
         )}
       </a>
     </li>
@@ -387,7 +384,7 @@ export function useCasinoSearch({ query, onQuery, onLaunchOnchain, onLaunchProvi
   const closeAll = () => { setDesktopOpen(false); setMobileOpen(false); wasOpenRef.current = false; };
 
   const selectGame = (game, rank) => {
-    (game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider)(game);
+    (game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider)(game, "search");
     recordSearch(query);
     track("casino_search_result_selected", { resultType: "game", resultId: game.favId, resultRank: rank ?? -1 });
     closeAll();
