@@ -526,33 +526,106 @@ const KIND_CHIPS = [
   { id: "onchain", label: "On-chain" },
   { id: "provider", label: "Provider" },
 ];
+// Display label for a category id where it differs from the routing/
+// sidebar id ("New" stays the URL slug; every place that shows it as text
+// reads "New Releases"). Folded into CASINO_CATEGORIES below.
+const CATEGORY_LABEL_OVERRIDE = { New: "New Releases" };
 
-// Display label for a category id where it differs from the routing/sidebar
-// id ("New" stays the URL slug and sidebar id; every place that shows it as
-// text reads "New Releases", matching the Lobby rail of the same name).
-// Exported so the Sidebar (built in App.jsx) can render the same text.
-export const CATEGORY_LABEL = { New: "New Releases" };
+// THE one shared Casino category-navigation config — every nav surface
+// (this in-page bar, Casino search's category results in casinoSearch.js,
+// the Sidebar/mobile menu's Casino section in App.jsx) derives from this
+// array instead of keeping its own list. Built from CATEGORY_META so a
+// routed category can never drift out of sync between "has a real page"
+// and "appears in navigation" — add a tag there and it shows up here
+// automatically. "Slots" is deliberately excluded: zero games today (see
+// CATEGORY_META's own comment), so its route still works for a direct/
+// bookmarked link but it's never offered as a destination anywhere ("Do
+// not render unsupported or empty categories"). "Table Games" doesn't
+// exist in this catalog's tag system at all, so it isn't invented just to
+// match another platform's taxonomy.
+//
+// "Originals" and "Providers" have no dedicated route — see
+// scrollToRail/activateCasinoCategory below — selecting them scrolls the
+// Lobby to that rail (which already shows the complete, real list) instead
+// of a fake page ("If a dedicated route does not exist: use the current
+// filter behavior; do not create fake routes just for visual completeness").
+export const CASINO_CATEGORIES = [
+  { id: "Lobby", label: "Lobby", kind: "lobby" },
+  ...Object.keys(CATEGORY_META)
+    .filter((id) => id !== "Slots")
+    .map((id) => ({ id, label: CATEGORY_LABEL_OVERRIDE[id] ?? id, kind: "routed" })),
+  { id: "Originals", label: "Originals", kind: "rail", railTarget: "originals-rail" },
+  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail" },
+];
+
+// Backward-compatible id -> label lookup, derived from CASINO_CATEGORIES
+// rather than hand-maintained a second time (App.jsx's Sidebar item labels
+// and CategoryPage's own title both read from this).
+export const CATEGORY_LABEL = Object.fromEntries(CASINO_CATEGORIES.map((c) => [c.id, c.label]));
 const displayLabel = (category) => CATEGORY_LABEL[category] ?? category;
 
-// Routed categories with real data behind them — "Slots" is deliberately
-// left out (see CATEGORY_META) even though its route still works if linked
-// directly. Exported so casinoSearch.js can offer them as search results
-// without duplicating this list or reaching into CATEGORY_META directly.
-export const ROUTED_CATEGORIES = Object.keys(CATEGORY_META).filter((c) => c !== "Slots");
-const NAV_CATEGORIES = ["Lobby", ...ROUTED_CATEGORIES];
+// Routed category ids only (excludes Lobby and the two rail-only entries) —
+// exactly the set CasinoCatalog's `CATEGORY_META[category]` branch below
+// renders as a full page. Exported for casinoSearch.js.
+export const ROUTED_CATEGORIES = CASINO_CATEGORIES.filter((c) => c.kind === "routed").map((c) => c.id);
 
+// Scrolls the Lobby to a rail rather than opening a dedicated page — the
+// real, working destination for "Originals"/"Providers" category
+// selections (see CASINO_CATEGORIES above). Exported so both this bar and
+// Casino search's category results (CasinoSearch.jsx) share one
+// implementation instead of two.
+export function scrollToRail(railTestId) {
+  requestAnimationFrame(() => {
+    document.querySelector(`[data-test-id="${railTestId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+// The one shared "what happens when this category is chosen" behavior —
+// routed categories (and Lobby) change casinoCategory; rail-only categories
+// instead ensure Lobby is showing and scroll to that rail. Used by both
+// CategoryNav below and Casino search's category results, so selecting
+// "Providers" behaves identically everywhere (see SEARCH INTEGRATION: "Do
+// not create search-only category IDs... avoid duplicate category logic").
+export function activateCasinoCategory(category, onSelectCategory) {
+  if (category.kind === "rail") {
+    onSelectCategory?.("Lobby");
+    scrollToRail(category.railTarget);
+    return;
+  }
+  onSelectCategory?.(category.id);
+}
+
+// Casino's one in-page category-navigation bar — non-sticky (the global
+// TopBar already consumes a fixed, persistent header slot; stacking a
+// second sticky bar below it would push content down and add a second
+// scroll-offset to account for, without a page long enough here to justify
+// it — see STICKY BEHAVIOR: "non-sticky on Casino Home if the global
+// header already consumes significant space"). Real navigation-link
+// semantics (a route or rail-scroll actually happens on selection), not
+// ARIA tabs — this isn't an in-place tab panel.
 export function CategoryNav({ selected, onSelect }) {
+  const activeRef = useRef(null);
+  useEffect(() => {
+    // Keeps the active pill in view on mobile after a direct link/back-
+    // forward navigation lands on a category the horizontal scroll
+    // position doesn't already show — never fires for rail-only selections
+    // (Originals/Providers never become `selected`, see
+    // activateCasinoCategory: those stay on the Lobby route).
+    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selected]);
+
   return (
     <nav aria-label="Casino categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {NAV_CATEGORIES.map((category) => {
-        const isSelected = selected === category;
+      {CASINO_CATEGORIES.map((category) => {
+        const isSelected = selected === category.id;
         return (
           <button
-            key={category}
+            key={category.id}
+            ref={isSelected ? activeRef : undefined}
             type="button"
             onClick={() => onSelect(category)}
             aria-current={isSelected ? "page" : undefined}
-            data-test-id={`category-nav-${category.toLowerCase().replace(/\s+/g, "-")}`}
+            data-test-id={`category-nav-${category.id.toLowerCase().replace(/\s+/g, "-")}`}
             className={cn(
               "flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isSelected
@@ -560,7 +633,7 @@ export function CategoryNav({ selected, onSelect }) {
                 : "border-white/10 text-zinc-400 hover:text-white"
             )}
           >
-            {displayLabel(category)}
+            {category.label}
           </button>
         );
       })}

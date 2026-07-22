@@ -1,5 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { gameProviderName, ALL_GAMES, railCardsPerPage } from "./CasinoCatalog";
+import { describe, it, expect, vi } from "vitest";
+import {
+  gameProviderName,
+  ALL_GAMES,
+  railCardsPerPage,
+  CASINO_CATEGORIES,
+  ROUTED_CATEGORIES,
+  activateCasinoCategory,
+} from "./CasinoCatalog";
 
 // CASINO GAME-CARD SYSTEM AUDIT AND CLEANUP — scenario coverage. The only
 // genuinely pure logic this task introduces is gameProviderName (relocated
@@ -81,6 +88,103 @@ describe("gameProviderName", () => {
 //  18. Empty generic rail does not render                                       -> code review (CasinoGameRail returns null when games.length === 0 and no emptyState was supplied)
 //  19. Too-few-items rail hides arrows                                           -> Playwright (Live Casino/Game Shows, 1 card each — canScrollLeft/Right both false, arrows disabled)
 //  20. 320px layout works                                                        -> Playwright (no overflow, arrows hidden, header single-line, See-all/cards all reachable)
+
+// CASINO CATEGORY NAVIGATION — scenario coverage. The genuinely pure logic
+// this task introduces is CASINO_CATEGORIES (the one shared config every nav
+// surface derives from) and activateCasinoCategory (routed vs. rail-scroll
+// behavior). CategoryNav itself, plus the sidebar/mobile-menu simplification
+// and search integration built on top of these, are presentational/DOM
+// behavior, verified manually via Playwright against the running dev server:
+//
+//  1.  One shared config drives every nav surface       -> code review (Casino Home CategoryNav, Sidebar/mobile menu, CasinoSearch's category results all import CASINO_CATEGORIES/derive from it — no second hand-rolled list)
+//  2.  Only real catalog/route content is shown          -> unit test (CASINO_CATEGORIES shape) + code review ("Slots" excluded — zero real games; "Table Games" never existed in the tag system)
+//  3.  Each category has one clear route/filter behavior  -> unit test (activateCasinoCategory)
+//  4.  No dead destinations                                -> code review (routed kinds map 1:1 to CATEGORY_META entries with real CategoryPage renders; rail kinds scroll to a real, always-rendered rail)
+//  5.  Browser Back works                                   -> Playwright (Popular -> Live Casino -> Back restores Popular's active state)
+//  6.  Direct URLs resolve to the right active category      -> Playwright (loading /casino/live-casino directly highlights Live Casino)
+//  7.  Refresh preserves active state                          -> Playwright (route-derived active state, not client-only state)
+//  8.  Route and selected-state cannot disagree                -> code review (active state is derived from the route param, never a separate parallel field)
+//  9.  One click does not create duplicate history entries      -> code review (activateCasinoCategory calls onSelectCategory once; no nested/duplicate navigate calls)
+//  10. One consistent active-state visual treatment, not color-only -> code review (aria-current="page" + border/background/text change together, not color alone)
+//  11. Desktop composition order is Promotions -> Search -> CategoryNav -> rails -> code review (CasinoLobby JSX order unchanged by this task except inserting CategoryNav in that slot)
+//  12. Mobile bar scrolls horizontally, no clipped ends            -> Playwright (390px, zero page overflow, first/last pill fully reachable)
+//  13. Active item scrolls into view on mobile                      -> Playwright (scrollIntoView effect keyed on `selected`)
+//  14. 44px minimum touch targets                                     -> Playwright (pill height >= 44px at 390px)
+//  15. Sticky behavior: explicitly non-sticky                          -> code review (CategoryNav has no sticky/fixed positioning; global header already consumes that space)
+//  16. Providers has one clear role (rail-scroll, no duplicate route)   -> unit test (activateCasinoCategory rail branch) + code review (no /casino/providers route exists)
+//  17. Search category results use the exact same shared config          -> code review (casinoSearch.js's SEARCH_CATEGORIES = CASINO_CATEGORIES.filter, no search-only ids)
+//  18. Sidebar/mobile menu no longer duplicates the full category list    -> Playwright (desktop sidebar + mobile menu Casino section show only Lobby/Favorites, not all 7)
+//  19. Keyboard: every category reachable, Enter/Space activates            -> Playwright (Tab traversal + Enter on a pill navigates)
+//  20. Accessibility: nav has an accessible label, aria-current on active   -> code review (aria-label="Casino categories"; aria-current="page" only on the selected pill)
+
+describe("CASINO_CATEGORIES", () => {
+  it("has exactly seven entries, matching the catalog's real taxonomy", () => {
+    expect(CASINO_CATEGORIES).toHaveLength(7);
+    expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
+      "Lobby",
+      "Popular",
+      "New",
+      "Live Casino",
+      "Game Shows",
+      "Originals",
+      "Providers",
+    ]);
+  });
+
+  it("never includes Slots (zero real games in the catalog)", () => {
+    expect(CASINO_CATEGORIES.some((c) => c.id === "Slots")).toBe(false);
+  });
+
+  it("gives every entry a non-empty label", () => {
+    for (const c of CASINO_CATEGORIES) expect(c.label).toBeTruthy();
+  });
+
+  it("gives every rail-kind entry a railTarget, and no other kind one", () => {
+    for (const c of CASINO_CATEGORIES) {
+      if (c.kind === "rail") expect(c.railTarget).toBeTruthy();
+      else expect(c.railTarget).toBeUndefined();
+    }
+  });
+
+  it("keeps ROUTED_CATEGORIES as the exact subset with kind: routed", () => {
+    expect(ROUTED_CATEGORIES).toEqual(
+      CASINO_CATEGORIES.filter((c) => c.kind === "routed").map((c) => c.id)
+    );
+  });
+});
+
+describe("activateCasinoCategory", () => {
+  it("selects the category directly for lobby/routed kinds", () => {
+    const onSelectCategory = vi.fn();
+    const popular = CASINO_CATEGORIES.find((c) => c.id === "Popular");
+    activateCasinoCategory(popular, onSelectCategory);
+    expect(onSelectCategory).toHaveBeenCalledWith("Popular");
+    expect(onSelectCategory).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes rail-kind categories back to Lobby instead of a dead route", () => {
+    // scrollToRail defers its DOM query via requestAnimationFrame, which this
+    // no-jsdom test environment doesn't provide — stub it like the browser
+    // would (immediate callback) since only activateCasinoCategory's own
+    // synchronous behavior (the onSelectCategory call) is under test here.
+    vi.stubGlobal("requestAnimationFrame", (cb) => cb());
+    vi.stubGlobal("document", { querySelector: () => null });
+    const onSelectCategory = vi.fn();
+    const providers = CASINO_CATEGORIES.find((c) => c.id === "Providers");
+    activateCasinoCategory(providers, onSelectCategory);
+    expect(onSelectCategory).toHaveBeenCalledWith("Lobby");
+    expect(onSelectCategory).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it("does not throw when onSelectCategory is omitted", () => {
+    vi.stubGlobal("requestAnimationFrame", (cb) => cb());
+    vi.stubGlobal("document", { querySelector: () => null });
+    const originals = CASINO_CATEGORIES.find((c) => c.id === "Originals");
+    expect(() => activateCasinoCategory(originals, undefined)).not.toThrow();
+    vi.unstubAllGlobals();
+  });
+});
 
 describe("railCardsPerPage", () => {
   it("returns how many whole cards fit in the visible width", () => {

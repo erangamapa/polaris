@@ -3,7 +3,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { Search, X, ArrowLeft, Clock, Building2, Compass, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
-import { gameHref, gameProviderName, useBrokenImage, FavStar } from "./CasinoCatalog";
+import { gameHref, gameProviderName, useBrokenImage, FavStar, scrollToRail, activateCasinoCategory } from "./CasinoCatalog";
 import { searchCasino, hasAnyResults, SEARCH_CATEGORIES } from "@/lib/casinoSearch";
 import { loadRecentSearches, addRecentSearch, clearRecentSearches } from "@/lib/casinoRecentSearches";
 
@@ -19,17 +19,6 @@ function useDebouncedValue(value, delay) {
     return () => clearTimeout(t);
   }, [value, delay]);
   return debounced;
-}
-
-// Scrolls the Lobby to a rail rather than opening a dedicated page — see
-// casinoSearch.js: there is no per-provider page and "Originals" has no
-// routed category, so this is the real, working destination for both
-// ("If provider pages are not implemented: use the existing... filter; do
-// not create dead links").
-function scrollToRail(railTestId) {
-  requestAnimationFrame(() => {
-    document.querySelector(`[data-test-id="${railTestId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
 }
 
 function GameThumb({ game }) {
@@ -399,12 +388,10 @@ export function useCasinoSearch({ query, onQuery, onLaunchOnchain, onLaunchProvi
     onQuery("");
   };
   const selectCategory = (category, rank) => {
-    if (category.kind === "rail") {
-      onSelectCategory?.("Lobby");
-      scrollToRail(category.railTarget);
-    } else {
-      onSelectCategory?.(category.id);
-    }
+    // Same shared behavior the in-page CategoryNav bar uses (see
+    // CasinoCatalog.jsx's activateCasinoCategory) — "Providers"/
+    // "Originals" scroll to their rail, everything else changes route.
+    activateCasinoCategory(category, onSelectCategory);
     if (trimmed) recordSearch(query);
     track("casino_search_result_selected", { resultType: "category", resultId: category.id, resultRank: rank ?? -1 });
     closeAll();

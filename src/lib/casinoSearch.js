@@ -3,7 +3,7 @@
 // ranking and grouping. No network, no fuzzy-search dependency — the whole
 // catalog is small and already in memory, so a plain tiered string match is
 // both correct and fast enough to run on every keystroke.
-import { ALL_GAMES, CATEGORY_LABEL, ROUTED_CATEGORIES } from "@/components/casino/CasinoCatalog";
+import { ALL_GAMES, CASINO_CATEGORIES } from "@/components/casino/CasinoCatalog";
 
 // `railTarget` is a Lobby rail's data-test-id — there's no dedicated
 // provider page (see ProviderGame.jsx / CasinoCatalog.jsx), so selecting a
@@ -14,15 +14,14 @@ export const SEARCH_PROVIDERS = [
   { id: "tribet-studio", name: "TriBet Studio", count: ALL_GAMES.filter((g) => g.kind === "provider").length, railTarget: "providers-rail" },
 ];
 
-// Routed categories (Popular/New Releases/Live Casino/Game Shows) open their
-// real category page. "Originals" has no dedicated route (it's a Lobby rail,
-// like Providers above) — its destination is the same scroll-to-rail. Both
-// only exist here because they have real games behind them; "Slots" is
-// excluded upstream (see ROUTED_CATEGORIES) for having none.
-export const SEARCH_CATEGORIES = [
-  ...ROUTED_CATEGORIES.map((id) => ({ id, label: CATEGORY_LABEL[id] ?? id, kind: "routed" })),
-  { id: "Originals", label: "Originals", kind: "rail", railTarget: "originals-rail" },
-];
+// Exactly CASINO_CATEGORIES minus Lobby — the same shared config the
+// in-page CategoryNav bar renders from (see CasinoCatalog.jsx), not a
+// second category list. Lobby is excluded because searching "lobby" and
+// being offered a "Lobby" result adds nothing — it's the default view, not
+// a distinct destination. Selecting any of these goes through
+// activateCasinoCategory (see CasinoSearch.jsx), the same route-vs-rail-
+// scroll behavior the nav bar uses.
+export const SEARCH_CATEGORIES = CASINO_CATEGORIES.filter((c) => c.id !== "Lobby");
 
 // Tiered match, lowest is best: 0 exact, 1 prefix, 2 partial (substring),
 // null no match. `q` must already be trimmed/lowercased by the caller.

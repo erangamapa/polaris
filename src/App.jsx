@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
-  LayoutGrid, Gem, Cherry, Radio, Tv, Sparkles, Star,
+  LayoutGrid, Radio, Star,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
   ShieldCheck, LifeBuoy, LogOut, LogIn,
 } from "lucide-react";
@@ -14,7 +14,7 @@ import { DevPanel } from "./components/dev/DevPanel";
 import { PromoStrip } from "./components/casino/PromoStrip";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
-import { CasinoCatalog, CategoryNav, CATEGORY_LABEL, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
+import { CasinoCatalog, CategoryNav, CATEGORY_LABEL, activateCasinoCategory, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
 import { useCasinoSearch } from "./components/casino/CasinoSearch";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
@@ -30,7 +30,6 @@ import { SportsArena } from "./components/sports/SportsArena";
 import { DesktopBetslipPanel } from "./components/sports/DesktopBetslipPanel";
 import { useSportsDesktopBetslipUi, useIsDesktopBetslipLayout } from "./lib/sportsDesktopBetslipUi";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
-import { CATEGORIES } from "./lib/mockData";
 import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { MVP_SPORTS } from "./lib/sportsModel";
@@ -72,10 +71,11 @@ const DEV_GAME_STATE_COPY = import.meta.env.DEV ? {
   "insufficient-balance": { type: "error", title: "Insufficient balance (dev simulation)", message: "Add funds to play this game." },
 } : {};
 
-const CASINO_ICONS = {
-  Lobby: LayoutGrid, Popular: Gem, Slots: Cherry, "Live Casino": Radio,
-  "Game Shows": Tv, New: Sparkles, Favorites: Star,
-};
+// Only Lobby and Favorites remain sidebar destinations — the rest of the
+// Casino category taxonomy lives exclusively in the in-page CategoryNav bar
+// now (see the sidebar-building comment below and CasinoCatalog.jsx's
+// CASINO_CATEGORIES).
+const CASINO_ICONS = { Lobby: LayoutGrid, Favorites: Star };
 
 // Favorites persist across sessions in localStorage, keyed by the game's favId.
 const FAVS_KEY = "tribet_favs";
@@ -624,16 +624,23 @@ export default function App() {
   // Build the contextual sidebar for the active product.
   const sidebar = (() => {
     if (product === "casino") {
-      // Favorites is a separated utility destination, not just another
-      // category — kept out of the main flat list and appended after a
-      // divider (Architecture rules: "Favorites as a separated utility item
-      // at the bottom").
+      // Broad Casino destinations/utilities only — Popular/New Releases/
+      // Live Casino/Game Shows/Originals/Providers used to be duplicated
+      // here AND in the in-page CategoryNav bar shown on every Casino page
+      // (see CasinoCatalog.jsx's CASINO_CATEGORIES), two controls doing the
+      // same job at once. The category bar is the one place that now owns
+      // Casino content taxonomy (it's contextual, always visible, and
+      // works identically on mobile where this sidebar doesn't even
+      // render); this list shrinks to exactly the two things that aren't
+      // content categories: Home, and Favorites as a separated utility
+      // destination below a divider (Architecture rules: "Favorites as a
+      // separated utility item at the bottom").
       return {
         title: "Casino",
         selected: casinoCategory,
         onSelect: setCasinoCategory,
         items: [
-          ...CATEGORIES.filter((c) => c !== "Favorites").map((c) => ({ id: c, label: CATEGORY_LABEL[c] ?? c, icon: CASINO_ICONS[c] })),
+          { id: "Lobby", label: CATEGORY_LABEL.Lobby, icon: CASINO_ICONS.Lobby },
           { id: "fav-divider", divider: true },
           { id: "Favorites", label: "Favorites", icon: CASINO_ICONS.Favorites, count: favs.size > 0 ? favs.size : undefined },
         ],
@@ -903,6 +910,21 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
   const [query, setQuery] = useState("");
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
   const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
+  // CategoryNav passes the full CASINO_CATEGORIES entry (not just an id) —
+  // activateCasinoCategory is the one shared "what happens when this
+  // category is chosen" behavior (route change vs scroll-to-rail), also
+  // used by Casino search's own category results (see CasinoSearch.jsx),
+  // so "Providers"/"Originals" behave identically from either entry point.
+  const selectCategoryFromNav = (categoryConfig) => {
+    setQuery("");
+    activateCasinoCategory(categoryConfig, onSelectCategory);
+    track("casino_category_selected", {
+      categoryId: categoryConfig.id,
+      source: "category-nav",
+      previousCategory: category,
+      destination: categoryConfig.kind === "rail" ? "rail" : "route",
+    });
+  };
 
   // Casino-only grouped search (games/providers/categories, ranking,
   // keyboard nav, recent searches, mobile full-screen surface) — see
@@ -923,7 +945,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
       {category === "Lobby" && <h1 className="sr-only">Casino Lobby</h1>}
       <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
       {mobileOverlay}
-      <CategoryNav selected={category} onSelect={selectCategory} />
+      <CategoryNav selected={category} onSelect={selectCategoryFromNav} />
       <CasinoCatalog
         category={category}
         query={query}
