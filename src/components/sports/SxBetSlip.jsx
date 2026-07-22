@@ -155,9 +155,14 @@ export function SxBetSlip({ selections, stake, setStake, removeSelection, combin
             </div>
           ) : (
             <div className="flex flex-col gap-2">
+              {isConnected && insufficient && (
+                <p role="alert" data-test-id="betslip-insufficient" className="text-center text-xs font-medium text-destructive">
+                  Insufficient funds — you need {stakeNum} USDC to place this bet.
+                </p>
+              )}
               <button
                 onClick={submit}
-                disabled={!validation.canSubmit}
+                disabled={!validation.canSubmit || (isConnected && insufficient)}
                 aria-describedby={!validation.canSubmit ? "sx-betslip-validation" : undefined}
                 data-test-id="betslip-submit"
                 className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
@@ -166,7 +171,7 @@ export function SxBetSlip({ selections, stake, setStake, removeSelection, combin
               </button>
               {isConnected && insufficient && (
                 <a href={sxbet.faucet} target="_blank" rel="noreferrer" data-test-id="betslip-faucet" className="flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border text-xs font-medium hover:bg-secondary">
-                  <ExternalLink className="size-3 shrink-0" /> Low balance — get testnet USDC
+                  <ExternalLink className="size-3 shrink-0" /> Get testnet USDC
                 </a>
               )}
             </div>
