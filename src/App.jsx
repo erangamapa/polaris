@@ -15,6 +15,7 @@ import { PromoStrip } from "./components/casino/PromoStrip";
 import { BetSwirlGame } from "./components/casino/BetSwirlGame";
 import { ProviderGame } from "./components/casino/ProviderGame";
 import { CasinoCatalog, CategoryNav, CATEGORY_LABEL, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
+import { useCasinoSearch } from "./components/casino/CasinoSearch";
 import { FundsDialog } from "./components/wallet/FundsDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
@@ -873,15 +874,17 @@ export default function App() {
 
 function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
-  const searchResults = q ? ALL_GAMES.filter((g) => g.title.toLowerCase().includes(q)) : [];
-
-  const selectSearchResult = (game) => {
-    (game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider)(game);
-    setQuery("");
-  };
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
   const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
+
+  // Casino-only grouped search (games/providers/categories, ranking,
+  // keyboard nav, recent searches, mobile full-screen surface) — see
+  // CasinoSearch.jsx. Sports/Predictions keep the plain ScopedSearch input
+  // (see ArenaTileRow.jsx), untouched by this.
+  const { searchPanelProps, mobileOverlay } = useCasinoSearch({
+    query, onQuery: setQuery, onLaunchOnchain, onLaunchProvider, isFav, onFav,
+    onSelectCategory: selectCategory,
+  });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -891,14 +894,8 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
           the one remaining case without adding visual chrome the design
           doesn't call for. */}
       {category === "Lobby" && <h1 className="sr-only">Casino Lobby</h1>}
-      <PromoStrip
-        query={query}
-        onQuery={setQuery}
-        searchResults={searchResults}
-        onSelectResult={selectSearchResult}
-        onBrowseAll={browseAll}
-        onZeroResults={(q) => track("casino_search_zero_results", { query: q, searchScope: "casino" })}
-      />
+      <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
+      {mobileOverlay}
       <CategoryNav selected={category} onSelect={selectCategory} />
       <CasinoCatalog
         category={category}

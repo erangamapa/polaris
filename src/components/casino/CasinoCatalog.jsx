@@ -286,14 +286,12 @@ const KIND_CHIPS = [
 export const CATEGORY_LABEL = { New: "New Releases" };
 const displayLabel = (category) => CATEGORY_LABEL[category] ?? category;
 
-// In-page horizontal category browser, shown on every Casino Home view
-// (Lobby and each category page share it) between search and content. Only
-// lists categories with real games behind them — "Slots" is deliberately
-// left out here (see CATEGORY_META) even though its route still works if
-// linked directly. This complements the persistent sidebar rather than
-// duplicating it: the sidebar is desktop-only chrome outside the page, while
-// mobile has no persistent category list at all today besides this bar.
-const NAV_CATEGORIES = ["Lobby", ...Object.keys(CATEGORY_META).filter((c) => c !== "Slots")];
+// Routed categories with real data behind them — "Slots" is deliberately
+// left out (see CATEGORY_META) even though its route still works if linked
+// directly. Exported so casinoSearch.js can offer them as search results
+// without duplicating this list or reaching into CATEGORY_META directly.
+export const ROUTED_CATEGORIES = Object.keys(CATEGORY_META).filter((c) => c !== "Slots");
+const NAV_CATEGORIES = ["Lobby", ...ROUTED_CATEGORIES];
 
 export function CategoryNav({ selected, onSelect }) {
   return (

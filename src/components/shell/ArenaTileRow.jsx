@@ -10,10 +10,10 @@ import { ArenaPromoTile } from "./ArenaPromoTile";
 //
 // `promos` is a 2-item array shaped like the entries in src/lib/arenaPromos.js
 // ({ id, label, title, metadata?, ctaLabel, href, artwork, ariaLabel? }).
-// `results`/`onSelectResult`/`onBrowseAll`/`onZeroResults` are optional
-// passthroughs to ScopedSearch's rich results dropdown — omitted entirely
-// by Predictions (unaffected), used by Sports for real result navigation.
-export function ArenaTileRow({ arena, promos, query, onQuery, results, onSelectResult, onBrowseAll, onZeroResults }) {
+// Sports/Predictions get the plain ScopedSearch input only — no `panel`, so
+// no dropdown/combobox semantics — that rich behaviour is Casino-only (see
+// PromoStrip.jsx's own CasinoLobby usage and CasinoSearch.jsx).
+export function ArenaTileRow({ arena, promos, query, onQuery }) {
   const [promo1, promo2] = promos;
   return (
     <div className="w-full space-y-3">
@@ -26,15 +26,7 @@ export function ArenaTileRow({ arena, promos, query, onQuery, results, onSelectR
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><ArenaPromoTile promo={promo1} /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><ArenaPromoTile promo={promo2} /></div>
       </div>
-      <ScopedSearch
-        query={query}
-        onQuery={onQuery}
-        defaultScope={arena}
-        results={results}
-        onSelectResult={onSelectResult}
-        onBrowseAll={onBrowseAll}
-        onZeroResults={onZeroResults}
-      />
+      <ScopedSearch query={query} onQuery={onQuery} defaultScope={arena} />
     </div>
   );
 }

@@ -255,19 +255,40 @@ const SEARCH_SCOPES = ARENAS.map((a) => ({ ...a, ...SEARCH_COPY[a.id] }));
 // arena-tinted focus ring comes from --product-primary, which the page root's
 // [data-product] attribute already resolves per arena.
 //
-// `results` is optional — pass it (Casino does; Sports/Predictions don't yet,
-// per "casino first") to get real combobox behaviour: a keyboard-navigable
-// results dropdown, Enter-to-open, and a zero-results state with a "Browse
-// games" way out instead of a silent empty pane. Without `results` this is
-// just the scoped input, filtering whatever's below it inline (unchanged
-// behaviour for Sports/Predictions).
-export function ScopedSearch({ query, onQuery, defaultScope = "casino", results, onSelectResult, onBrowseAll, onZeroResults }) {
+// `panel` is optional — Casino passes a grouped results/empty/no-results
+// ReactNode (see CasinoSearch.jsx) to get real combobox behaviour: this
+// component owns only the input/scope-select chrome and the anchored
+// positioning wrapper, never the panel's contents, grouping, or keyboard
+// semantics — those are entirely the caller's (see `onInputKeyDown`,
+// `activeDescendantId`). Sports/Predictions pass none of this and keep their
+// original plain-input behaviour untouched: no dropdown, no combobox roles.
+//
+// `mobileMode="fullscreen"` (Casino-only) suppresses the inline dropdown
+// below `md:` entirely — focusing the input calls `onMobileFocus` instead,
+// so the caller can mount its own full-screen search surface rather than
+// this component trying to be both an inline combobox and a modal.
+//
+// `open`/`onOpenChange` are optionally controlled: Casino passes both (it
+// needs to force-close the panel after a mouse selection, since results use
+// onMouseDown={preventDefault} to keep focus in the input while clicking —
+// see CasinoSearch.jsx). Sports/Predictions pass neither and get the
+// original uncontrolled focus/blur-driven open state, unchanged.
+export function ScopedSearch({
+  query, onQuery, defaultScope = "casino",
+  panel, panelId, onInputKeyDown, activeDescendantId,
+  open: openProp, onOpenChange,
+  mobileMode = "inline", onMobileFocus,
+}) {
   const [scope, setScope] = useState(defaultScope);
-  const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlledOpen = openProp !== undefined;
+  const open = isControlledOpen ? openProp : internalOpen;
   const rootRef = useRef(null);
-  const zeroReportedFor = useRef(null);
   const active = SEARCH_SCOPES.find((s) => s.id === scope);
+  const setOpen = (next) => {
+    if (!isControlledOpen) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
 
   // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
   // "full" (unrestricted) in production, same no-op-outside-dev guarantee
@@ -297,42 +318,26 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  const hasResults = results !== undefined;
-  const trimmed = query.trim();
-  const showDropdown = hasResults && open && trimmed.length > 0;
-  const shown = results?.slice(0, 8) ?? [];
+  const hasPanel = panel !== undefined;
+  const fullscreenOnMobile = mobileMode === "fullscreen" && isMobile;
+  // Casino's panel decides its own content for every state (empty query,
+  // results, no-results) — no query-length gate here, unlike the old
+  // results-only dropdown. On mobile in fullscreen mode this never renders
+  // inline at all; onMobileFocus below opens the caller's own surface.
+  const showPanel = hasPanel && open && !fullscreenOnMobile;
 
-  useEffect(() => { setActiveIndex(-1); }, [query, scope]);
-
-  // Debounced: report a zero-results query once the user pauses typing, not
-  // on every keystroke — "zzzn" and "zzzno" mid-type aren't separate search
-  // intents worth separate events.
-  useEffect(() => {
-    if (!(showDropdown && shown.length === 0)) return;
-    const t = setTimeout(() => {
-      if (zeroReportedFor.current !== trimmed) {
-        zeroReportedFor.current = trimmed;
-        onZeroResults?.(trimmed);
-      }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [showDropdown, shown.length, trimmed]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const selectResult = (game) => {
-    onSelectResult?.(game);
-    track("casino_search_result_selected", { gameId: game.favId, searchScope: scope });
-    setOpen(false);
-  };
-
+  // All keyboard semantics beyond a bare Escape fallback belong to the
+  // caller (Casino owns a flattened cross-group active index ScopedSearch
+  // has no visibility into). If the caller's handler already dealt with
+  // Escape (e.g. clearing the active selection first), it calls
+  // preventDefault() and this fallback close is skipped — see
+  // CasinoSearch.jsx's two-stage Escape.
   const onKeyDown = (e) => {
-    if (!showDropdown || shown.length === 0) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, shown.length - 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); }
-    else if (e.key === "Enter" && activeIndex >= 0) { e.preventDefault(); selectResult(shown[activeIndex]); }
-    else if (e.key === "Escape") { setOpen(false); }
+    onInputKeyDown?.(e);
+    if (e.key === "Escape" && !e.defaultPrevented && hasPanel && open) setOpen(false);
   };
 
-  // Close only when focus truly leaves the whole combobox (input, listbox,
+  // Close only when focus truly leaves the whole combobox (input, panel,
   // scope select) — not on every internal focus move.
   const onBlur = (e) => {
     if (!rootRef.current?.contains(e.relatedTarget)) setOpen(false);
@@ -412,15 +417,19 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
               id="arena-search-input"
               value={query}
               onChange={(e) => onQuery(e.target.value)}
-              onFocus={() => { setOpen(true); track("casino_search_focused", { searchScope: scope }); }}
+              onFocus={() => {
+                track("casino_search_focused", { searchScope: scope });
+                if (fullscreenOnMobile) { onMobileFocus?.(); return; }
+                setOpen(true);
+              }}
               onKeyDown={onKeyDown}
               placeholder={isMobile ? active.mobilePlaceholder : active.placeholder}
               data-test-id="arena-search"
-              role={hasResults ? "combobox" : undefined}
-              aria-expanded={hasResults ? showDropdown : undefined}
-              aria-controls={hasResults ? "arena-search-listbox" : undefined}
-              aria-activedescendant={activeIndex >= 0 ? `arena-search-opt-${activeIndex}` : undefined}
-              aria-autocomplete={hasResults ? "list" : undefined}
+              role={hasPanel ? "combobox" : undefined}
+              aria-expanded={hasPanel ? showPanel : undefined}
+              aria-controls={hasPanel ? panelId : undefined}
+              aria-activedescendant={activeDescendantId}
+              aria-autocomplete={hasPanel ? "list" : undefined}
               autoComplete="off"
               className={cn(
                 "h-full w-full min-w-0 rounded-r-lg border-0 bg-transparent pl-8 pr-3 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none sm:pl-9",
@@ -441,47 +450,14 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
           </div>
         </div>
 
-        {showDropdown && (
-          <ul
-            id="arena-search-listbox"
-            role="listbox"
-            aria-label="Search results"
-            data-test-id="arena-search-listbox"
-            className="absolute inset-x-0 top-[calc(100%+6px)] z-30 max-h-80 overflow-y-auto rounded-lg border border-white/10 bg-zinc-900 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.5)]"
+        {showPanel && (
+          <div
+            id={panelId}
+            data-test-id="arena-search-panel"
+            className="tribet-scrollbar absolute inset-x-0 top-[calc(100%+6px)] z-30 max-h-[28rem] overflow-y-auto rounded-lg border border-white/10 bg-zinc-900 shadow-[0_12px_28px_rgba(0,0,0,0.5)]"
           >
-            {shown.length === 0 ? (
-              <li className="px-4 py-6 text-center" data-test-id="arena-search-zero">
-                <p className="text-sm text-zinc-400">No games match “{trimmed}”.</p>
-                <button
-                  type="button"
-                  onClick={() => { onBrowseAll?.(); setOpen(false); }}
-                  className="mt-2 text-sm font-semibold text-[var(--product-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  Browse games
-                </button>
-              </li>
-            ) : (
-              shown.map((game, i) => (
-                <li
-                  key={game.favId}
-                  id={`arena-search-opt-${i}`}
-                  role="option"
-                  aria-selected={i === activeIndex}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => selectResult(game)}
-                  data-test-id={`arena-search-opt-${game.key}`}
-                  className={cn(
-                    "mx-1.5 flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm",
-                    i === activeIndex ? "bg-white/10 text-white" : "text-zinc-300"
-                  )}
-                >
-                  <img src={game.image} alt="" className="size-7 shrink-0 rounded object-cover" />
-                  <span className="truncate">{game.title}</span>
-                </li>
-              ))
-            )}
-          </ul>
+            {panel}
+          </div>
         )}
       </div>
     </div>
@@ -496,7 +472,7 @@ export function ScopedSearch({ query, onQuery, defaultScope = "casino", results,
 // clipping; each card gets real width here instead, with an intentional
 // peek of the next card as the swipe affordance. Search sits directly
 // beneath, sharing the same wrapper/width so both edges align.
-export function PromoStrip({ query, onQuery, searchResults, onSelectResult, onBrowseAll, onZeroResults }) {
+export function PromoStrip({ query, onQuery, searchPanelProps }) {
   const [p1, p2] = PROMOS;
   return (
     <div className="casino-content-column w-full space-y-3">
@@ -508,10 +484,7 @@ export function PromoStrip({ query, onQuery, searchResults, onSelectResult, onBr
       <ScopedSearch
         query={query}
         onQuery={onQuery}
-        results={searchResults}
-        onSelectResult={onSelectResult}
-        onBrowseAll={onBrowseAll}
-        onZeroResults={onZeroResults}
+        {...searchPanelProps}
       />
     </div>
   );
