@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronsRight, ChevronsLeft, Ticket } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { AzuroBetSlip } from "./AzuroBetSlip";
+import { ProviderBetSlip } from "./ProviderBetSlip";
 import { DemoBetSlip } from "./DemoBetSlip";
 import { track } from "@/lib/telemetry";
 
@@ -104,7 +104,7 @@ export function DesktopBetslipPanel({ betslip, uiState, onBetPlaced, onDemoBetPl
 
             <div className="flex min-h-0 flex-1 flex-col px-4 py-3.5">
               {source === "provider" && (
-                <AzuroBetSlip
+                <ProviderBetSlip
                   presentation="panel"
                   selections={betslip.selections}
                   stake={betslip.stake}

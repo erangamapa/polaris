@@ -1,6 +1,7 @@
 import { useWallet } from "@/web3/useWallet";
-import { useNormalizedAzuroEvents } from "@/web3/useAzuro";
+import { useSportsEvents } from "@/web3/useSportsEvents";
 import { SPORTS_DEMO_MODE } from "@/lib/sportsDemo";
+import { SPORTS_PROVIDER, isSxbet } from "@/lib/sportsProvider";
 
 // Internal-only — the raw provider-console information the old "On-chain
 // Sports" block used to show directly on the customer journey (network,
@@ -9,8 +10,9 @@ import { SPORTS_DEMO_MODE } from "@/lib/sportsDemo";
 // users. Functionality preserved, just relocated (see PROVIDER DIAGNOSTICS).
 export function ProviderDiagnostics() {
   const wallet = useWallet();
-  const { events, loading, bettableCount } = useNormalizedAzuroEvents();
+  const { events, loading, bettableCount } = useSportsEvents();
   const totalMarkets = events.reduce((s, e) => s + e.markets.length, 0);
+  const network = isSxbet() ? "SX Bet · SX Toronto (testnet)" : "Azuro · Polygon Amoy (testnet)";
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -20,8 +22,9 @@ export function ProviderDiagnostics() {
       </div>
 
       <DiagCard title="Config">
+        <Row k="Provider" v={SPORTS_PROVIDER} />
         <Row k="Demo mode" v={String(SPORTS_DEMO_MODE)} />
-        <Row k="Network" v="Azuro · Polygon Amoy (testnet)" />
+        <Row k="Network" v={network} />
         <Row k="Wallet connected" v={String(wallet.isConnected)} />
         <Row k="On sports chain" v={String(wallet.onSportsChain)} />
         <Row k="Sports balance (USDT)" v={wallet.sportsBalance?.toFixed(2)} />
@@ -35,7 +38,7 @@ export function ProviderDiagnostics() {
         <Row k="Total markets" v={totalMarkets} />
       </DiagCard>
 
-      {bettableCount === 0 && events.length > 0 && (
+      {!isSxbet() && bettableCount === 0 && events.length > 0 && (
         <DiagCard title="Testnet limitation">
           <p className="text-xs text-muted-foreground">
             Every fetched game has already started, so Azuro's relayer will reject a real bet with

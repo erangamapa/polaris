@@ -168,6 +168,62 @@ function normalizeAzuroCondition(condition) {
   };
 }
 
+// ── SX Bet game -> normalized SportsEvent ───────────────────────────────
+// `game` is the intermediate shape from sxbet.buildSxEvents(). As with Azuro,
+// every raw SX ref (marketHash + the fill descriptor per outcome) is kept on
+// `.raw` all the way down so SxBetSlip can reconstruct the exact order-fill
+// when an odds button is clicked — normalizing for display never touches the
+// bet-placement path.
+const SX_SPORT_TO_MVP = { 1: "basketball", 3: "baseball", 5: "soccer", 6: "tennis", 8: "american-football" };
+
+export function normalizeSxGame(game) {
+  const mvp = SX_SPORT_TO_MVP[game.sportId];
+  const sport = mvp && MVP_SPORTS.find((s) => s.id === mvp);
+  if (!sport) return null; // outside the 5-sport MVP whitelist — never shown
+
+  const now = Math.floor(Date.now() / 1000);
+  const status = Number(game.startsAt) > now ? "upcoming" : "started";
+
+  return {
+    id: `sx-${game.eventId}`,
+    source: "provider",
+    sport: { id: sport.id, slug: sport.slug, name: sport.name, templateFamily: sport.templateFamily, icon: sport.icon },
+    // SX doesn't split by country; the league label carries the competition.
+    country: normalizeCountry(null),
+    league: normalizeLeague(game.leagueLabel),
+    participants: [
+      { name: game.teamOne, shortName: game.teamOne },
+      { name: game.teamTwo, shortName: game.teamTwo },
+    ],
+    startsAt: game.startsAt ? new Date(Number(game.startsAt) * 1000).toISOString() : null,
+    status,
+    markets: (game.markets ?? []).map(normalizeSxMarket),
+    featured: false,
+    competitionPriority: 50,
+    raw: game,
+  };
+}
+
+function normalizeSxMarket(m) {
+  return {
+    id: `sxm-${m.marketHash}`,
+    name: m.name,
+    group: m.group,
+    type: m.type,
+    line: m.line,
+    status: "active",
+    outcomes: (m.outcomes ?? []).map((o) => ({
+      id: `sxo-${m.marketHash}-${o.side}`,
+      name: o.name,
+      odds: Number(o.odds),
+      status: "active",
+      // The order-fill descriptor SxBetSlip signs + submits.
+      raw: { ...o.fill, odds: o.odds },
+    })),
+    raw: m,
+  };
+}
+
 // ── Ranking (Sports Home / sport landing "top matches") ─────────────────
 // A separate, replaceable layer — never baked into card components. See
 // SPORTS HOME INVENTORY RANKING. Testnet/placeholder inventory has no real

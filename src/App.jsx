@@ -36,7 +36,7 @@ import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { MVP_SPORTS } from "./lib/sportsModel";
 import { getSportsInventory } from "./lib/sportsDemo";
 import { useSportsBetslip } from "./lib/sportsBetslip";
-import { useNormalizedAzuroEvents } from "./web3/useAzuro";
+import { useSportsEvents } from "./web3/useSportsEvents";
 import { PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 import { NetworkBanner } from "./components/shell/NetworkBanner";
 import { GeoBlock } from "./components/shell/GeoBlock";
@@ -265,10 +265,12 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // Sports inventory (real Azuro + demo-mode placeholders) — fetched once
-  // here, not inside SportsArena, since the sidebar/mobile-menu live-count
-  // badges need the same merged data.
-  const { events: sportsProviderEvents, loading: sportsLoading } = useNormalizedAzuroEvents();
+  // Sports inventory from the active provider (SX Bet by default; Azuro when
+  // VITE_SPORTS_PROVIDER=azuro) — fetched once here, not inside SportsArena,
+  // since the sidebar/mobile-menu live-count badges need the same merged data.
+  // With SX active there are no placeholders — real markets stand alone (demo
+  // mode is off, see sportsDemo.js).
+  const { events: sportsProviderEvents, loading: sportsLoading } = useSportsEvents();
   const sportsEvents = useMemo(() => getSportsInventory({ providerEvents: sportsProviderEvents }), [sportsProviderEvents]);
   // Lifted here (not owned inside SportsArena) for the same reason as favs/
   // activity/recentIds above: SportsArena remounts on every arena switch

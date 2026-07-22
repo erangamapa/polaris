@@ -2,9 +2,22 @@
 // Testnet-only: Base Sepolia (both BetSwirl casino + Azuro sports live there).
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { baseSepolia, polygonAmoy } from '@reown/appkit/networks';
-import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from '@shared/chains';
+import { baseSepolia, polygonAmoy, defineChain } from '@reown/appkit/networks';
+import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID, sxToronto } from '@shared/chains';
 import { BRAND_NAME } from '@/lib/brand';
+
+// SX Toronto testnet as an AppKit network so the wallet can switch to it when
+// placing an SX Bet order (VITE_SPORTS_PROVIDER=sxbet).
+const sxTorontoNetwork = defineChain({
+  id: sxToronto.id,
+  caipNetworkId: `eip155:${sxToronto.id}`,
+  chainNamespace: 'eip155',
+  name: sxToronto.name,
+  nativeCurrency: sxToronto.nativeCurrency,
+  rpcUrls: sxToronto.rpcUrls,
+  blockExplorers: sxToronto.blockExplorers,
+  testnet: true,
+});
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
 
@@ -18,7 +31,7 @@ export const CASINO_CHAIN = baseSepolia;
 export const SPORTS_CHAIN = polygonAmoy;
 // Back-compat default used where a single "home" chain is assumed (casino).
 export const CHAIN = baseSepolia;
-export const networks = [baseSepolia, polygonAmoy];
+export const networks = [baseSepolia, polygonAmoy, sxTorontoNetwork];
 export { CASINO_CHAIN_ID, SPORTS_CHAIN_ID };
 
 const wagmiAdapter = new WagmiAdapter({

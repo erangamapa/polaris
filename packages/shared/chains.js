@@ -9,6 +9,8 @@
 
 export const BASE_SEPOLIA_ID = 84532;
 export const POLYGON_AMOY_ID = 80002;
+// SX Network — SX Bet's own SXR rollup. Toronto is the populated testnet.
+export const SX_TORONTO_ID = 79479957;
 
 // Two-chain split: casino (BetSwirl) on Base Sepolia, sports (Azuro) on Polygon
 // Amoy — Amoy's Azuro dev feed carries more live markets. The app auto-switches
@@ -47,10 +49,24 @@ export const polygonAmoy = {
   testnet: true,
 };
 
+// SX Toronto testnet (SXR rollup). SX Bet takes bets here in USDC (6 decimals).
+export const sxToronto = {
+  id: SX_TORONTO_ID,
+  name: 'SX Toronto',
+  network: 'sx-toronto',
+  nativeCurrency: { name: 'SX', symbol: 'SX', decimals: 18 },
+  rpcUrls: { default: { http: ['https://rpc-rollup.toronto.sx.technology'] } },
+  blockExplorers: {
+    default: { name: 'SX Explorer', url: 'https://explorer.toronto.sx.technology', apiUrl: 'https://explorer.toronto.sx.technology/api' },
+  },
+  testnet: true,
+};
+
 // Explorer lookup by chain id (bet/tx links are chain-aware now).
 export const EXPLORERS = {
   [BASE_SEPOLIA_ID]: baseSepolia.blockExplorers.default.url,
   [POLYGON_AMOY_ID]: polygonAmoy.blockExplorers.default.url,
+  [SX_TORONTO_ID]: sxToronto.blockExplorers.default.url,
 };
 
 // Native gas token sentinel used by BetSwirl for ETH bets.
@@ -100,6 +116,24 @@ export const azuro = {
   },
   api: 'https://dev-api.onchainfeed.org/api/v1/public',
   socket: 'wss://dev-streams.onchainfeed.org/v1/streams',
+};
+
+// --- SX Bet (sports) — REST order-book on the SX Toronto testnet rollup ------
+// Populated testnet inventory (unlike Azuro's empty dev feed). Bets are placed
+// by filling maker orders: read public odds -> the bettor signs an EIP-712 fill
+// -> POST /orders/fill/v2 -> SX matches + settles on-chain in USDC. The signing
+// addresses (EIP712FillHasher, TokenTransferProxy, domainVersion) are read from
+// GET /metadata at runtime — SX rotates them per environment, never hardcode.
+export const sxbet = {
+  chainId: SX_TORONTO_ID,
+  api: 'https://api.toronto.sx.bet',
+  betToken: { symbol: 'USDC', address: '0x1BC6326EA6aF2aB8E4b6Bc83418044B1923b2956', decimals: 6 },
+  wsx: '0x5c02932f8422D943647682E95c87ea0333191e08',
+  // EIP-712 domain name is fixed by the protocol; version + verifyingContract
+  // (EIP712FillHasher) + the approval spender (TokenTransferProxy) come from
+  // /metadata at runtime.
+  eip712DomainName: 'SX Bet',
+  faucet: 'https://faucet.toronto.sx.technology',
 };
 
 // House/affiliate address is injected at runtime from env (server) or the

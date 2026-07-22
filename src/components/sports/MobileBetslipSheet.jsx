@@ -1,7 +1,7 @@
 import { ArrowLeft, Ticket } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { AzuroBetSlip } from "./AzuroBetSlip";
+import { ProviderBetSlip } from "./ProviderBetSlip";
 import { DemoBetSlip } from "./DemoBetSlip";
 
 // Full-screen mobile Sports betslip — the familiar sportsbook "dedicated
@@ -91,7 +91,7 @@ export function MobileBetslipSheet({
           ) : (
             <div className="flex min-h-0 flex-1 flex-col px-4 pt-3.5 pb-[calc(14px+env(safe-area-inset-bottom,0px))]">
               {source === "provider" && (
-                <AzuroBetSlip
+                <ProviderBetSlip
                   presentation="sheet"
                   selections={betslip.selections}
                   stake={betslip.stake}

@@ -9,12 +9,13 @@
 // (see PROVIDER DATA RULES: no mixing invented odds into a real event).
 import { normalizeMockEvent } from "./sportsModel";
 import { EVENTS as MOCK_RAW_EVENTS } from "./sportsData";
+import { isSxbet } from "./sportsProvider";
 
-// Default true: real inventory on Base Sepolia/Polygon Amoy testnet is
-// proven sparse (see docs/architecture/25-sports-taxonomy-and-ia.md §3), so
-// without demo mode the MVP navigation structure has nothing to show.
-// Explicitly set VITE_SPORTS_DEMO_MODE=false for a provider-only build.
-export const SPORTS_DEMO_MODE = import.meta.env.VITE_SPORTS_DEMO_MODE !== "false";
+// Mocks exist because Azuro's testnet feed is near-empty. SX Bet's testnet is
+// genuinely populated, so demo mode is FORCED OFF whenever SX is the active
+// provider — real markets stand on their own, no placeholders. For the Azuro
+// provider it stays default-on (set VITE_SPORTS_DEMO_MODE=false to opt out).
+export const SPORTS_DEMO_MODE = !isSxbet() && import.meta.env.VITE_SPORTS_DEMO_MODE !== "false";
 
 const MOCK_EVENTS = MOCK_RAW_EVENTS.map(normalizeMockEvent).filter(Boolean);
 
