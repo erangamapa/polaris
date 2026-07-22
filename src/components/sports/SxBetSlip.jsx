@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
+import { useAppKit } from "@reown/appkit/react";
 import { formatUnits, erc20Abi } from "viem";
 import { Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -24,8 +25,9 @@ const STEP_LABEL = {
 // per submit (validation.submittableSelection); the multi-selection list is
 // presentation only.
 export function SxBetSlip({ selections, stake, setStake, removeSelection, combinedOdds, potentialReturn, validation, onClose, onDone, onContinueBetting, onViewMyBets, onBetPlaced, presentation = "modal" }) {
-  const { ready, placeBet } = useSxBet();
-  const { address } = useAccount();
+  const { placeBet } = useSxBet();
+  const { address, isConnected } = useAccount();
+  const { open } = useAppKit();
   const [phase, setPhase] = useState("idle"); // idle | placing | done
   const [step, setStep] = useState(null);
   const [order, setOrder] = useState(null);
@@ -47,8 +49,11 @@ export function SxBetSlip({ selections, stake, setStake, removeSelection, combin
   const isEmbedded = isPanel || isSheet;
 
   const submit = async () => {
-    if (!ready) { toast.error("Connect your wallet first"); return; }
     if (!validation.canSubmit || !target || busy) return;
+    // Stake entered + a valid selection is enough to click; if the wallet
+    // isn't connected yet, open the connect modal instead of placing. Once
+    // connected, the button becomes "Place bet" and the next click submits.
+    if (!isConnected) { open({ view: "Connect" }); return; }
     const fill = target.payload?.outcome?.raw;
     if (!fill?.marketHash || fill.isTakerBettingOutcomeOne === undefined) {
       toast.error("This selection is missing provider data — remove it and try again.");
@@ -152,14 +157,14 @@ export function SxBetSlip({ selections, stake, setStake, removeSelection, combin
             <div className="flex flex-col gap-2">
               <button
                 onClick={submit}
-                disabled={!ready || !validation.canSubmit}
+                disabled={!validation.canSubmit}
                 aria-describedby={!validation.canSubmit ? "sx-betslip-validation" : undefined}
                 data-test-id="betslip-submit"
                 className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
               >
-                Place bet
+                {isConnected ? "Place bet" : "Connect wallet to bet"}
               </button>
-              {insufficient && (
+              {isConnected && insufficient && (
                 <a href={sxbet.faucet} target="_blank" rel="noreferrer" data-test-id="betslip-faucet" className="flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border text-xs font-medium hover:bg-secondary">
                   <ExternalLink className="size-3 shrink-0" /> Low balance — get testnet USDC
                 </a>
