@@ -21,6 +21,9 @@ function decimalToFraction(dec) {
 }
 
 export function formatOdds(dec, format) {
+  // Unpriced outcome (e.g. an SX market with no maker order) — show a dash,
+  // never crash on null/NaN.
+  if (dec == null || !Number.isFinite(dec)) return "—";
   if (format === "american") {
     return dec >= 2 ? `+${Math.round((dec - 1) * 100)}` : `−${Math.round(100 / (dec - 1))}`;
   }

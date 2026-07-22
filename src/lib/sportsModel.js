@@ -217,14 +217,16 @@ function normalizeSxMarket(m) {
     group: m.group,
     type: m.type,
     line: m.line,
-    status: "active",
+    // A fully-unpriced market shows as suspended (its buttons disabled); a
+    // partly-priced one stays active and disables only the unpriced side.
+    status: m.priced ? "active" : "suspended",
     outcomes: (m.outcomes ?? []).map((o) => ({
       id: `sxo-${m.marketHash}-${o.side}`,
       name: o.name,
-      odds: Number(o.odds),
-      status: "active",
-      // The order-fill descriptor SxBetSlip signs + submits.
-      raw: { ...o.fill, odds: o.odds },
+      odds: o.priced ? Number(o.odds) : null,
+      status: o.priced ? "active" : "suspended",
+      // The order-fill descriptor SxBetSlip signs + submits (null when unpriced).
+      raw: o.fill ? { ...o.fill, odds: o.odds } : null,
     })),
     raw: m,
   };

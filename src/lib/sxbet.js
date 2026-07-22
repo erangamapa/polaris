@@ -5,6 +5,8 @@
 // SX Bet is an order book: each market has maker "orders" quoting a price. A
 // bettor (taker) FILLS the best maker order on the side they want. Everything
 // here reads the public API — no key, no wallet.
+import { sxbet } from "@shared/chains";
+
 // Browser calls go through our own same-origin proxy (api/sx.js) — SX's API
 // sends no Access-Control-Allow-Origin header, so a direct fetch from the app
 // is blocked by CORS. Server-side callers (tests, the proxy itself) pass an
@@ -87,26 +89,34 @@ export function deriveMarketMeta(m) {
 }
 
 const MARKET_GROUP_RANK = { main: 0, handicap: 1, totals: 2, other: 3 };
+const DEFAULT_BASE_TOKEN = sxbet.betToken.address;
+// Cap markets shown per event — futures/outright "vs The Field" events can
+// carry 100+ mostly-unpriced markets; keep the page sane (priced ones first).
+const MAX_MARKETS_PER_EVENT = 40;
 
-// Fold a flat list of SX markets (+ their orders) into events. A market is
-// dropped unless at least one outcome has live odds, so the UI never renders a
-// priceless odds button. Returns the intermediate "sx game" shape that
-// sportsModel.normalizeSxGame() maps into the shared SportsEvent model.
+// Fold a flat list of SX markets (+ the live order book) into events. Every
+// market is kept — priced markets are bettable, unpriced markets render with
+// disabled odds buttons (full-catalogue view) — so an event shows its whole
+// market list, not just the one or two lines a maker happened to quote.
+// Returns the intermediate "sx game" shape that sportsModel.normalizeSxGame()
+// maps into the shared SportsEvent model.
 export function buildSxEvents(markets, ordersByHash) {
   const byEvent = new Map();
   for (const m of markets) {
     if (!SX_SPORT_TO_MVP[m.sportId]) continue;
+    if (!m.outcomeOneName || !m.outcomeTwoName) continue; // skip malformed/1-way
+
     const orders = ordersByHash.get(m.marketHash) ?? [];
     const one = bestTakerOdds(orders, true);
     const two = bestTakerOdds(orders, false);
-    if (!one && !two) continue;
-
-    const baseToken = (one?.order ?? two?.order)?.baseToken;
-    const outcomes = [];
-    if (one) outcomes.push(sxOutcome(m, 1, m.outcomeOneName, one, baseToken));
-    if (two) outcomes.push(sxOutcome(m, 2, m.outcomeTwoName, two, baseToken));
+    const baseToken = (one?.order ?? two?.order)?.baseToken ?? DEFAULT_BASE_TOKEN;
+    const outcomes = [
+      sxOutcome(m, 1, m.outcomeOneName, one, baseToken),
+      sxOutcome(m, 2, m.outcomeTwoName, two, baseToken),
+    ];
+    const priced = !!(one || two);
     const meta = deriveMarketMeta(m);
-    const market = { marketHash: m.marketHash, type: m.type, line: m.line, baseToken, ...meta, outcomes, raw: m };
+    const market = { marketHash: m.marketHash, type: m.type, line: m.line, baseToken, priced, ...meta, outcomes, raw: m };
 
     const id = m.sportXeventId;
     if (!byEvent.has(id)) {
@@ -127,16 +137,25 @@ export function buildSxEvents(markets, ordersByHash) {
   }
 
   for (const ev of byEvent.values()) {
-    ev.markets.sort((a, b) => (MARKET_GROUP_RANK[a.group] ?? 9) - (MARKET_GROUP_RANK[b.group] ?? 9));
+    // Priced (bettable) markets first, then by group; cap to keep it readable.
+    ev.markets.sort(
+      (a, b) => Number(b.priced) - Number(a.priced) || (MARKET_GROUP_RANK[a.group] ?? 9) - (MARKET_GROUP_RANK[b.group] ?? 9),
+    );
+    ev.markets = ev.markets.slice(0, MAX_MARKETS_PER_EVENT);
   }
-  return [...byEvent.values()].filter((e) => e.markets.length);
+  // Only surface events that have at least one bettable market.
+  return [...byEvent.values()].filter((e) => e.markets.some((m) => m.priced));
 }
 
+// One outcome. If `best` is null the outcome is unpriced — kept for display
+// (so the market shows its full line) but not bettable: no fill descriptor.
 function sxOutcome(m, side, name, best, baseToken) {
+  if (!best) return { side, name, odds: null, priced: false, fill: null };
   return {
     side,
     name,
     odds: best.odds,
+    priced: true,
     // Everything the fill needs to reconstruct this exact bet later.
     fill: {
       marketHash: m.marketHash,
@@ -187,13 +206,35 @@ export async function fetchSxMarketsByHash(hashes, base) {
   return results.flat();
 }
 
-// One-shot: live orders → the markets they price → folded into events.
+// All markets for one event (its full catalogue, priced or not).
+export async function fetchSxEventMarkets(eventId, base) {
+  return getJson(sxUrl("markets/active", { eventId }, base))
+    .then((d) => d?.data?.markets ?? [])
+    .catch(() => []);
+}
+
+const MAX_EVENTS = 40; // bound the per-event catalogue fan-out
+
+// One-shot pipeline: the live order book tells us which events are active; for
+// each we pull the full market catalogue so the UI shows every market (priced
+// = bettable, unpriced = disabled), not just the lines a maker quoted.
 export async function loadSxEvents({ base } = {}) {
   const ordersByHash = await fetchSxOrderBook(base);
-  const hashes = [...ordersByHash.keys()];
-  if (!hashes.length) return [];
-  const markets = await fetchSxMarketsByHash(hashes, base);
-  return buildSxEvents(markets, ordersByHash);
+  const pricedHashes = [...ordersByHash.keys()];
+  if (!pricedHashes.length) return [];
+
+  const pricedMarkets = await fetchSxMarketsByHash(pricedHashes, base);
+  const eventIds = [...new Set(pricedMarkets.map((m) => m.sportXeventId).filter(Boolean))].slice(0, MAX_EVENTS);
+
+  const catalogues = await Promise.all(eventIds.map((id) => fetchSxEventMarkets(id, base)));
+
+  // Dedupe by hash; fall back to the priced markets themselves if a catalogue
+  // call came back empty, so a bettable market is never lost.
+  const byHash = new Map();
+  for (const m of [...catalogues.flat(), ...pricedMarkets]) {
+    if (m?.marketHash && !byHash.has(m.marketHash)) byHash.set(m.marketHash, m);
+  }
+  return buildSxEvents([...byHash.values()], ordersByHash);
 }
 
 // GET /metadata — signing addresses (rotated per env, read at runtime).

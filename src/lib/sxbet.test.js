@@ -93,8 +93,29 @@ describe("buildSxEvents + normalizeSxGame", () => {
     expect(o1.fill.desiredOdds).toBe("60000000000000000000"); // 1e20 - 4e19
   });
 
-  it("drops markets with no live odds", () => {
+  it("drops an event whose markets are all unpriced", () => {
     expect(buildSxEvents([market], new Map())).toHaveLength(0);
+  });
+
+  it("keeps unpriced markets (disabled) when the event has a bettable market", () => {
+    const total = { ...market, marketHash: "0xmh2", outcomeOneName: "Over 2.5", outcomeTwoName: "Under 2.5", type: 28, line: 2.5 };
+    const [ev] = buildSxEvents([market, total], ordersByHash); // orders only exist for 0xmh
+    expect(ev.markets).toHaveLength(2);
+    const priced = ev.markets.find((m) => m.marketHash === "0xmh");
+    const unpriced = ev.markets.find((m) => m.marketHash === "0xmh2");
+    expect(priced.priced).toBe(true);
+    expect(unpriced.priced).toBe(false);
+    expect(unpriced.outcomes).toHaveLength(2);
+    expect(unpriced.outcomes.every((o) => o.odds === null && !o.priced && o.fill === null)).toBe(true);
+    expect(ev.markets[0].marketHash).toBe("0xmh"); // priced markets sort first
+  });
+
+  it("normalizes an unpriced market to a suspended, non-bettable market", () => {
+    const total = { ...market, marketHash: "0xmh2", outcomeOneName: "Over 2.5", outcomeTwoName: "Under 2.5", type: 28, line: 2.5 };
+    const norm = normalizeSxGame(buildSxEvents([market, total], ordersByHash)[0]);
+    const m = norm.markets.find((x) => x.id === "sxm-0xmh2");
+    expect(m.status).toBe("suspended");
+    expect(m.outcomes.every((o) => o.odds === null && o.status === "suspended" && o.raw === null)).toBe(true);
   });
 
   it("normalizes into the shared SportsEvent model with provider source", () => {
@@ -137,7 +158,11 @@ describe.runIf(process.env.SX_LIVE)("live SX Toronto testnet", () => {
     expect(normalized.length).toBeGreaterThan(0);
     const withOdds = normalized.flatMap((e) => e.markets.flatMap((m) => m.outcomes)).filter((o) => o.odds > 1);
     expect(withOdds.length).toBeGreaterThan(0);
+    const totalMarkets = normalized.reduce((s, e) => s + e.markets.length, 0);
+    const maxMarkets = Math.max(...normalized.map((e) => e.markets.length));
+    // Full catalogue means far more total markets than priced ones.
+    expect(totalMarkets).toBeGreaterThan(withOdds.length);
     // eslint-disable-next-line no-console
-    console.log(`live: ${normalized.length} events, ${withOdds.length} priced outcomes`);
+    console.log(`live: ${normalized.length} events, ${totalMarkets} total markets (max ${maxMarkets}/event), ${withOdds.length} priced outcomes`);
   }, 30_000);
 });
