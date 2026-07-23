@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { useBetSwirl } from "@/web3/useBetSwirl";
 import { useWallet } from "@/web3/useWallet";
@@ -9,8 +9,12 @@ const txUrl = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
 const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
 
 // A real, on-chain BetSwirl game. Every play is a wallet transaction settled by
-// Chainlink VRF; winnings pay straight to the player.
-export function BetSwirlGame({ game, onClose, onRound }) {
+// Chainlink VRF; winnings pay straight to the player. Renders only its own
+// inner content now (visual + controls) — the outer fixed frame, header,
+// title and the one close button all live in CasinoGameplayFrame.jsx (see
+// GAME CONTAINER task: "outer frame ownership should be shared" /
+// "do not show multiple competing close buttons").
+export function BetSwirlGame({ game, onRound, onBusyChange }) {
   const { casinoBalance } = useWallet();
   const { ready, play } = useBetSwirl();
 
@@ -25,6 +29,12 @@ export function BetSwirlGame({ game, onClose, onRound }) {
 
   const busy = phase === "confirming" || phase === "rolling";
   const insufficient = betEth > casinoBalance;
+
+  // Reports busy state up to GameLaunchSurface (see that file), which
+  // disables the shared frame's one close control while a bet is
+  // mid-confirmation — abandoning that has a real consequence (a pending
+  // wallet tx / VRF roll), unlike the previous phases.
+  useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
 
   const selectionFor = () => {
     if (game.control === "dice") return { cap };
@@ -63,21 +73,19 @@ export function BetSwirlGame({ game, onClose, onRound }) {
     : phase === "rolling" ? "Rolling — Chainlink VRF…" : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950/95 backdrop-blur">
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-white">{game.title}</span>
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · BetSwirl</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{casinoBalance.toFixed(5)} ETH</div>
-          <button onClick={onClose} disabled={busy} aria-label="Close game" className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-white disabled:opacity-40">✕</button>
-        </div>
+    <div className="flex h-full w-full flex-col">
+      <div className="flex shrink-0 items-center justify-between px-4 py-2">
+        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · BetSwirl</span>
+        <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{casinoBalance.toFixed(5)} ETH</div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-6">
+      <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        {/* Fills whatever the shared CasinoGameplayFrame content-box already
+            allotted (viewport-aware, see that file) rather than a second,
+            independent fixed cap on top of it — see DESKTOP SIZING RULES:
+            "do not hardcode one fixed width and height for all displays." */}
         <div
-          className="relative grid h-full max-h-[460px] w-full max-w-3xl place-items-center overflow-hidden rounded-2xl bg-cover bg-center"
+          className="relative grid h-full w-full place-items-center overflow-hidden rounded-2xl bg-cover bg-center"
           style={{ backgroundImage: `url(${game.image})` }}
         >
           <div className="absolute inset-0 bg-black/45" />
@@ -104,7 +112,11 @@ export function BetSwirlGame({ game, onClose, onRound }) {
         </div>
       </div>
 
-      <div className="border-t border-white/5 bg-zinc-900 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+      {/* No extra safe-area padding here — CasinoGameplayFrame's content-box
+          already reserves env(safe-area-inset-bottom) once, at the outer
+          level (see that file), so this footer isn't crowded by a home
+          indicator without double-padding the bottom. */}
+      <div className="shrink-0 border-t border-white/5 bg-zinc-900 p-4">
         <div className="mx-auto flex max-w-md flex-col gap-3">
           <GameControls game={game} busy={busy}
             cap={cap} setCap={setCap}

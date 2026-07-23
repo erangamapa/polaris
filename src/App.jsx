@@ -946,13 +946,11 @@ export default function App() {
               key={`${launchedGame.favId}:${launch.state.attempt}`}
               game={launchedGame}
               onRound={logRound}
-              onClose={closeGame}
             />
           ) : launchedGame ? (
             <ProviderGame
               key={`${launchedGame.favId}:${launch.state.attempt}`}
               game={launchedGame}
-              onClose={closeGame}
               onReady={
                 import.meta.env.DEV && devMock.gameStatus === "loading"
                   ? undefined
