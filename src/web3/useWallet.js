@@ -21,8 +21,12 @@ export function useWallet() {
 
   const enabled = Boolean(address);
 
-  // Casino stake/gas: native ETH on Base Sepolia.
-  const { data: casinoBal, isLoading: casinoBalLoading, isError: casinoBalError, refetch: refetchCasinoBalance } = useBalance({
+  // Casino stake/gas: native ETH on Base Sepolia. `isFetching` (react-query,
+  // under wagmi) is exposed separately from `isLoading` so callers can tell
+  // "no value yet" (loading) apart from "refreshing a value we already have"
+  // (syncing) — see lib/casinoBalance.js's resolveBalanceStatus, which is
+  // the one place that distinction turns into a customer-facing status.
+  const { data: casinoBal, isLoading: casinoBalLoading, isFetching: casinoBalFetching, isError: casinoBalError, refetch: refetchCasinoBalance } = useBalance({
     address, chainId: CASINO_CHAIN_ID,
     query: { enabled, refetchInterval: 15_000 },
   });
@@ -55,6 +59,7 @@ export function useWallet() {
     casinoBalance: fmt(casinoBal),
     casinoSymbol: casinoBal?.symbol ?? 'ETH',
     casinoBalanceLoading: casinoBalLoading,
+    casinoBalanceFetching: casinoBalFetching,
     casinoBalanceError: casinoBalError,
     refetchCasinoBalance,
     sportsBalance: usdtRaw !== undefined ? Number(formatUnits(usdtRaw, azuro.betToken.decimals)) : 0,

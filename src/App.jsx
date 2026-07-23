@@ -51,6 +51,8 @@ import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
 import { GAME_LAUNCH_STATUS } from "./lib/casinoGameLaunch";
 import { GameLaunchSurface } from "./components/casino/GameLaunchSurface";
+import { GameInfoPanel } from "./components/casino/GameInfoPanel";
+import { normalizePendingRound, normalizeLiveResultRound } from "./lib/casinoRounds";
 
 // Module-load-time, not inside the component — idempotent (see its own
 // `installed` guard) and needs to be active before BetHistoryDialog's
@@ -256,6 +258,7 @@ export default function App() {
       setSportsLeague(nav.sportsLeague);
       setSportsEventId(nav.sportsEventId);
       resolveLaunchFromUrl();
+      resolveInfoFromUrl();
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -362,6 +365,31 @@ export default function App() {
     setRecentIds((list) => [game.favId, ...list.filter((id) => id !== game.favId)].slice(0, RECENT_CAP));
   };
 
+  // Casino-only "just happened in this tab" round cache — feeds
+  // BetHistoryDialog's Casino tab (see lib/casinoRounds.js's mergeCasinoRounds)
+  // so a round appears immediately without waiting for the next
+  // /api/casino-history refetch, and so a bet shows as pending the moment
+  // its transaction confirms. Deliberately separate from the older
+  // `activity`/`logRound` state below (that one still feeds Sports/
+  // Predictions' own demo betslip + badges — see CASINO-ONLY ACTIVITY SCOPE:
+  // "do not merge incompatible arena data into one generic receipt
+  // prematurely"). Capped the same way recentIds is, for the same reason:
+  // this only needs to bridge "just played" to "the next real chain read",
+  // not grow forever.
+  const ACTIVITY_CAP = 20;
+  const [casinoPendingRounds, setCasinoPendingRounds] = useState([]);
+  const [casinoLiveResults, setCasinoLiveResults] = useState([]);
+  const recordCasinoRoundPending = (e) => {
+    setCasinoPendingRounds((list) => [normalizePendingRound(e), ...list].slice(0, ACTIVITY_CAP));
+  };
+  const recordCasinoRoundResolved = (e) => {
+    setCasinoLiveResults((list) => [normalizeLiveResultRound(e), ...list].slice(0, ACTIVITY_CAP));
+    // The pending placeholder for this exact tx is now redundant —
+    // mergeCasinoRounds would already dedupe it, but dropping it here too
+    // means the row doesn't even flash through both states in one render.
+    setCasinoPendingRounds((list) => list.filter((r) => r.txHash !== e.txnHash));
+  };
+
   // Known-unavailable before any init is attempted: a real non-playable
   // onchain game (see BETSWIRL_GAMES' own `playable` flag — Wheel/Plinko
   // revert on this testnet), or a Developer Panel simulation of a
@@ -386,6 +414,22 @@ export default function App() {
     onReady: (game) => { if (game) trackRecent(game); },
   });
   const launchedGame = findGameByFavId(launch.state.gameId);
+
+  // Game info — a plain sibling piece of state, entirely separate from
+  // `launch` (see useCasinoGameLaunch above): opening/closing it never
+  // dispatches a launch action, so it can't remount the game, reset a
+  // round, or touch Recently Played (see GAMEPLAY INTEGRATION). Viewable
+  // independent of an active launch too (a direct `?info=` link works
+  // whether or not `?play=` is also present — see GAME DETAILS ENTRY
+  // POINTS: "direct game-detail route").
+  const [infoFavId, setInfoFavId] = useState(null);
+  const infoGame = infoFavId ? findGameByFavId(infoFavId) : null;
+  // Tracks whether the CURRENT `info` URL entry was pushed by openGameInfo
+  // in this tab (vs. arrived at via a direct link/reload/Back) — only then
+  // is it safe to close via history.back() instead of replaceState, so
+  // Back really does "close info before closing gameplay" (see ESCAPE AND
+  // BROWSER BACK) without ever assuming history-stack shape it can't verify.
+  const infoPushedRef = useRef(false);
 
   const [fundsOpen, setFundsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -513,6 +557,38 @@ export default function App() {
   };
   // Resolve a deep link on first load (e.g. a game opened in a new tab).
   useEffect(() => { resolveLaunchFromUrl(); }, []);
+
+  // Mirrors resolveLaunchFromUrl's own `?play=` handling for the separate
+  // `?info=` param — an unknown favId here safely renders the panel's own
+  // "Game information unavailable" state (see GameInfoPanel.jsx) rather
+  // than silently doing nothing.
+  const resolveInfoFromUrl = () => {
+    infoPushedRef.current = false;
+    setInfoFavId(new URLSearchParams(window.location.search).get("info"));
+  };
+  useEffect(() => { resolveInfoFromUrl(); }, []);
+
+  const openGameInfo = (favId, source) => {
+    infoPushedRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    params.set("info", favId);
+    window.history.pushState({}, "", `${window.location.pathname}?${params.toString()}`);
+    setInfoFavId(favId);
+    track("casino_game_info_opened", { gameId: favId, source, launchState: launch.state.status });
+  };
+  const closeGameInfo = () => {
+    track("casino_game_info_closed", { gameId: infoFavId });
+    if (infoPushedRef.current) {
+      infoPushedRef.current = false;
+      window.history.back();
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("info");
+      const qs = params.toString();
+      window.history.replaceState({}, "", `${window.location.pathname}${qs ? "?" + qs : ""}`);
+    }
+    setInfoFavId(null);
+  };
 
   const activityRef = useRef([]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
@@ -940,12 +1016,14 @@ export default function App() {
           onClose={closeGame}
           onRetry={launch.retryLaunch}
           onBrowseGames={() => { closeGame(); setCasinoCategory("Lobby"); }}
+          onOpenInfo={launchedGame ? () => openGameInfo(launchedGame.favId, "gameplay-frame") : undefined}
         >
           {launchedGame?.kind === "onchain" ? (
             <BetSwirlGame
               key={`${launchedGame.favId}:${launch.state.attempt}`}
               game={launchedGame}
-              onRound={logRound}
+              onRound={(e) => { logRound(e); recordCasinoRoundResolved(e); }}
+              onRoundPending={recordCasinoRoundPending}
             />
           ) : launchedGame ? (
             <ProviderGame
@@ -961,7 +1039,26 @@ export default function App() {
           ) : null}
         </GameLaunchSurface>
       )}
-      <BetHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
+      <GameInfoPanel
+        game={infoGame}
+        open={!!infoFavId}
+        notFound={Boolean(infoFavId) && !infoGame}
+        onClose={closeGameInfo}
+        onResponsibleGaming={() => { closeGameInfo(); openRg(); }}
+      />
+      <BetHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        casinoPendingRounds={casinoPendingRounds}
+        casinoLiveResults={casinoLiveResults}
+        profileVariant={profileVariant}
+        onLogin={openFunds}
+        onPlayAgain={(gameId) => {
+          const game = findGameByFavId(gameId);
+          if (game) launchGame(game, "receipt");
+        }}
+        onViewGameInfo={(gameId) => openGameInfo(gameId, "receipt")}
+      />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
       <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} />

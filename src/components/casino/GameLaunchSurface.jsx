@@ -36,7 +36,7 @@ const ACTION_LABEL = { retry: "Try again", browse: "Browse games", close: "Close
 // makes loading -> ready -> failed all share identical outer bounds: every
 // status mounts the exact same <CasinoGameplayFrame>, only the content
 // inside its content-box differs.
-export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGames, children }) {
+export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGames, onOpenInfo, children }) {
   const { status, delayed, errorCode } = launch;
   const headingRef = useRef(null);
   // Set only by BetSwirlGame (via the cloned `onBusyChange` prop below) while
@@ -88,7 +88,7 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
   const content = isValidElement(children) ? cloneElement(children, { onBusyChange: setCloseDisabled }) : children;
 
   return (
-    <CasinoGameplayFrame game={game} mode={mode} onClose={onClose} closeDisabled={closeDisabled}>
+    <CasinoGameplayFrame game={game} mode={mode} onClose={onClose} closeDisabled={closeDisabled} onOpenInfo={game ? onOpenInfo : undefined}>
       {showChildren && (
         <div className={status === GAME_LAUNCH_STATUS.READY ? "flex h-full w-full flex-col" : "absolute inset-0 flex flex-col"}>
           {content}

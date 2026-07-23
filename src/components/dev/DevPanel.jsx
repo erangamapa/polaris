@@ -112,7 +112,10 @@ export function DevPanel() {
               { value: "zero", label: "Zero" },
               { value: "normal", label: "Normal" },
               { value: "large", label: "Large" },
+              { value: "tiny", label: "Tiny decimal" },
               { value: "loading", label: "Loading" },
+              { value: "syncing", label: "Syncing" },
+              { value: "stale", label: "Stale" },
               { value: "error", label: "Error" },
             ]}
             groupLabel="Balance preset"

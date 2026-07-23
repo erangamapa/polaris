@@ -41,7 +41,7 @@ export const DEFAULT_DEV_MOCK_STATE = {
   panelOpen: false,
   authStatus: "default", // default | logged-out | logged-in | session-expired
   walletStatus: "default", // default | disconnected | connecting | connected | wrong-network | error
-  balancePreset: "default", // default | zero | normal | large | loading | error
+  balancePreset: "default", // default | zero | normal | large | tiny | loading | syncing | stale | error
   platformScope: "mvp", // mvp | full
   favoritesPreset: "default", // default | empty | populated
   recentlyPlayedPreset: "default", // default | empty | populated

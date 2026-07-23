@@ -1,9 +1,10 @@
 import { useRef } from "react";
-import { ChevronDown, Wallet as WalletIcon, AlertTriangle } from "lucide-react";
+import { ChevronDown, Wallet as WalletIcon, AlertTriangle, RefreshCw } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { baseSepolia, polygonAmoy } from "@shared/chains";
+import { BALANCE_STATUS } from "@/lib/casinoBalance";
 
 // Compact grouped balance control: "Balance = what I have" (see TopBar.jsx's
 // mental-model comment). A lightweight, non-modal Popover — never the full
@@ -35,40 +36,56 @@ import { baseSepolia, polygonAmoy } from "@shared/chains";
 // alone would make the trigger visibly grow/shrink as the digit count
 // changes; the min-width absorbs that, and `truncate` is the safety net for
 // values that still exceed it.
-export function BalanceControl({ open, onOpenChange, casinoBalance, casinoSymbol, casinoLoading, casinoBalanceError, sportsBalance, sportsSymbol, wrongNetwork, onManageWallet }) {
+export function BalanceControl({ open, onOpenChange, casinoBalance, casinoSymbol, casinoLoading, casinoBalanceError, casinoStatus, onRefreshBalance, sportsBalance, sportsSymbol, wrongNetwork, onManageWallet }) {
   const triggerRef = useRef(null);
 
   const fullValue = `${casinoBalance.toFixed(8)} ${casinoSymbol}`;
   const displayValue = `${casinoBalance.toFixed(4)} ${casinoSymbol}`;
+  // STALE/SYNCING are both "we have a real value, just flag it" states — the
+  // trigger keeps showing the real number in both cases (never a spinner in
+  // place of a value that already exists — see BALANCE SYNCING STATE:
+  // "retain the last known value... avoid confusing flicker"); only the
+  // popover's own body adds the explanatory row + Refresh action for STALE.
+  const isSyncing = casinoStatus === BALANCE_STATUS.SYNCING;
+  const isStale = casinoStatus === BALANCE_STATUS.STALE;
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <PopoverPrimitive.Trigger asChild>
         <button
           ref={triggerRef}
-          title={casinoLoading || casinoBalanceError ? undefined : fullValue}
+          title={casinoLoading || (casinoBalanceError && !isStale) ? undefined : fullValue}
           aria-label={
-            casinoBalanceError
+            casinoBalanceError && !isStale
               ? "Balance, unavailable"
-              : `Balance, ${casinoLoading ? "loading" : fullValue}${wrongNetwork ? ", wrong network" : ""}`
+              : `Balance, ${casinoLoading ? "loading" : fullValue}${isStale ? ", may be out of date" : isSyncing ? ", updating" : ""}${wrongNetwork ? ", wrong network" : ""}`
           }
           className={cn(
             "flex h-11 min-w-[132px] shrink-0 items-center gap-1.5 rounded-s-lg border border-e-0 px-3 font-mono text-sm font-semibold tabular-nums transition-colors hover:bg-secondary focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             wrongNetwork
               ? "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--warning)]"
-              : casinoBalanceError
+              : casinoBalanceError && !isStale
                 ? "border-border bg-secondary/40 text-muted-foreground"
                 : "border-border bg-secondary/40 text-foreground"
           )}
         >
+          {/* STALE keeps showing the real last-known value (never replaced
+              with "Unavailable") — only bare ERROR (no value ever obtained)
+              falls back to the unavailable label (see BALANCE ERROR STATE:
+              "do not replace the value with zero" — the same principle
+              extends to not replacing a real stale value with nothing). */}
           {casinoLoading ? (
             <Skeleton className="h-4 w-16" />
-          ) : casinoBalanceError ? (
+          ) : casinoBalanceError && !isStale ? (
             <span className="flex items-center gap-1.5 truncate">
               <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" /> Unavailable
             </span>
           ) : (
-            <span className="truncate">{displayValue}</span>
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate">{displayValue}</span>
+              {isSyncing && <RefreshCw className="size-3 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none" aria-hidden="true" />}
+              {isStale && <AlertTriangle className="size-3 shrink-0 text-[var(--warning)]" aria-hidden="true" />}
+            </span>
           )}
           <ChevronDown className={cn("ms-auto size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden="true" />
         </button>
@@ -82,8 +99,21 @@ export function BalanceControl({ open, onOpenChange, casinoBalance, casinoSymbol
           className="z-[var(--z-header-popover)] w-64 rounded-lg border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
           <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Balances</div>
-          <BalanceRow label="Casino" network={baseSepolia.name} dot="#0052ff" amount={casinoBalance} symbol={casinoSymbol} decimals={4} error={casinoBalanceError} />
+          <BalanceRow label="Casino" network={baseSepolia.name} dot="#0052ff" amount={casinoBalance} symbol={casinoSymbol} decimals={4} error={casinoBalanceError && !isStale} />
           <BalanceRow label="Sports" network={polygonAmoy.name} dot="#8247e5" amount={sportsBalance} symbol={sportsSymbol} decimals={2} />
+          {isStale && (
+            <div role="status" className="mx-2 mb-1.5 flex items-center justify-between gap-2 rounded-md bg-[var(--warning)]/10 px-2 py-1.5 text-xs text-[var(--warning)]">
+              <span>Balance may be out of date</span>
+              <button
+                type="button"
+                onClick={onRefreshBalance}
+                data-test-id="balance-refresh"
+                className="shrink-0 font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Refresh
+              </button>
+            </div>
+          )}
           <div className="my-1 border-t" aria-hidden="true" />
           <button
             onClick={() => { onOpenChange(false); onManageWallet(); }}

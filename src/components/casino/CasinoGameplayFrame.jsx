@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { RotateCw } from "lucide-react";
+import { Info, RotateCw } from "lucide-react";
 import { useCasinoViewportInfo, needsRotateHint } from "@/lib/casinoGameplayViewport";
 import { track } from "@/lib/telemetry";
 
@@ -25,7 +25,7 @@ import { track } from "@/lib/telemetry";
 // changes on its own, and the only JS viewport read here
 // (useCasinoViewportInfo) is for analytics + the rotate hint, not sizing —
 // see RESIZE HANDLING: "do not introduce multiple competing resize systems."
-export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, children }) {
+export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, onOpenInfo, children }) {
   const headerTitle = game?.title ?? "Game";
   const frameRef = useRef(null);
   const { orientation, viewportClass } = useCasinoViewportInfo();
@@ -96,16 +96,37 @@ export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, childr
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
       >
         <span className="min-w-0 truncate text-sm font-bold text-white">{headerTitle}</span>
-        <button
-          type="button"
-          onClick={handleClose}
-          disabled={closeDisabled}
-          aria-label="Close game"
-          data-test-id="gameplay-frame-close"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
-        >
-          ✕
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Restrained access point (see GAMEPLAY INTEGRATION) — a plain
+              sibling action, not part of the launch state machine at all:
+              clicking it never touches `launch` state, so it can't remount
+              the game, reset a round, or change Recently Played. Available
+              across every status this frame renders (loading/ready/failed/
+              unavailable), since App.jsx only omits `onOpenInfo` when there's
+              truly no resolved game to show info about (NOT_FOUND). */}
+          {onOpenInfo && (
+            <button
+              type="button"
+              onClick={onOpenInfo}
+              aria-label="Game info"
+              title="Game info"
+              data-test-id="gameplay-frame-info"
+              className="grid h-11 w-11 place-items-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Info className="size-4" aria-hidden="true" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={closeDisabled}
+            aria-label="Close game"
+            data-test-id="gameplay-frame-close"
+            className="grid h-11 w-11 place-items-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
+          >
+            ✕
+          </button>
+        </div>
       </header>
 
       <div

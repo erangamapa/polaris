@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { useBetSwirl } from "@/web3/useBetSwirl";
-import { useWallet } from "@/web3/useWallet";
+import { useCasinoBalance, BALANCE_STATUS } from "@/lib/casinoBalance";
 import { baseSepolia } from "@shared/chains";
 import { toast } from "@/lib/toast";
+import { track } from "@/lib/telemetry";
 
 const txUrl = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
 const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
@@ -14,8 +15,13 @@ const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
 // title and the one close button all live in CasinoGameplayFrame.jsx (see
 // GAME CONTAINER task: "outer frame ownership should be shared" /
 // "do not show multiple competing close buttons").
-export function BetSwirlGame({ game, onRound, onBusyChange }) {
-  const { casinoBalance } = useWallet();
+export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
+  // One shared balance source (see lib/casinoBalance.js) — replaces the
+  // previous direct useWallet() read, which bypassed useDevAwareWallet()
+  // entirely: Developer Panel balance presets (Loading/Error/etc) had no
+  // effect in-game before this, only in the top HUD (a real, now-fixed
+  // inconsistency — see BALANCE MODEL task's audit).
+  const { available: casinoBalance, status: balanceStatus, refreshBalance } = useCasinoBalance();
   const { ready, play } = useBetSwirl();
 
   const [betEth, setBetEth] = useState(0.00001);
@@ -23,18 +29,39 @@ export function BetSwirlGame({ game, onRound, onBusyChange }) {
   const [face, setFace] = useState("HEADS"); // coin
   const [rouletteNums, setRouletteNums] = useState([17]); // roulette
   const [balls, setBalls] = useState([1, 2, 3]); // keno
-  const [phase, setPhase] = useState("idle"); // idle | confirming | rolling | done
+  // idle | confirming | rolling | done | uncertain — "uncertain" is a real,
+  // distinct state (not a guess): it only fires when the bet transaction had
+  // ALREADY confirmed (past onBetPlaced) before something went wrong waiting
+  // for the VRF roll, so the stake genuinely may have been spent even though
+  // the outcome never arrived (see UNCERTAIN SETTLEMENT). A rejection/error
+  // BEFORE that point is real, verified "not charged" — never blurred
+  // together with this state.
+  const [phase, setPhase] = useState("idle");
   const [result, setResult] = useState(null);
   const [betTx, setBetTx] = useState(null);
+  const stakeInputRef = useRef(null);
 
   const busy = phase === "confirming" || phase === "rolling";
-  const insufficient = betEth > casinoBalance;
+  const balanceUnknown = balanceStatus === BALANCE_STATUS.LOADING || balanceStatus === BALANCE_STATUS.ERROR || balanceStatus === BALANCE_STATUS.IDLE;
+  const insufficient = !balanceUnknown && betEth > casinoBalance;
 
   // Reports busy state up to GameLaunchSurface (see that file), which
   // disables the shared frame's one close control while a bet is
   // mid-confirmation — abandoning that has a real consequence (a pending
   // wallet tx / VRF roll), unlike the previous phases.
   useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
+
+  // Block-disabled (not eslint-disable-next-line) — oxlint anchors this
+  // rule's diagnostic at the `track(...)` line itself, not the dependency
+  // array below (same fix as useCasinoGameLaunch.js's identical case).
+  // Deliberately keyed only on [insufficient]: firing on every betEth
+  // keystroke would spam this analytics event while the player is still
+  // typing, not just when they actually land on an unaffordable stake.
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    if (insufficient) track("casino_insufficient_balance_shown", { gameId: game.favId, stake: betEth });
+  }, [insufficient]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const selectionFor = () => {
     if (game.control === "dice") return { cap };
@@ -44,40 +71,120 @@ export function BetSwirlGame({ game, onRound, onBusyChange }) {
     return {};
   };
 
+  // REDUCE BET ACTION: this app has no reliable way to compute "largest
+  // valid stake" (gas cost isn't known ahead of the wallet's own estimate,
+  // and casinoBalance is the whole wallet balance, not a spendable-after-gas
+  // figure) — auto-filling the full balance could produce a stake the
+  // wallet then can't actually afford to submit. Per REDUCE BET ACTION's own
+  // instruction ("if the maximum valid amount cannot be calculated safely,
+  // do not provide an automatic amount — focus the input instead"), this
+  // only focuses/selects the input for manual editing.
+  const reduceBet = () => {
+    stakeInputRef.current?.focus();
+    stakeInputRef.current?.select();
+  };
+
   const play_ = async () => {
     if (!ready) { toast.error("Connect your wallet first"); return; }
+    if (balanceUnknown) { toast.error("Balance still loading", { message: "Wait a moment and try again." }); return; }
     if (insufficient || betEth <= 0 || busy) return;
     setResult(null); setBetTx(null); setPhase("confirming");
+    track("casino_bet_submission_started", { gameId: game.favId, stake: betEth });
+    let placedThisAttempt = false;
     try {
       const { rolledBet } = await play({
         gameKey: game.key,
         betEth,
         selection: selectionFor(),
-        onBetPlaced: ({ betTxnHash }) => { setBetTx(betTxnHash); setPhase("rolling"); },
+        onBetPlaced: ({ betTxnHash }) => {
+          placedThisAttempt = true;
+          setBetTx(betTxnHash);
+          setPhase("rolling");
+          track("casino_bet_accepted", { gameId: game.favId, stake: betEth });
+          // Real signal, not a fabricated one: the bet transaction is
+          // confirmed on-chain and the stake is genuinely locked in — only
+          // the win/loss outcome is still unknown, which is exactly what
+          // "pending" means (see CASINO ACTIVITY task's PENDING ROUND
+          // BEHAVIOR / mergeCasinoRounds in lib/casinoRounds.js, which drops
+          // this the instant the same txHash resolves below).
+          onRoundPending?.({ gameKey: game.key, favId: game.favId, stake: betEth, txHash: betTxnHash, at: Date.now() });
+          // The stake already left the wallet as part of this real on-chain
+          // transaction — refresh from the authoritative source now rather
+          // than waiting for the next 15s poll (see BALANCE REFRESH: this
+          // never does the arithmetic itself, only asks the real source to
+          // catch up sooner).
+          refreshBalance({ reason: "bet-accepted" });
+        },
       });
       setResult(rolledBet);
       setPhase("done");
+      track("casino_round_settled", { gameId: game.favId, status: rolledBet.isWin ? "won" : "lost" });
       onRound?.({
         product: "casino", title: game.title, stake: betEth,
         potential: rolledBet.isWin ? Number(rolledBet.formattedPayout) : 0,
         status: rolledBet.isWin ? "won" : "lost", txnHash: rolledBet.rollTxnHash,
+        // Additive fields only — existing `logRound` consumers just spread
+        // `...e` into their own entries, so this doesn't change anything for
+        // them (see App.jsx's logRound). Lets casinoRounds.js's
+        // normalizeLiveResultRound resolve the real game identity without
+        // re-deriving it from `title` (a display string, not a stable key).
+        gameKey: game.key, favId: game.favId,
       });
-      toast[rolledBet.isWin ? "success" : "info"](rolledBet.isWin ? `Won ${rolledBet.formattedPayout} ETH` : "No win this round");
+      refreshBalance({ reason: "round-settled" });
+      if (rolledBet.isWin) {
+        // Profit, not payout — the two are never the same number here (see
+        // WIN SETTLEMENT: "distinguish payout from profit"). Payout stays
+        // visible in the result panel itself, right below this toast.
+        const profit = Number(rolledBet.formattedPayout) - betEth;
+        toast.success(`You won ${profit.toFixed(6)} ETH`, { message: `Payout ${rolledBet.formattedPayout} ETH` });
+      } else {
+        toast.info("Round lost", { message: `Loss ${betEth} ETH` });
+      }
     } catch (e) {
-      setPhase("idle");
-      toast.error(e.shortMessage || e.message || "Bet failed");
+      // Raw error logged only for diagnostics, never surfaced as customer
+      // copy (see FAILED SUBMISSION: "do not show raw contract rejection").
+      if (import.meta.env.DEV) console.error("BetSwirl play() failed:", e);
+      if (placedThisAttempt) {
+        // The bet was genuinely already accepted on-chain — this is not a
+        // "not charged" failure, and retrying now risks a real duplicate
+        // wager (see UNCERTAIN SETTLEMENT). Never auto-retried.
+        setPhase("uncertain");
+        track("casino_bet_status_uncertain", { gameId: game.favId });
+      } else {
+        setPhase("idle");
+        track("casino_bet_submission_failed", { gameId: game.favId, failureCategory: "not-accepted" });
+        toast.error("Bet not placed", { message: "We couldn't place your bet. Your balance was not charged." });
+      }
     }
   };
 
   const statusText = phase === "confirming" ? "Confirm in your wallet…"
-    : phase === "rolling" ? "Rolling — Chainlink VRF…" : null;
+    : phase === "rolling" ? "Round pending — Chainlink VRF…" : null;
 
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-4 py-2">
         <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · BetSwirl</span>
-        <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{casinoBalance.toFixed(5)} ETH</div>
+        <div className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white" data-test-id="betswirl-balance" data-balance-status={balanceStatus}>
+          {balanceStatus === BALANCE_STATUS.LOADING ? (
+            <span className="text-zinc-400">Loading…</span>
+          ) : balanceStatus === BALANCE_STATUS.ERROR ? (
+            <span className="flex items-center gap-1 text-zinc-400"><AlertTriangle className="size-3.5" aria-hidden="true" /> Unavailable</span>
+          ) : (
+            <>
+              <span>{casinoBalance.toFixed(5)} ETH</span>
+              {balanceStatus === BALANCE_STATUS.SYNCING && <RefreshCw className="size-3 animate-spin text-zinc-400 motion-reduce:animate-none" aria-hidden="true" />}
+              {balanceStatus === BALANCE_STATUS.STALE && <AlertTriangle className="size-3 text-[var(--warning)]" aria-hidden="true" />}
+            </>
+          )}
+        </div>
       </div>
+      {balanceStatus === BALANCE_STATUS.STALE && (
+        <div role="status" className="flex shrink-0 items-center justify-between gap-2 bg-[var(--warning)]/10 px-4 py-1.5 text-xs text-[var(--warning)]">
+          <span>Balance may be out of date</span>
+          <button type="button" onClick={() => refreshBalance({ reason: "manual-retry" })} className="font-semibold underline-offset-2 hover:underline">Refresh</button>
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 items-center justify-center p-4">
         {/* Fills whatever the shared CasinoGameplayFrame content-box already
@@ -89,11 +196,27 @@ export function BetSwirlGame({ game, onRound, onBusyChange }) {
           style={{ backgroundImage: `url(${game.image})` }}
         >
           <div className="absolute inset-0 bg-black/45" />
-          <div className={`relative ${busy ? "animate-pulse" : ""}`}>
-            {statusText ? (
+          <div className={`relative ${busy ? "animate-pulse motion-reduce:animate-none" : ""}`}>
+            {phase === "uncertain" ? (
+              <div className="flex flex-col items-center gap-3 text-center text-white" role="alert">
+                <AlertTriangle className="size-8 text-amber-400" aria-hidden="true" />
+                <div className="text-lg font-semibold">Checking bet status</div>
+                <p className="max-w-xs text-sm text-white/80">Do not place the bet again until we confirm the result.</p>
+                {betTx && <a href={txUrl(betTx)} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-white/80 hover:underline"><ExternalLink className="size-3.5" /> bet tx</a>}
+                <button
+                  type="button"
+                  onClick={() => setPhase("idle")}
+                  data-test-id="betswirl-dismiss-uncertain"
+                  className="mt-1 rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                >
+                  Dismiss
+                </button>
+              </div>
+            ) : statusText ? (
               <div className="flex flex-col items-center gap-3 text-white">
-                <Loader2 className="size-8 animate-spin" />
-                <div className="text-lg font-semibold">{statusText}</div>
+                <Loader2 className="size-8 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <div className="text-lg font-semibold" role="status" aria-live="polite">{statusText}</div>
+                <div className="text-sm text-white/70">Stake {betEth} ETH</div>
                 {betTx && <a href={txUrl(betTx)} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sm text-white/80 hover:underline"><ExternalLink className="size-3.5" /> bet tx</a>}
               </div>
             ) : result ? (
@@ -127,19 +250,29 @@ export function BetSwirlGame({ game, onRound, onBusyChange }) {
           <div className="flex items-end gap-3">
             <label className="flex-1">
               <span className="mb-1 block text-[11px] uppercase tracking-wide text-zinc-500">Bet amount (ETH)</span>
-              <div className="flex items-center rounded-lg border border-white/5 bg-zinc-950 px-3">
-                <input type="number" value={betEth} min={0} step={0.00001} disabled={busy}
+              <div className={`flex items-center rounded-lg border px-3 ${insufficient ? "border-[var(--danger)]/60 bg-[var(--danger)]/5" : "border-white/5 bg-zinc-950"}`}>
+                <input
+                  ref={stakeInputRef}
+                  type="number" value={betEth} min={0} step={0.00001} disabled={busy}
+                  aria-invalid={insufficient || undefined}
+                  aria-describedby={insufficient ? "betswirl-insufficient" : undefined}
                   onFocus={(e) => e.target.select()} onChange={(e) => setBetEth(Math.max(0, +e.target.value))}
                   className="w-full bg-transparent py-2.5 px-1 font-mono tabular-nums text-white outline-none" />
                 <button onClick={() => setBetEth((b) => +(b / 2).toFixed(6))} disabled={busy} className="px-2 text-xs text-zinc-400 hover:text-white">½</button>
                 <button onClick={() => setBetEth((b) => +(b * 2).toFixed(6))} disabled={busy} className="px-2 text-xs text-zinc-400 hover:text-white">2×</button>
               </div>
             </label>
-            <button onClick={play_} disabled={insufficient || busy || !ready} data-test-id="betswirl-play"
+            <button onClick={play_} disabled={insufficient || busy || !ready || balanceUnknown || phase === "uncertain"} data-test-id="betswirl-play"
               className="h-[44px] rounded-lg bg-[var(--casino-primary)] px-8 font-bold text-white transition hover:bg-[var(--casino-primary-hover)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">
               {busy ? "…" : insufficient ? "Low balance" : "Bet"}
             </button>
           </div>
+          {insufficient && (
+            <div id="betswirl-insufficient" role="alert" className="flex items-center justify-between gap-2 rounded-lg bg-[var(--danger)]/10 px-3 py-2 text-xs text-[var(--danger)]">
+              <span><strong className="font-semibold">Insufficient balance.</strong> Reduce your bet or add funds to continue.</span>
+              <button type="button" onClick={reduceBet} data-test-id="betswirl-reduce-bet" className="shrink-0 font-semibold underline-offset-2 hover:underline">Reduce bet</button>
+            </div>
+          )}
           <p className="text-center text-[11px] text-zinc-500">Each bet is an on-chain transaction (gas + Chainlink VRF fee).</p>
         </div>
       </div>

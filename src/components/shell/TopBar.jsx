@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
+import { useCasinoBalance } from "@/lib/casinoBalance";
 import { getTopBarMode, HEADER_CENTER_VARIANT, getHeaderCenterVariant } from "@/lib/topBarState";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "@/lib/profileState";
 import { setDevMockState } from "@/lib/devMock";
@@ -65,6 +66,11 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
     isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, sportsBalance, sportsSymbol, disconnect,
     loggedInNoWallet, sessionExpired, wrongNetworkOverride, authStatus,
   } = wallet;
+  // Same underlying dev-aware wallet hook (react-query dedupes the actual
+  // network request under the hood) — this just adds the shared
+  // status/refresh layer on top for BalanceControl (see lib/casinoBalance.js
+  // — one balance model, not a second store).
+  const { status: casinoBalanceStatus, refreshBalance } = useCasinoBalance();
 
   // Triple-tap the logo toggles the Developer Panel on touch devices, where
   // Shift+D isn't practical (see lib/useDevPanelLogoTap.js).
@@ -178,6 +184,8 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
               casinoSymbol={casinoSymbol}
               casinoLoading={casinoBalanceLoading}
               casinoBalanceError={casinoBalanceError}
+              casinoStatus={casinoBalanceStatus}
+              onRefreshBalance={() => refreshBalance({ reason: "manual-retry" })}
               sportsBalance={sportsBalance}
               sportsSymbol={sportsSymbol}
               wrongNetwork={centerVariant === HEADER_CENTER_VARIANT.WRONG_NETWORK}

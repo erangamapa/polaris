@@ -22,6 +22,17 @@ const BALANCE_PRESET_VALUES = {
   zero: 0,
   normal: 1248.32,
   large: 1284392.18,
+  // Real BetSwirl stakes on this testnet are this small (see
+  // BetSwirlGame.jsx's default 0.00001 ETH bet) — exercises precision/
+  // formatting at the actual scale this app uses, not an arbitrary tiny
+  // number (see CASINO ACTIVITY/BALANCE task's NUMERIC SAFETY: "large
+  // balances remain readable" applies just as much in the other direction).
+  tiny: 0.00000042,
+  // "syncing"/"stale" reuse the "normal" value as their underlying balance —
+  // both are about the STATUS derived around a real value (see
+  // lib/casinoBalance.js's resolveBalanceStatus), not a different amount.
+  syncing: 1248.32,
+  stale: 1248.32,
 };
 
 export function useDevAwareWallet() {
@@ -53,7 +64,16 @@ export function useDevAwareWallet() {
 
   if (mock.balancePreset !== "default") {
     view.casinoBalanceLoading = mock.balancePreset === "loading";
-    view.casinoBalanceError = mock.balancePreset === "error";
+    // "stale" simulates a refresh that failed while a good value was
+    // already on screen (see resolveBalanceStatus: error + a real
+    // lastUpdatedAt = stale, not the bare "error" state with no value ever
+    // obtained) — "error" alone simulates the no-value-ever case.
+    view.casinoBalanceError = mock.balancePreset === "error" || mock.balancePreset === "stale";
+    // "syncing" simulates a background refetch while a value is already
+    // shown — real react-query semantics (see useWallet.js's
+    // casinoBalanceFetching), just forced on for this preset instead of
+    // waiting for a real 15s poll to land mid-demo.
+    view.casinoBalanceFetching = mock.balancePreset === "syncing";
     if (mock.balancePreset in BALANCE_PRESET_VALUES) view.casinoBalance = BALANCE_PRESET_VALUES[mock.balancePreset];
   }
 
