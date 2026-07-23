@@ -181,6 +181,30 @@ export function DevPanel() {
           </Field>
         </Section>
 
+        <Section title="Compliance">
+          <Segmented
+            value={mock.complianceStatus}
+            onChange={(v) => set({ complianceStatus: v })}
+            options={[
+              { value: "clear", label: "Clear" },
+              { value: "kyc-required", label: "KYC required" },
+              { value: "kyc-pending", label: "KYC pending" },
+              { value: "kyc-failed", label: "KYC failed" },
+              { value: "restricted", label: "Restricted" },
+              { value: "region-blocked", label: "Region blocked" },
+              { value: "age-restricted", label: "Age restricted" },
+              { value: "self-excluded", label: "Self-excluded" },
+              { value: "cool-off", label: "Cool-off" },
+              { value: "loading", label: "Loading" },
+              { value: "error", label: "Error" },
+            ]}
+            groupLabel="Compliance status"
+          />
+          <p className="text-xs text-muted-foreground">
+            Blocks real-money game launch and shows the shared compliance block. No real KYC/region/self-exclusion backend exists — this previews the UI only (see lib/complianceState.js).
+          </p>
+        </Section>
+
         <Section title="Transactions">
           <Field label="Latest activity entry" htmlFor="dev-transaction-status">
             <select

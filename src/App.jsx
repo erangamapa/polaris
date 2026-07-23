@@ -21,6 +21,7 @@ import { FundsDialog } from "./components/wallet/FundsDialog";
 import { AccountDialog } from "./components/wallet/AccountDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
+import { ComplianceBlockDialog } from "./components/trust/ComplianceBlockDialog";
 import { SupportDialog } from "./components/trust/SupportDialog";
 import { useWallet } from "./web3/useWallet";
 import { useDevAwareWallet } from "./lib/useDevAwareWallet";
@@ -48,6 +49,7 @@ import { track } from "./lib/telemetry";
 import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock";
 import { DEV_PANEL_ENABLED } from "./lib/devPanelFlag";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
+import { canPerformAction } from "./lib/complianceState";
 import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
@@ -438,6 +440,7 @@ export default function App() {
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [complianceBlockOpen, setComplianceBlockOpen] = useState(false);
 
   // OVERLAY OWNERSHIP: the one place every other App-level overlay gets
   // closed from, so opening any of them (including the mobile menu, see
@@ -456,6 +459,7 @@ export default function App() {
     setRgOpen(false);
     setSupportOpen(false);
     setAccountOpen(false);
+    setComplianceBlockOpen(false);
     closeGame();
   };
 
@@ -533,8 +537,28 @@ export default function App() {
   // they run on a mock economy, not a wallet). This is the one place both a
   // card click and a direct `?play=` link apply that same gate, so a
   // bookmarked/shared onchain-game URL can't bypass it.
+  //
+  // GAME LAUNCH INTEGRATION: the same `kind === "onchain" && playable`
+  // check IS this app's one real-money action (launching a playable
+  // onchain BetSwirl game is placing a bet — see complianceState.js's
+  // SENSITIVE_ACTIONS comment), so the shared compliance gate sits right
+  // next to ensureAuth, checked first — neither the launch reducer nor
+  // ensureAuth's wallet-connect prompt ever runs when compliance blocks the
+  // attempt, so no loading starts, no Recently Played update, and no
+  // pending round is ever created for a blocked attempt (see GAME LAUNCH
+  // INTEGRATION: "do not start loading if play is already blocked").
+  // Provider games are untouched by this — they're this app's only real
+  // "demo" mode (no wallet, mock economy), which the task explicitly allows
+  // to remain available (see GAME LAUNCH INTEGRATION: "demo games may
+  // remain available only if actual policy supports them" — it does here).
   const attemptLaunch = (game, source, categoryId) => {
-    if (game && game.kind === "onchain" && game.playable && !ensureAuth()) return;
+    if (game && game.kind === "onchain" && game.playable) {
+      if (!canPerformAction({ action: "launch-real-game", complianceStatus: devMock.complianceStatus })) {
+        setComplianceBlockOpen(true);
+        return;
+      }
+      if (!ensureAuth()) return;
+    }
     launch.launchCasinoGame({ gameId: game ? game.favId : null, source, categoryId });
   };
   const launchGame = (game, context) => {
@@ -894,7 +918,17 @@ export default function App() {
 
   // All hooks above run unconditionally either way — only the returned JSX
   // branches on the geo check, so this stays a valid conditional render.
-  if (geo.blocked) return <GeoBlock reason={geo.reason} />;
+  // SupportDialog is rendered alongside GeoBlock (not just GeoBlock alone)
+  // so "Contact support" here opens this app's real Support system instead
+  // of a hardcoded, unverified `mailto:` address (see GeoBlock.jsx).
+  if (geo.blocked) {
+    return (
+      <>
+        <GeoBlock reason={geo.reason} onContactSupport={() => setSupportOpen(true)} />
+        <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+      </>
+    );
+  }
 
   return (
     <div data-product={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
@@ -1083,8 +1117,15 @@ export default function App() {
         onResponsibleGambling={openRg}
         onSupport={openSupport}
       />
-      <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
+      <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} complianceStatus={devMock.complianceStatus} onSupport={openSupport} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+      <ComplianceBlockDialog
+        open={complianceBlockOpen}
+        onClose={() => setComplianceBlockOpen(false)}
+        complianceStatus={devMock.complianceStatus}
+        onSupport={openSupport}
+        onResponsibleGaming={openRg}
+      />
       <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} />
     </div>
   );

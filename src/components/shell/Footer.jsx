@@ -28,8 +28,15 @@ export function Footer({ onResponsibleGambling, onSupport }) {
             <ul className="space-y-1.5">
               <li><button onClick={onSupport} className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Help Center</button></li>
               <li><button onClick={onSupport} className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Live Support</button></li>
-              <li><button onClick={onResponsibleGambling} className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Responsible Gambling</button></li>
-              <li><button onClick={onResponsibleGambling} className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Self-Exclusion</button></li>
+              {/* One link, one destination — the shared Responsible Gaming
+                  hub (see ResponsibleGamblingDialog.jsx). A separate
+                  "Self-Exclusion" link was removed: it opened this exact
+                  same dialog, which has no distinct self-exclusion action
+                  to offer (no real backend — see that file's own honesty
+                  note), so a second label implying a different destination
+                  would be misleading (see PRIMARY GOAL: "do not create
+                  duplicate dialogs"). */}
+              <li><button onClick={onResponsibleGambling} data-test-id="footer-responsible-gaming" className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Responsible Gaming</button></li>
             </ul>
           </div>
         </div>
@@ -42,8 +49,16 @@ export function Footer({ onResponsibleGambling, onSupport }) {
           </div>
           <span className="text-muted-foreground/70">© {new Date().getFullYear()} {BRAND_NAME} · Demo build — simulated balances, no real money.</span>
         </div>
+        {/* No invented licensing claim, regulator name or named external
+            helpline — none of those are real/approved for this prototype
+            (see DATA HONESTY: "do not invent... licensing claims...
+            regulatory body names"; SUPPORT AND INDEPENDENT HELP: "do not
+            invent hotline numbers, organizations or local services"). The
+            only real, working help channel this app has is its own
+            Support system. */}
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/60">
-          {BRAND_NAME} is a prototype. In production, operated under licence (e.g. Curaçao / Medium Rare N.V.-style). If gambling is affecting you, contact a local helpline such as Gambling Therapy.
+          {BRAND_NAME} is a prototype — simulated balances, no real money. If gambling is affecting you or someone you know,{" "}
+          <button onClick={onSupport} className="underline hover:text-foreground">contact Support</button>.
         </p>
       </div>
     </footer>

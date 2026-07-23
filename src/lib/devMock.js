@@ -52,6 +52,14 @@ export const DEFAULT_DEV_MOCK_STATE = {
   transactionStatus: "none", // none | deposit-pending | deposit-confirmed | withdrawal-pending | withdrawal-failed | bet-won | bet-lost
   slowNetwork: false,
   forceApiError: false,
+  // RESPONSIBLE GAMING AND COMPLIANCE ACCESS task's one new field — see
+  // lib/complianceState.js's module doc comment for why this is the ONLY
+  // source a real account-level compliance status can ever come from today
+  // (no KYC/self-exclusion/region backend exists). "clear" is the only
+  // value a real user ever sees; every other value is a Developer-Panel-
+  // only preview of what the shared ComplianceBlock/gating would look like
+  // if a real signal existed.
+  complianceStatus: "clear", // clear | kyc-required | kyc-pending | kyc-failed | restricted | region-blocked | age-restricted | self-excluded | cool-off | loading | error
 };
 
 function safeLoad() {

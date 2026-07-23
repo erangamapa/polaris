@@ -1,117 +1,79 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, Check } from "lucide-react";
-import { toast } from "@/lib/toast";
+import { ShieldCheck, LifeBuoy } from "lucide-react";
+import { track } from "@/lib/telemetry";
+import { getComplianceState } from "@/lib/complianceState";
+import { ComplianceBlock } from "./ComplianceBlock";
 
-const KEY = "polaris_rg";
-const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
-const save = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* ignore */ } };
+// The ONE shared Responsible Gaming destination in the app — reached from
+// the desktop ProfileMenu, AccountDialog, the mobile menu's Account group,
+// the footer, and GameInfoPanel (see ACCESS POINTS — every one of those
+// call sites already opens this same dialog via App.jsx's single `rgOpen`
+// state; see PRIMARY GOAL: "do not create duplicate dialogs"). Reads the
+// same shared `complianceStatus` every other compliance-aware surface
+// does (see lib/complianceState.js) — never a second, RG-only copy of it.
+//
+// DATA HONESTY — this app has no real backend for deposit/loss/session
+// limits, reality-check reminders, cool-off, or self-exclusion: the
+// previous version of this dialog persisted "limits" to localStorage and
+// presented them as if saved/enforced, which is exactly the pattern this
+// task forbids (see LIMITS: "if limits are not implemented, do not create
+// editable controls"; SELF-EXCLUSION: "do not simulate self-exclusion
+// using local storage and present it as production functionality"). None
+// of those editable controls exist here anymore — only a plain,
+// once-stated note that they aren't available yet, plus the one real,
+// working thing this app can offer: Support access.
+export function ResponsibleGamblingDialog({ open, onClose, complianceStatus, onSupport }) {
+  useEffect(() => {
+    if (open) track("responsible_gaming_opened", {});
+  }, [open]);
 
-const REALITY = [15, 30, 60];
-const BREAKS = [{ label: "24 hours", h: 24 }, { label: "7 days", h: 168 }, { label: "30 days", h: 720 }];
-
-export function ResponsibleGamblingDialog({ open, onClose }) {
-  const [rg, setRg] = useState({});
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => { if (open) { setRg(load()); setSaved(false); } }, [open]);
-
-  const set = (k, v) => setRg((r) => ({ ...r, [k]: v }));
-  const persist = (next) => { save(next); setRg(next); setSaved(true); setTimeout(() => setSaved(false), 1800); };
-  const onSaveLimits = () => { persist({ ...rg }); toast.success("Limits saved"); };
-  const takeBreak = (h) => { persist({ ...rg, breakUntil: Date.now() + h * 3600e3 }); toast.info("Break scheduled"); };
-
-  const breakActive = rg.breakUntil && rg.breakUntil > Date.now();
+  const compliance = getComplianceState({ complianceStatus });
+  const supportSelected = () => { track("responsible_gaming_support_selected", { source: "responsible-gaming" }); onSupport(); };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-[var(--success)]" /> Responsible gambling</DialogTitle>
-          <DialogDescription>Set limits to stay in control. Demo — not enforced.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-[var(--success)]" /> Responsible Gaming</DialogTitle>
+          <DialogDescription>Tools and information to help you stay in control of your play.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-1.5">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Limits</div>
-          <Field label="Daily deposit limit" value={rg.deposit} onChange={(v) => set("deposit", v)} />
-          <Field label="Daily loss limit" value={rg.loss} onChange={(v) => set("loss", v)} />
-          <Field label="Session time limit (min)" value={rg.session} onChange={(v) => set("session", v)} prefix="" />
-          <Button size="sm" className="mt-1 w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={onSaveLimits}>
-            {saved ? <><Check className="size-4" /> Saved</> : "Save limits"}
-          </Button>
-        </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Reality check reminder</div>
-          <div className="flex gap-2">
-            {REALITY.map((m) => (
-              <button
-                key={m}
-                onClick={() => persist({ ...rg, reality: m })}
-                className={`flex-1 rounded-lg border py-1.5 text-xs font-medium transition ${rg.reality === m ? "border-[var(--global-cta-soft-border)] bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]" : "border-border bg-muted/30 text-muted-foreground hover:text-foreground"}`}
-              >
-                {m} min
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Take a break</div>
-          {breakActive ? (
-            <div className="rounded-lg border border-[var(--warning)]/40 bg-[var(--warning-bg)] p-2.5 text-sm text-[var(--warning)]">
-              Break active until {new Date(rg.breakUntil).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              {BREAKS.map((b) => (
-                <button
-                  key={b.h}
-                  onClick={() => takeBreak(b.h)}
-                  className="flex-1 rounded-lg border border-border bg-muted/30 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
-          )}
-          <p className="text-[11px] text-muted-foreground">Need more help? Reach out via the Gambling Helpline.</p>
-        </div>
-
-        {(rg.deposit || rg.loss || rg.session || rg.reality) && (
-          <div className="flex flex-wrap gap-1.5">
-            {rg.deposit ? <Badge variant="outline" className="text-[var(--success)]">Deposit ${rg.deposit}/day</Badge> : null}
-            {rg.loss ? <Badge variant="outline" className="text-[var(--success)]">Loss ${rg.loss}/day</Badge> : null}
-            {rg.session ? <Badge variant="outline" className="text-[var(--success)]">{rg.session}m session</Badge> : null}
-            {rg.reality ? <Badge variant="outline" className="text-[var(--success)]">Check every {rg.reality}m</Badge> : null}
-          </div>
+        {/* Calm, persistent status — never a second blocking modal stacked
+            on top of this one (see SELF-EXCLUDED / COOL-OFF ACTIVE STATE:
+            "do not repeatedly show blocking modals... one stable status
+            surface is sufficient"). Only renders while a Developer-Panel
+            preview is active; a real user (complianceStatus "clear") never
+            sees this. */}
+        {compliance.status !== "clear" && (
+          <ComplianceBlock status={compliance.status} title={compliance.title} message={compliance.message} />
         )}
+
+        <ul className="space-y-1.5 text-sm text-muted-foreground">
+          <li>Review your activity any time in Casino Activity.</li>
+          <li>Take breaks between sessions.</li>
+          <li>Contact Support if you have questions or concerns.</li>
+          <li>Seek independent help if gambling is affecting you or someone you know.</li>
+        </ul>
+
+        {/* One honest sentence covering every unsupported control, rather
+            than four separate hollow sections repeating the same
+            disclaimer (see LIMITS: "optionally show one concise
+            informational section"; DATA HONESTY: "do not create fake
+            forms that do nothing"). */}
+        <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground" data-test-id="rg-controls-unavailable">
+          Limit, time and self-exclusion controls are not available in this prototype yet.
+        </p>
+
+        <button
+          type="button"
+          onClick={supportSelected}
+          data-test-id="rg-support"
+          className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--global-cta)] text-sm font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <LifeBuoy className="size-4" aria-hidden="true" /> Contact Support
+        </button>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({ label, value, onChange, prefix = "$" }) {
-  return (
-    <div className="flex items-center gap-2">
-      <label className="flex-1 text-sm text-muted-foreground">{label}</label>
-      <div className="flex w-28 items-center rounded-md border bg-background px-2">
-        {prefix && <span className="text-xs text-muted-foreground">{prefix}</span>}
-        <Input
-          type="number" min={0} value={value ?? ""} placeholder="—"
-          onFocus={(e) => e.target.select()}
-          onChange={(e) => onChange(e.target.value ? Math.max(0, +e.target.value) : "")}
-          className="h-8 border-0 bg-transparent px-1.5 font-mono tabular-nums shadow-none focus-visible:ring-0"
-        />
-      </div>
-    </div>
   );
 }
