@@ -53,7 +53,7 @@ import { canPerformAction } from "./lib/complianceState";
 import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
-import { GAME_LAUNCH_STATUS } from "./lib/casinoGameLaunch";
+import { GAME_LAUNCH_STATUS, isLaunchActive } from "./lib/casinoGameLaunch";
 import { GameLaunchSurface } from "./components/casino/GameLaunchSurface";
 import { GameInfoPanel } from "./components/casino/GameInfoPanel";
 import { normalizePendingRound, normalizeLiveResultRound } from "./lib/casinoRounds";
@@ -1029,8 +1029,21 @@ export default function App() {
           same component internally (as a real descendant of its own Dialog
           Content, inside its focus boundary) while open. No z-index or
           pointer-events trick makes two DOM copies act like one — there is
-          only ever one. */}
-      {!mobileMenuOpen && (
+          only ever one.
+          RESPONSIVE AUDIT fix: also unmounted (not just visually covered)
+          during an active game launch. GameLaunchSurface covers the full
+          viewport visually (fixed inset-0), but with no z-index/opacity
+          trick actually removing the nav from the DOM, its buttons stayed
+          in the tab order and accessibility tree underneath a supposedly
+          full-screen game — a real focus/a11y gap, not merely cosmetic
+          (see GAMEPLAY: "bottom nav hidden... restored after gameplay").
+          Reuses the exact same status check GameLaunchSurface's own
+          render guard below already uses, so "restored after gameplay"
+          falls out for free the moment `launch.state.status` returns to
+          IDLE — reuses the already-tested `isLaunchActive` predicate (see
+          lib/casinoGameLaunch.test.js) rather than re-deriving the same
+          IDLE comparison a second, untested way. */}
+      {!mobileMenuOpen && !isLaunchActive(launch.state.status) && (
         <MobileBottomNav
           product={product}
           onSelectArena={selectMobileArena}
