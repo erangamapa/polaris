@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./profileState";
+import { PROFILE_VARIANT, getProfileVariant, getSignOutAction, getAccountAuthMethod } from "./profileState";
 
 // PLAYER PROFILE / ACCOUNT MENU — this task's own TESTS list (20 scenarios)
 // is almost entirely rendering/popover/focus behavior, which needs a DOM
@@ -63,5 +63,25 @@ describe("getSignOutAction", () => {
     expect(getSignOutAction("logged-in")).toBe("reset-auth-mock");
     expect(getSignOutAction("session-expired")).toBe("reset-auth-mock");
     expect(getSignOutAction("logged-out")).toBe("reset-auth-mock");
+  });
+});
+
+// ACCOUNT, SECURITY AND SESSION SETTINGS task's own addition — the one new
+// piece of decision logic it introduces (the Account destination's
+// sign-in-method field). "wallet" is the only real value this app can ever
+// honestly claim (see SIGN-IN METHOD: "do not show wallet as the sign-in
+// method unless it actually authenticated the user").
+describe("getAccountAuthMethod", () => {
+  it("is wallet whenever a real wallet is connected", () => {
+    expect(getAccountAuthMethod({ authStatus: "default", isConnected: true })).toBe("wallet");
+    expect(getAccountAuthMethod({ authStatus: "logged-in", isConnected: true })).toBe("wallet");
+  });
+
+  it("is undefined when logged out (nothing to report)", () => {
+    expect(getAccountAuthMethod({ authStatus: "default", isConnected: false })).toBeUndefined();
+  });
+
+  it("is unknown for the one combination with no real backing at all — dev-mocked logged-in with no real wallet connection", () => {
+    expect(getAccountAuthMethod({ authStatus: "logged-in", isConnected: false })).toBe("unknown");
   });
 });

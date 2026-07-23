@@ -32,6 +32,21 @@ export function getProfileVariant({ authStatus, isConnected }) {
   return isConnected ? PROFILE_VARIANT.LOGGED_IN : PROFILE_VARIANT.LOGGED_OUT;
 }
 
+// ACCOUNT, SECURITY AND SESSION SETTINGS task's one real question: what did
+// the player actually sign in WITH? "wallet" is only ever returned when a
+// real wallet connection exists — this app has no other authentication
+// mechanism (no email/password, no social login), so it's the one honest,
+// non-invented value (see SIGN-IN METHOD: "do not show wallet as the
+// sign-in method unless it actually authenticated the user"). The one
+// combination with no real backing at all is the dev-only "logged in, but
+// wallet not connected" mock (see devMock.js's architecture note) — that
+// returns "unknown" rather than quietly claiming "wallet" for a session
+// nothing real actually authenticated.
+export function getAccountAuthMethod({ authStatus, isConnected }) {
+  if (authStatus === "logged-in" && !isConnected) return "unknown";
+  return isConnected ? "wallet" : undefined;
+}
+
 // Sign Out's one real decision: is there an active devMock auth-layer
 // override to clear, or does this app's only real sign-out mechanism
 // (disconnecting the wallet — see devMock.js's architecture note) need to

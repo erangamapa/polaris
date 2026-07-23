@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { useDevMockState, setDevMockState, resetDevMockState, closeDevPanel } from "@/lib/devMock";
 import { useDevPanelShortcut } from "@/lib/useDevPanelShortcut";
+import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 
-// Internal Developer Panel — Shift+D toggles it (see useDevPanelShortcut),
-// dev-only end to end: this whole module is only ever imported by App.jsx
-// behind the same guard the component itself checks below, and every
-// mutator in lib/devMock.js no-ops outside dev — so even a stray import
-// path could never make this visible or active in a production build (see
-// DEV-ONLY REQUIREMENT).
+// Developer Panel — Shift+D toggles it (see useDevPanelShortcut). Gated end
+// to end on `DEV_PANEL_ENABLED` (devPanelFlag.js), currently `true` in every
+// build including production — see that file for the toggle. Every mutator
+// in lib/devMock.js also no-ops when the flag is off, so even a stray
+// import path couldn't make this visible or active with the flag off.
 //
 // A non-modal complementary region, not a Dialog — the whole point is to
 // keep testing the app *while* the panel is open (see PANEL DEV
@@ -21,14 +21,14 @@ import { useDevPanelShortcut } from "@/lib/useDevPanelShortcut";
 export function DevPanel() {
   useDevPanelShortcut();
   const mock = useDevMockState();
-  const open = import.meta.env.DEV && mock.panelOpen;
+  const open = DEV_PANEL_ENABLED && mock.panelOpen;
 
   const panelRef = useRef(null);
   const closeButtonRef = useRef(null);
   const lastFocusedRef = useRef(null);
 
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    if (!DEV_PANEL_ENABLED) return;
     if (open) {
       lastFocusedRef.current = document.activeElement;
       // One frame so the panel has actually mounted/painted before we try
@@ -40,7 +40,7 @@ export function DevPanel() {
     }
   }, [open]);
 
-  if (!import.meta.env.DEV) return null;
+  if (!DEV_PANEL_ENABLED) return null;
   if (!open) return null;
 
   const set = (patch) => setDevMockState(patch);

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import {
   LayoutGrid, Radio,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
-  ShieldCheck, LifeBuoy, LogOut, LogIn,
+  ShieldCheck, LifeBuoy, LogOut, LogIn, Settings,
 } from "lucide-react";
 import { TopBar } from "./components/shell/TopBar";
 import { Sidebar } from "./components/shell/Sidebar";
@@ -18,6 +18,7 @@ import { CasinoCatalog, CategoryNav, gameHref, findGameByFavId, ALL_GAMES } from
 import { CASINO_CATEGORIES, CASINO_PERSONAL_DESTINATIONS, activateCasinoCategory } from "./lib/casinoCategories";
 import { useCasinoSearch } from "./components/casino/CasinoSearch";
 import { FundsDialog } from "./components/wallet/FundsDialog";
+import { AccountDialog } from "./components/wallet/AccountDialog";
 import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
 import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
 import { SupportDialog } from "./components/trust/SupportDialog";
@@ -45,6 +46,7 @@ import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
 import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock";
+import { DEV_PANEL_ENABLED } from "./lib/devPanelFlag";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
 import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
@@ -133,11 +135,10 @@ export default function App() {
   // Seed navigation from the URL so deep links work. Resolved against the
   // Developer Panel's Platform Scope mock (see lib/platformScope.js) so a
   // deep link straight into /sports or /predictions while in MVP mode lands
-  // on Casino instead — same as devMock everywhere else, this reads as
-  // "full" in production (getDevMockState() only ever returns a real
-  // platformScope value in dev; see devMock.js's safeLoad).
+  // on Casino instead — reads as "full" at rest and everywhere
+  // `DEV_PANEL_ENABLED` is off (devPanelFlag.js).
   const initialNav = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
-  const initialPlatformScope = import.meta.env.DEV ? getDevMockState().platformScope : "full";
+  const initialPlatformScope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
   const [product, setProduct] = useState(resolveScopedProduct(initialNav.product, initialPlatformScope));
 
   // Desktop/tablet (≥768px): a persistent expanded/collapsed rail, never
@@ -248,7 +249,7 @@ export default function App() {
   useEffect(() => {
     const onPop = () => {
       const nav = parsePath(window.location.pathname);
-      const scope = import.meta.env.DEV ? getDevMockState().platformScope : "full";
+      const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
       setProduct(resolveScopedProduct(nav.product, scope));
       setCasinoCategory(nav.casinoCategory);
       setPredSection(nav.predSection);
@@ -300,19 +301,20 @@ export default function App() {
   // wallet.isConnected can't see the mock (see TopBar.jsx, which already
   // reads this same hook for its own desktop ProfileMenu).
   const devWallet = useDevAwareWallet();
-  // Developer Panel (Shift+D) mock state — a no-op object in production
-  // (useDevMockState always returns DEFAULT_DEV_MOCK_STATE there, and every
-  // field below reads as "default", so every override branch this file
-  // adds is inert). See INTEGRATION PRIORITY: Casino favorites/recently
-  // played/game state are wired here (App.jsx), not deeper inside
-  // CasinoLobby/CasinoCatalog, so those components stay untouched.
-  // `platformScope` is the one exception to "default = inert": its default
-  // is the literal value "mvp", not "default" (see devMock.js), so every
-  // read of it below is explicitly gated on `import.meta.env.DEV` instead —
-  // production always behaves as "full" (unrestricted), matching every
-  // other Developer-Panel-mocked field's no-op-in-prod guarantee.
+  // Developer Panel (Shift+D) mock state — currently live in every build
+  // including production (see lib/devPanelFlag.js's DEV_PANEL_ENABLED), so
+  // every field below reflects whatever the panel has been set to, and
+  // reads as "default" (inert) until someone touches the panel. See
+  // INTEGRATION PRIORITY: Casino favorites/recently played/game state are
+  // wired here (App.jsx), not deeper inside CasinoLobby/CasinoCatalog, so
+  // those components stay untouched. `platformScope` is the one exception
+  // to "default = inert": its resting value is the literal "full"
+  // (unrestricted) rather than "default" (see devMock.js's
+  // DEFAULT_DEV_MOCK_STATE), and every read of it below is explicitly
+  // gated on `DEV_PANEL_ENABLED` so it falls back to "full" wherever the
+  // flag is off.
   const devMock = useDevMockState();
-  const platformScope = import.meta.env.DEV ? devMock.platformScope : "full";
+  const platformScope = DEV_PANEL_ENABLED ? devMock.platformScope : "full";
   // "Switching to MVP while inside Sports or Predictions immediately
   // redirects to Casino" — also the safety net for the initial-load/popstate
   // resolution above (resolveScopedProduct), in case of any other path that
@@ -333,7 +335,7 @@ export default function App() {
   // is reviewable without inventing backing data. Effect (not inline in the
   // <select> handler) so it also fires correctly on session-restore.
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    if (!DEV_PANEL_ENABLED) return;
     const copy = {
       "deposit-pending": { type: "info", title: "Deposit pending", message: "Waiting for confirmations." },
       "deposit-confirmed": { type: "success", title: "Deposit confirmed", message: "Your balance has been updated." },
@@ -399,7 +401,7 @@ export default function App() {
   // open a loading state first when availability is already known").
   const checkGameAvailability = (game) =>
     (game.kind === "onchain" && !game.playable ? "coming-soon" : null) ||
-    (import.meta.env.DEV && DEV_UNAVAILABLE_GAME_STATUSES.has(devMock.gameStatus) ? devMock.gameStatus : null);
+    (DEV_PANEL_ENABLED && DEV_UNAVAILABLE_GAME_STATUSES.has(devMock.gameStatus) ? devMock.gameStatus : null);
 
   // The one shared Casino game-launch state machine — every entry point
   // (Lobby rail, category page, search, Favorites, Recently Played, a direct
@@ -435,6 +437,7 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [rgOpen, setRgOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   // OVERLAY OWNERSHIP: the one place every other App-level overlay gets
   // closed from, so opening any of them (including the mobile menu, see
@@ -452,6 +455,7 @@ export default function App() {
     setHistoryOpen(false);
     setRgOpen(false);
     setSupportOpen(false);
+    setAccountOpen(false);
     closeGame();
   };
 
@@ -485,16 +489,21 @@ export default function App() {
   // exact same dialogs rather than a second copy.
   const openRg = () => { setMobileMenuOpen(false); setRgOpen(true); };
   const openSupport = () => { setMobileMenuOpen(false); setSupportOpen(true); };
+  // Not wallet-gated — Account is reachable logged-out and session-expired
+  // too (it renders its own sign-in entry point in those cases; see
+  // AccountDialog.jsx), unlike Wallet/Activity which require a connected
+  // wallet before there's anything real to show.
+  const openAccount = () => { setMobileMenuOpen(false); setAccountOpen(true); };
 
   // Player Profile / Account — same auth/wallet-independence model
   // TopBar.jsx's desktop ProfileMenu uses (see lib/profileState.js),
   // computed here too since the mobile account section (below, in
   // mobileMenu) needs it for its own item list. `devMock.authStatus` reads
-  // as "default" outside dev (see devMock.js), so `profileVariant` always
-  // falls back to deriving from the real `wallet.isConnected` in
-  // production — no separate auth system, per this app's existing
-  // architecture (see devMock.js's own note on this).
-  const authStatus = import.meta.env.DEV ? devMock.authStatus : "default";
+  // as "default" wherever `DEV_PANEL_ENABLED` is off (see devMock.js), so
+  // `profileVariant` falls back to deriving from the real
+  // `wallet.isConnected` there — no separate auth system, per this app's
+  // existing architecture (see devMock.js's own note on this).
+  const authStatus = DEV_PANEL_ENABLED ? devMock.authStatus : "default";
   const profileVariant = getProfileVariant({ authStatus, isConnected: devWallet.isConnected });
   // Mirrors TopBar.jsx's identical handleSignOut — see lib/profileState.js's
   // getSignOutAction for why this never disconnects the real wallet just to
@@ -502,7 +511,7 @@ export default function App() {
   // unless current product logic explicitly disconnects it").
   const signOut = () => {
     setMobileMenuOpen(false);
-    if (import.meta.env.DEV && getSignOutAction(authStatus) === "reset-auth-mock") {
+    if (DEV_PANEL_ENABLED && getSignOutAction(authStatus) === "reset-auth-mock") {
       setDevMockState({ authStatus: "logged-out" });
     } else {
       wallet.disconnect();
@@ -645,15 +654,12 @@ export default function App() {
     lastFavToastRef.current = toast[type](title, opts);
   };
   const toggleFav = (game) => {
-    // Session-expired is dev-only (see profileState.js — authStatus is
-    // hardcoded "default" outside dev, so profileVariant can never actually
-    // equal SESSION_EXPIRED in production); the literal `import.meta.env.DEV
-    // &&` here is what actually keeps this branch (and its string) out of
-    // the production bundle, not the variant check alone (see DEV-ONLY
-    // REQUIREMENT — same fix as every other session-expired branch in this
-    // file). Nothing is mutated: the real `favs` value is untouched, so the
-    // visible favorite state is preserved rather than silently discarded.
-    if (import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED) {
+    // Session-expired only ever comes from the mock panel (see
+    // profileState.js), gated on `DEV_PANEL_ENABLED` — same guard as every
+    // other session-expired branch in this file. Nothing is mutated: the
+    // real `favs` value is untouched, so the visible favorite state is
+    // preserved rather than silently discarded.
+    if (DEV_PANEL_ENABLED && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED) {
       showFavoriteToast("warning", "Log in again to update Favorites", { action: { label: "Log in again", onClick: openFunds } });
       return;
     }
@@ -834,21 +840,21 @@ export default function App() {
   // Support/Responsible Gaming are always reachable regardless of variant
   // (see RESPONSIBLE GAMING: "must be easy to find... near Support"), never
   // buried behind auth state.
-  // `profileVariant === SESSION_EXPIRED` can only be true in dev (see
-  // profileState.js's getProfileVariant — the session-expired mock has no
-  // real-world equivalent), so this leads with the build-time
-  // `import.meta.env.DEV` constant, not just the runtime variant check —
-  // same fix as ProfileMenu.jsx's identical branch (see DEV-ONLY
-  // REQUIREMENT).
+  // `profileVariant === SESSION_EXPIRED` only ever comes from the mock
+  // panel (see profileState.js's getProfileVariant), so this leads with
+  // `DEV_PANEL_ENABLED` — same pattern as ProfileMenu.jsx's identical
+  // branch.
   const accountItems =
-    import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED
+    DEV_PANEL_ENABLED && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED
       ? [
           { id: "account-reconnect", label: "Log in again", icon: LogIn, action: openFunds },
+          { id: "account-settings", label: "Account", icon: Settings, action: openAccount },
           { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
           { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
         ]
       : profileVariant === PROFILE_VARIANT.LOGGED_IN
         ? [
+            { id: "account-settings", label: "Account", icon: Settings, action: openAccount },
             { id: "account-wallet", label: devWallet.isConnected ? "Wallet" : "Connect wallet", icon: Wallet, action: openFunds },
             { id: "account-activity", label: "Activity", icon: ReceiptText, action: openHistory },
             { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
@@ -856,7 +862,12 @@ export default function App() {
             { id: "account-signout", label: "Sign out", icon: LogOut, action: signOut },
           ]
         : [
+            // Account stays reachable even logged-out (see LOGGED-OUT
+            // ACCOUNT STATE: "Account destination should present sign-in
+            // entry") — AccountDialog's own LoggedOutBody is what actually
+            // renders, matching ProfileMenu.jsx's identical logged-out row.
             { id: "account-connect", label: "Connect wallet", icon: Wallet, action: openFunds },
+            { id: "account-settings", label: "Account", icon: Settings, action: openAccount },
             { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
             { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
           ];
@@ -890,6 +901,7 @@ export default function App() {
       <TopBar
         onBurger={toggleSidebar}
         burgerLabel={sidebarLabel}
+        onAccount={openAccount}
         onManageWallet={openFunds}
         onFund={openFunds}
         onActivity={openHistory}
@@ -1030,7 +1042,7 @@ export default function App() {
               key={`${launchedGame.favId}:${launch.state.attempt}`}
               game={launchedGame}
               onReady={
-                import.meta.env.DEV && devMock.gameStatus === "loading"
+                DEV_PANEL_ENABLED && devMock.gameStatus === "loading"
                   ? undefined
                   : () => launch.markReady(launchedGame.favId)
               }
@@ -1058,6 +1070,18 @@ export default function App() {
           if (game) launchGame(game, "receipt");
         }}
         onViewGameInfo={(gameId) => openGameInfo(gameId, "receipt")}
+      />
+      <AccountDialog
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        variant={profileVariant}
+        address={devWallet.address}
+        isConnected={devWallet.isConnected}
+        authStatus={authStatus}
+        onSignOut={signOut}
+        onManageWallet={openFunds}
+        onResponsibleGambling={openRg}
+        onSupport={openSupport}
       />
       <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} />
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />

@@ -9,6 +9,7 @@ import { track } from "@/lib/telemetry";
 import { CASINO_CHAIN_ID } from "@shared/chains";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useDevMockState } from "@/lib/devMock";
+import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { isArenaAllowed } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
 
@@ -291,12 +292,13 @@ export function ScopedSearch({
   };
 
   // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
-  // "full" (unrestricted) in production, same no-op-outside-dev guarantee
-  // as every other devMock-driven override in this app. Casino is always
-  // selectable (see lib/platformScope.js's isArenaAllowed); Predictions/
-  // Sports are only disabled here while MVP-scoped.
+  // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
+  // off, same guarantee as every other devMock-driven override in this
+  // app. Casino is always selectable (see lib/platformScope.js's
+  // isArenaAllowed); Predictions/Sports are only disabled here while
+  // MVP-scoped.
   const mock = useDevMockState();
-  const platformScope = import.meta.env.DEV ? mock.platformScope : "full";
+  const platformScope = DEV_PANEL_ENABLED ? mock.platformScope : "full";
   // Mirrors App.jsx's "switching to MVP while inside a disabled arena
   // immediately redirects" effect: if scope somehow points at a
   // now-disallowed arena (e.g. Platform Scope flips to MVP live while
@@ -379,7 +381,7 @@ export function ScopedSearch({
                     onValueChange={(v) => { setScope(v); track("casino_search_scope_changed", { searchScope: v }); }}
                   >
                     {SEARCH_SCOPES.map((s) => {
-                      const scopeDisabled = import.meta.env.DEV && !isArenaAllowed(s.id, platformScope);
+                      const scopeDisabled = DEV_PANEL_ENABLED && !isArenaAllowed(s.id, platformScope);
                       const item = (
                         <DropdownMenuPrimitive.RadioItem
                           key={s.id}
@@ -397,7 +399,7 @@ export function ScopedSearch({
                       // soon", hover/focus-only (never tap-triggered), no
                       // layout shift pattern as the main arena nav (see
                       // Sidebar.jsx).
-                      return import.meta.env.DEV && scopeDisabled ? (
+                      return DEV_PANEL_ENABLED && scopeDisabled ? (
                         <Tooltip key={s.id}>
                           <TooltipTrigger asChild>{item}</TooltipTrigger>
                           <TooltipContent side="right">Coming soon</TooltipContent>

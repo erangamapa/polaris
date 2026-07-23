@@ -4,17 +4,17 @@
 // (wagmi/viem RPC calls, WalletConnect, Reown) passes straight through
 // untouched, so the real wallet connection can never be broken by this.
 //
-// Installed exactly once, and only in dev (see installDevFetchInterceptor's
-// own guard) — in a production build this module's install function is
-// never called (see App.jsx), and even if it somehow were, the internal
-// `import.meta.env.DEV` check makes it a no-op, so window.fetch is never
-// touched in production either way.
+// Installed exactly once, gated on `DEV_PANEL_ENABLED` (devPanelFlag.js) —
+// currently `true` in every build including production, so this runs on
+// playtribet.vercel.app too. If the flag is ever switched off, this no-ops
+// so window.fetch is never touched.
 import { getDevMockState } from "./devMock";
+import { DEV_PANEL_ENABLED } from "./devPanelFlag";
 
 let installed = false;
 
 export function installDevFetchInterceptor() {
-  if (!import.meta.env.DEV || installed || typeof window === "undefined") return;
+  if (!DEV_PANEL_ENABLED || installed || typeof window === "undefined") return;
   installed = true;
 
   const originalFetch = window.fetch.bind(window);

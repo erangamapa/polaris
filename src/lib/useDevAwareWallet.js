@@ -1,11 +1,12 @@
-// Dev-only decorator around the real useWallet() — never a second wallet
-// store, never a fork of the real connection logic (see DO NOT CHANGE:
-// "wallet rewrite"). In production this is exactly `useWallet()` with zero
-// extra work; in dev, when the Developer Panel has set a field away from
-// "default", the matching real value is overridden for display purposes
-// only — nothing here touches the actual wagmi/viem connection, so the
-// real wallet flow (Connect, disconnect, chain switching) keeps working
-// underneath the mock exactly as before.
+// Decorator around the real useWallet() — never a second wallet store,
+// never a fork of the real connection logic (see DO NOT CHANGE: "wallet
+// rewrite"). When `DEV_PANEL_ENABLED` (devPanelFlag.js) is off this is
+// exactly `useWallet()` with zero extra work; when it's on (currently
+// every build, including production), and the Developer Panel has set a
+// field away from "default", the matching real value is overridden for
+// display purposes only — nothing here touches the actual wagmi/viem
+// connection, so the real wallet flow (Connect, disconnect, chain
+// switching) keeps working underneath the mock exactly as before.
 //
 // Also where the auth/wallet separation this task requires actually
 // surfaces in the UI (see devMock.js's architecture note for why): a real
@@ -15,6 +16,7 @@
 // disconnected/connected states it already had.
 import { useWallet } from "@/web3/useWallet";
 import { useDevMockState } from "./devMock";
+import { DEV_PANEL_ENABLED } from "./devPanelFlag";
 
 const MOCK_ADDRESS = "0xDEV0000000000000000000000000000000DEV0";
 
@@ -37,13 +39,13 @@ const BALANCE_PRESET_VALUES = {
 
 export function useDevAwareWallet() {
   const real = useWallet();
-  if (!import.meta.env.DEV) return { ...real, loggedInNoWallet: false, sessionExpired: false, authStatus: "default" };
+  if (!DEV_PANEL_ENABLED) return { ...real, loggedInNoWallet: false, sessionExpired: false, authStatus: "default" };
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- import.meta.env.DEV
-  // is a build-time constant; this branch never changes within a running
-  // build (dev builds always take it, prod builds never reach it — the
-  // early return above already dead-code-eliminates this whole rest of the
-  // function in production).
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- DEV_PANEL_ENABLED
+  // is a plain module-level constant; this branch never changes within a
+  // running build (every build currently takes it, since the flag is
+  // `true` everywhere — flipping it off would make the early return above
+  // dead-code-eliminate this whole rest of the function instead).
   const mock = useDevMockState();
 
   let view = { ...real, wrongNetworkOverride: null };

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useDevMockState } from "@/lib/devMock";
+import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { isArenaAllowed } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
 
@@ -92,13 +93,10 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect, platfor
   return (
     <div className="flex h-full flex-col items-center gap-1.5 overflow-y-auto py-3">
       {PRODUCTS.map((p) => {
-        // See DEV-ONLY REQUIREMENT: `import.meta.env.DEV` leads the
-        // expression (a build-time constant Vite inlines as literal `false`
-        // in production) so the whole "disabled"/"Coming soon" branch below
-        // is dead-code-eliminated from the production bundle, not just
-        // runtime-inert — same fix as TopBar.jsx's sessionExpired/
-        // loggedInNoWallet branches.
-        const disabled = import.meta.env.DEV && !isArenaAllowed(p.id, platformScope);
+        // Gated on `DEV_PANEL_ENABLED` (devPanelFlag.js) — currently `true`
+        // in every build including production, same as every other
+        // devMock-driven override in this app.
+        const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
         return (
           <RailIcon
             key={p.id}
@@ -110,7 +108,7 @@ function CollapsedRail({ product, setProduct, items, selected, onSelect, platfor
             ariaCurrent={product === p.id ? "page" : undefined}
             onClick={() => setProduct(p.id)}
             disabled={disabled}
-            disabledLabel={import.meta.env.DEV ? "Coming soon" : undefined}
+            disabledLabel={DEV_PANEL_ENABLED ? "Coming soon" : undefined}
           />
         );
       })}
@@ -159,8 +157,8 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
         {PRODUCTS.map((p) => {
           const Icon = p.icon;
           const active = product === p.id;
-          // See CollapsedRail's identical comment — DEV-ONLY REQUIREMENT.
-          const disabled = import.meta.env.DEV && !isArenaAllowed(p.id, platformScope);
+          // See CollapsedRail's identical comment.
+          const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
 
           // Identical box for every state (active/inactive/disabled) — no
           // extra row, no background/border override for disabled — so
@@ -175,7 +173,7 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
               onClick={disabled ? undefined : () => setProduct(p.id)}
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
-              aria-label={import.meta.env.DEV && disabled ? `${p.label}, coming soon` : undefined}
+              aria-label={DEV_PANEL_ENABLED && disabled ? `${p.label}, coming soon` : undefined}
               style={!disabled && active ? ACCENTS[p.id].tab : undefined}
               className={cn(
                 // Fixed height + no-wrap so the active/bold state can never change the row height (no layout jump).
@@ -193,7 +191,7 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
           // no tooltip added. Radix Tooltip is hover/focus-driven, never
           // tap-triggered, so this is silent on touch by construction (see
           // MOBILE: "do not show a tooltip on touch devices").
-          if (import.meta.env.DEV && disabled) {
+          if (DEV_PANEL_ENABLED && disabled) {
             return (
               <Tooltip key={p.id}>
                 <TooltipTrigger asChild>{tile}</TooltipTrigger>
@@ -266,10 +264,10 @@ function ExpandedRail({ product, setProduct, items, selected, onSelect, platform
 export function Sidebar({ railMode, product, setProduct, items, selected, onSelect }) {
   const expanded = railMode === "expanded";
   // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
-  // "full" (unrestricted) in production, same no-op-outside-dev guarantee
-  // as every other devMock-driven override in this app.
+  // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
+  // off, same guarantee as every other devMock-driven override in this app.
   const mock = useDevMockState();
-  const platformScope = import.meta.env.DEV ? mock.platformScope : "full";
+  const platformScope = DEV_PANEL_ENABLED ? mock.platformScope : "full";
 
   // Focus retention: collapsed <-> expanded swaps the entire rail's DOM
   // (different components), which would otherwise drop focus to <body>.

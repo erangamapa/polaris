@@ -7,6 +7,7 @@ import { PROVIDER_GAMES } from "./ProviderGame";
 import { EmptyState } from "@/components/ui/empty-state";
 import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
+import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS, scrollToRail } from "@/lib/casinoCategories";
 import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from "@/lib/casinoLobbyScroll";
 
@@ -469,14 +470,10 @@ function RailEmptyCard({ icon: Icon, title, description, actionLabel, actionAria
 // thing that differs between the two call sites is presentation (a small
 // rail-sized card vs a full-page centered EmptyState), never the message.
 export function recentlyPlayedEmptyCopy(profileVariant) {
-  // Session-expired has no real-world equivalent (see profileState.js —
-  // authStatus is hardcoded "default" outside dev, so profileVariant can
-  // never actually equal SESSION_EXPIRED in production). The literal
-  // `import.meta.env.DEV &&` here is still what lets Rollup drop this copy
-  // from the production bundle — profileVariant alone provably never taking
-  // that value doesn't reliably tree-shake it (same guard ProfileMenu.jsx
-  // uses for its own session-expired block).
-  const isExpired = import.meta.env.DEV && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED;
+  // Session-expired has no real-world equivalent outside the mock panel
+  // (see profileState.js) — gated on `DEV_PANEL_ENABLED` (devPanelFlag.js),
+  // same guard ProfileMenu.jsx uses for its own session-expired block.
+  const isExpired = DEV_PANEL_ENABLED && profileVariant === PROFILE_VARIANT.SESSION_EXPIRED;
   const isLoggedOut = profileVariant === PROFILE_VARIANT.LOGGED_OUT;
 
   if (isExpired) {

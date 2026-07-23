@@ -12,6 +12,7 @@ import { getTopBarMode, HEADER_CENTER_VARIANT, getHeaderCenterVariant } from "@/
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "@/lib/profileState";
 import { setDevMockState } from "@/lib/devMock";
 import { useDevPanelLogoTap } from "@/lib/useDevPanelLogoTap";
+import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 
 // Authenticated desktop top bar — a stable three-zone grid (see PRIMARY
 // GOAL): [left: menu + logo] [center: Balance+Wallet HUD] [right: Activity +
@@ -60,7 +61,7 @@ import { useDevPanelLogoTap } from "@/lib/useDevPanelLogoTap";
 // utility section instead (see MobileFullScreenMenu) — reusing that
 // existing full-screen surface rather than adding a second mobile account
 // sheet (see OVERLAY BEHAVIOR: "do not stack it with the mobile menu").
-export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, onFund, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
+export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onManageWallet, onFund, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
   const wallet = useDevAwareWallet();
   const {
     isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, sportsBalance, sportsSymbol, disconnect,
@@ -95,7 +96,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
   // layer honestly"). Never resets unrelated dev-panel state (balance
   // preset, Platform Scope, etc.) — only the one `authStatus` field.
   const handleSignOut = () => {
-    if (import.meta.env.DEV && getSignOutAction(authStatus) === "reset-auth-mock") {
+    if (DEV_PANEL_ENABLED && getSignOutAction(authStatus) === "reset-auth-mock") {
       setDevMockState({ authStatus: "logged-out" });
     } else {
       disconnect();
@@ -132,19 +133,15 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
           this task (see DO NOT CHANGE: "centered balance + Wallet HUD"). */}
       <div className="hidden min-w-0 items-center justify-center md:flex md:justify-self-center">
         {centerVariant === HEADER_CENTER_VARIANT.SESSION_EXPIRED ? (
-          // DEV-ONLY state (Developer Panel -> User -> Session expired).
-          // Gated on the build-time `import.meta.env.DEV` constant, not
-          // just the runtime `sessionExpired` flag: that flag is already
-          // always false in production (see useDevAwareWallet.js), but
-          // without this the branch's JSX would still ship as dead code in
-          // the production bundle — Rollup can only eliminate a branch
-          // whose condition folds to a compile-time constant, not one that
-          // merely evaluates false at runtime (see DEV-ONLY REQUIREMENT).
-          // A deliberately DIFFERENT shape than the balance HUD, not a
-          // variant of it — auth and wallet are independent (see WALLET
-          // STATES: "do not collapse auth and wallet into one state"), so
-          // this never pretends to be a balance control.
-          import.meta.env.DEV && (
+          // Developer-Panel-only state (Developer Panel -> User -> Session
+          // expired). Gated on `DEV_PANEL_ENABLED` (devPanelFlag.js),
+          // currently `true` in every build including production, so this
+          // is reachable there too. A deliberately DIFFERENT shape than the
+          // balance HUD, not a variant of it — auth and wallet are
+          // independent (see WALLET STATES: "do not collapse auth and
+          // wallet into one state"), so this never pretends to be a
+          // balance control.
+          DEV_PANEL_ENABLED && (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--warning)]/40 px-3 text-sm font-semibold text-[var(--warning)]">
                 <ShieldAlert className="size-4 shrink-0" aria-hidden="true" /> Session expired
@@ -253,6 +250,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onManageWallet, 
             variant={profileVariant}
             address={address}
             isConnected={isConnected}
+            onAccount={onAccount}
             onManageWallet={onManageWallet}
             onActivity={onActivity}
             onResponsibleGambling={onResponsibleGambling}

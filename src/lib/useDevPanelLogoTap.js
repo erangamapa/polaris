@@ -2,11 +2,12 @@
 // touch devices, where Shift+D isn't practical — replaces the earlier
 // long-press gesture as the app's one non-visible mobile entry point (see
 // DO NOT ADD: "visible mobile dev trigger" — a hidden gesture, not an
-// on-screen control). No-ops entirely in production, same guarantee as
-// every other devMock-driven surface (see lib/devMock.js).
+// on-screen control). No-ops entirely when `DEV_PANEL_ENABLED` is off, same
+// guarantee as every other devMock-driven surface (see lib/devMock.js).
 import { useCallback, useRef } from "react";
 import { toggleDevPanel, getDevMockState } from "./devMock";
 import { toast } from "./toast";
+import { DEV_PANEL_ENABLED } from "./devPanelFlag";
 
 const TAP_WINDOW_MS = 1500;
 const REQUIRED_TAPS = 3;
@@ -47,7 +48,7 @@ export function useDevPanelLogoTap() {
   // (currently none — it's a static brand mark) completely untouched: 1 or
   // 2 taps just update the in-memory counter and produce no visible effect.
   return useCallback(() => {
-    if (!import.meta.env.DEV) return;
+    if (!DEV_PANEL_ENABLED) return;
     const next = nextLogoTapState(stateRef.current, Date.now());
     stateRef.current = next;
     if (next.ignored || !next.completed) return;

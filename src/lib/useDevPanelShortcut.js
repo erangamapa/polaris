@@ -1,11 +1,11 @@
-// Shift+D global shortcut for the Developer Panel — dev-only. Registers
-// nothing at all in production: the whole hook body short-circuits before
-// adding any listener, so there is no Shift+D interception, no keydown
-// handler, and (since `import.meta.env.DEV` is a build-time constant Vite
-// inlines and dead-code-eliminates) none of this even ships in the
-// production bundle.
+// Shift+D global shortcut for the Developer Panel. Registers nothing at
+// all when `DEV_PANEL_ENABLED` (devPanelFlag.js) is off: the whole hook
+// body short-circuits before adding any listener. Currently the flag is
+// `true` in every build including production, so this listener is live on
+// playtribet.vercel.app too — see devPanelFlag.js for the toggle.
 import { useEffect } from "react";
 import { toggleDevPanel, closeDevPanel, getDevMockState } from "./devMock";
+import { DEV_PANEL_ENABLED } from "./devPanelFlag";
 
 const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
@@ -39,7 +39,7 @@ export function shouldToggleDevPanel({ code, shiftKey, ctrlKey, metaKey, altKey,
 
 export function useDevPanelShortcut() {
   useEffect(() => {
-    if (!import.meta.env.DEV) return undefined;
+    if (!DEV_PANEL_ENABLED) return undefined;
 
     const onKeyDown = (e) => {
       // Escape closes whenever the panel is open, regardless of focus

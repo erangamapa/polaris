@@ -1,17 +1,16 @@
-// Dev-only mock-state store for the Developer Panel (Shift+D). A tiny
-// module-level external store (React's built-in useSyncExternalStore, no
-// new state library) rather than a Context Provider — this state needs to
-// be read from many unrelated surfaces (TopBar, CasinoLobby, game launch,
-// activity) without threading a Provider through App.jsx's tree, and it's
-// a genuinely global, singleton, dev-only concern.
+// Mock-state store for the Developer Panel (Shift+D). A tiny module-level
+// external store (React's built-in useSyncExternalStore, no new state
+// library) rather than a Context Provider — this state needs to be read
+// from many unrelated surfaces (TopBar, CasinoLobby, game launch, activity)
+// without threading a Provider through App.jsx's tree, and it's a genuinely
+// global, singleton concern.
 //
-// Every mutator below no-ops outside dev (`import.meta.env.DEV` is a
-// build-time constant Vite inlines and dead-code-eliminates — see
-// DEV-ONLY REQUIREMENT), so even if some file accidentally imported this
-// in a path that reached production, it could never actually change
-// anything there. The panel component itself is also never rendered in
-// production (see DevPanel.jsx) — this is the second, independent layer of
-// exclusion, not the only one.
+// Every mutator below no-ops when `DEV_PANEL_ENABLED` (devPanelFlag.js) is
+// off, so even if some file accidentally imported this in a path that
+// reached a build with the flag off, it could never actually change
+// anything there. Product decision: the flag is currently `true` in every
+// build, including production, so the panel and its mocks ARE live on
+// playtribet.vercel.app — see devPanelFlag.js for the toggle.
 //
 // IMPORTANT ARCHITECTURE NOTE — auth vs wallet coupling in the real app:
 // today there is no independent "logged in" concept anywhere in Tribet;
@@ -27,6 +26,7 @@
 // backed by any real auth system. This is the "clear mock-layer
 // distinction" the task asks for in place of a real auth rewrite.
 import { useSyncExternalStore } from "react";
+import { DEV_PANEL_ENABLED } from "./devPanelFlag";
 
 const STORAGE_KEY = "tribet-dev-panel-state";
 const STORAGE_VERSION = 2;
@@ -34,15 +34,18 @@ const STORAGE_VERSION = 2;
 // "default" means "don't override — use the real app's own state." Reset
 // is just "every field back to its default." `platformScope` is the one
 // exception: it isn't a "defer to real state" mock, it's a direct two-value
-// toggle (there's no independent real-app concept to defer to), so its
-// default is the literal starting value "mvp", not "default".
+// toggle (there's no independent real-app concept to defer to). Its resting
+// value is "full" (unrestricted) — matching what every real user actually
+// sees — not "mvp", since `DEV_PANEL_ENABLED` now leaves this default live
+// in production too; someone opening the panel can still switch it to
+// "mvp" to preview the MVP-scoped nav.
 export const DEFAULT_DEV_MOCK_STATE = {
   version: STORAGE_VERSION,
   panelOpen: false,
   authStatus: "default", // default | logged-out | logged-in | session-expired
   walletStatus: "default", // default | disconnected | connecting | connected | wrong-network | error
   balancePreset: "default", // default | zero | normal | large | tiny | loading | syncing | stale | error
-  platformScope: "mvp", // mvp | full
+  platformScope: "full", // mvp | full
   favoritesPreset: "default", // default | empty | populated
   recentlyPlayedPreset: "default", // default | empty | populated
   gameStatus: "default", // default | loading | provider-error | maintenance | region-restricted | insufficient-balance
@@ -52,7 +55,7 @@ export const DEFAULT_DEV_MOCK_STATE = {
 };
 
 function safeLoad() {
-  if (!import.meta.env.DEV || typeof window === "undefined") return DEFAULT_DEV_MOCK_STATE;
+  if (!DEV_PANEL_ENABLED || typeof window === "undefined") return DEFAULT_DEV_MOCK_STATE;
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_DEV_MOCK_STATE;
@@ -71,7 +74,7 @@ let state = safeLoad();
 const listeners = new Set();
 
 function persist() {
-  if (!import.meta.env.DEV || typeof window === "undefined") return;
+  if (!DEV_PANEL_ENABLED || typeof window === "undefined") return;
   try { window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage unavailable — mock still works in-memory */ }
 }
 
@@ -85,26 +88,26 @@ export function subscribeDevMockState(cb) {
 }
 
 export function setDevMockState(patch) {
-  if (!import.meta.env.DEV) return;
+  if (!DEV_PANEL_ENABLED) return;
   state = { ...state, ...patch };
   persist();
   notify();
 }
 
 export function resetDevMockState() {
-  if (!import.meta.env.DEV) return;
+  if (!DEV_PANEL_ENABLED) return;
   state = { ...DEFAULT_DEV_MOCK_STATE, panelOpen: state.panelOpen };
   try { window.sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
   notify();
 }
 
 export function toggleDevPanel() {
-  if (!import.meta.env.DEV) return;
+  if (!DEV_PANEL_ENABLED) return;
   setDevMockState({ panelOpen: !state.panelOpen });
 }
 
 export function closeDevPanel() {
-  if (!import.meta.env.DEV) return;
+  if (!DEV_PANEL_ENABLED) return;
   if (state.panelOpen) setDevMockState({ panelOpen: false });
 }
 

@@ -1,27 +1,28 @@
 import { useRef } from "react";
-import { User, ChevronDown, Wallet as WalletIcon, ShieldCheck, ShieldAlert, LifeBuoy, LogOut, LogIn, ReceiptText } from "lucide-react";
+import { User, ChevronDown, Wallet as WalletIcon, ShieldCheck, ShieldAlert, LifeBuoy, LogOut, LogIn, ReceiptText, Settings } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 import { shortAddress } from "@/web3/useWallet";
 import { PROFILE_VARIANT } from "@/lib/profileState";
+import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 
 // The one account entry point in the global shell (see PRIMARY GOAL) — a
 // single component rendering three distinct bodies by `variant` rather than
 // three separately-rendered `<ProfileMenu>` instances (TopBar.jsx used to
 // pick between three near-duplicate call sites; see lib/profileState.js's
 // getProfileVariant for how `variant` itself is decided). Only ever links to
-// destinations that genuinely exist: Wallet (FundsDialog), Activity
-// (BetHistoryDialog), Responsible Gaming and Support (both dialogs, see
-// ResponsibleGamblingDialog/SupportDialog) and Sign out. No Settings,
-// Security, or VIP row — none of those have a real surface anywhere in this
-// app yet, so per PROFILE STATES/LOGGED-IN MENU ("omit destinations that do
-// not exist", "do not create dead-end menu items") they're left out
-// entirely rather than faked; the architecture (one menu, one row per real
-// destination) is exactly how they'd slot in once they exist.
+// destinations that genuinely exist: Account (AccountDialog.jsx — see the
+// ACCOUNT/SECURITY/SESSION task, which built it), Wallet (FundsDialog),
+// Activity (BetHistoryDialog), Responsible Gaming and Support (both
+// dialogs, see ResponsibleGamblingDialog/SupportDialog) and Sign out. Real
+// Settings/Security controls now DO have a home (Account), so this menu
+// links there rather than duplicating any of its content inline (see
+// PROFILE MENU INTEGRATION: "do not put full settings controls directly
+// inside the popover").
 //
 // `open`/`onOpenChange` are controlled by TopBar (one shared `activePopover`
 // state — see OVERLAY OWNERSHIP), not owned locally.
-export function ProfileMenu({ open, onOpenChange, variant, address, isConnected, onManageWallet, onActivity, onResponsibleGambling, onSupport, onSignOut }) {
+export function ProfileMenu({ open, onOpenChange, variant, address, isConnected, onAccount, onManageWallet, onActivity, onResponsibleGambling, onSupport, onSignOut }) {
   const triggerRef = useRef(null);
   const isLoggedIn = variant === PROFILE_VARIANT.LOGGED_IN;
   const isExpired = variant === PROFILE_VARIANT.SESSION_EXPIRED;
@@ -30,13 +31,11 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
   // (see ACCESSIBILITY) — it changes with `variant`, so a screen reader
   // reading the control always reports the state actually showing, not a
   // static "Profile" label regardless of session/wallet state. `isExpired`
-  // can only be true in dev (see profileState.js's getProfileVariant — the
-  // session-expired mock has no real-world equivalent), so this leads with
-  // the build-time `import.meta.env.DEV` constant: Rollup can only
-  // eliminate a branch whose condition folds to a compile-time constant,
-  // not one that merely evaluates false at runtime (see DEV-ONLY
-  // REQUIREMENT — same fix as TopBar.jsx's session-expired HUD block).
-  const triggerLabel = import.meta.env.DEV && isExpired
+  // only ever comes from the mock panel (see profileState.js's
+  // getProfileVariant — session-expired has no real-world backing), so
+  // this leads with `DEV_PANEL_ENABLED` (devPanelFlag.js) — same pattern
+  // as TopBar.jsx's session-expired HUD block.
+  const triggerLabel = DEV_PANEL_ENABLED && isExpired
     ? "Account, session expired"
     : isLoggedIn
       ? `Account, ${address ? shortAddress(address) : "signed in"}`
@@ -75,7 +74,7 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
           onCloseAutoFocus={(e) => { e.preventDefault(); triggerRef.current?.focus(); }}
           className="z-[var(--z-header-popover)] w-60 rounded-lg border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
-          {import.meta.env.DEV && isExpired ? (
+          {DEV_PANEL_ENABLED && isExpired ? (
             <>
               {/* A deliberately different shape than the logged-in summary —
                   never exposes the account identifier here (see SESSION
@@ -87,6 +86,7 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
               <p className="px-2 pb-1.5 text-xs text-muted-foreground">Log in again to access your account.</p>
               <DropdownMenuPrimitive.Separator className="my-1 border-t" />
               <MenuItem icon={LogIn} label="Log in again" onSelect={onManageWallet} testId="profile-reconnect" />
+              <MenuItem icon={Settings} label="Account" onSelect={onAccount} testId="profile-account" />
               <MenuItem icon={ShieldCheck} label="Responsible Gaming" onSelect={onResponsibleGambling} />
               <MenuItem icon={LifeBuoy} label="Support" onSelect={onSupport} />
             </>
@@ -106,6 +106,7 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
                 </div>
               </div>
               <DropdownMenuPrimitive.Separator className="my-1 border-t" />
+              <MenuItem icon={Settings} label="Account" onSelect={onAccount} testId="profile-account" />
               <MenuItem icon={WalletIcon} label={isConnected ? "Wallet" : "Connect wallet"} onSelect={onManageWallet} />
               <MenuItem icon={ReceiptText} label="Activity" onSelect={onActivity} />
               <MenuItem icon={ShieldCheck} label="Responsible Gaming" onSelect={onResponsibleGambling} />
@@ -125,6 +126,7 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
               <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">Not signed in</div>
               <DropdownMenuPrimitive.Separator className="my-1 border-t" />
               <MenuItem icon={WalletIcon} label="Connect wallet" onSelect={onManageWallet} testId="profile-connect" />
+              <MenuItem icon={Settings} label="Account" onSelect={onAccount} testId="profile-account" />
               <MenuItem icon={ShieldCheck} label="Responsible Gaming" onSelect={onResponsibleGambling} />
               <MenuItem icon={LifeBuoy} label="Support" onSelect={onSupport} />
             </>
