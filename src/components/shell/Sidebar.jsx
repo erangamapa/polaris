@@ -7,18 +7,7 @@ import { useDevMockState } from "@/lib/devMock";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { isArenaAllowed } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
-import {
-  RAIL_PHASE,
-  initialRailPhase,
-  onDesiredChange,
-  onCompactFadeEnd,
-  onExpandedFadeEnd,
-  onWidthTransitionEnd,
-  railPhaseVisuals,
-  isCompactFading,
-  isExpandedFading,
-  isWidthInMotion,
-} from "@/lib/sidebarTransition";
+import { SIDEBAR_SETTLE_MS, railVisuals } from "@/lib/sidebarTransition";
 
 // Icons are desktop-rail-specific presentation, not "availability" data —
 // see lib/arenas.js for why id/label live there instead of being retyped here.
@@ -66,68 +55,39 @@ const ACCENTS = {
 // when timing happens to line up).
 const SIDEBAR_COLLAPSED_WIDTH_PX = 60;
 const SIDEBAR_EXPANDED_WIDTH_PX = 220;
-
-// Durations reused unchanged from the prior passes (this is a structural/
-// sequencing fix, not a retune). COMPACT_FADE_MS/EXPANDED_FADE_MS map onto
-// the same "fast fade out, slightly slower reveal" feel as before.
-const RAIL_WIDTH_MS = 280;
-const COMPACT_FADE_OUT_MS = 100;
-const COMPACT_FADE_IN_MS = 140;
-const EXPANDED_FADE_IN_MS = 140;
-const EXPANDED_FADE_OUT_MS = 100;
-const WIDTH_FALLBACK_SLACK_MS = 150;
+const SIDEBAR_SHELL_DURATION_MS = 145;
+const SIDEBAR_SHELL_START_DELAY_MS = 24;
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-// The phase-machine wiring for one <nav> rail. Pure phase logic lives in
-// lib/sidebarTransition.js (unit-tested there, 37 cases); this hook is
-// just the React glue — one `useEffect` per real event source (a fresh
-// desired target, the compact fade's own timer, the expanded fade's own
-// timer, and the width's real `transitionend` + a fallback timer), each
-// owning and cleaning up its own timer/listener. Rapid toggling and
-// mid-transition reversal need no special-casing here: every effect below
-// tears down its previous timer (React's normal cleanup-on-dependency-
-// change) before a new one runs, so a stale timer can never fire into a
-// phase this hook has already left.
-function useRailTransition(desiredExpanded) {
-  const [phase, setPhase] = useState(() => initialRailPhase(desiredExpanded));
-
+// SOFT OVERLAPPING FADE — replaces an earlier discrete phase machine that
+// waited for each step (outgoing fade, then shell width, then incoming
+// fade) to fully finish before starting the next. That produced a
+// noticeably long blank pause. This hook just tracks whether the whole
+// sequence has had enough time to visually settle — the actual outgoing-
+// fade/shell-width/incoming-fade choreography is pure CSS (delay+duration
+// values from lib/sidebarTransition.js, applied directly in this file's
+// JSX below), left to run concurrently rather than JS-timer-chained.
+// `settled` only gates interactivity/tooltips/AT-exposure, never the
+// visual animation itself — so reversing direction mid-transition is just
+// "the CSS target flipped, the browser reverses it", no special handling
+// needed, and rapid toggling can't get anything stuck: this is the ONLY
+// timer in the whole component, and React's effect cleanup on every
+// `desiredExpanded` change cancels whichever one was pending before.
+function useSidebarSettled(desiredExpanded) {
+  const [settled, setSettled] = useState(true);
   useEffect(() => {
     if (prefersReducedMotion()) {
-      setPhase(desiredExpanded ? RAIL_PHASE.EXPANDED : RAIL_PHASE.COLLAPSED);
-      return;
+      setSettled(true);
+      return undefined;
     }
-    setPhase((p) => onDesiredChange(p, desiredExpanded));
+    setSettled(false);
+    const t = setTimeout(() => setSettled(true), SIDEBAR_SETTLE_MS);
+    return () => clearTimeout(t);
   }, [desiredExpanded]);
-
-  useEffect(() => {
-    if (!isCompactFading(phase)) return undefined;
-    const duration = phase === RAIL_PHASE.COMPACT_HIDING ? COMPACT_FADE_OUT_MS : COMPACT_FADE_IN_MS;
-    const t = setTimeout(() => setPhase((p) => onCompactFadeEnd(p, desiredExpanded)), duration);
-    return () => clearTimeout(t);
-  }, [phase, desiredExpanded]);
-
-  useEffect(() => {
-    if (!isExpandedFading(phase)) return undefined;
-    const duration = phase === RAIL_PHASE.EXPANDED_REVEALING ? EXPANDED_FADE_IN_MS : EXPANDED_FADE_OUT_MS;
-    const t = setTimeout(() => setPhase((p) => onExpandedFadeEnd(p, desiredExpanded)), duration);
-    return () => clearTimeout(t);
-  }, [phase, desiredExpanded]);
-
-  useEffect(() => {
-    if (!isWidthInMotion(phase)) return undefined;
-    const t = setTimeout(() => setPhase((p) => onWidthTransitionEnd(p, desiredExpanded)), RAIL_WIDTH_MS + WIDTH_FALLBACK_SLACK_MS);
-    return () => clearTimeout(t);
-  }, [phase, desiredExpanded]);
-
-  const onWidthEnd = (e) => {
-    if (e.propertyName !== "width") return;
-    setPhase((p) => onWidthTransitionEnd(p, desiredExpanded));
-  };
-
-  return { phase, onWidthEnd, ...railPhaseVisuals(phase) };
+  return settled;
 }
 
 function ItemIcon({ icon, className = "size-4" }) {
@@ -365,28 +325,30 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
 // per `railMode`. Below 768px this renders nothing: mobile navigation is
 // the bottom nav + MobileFullScreenMenu, untouched by this pass.
 //
-// SIDEBAR SEQUENTIAL HANDOFF — replaces an earlier crossfade design that
-// made things worse in practice: that version stacked both layers in one
-// shared CSS grid cell (so the compact layer's `items-center` centered its
-// icons within the CURRENT, growing cell width — icons visibly drifted
-// toward the centre as the shell widened) and cross-faded both layers'
-// opacity during the SAME phase window (so a brief span existed where a
-// dense expanded menu and a compact icon column were both partially
-// visible and overlapping — busier and less polished than a plain state
-// change, not a subtle blend).
+// SIDEBAR SOFT OVERLAPPING FADE — replaces two earlier designs. The first
+// (a full crossfade) stacked both layers in one shared, width-animating
+// CSS grid cell, so the compact layer's `items-center` centered its icons
+// within that CURRENT, growing width — icons visibly drifted toward the
+// centre — and cross-faded both layers' opacity during the same window,
+// so a dense expanded menu and the compact icon column were both
+// partially visible and overlapping (busy, not a subtle blend). The
+// second (strictly sequential: fade out fully, THEN resize, THEN fade in)
+// fixed both of those, but the strict full-completion waiting between
+// each step produced a noticeably long blank pause.
 //
-// This version: each layer is absolutely positioned at its OWN fixed
-// width (SIDEBAR_COLLAPSED_WIDTH_PX / SIDEBAR_EXPANDED_WIDTH_PX) — never
-// sized to the shell's current width, so nothing can ever drift — and the
-// phase machine (lib/sidebarTransition.js) makes the two layers' opacity
-// changes strictly SEQUENTIAL: compact fades out completely, THEN (only
-// once compact is fully gone) the shell width changes with neither layer
-// visible, THEN expanded fades in. See that file's own phase diagram.
+// This version keeps every structural fix from the sequential pass
+// (each layer absolutely positioned at its OWN fixed width — see
+// CompactSidebarLayer/ExpandedSidebarLayer, still true here, still what
+// makes icons immovable regardless of the shell's current width) but
+// replaces the JS-timer-chained waiting with plain concurrent CSS: the
+// outgoing fade, the shell width, and the incoming fade all start on
+// their own fixed delay (see lib/sidebarTransition.js's constants) and
+// run at the same time, coordinated only by those delay values — no
+// waiting for one to finish before starting the next.
 export function Sidebar({ railMode, product, setProduct, items, selected, onSelect }) {
   const desiredExpanded = railMode === "expanded";
-  const { phase, onWidthEnd, widthExpanded, compactOpacity, expandedOpacity, compactInteractive, expandedInteractive } = useRailTransition(desiredExpanded);
-  const compactFadeMs = phase === RAIL_PHASE.COMPACT_REVEALING ? COMPACT_FADE_IN_MS : COMPACT_FADE_OUT_MS;
-  const expandedFadeMs = phase === RAIL_PHASE.EXPANDED_REVEALING ? EXPANDED_FADE_IN_MS : EXPANDED_FADE_OUT_MS;
+  const settled = useSidebarSettled(desiredExpanded);
+  const { widthExpanded, compactOpacity, expandedOpacity, compactInteractive, expandedInteractive, compactTiming, expandedTiming } = railVisuals(desiredExpanded, settled);
 
   // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
   // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
@@ -397,29 +359,26 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
   // Focus retention across the layer swap. Both layers use ids suffixed
   // `-compact`/`-expanded` for the SAME logical destination (two elements
   // can't share one id), so this tracks the LOGICAL key (id minus suffix)
-  // continuously, and only actually refocuses once the rail has reached a
-  // real steady endpoint (COLLAPSED or EXPANDED) — refocusing any earlier
-  // would target an element that isn't interactive yet (both layers are
-  // non-interactive through every in-between phase — see
-  // compactInteractive/expandedInteractive above, each true in exactly
-  // one steady phase and false everywhere else).
-  const focusedKeyRef = useRef(null);
+  // continuously, and only actually refocuses once the whole sequence has
+  // settled — refocusing any earlier would target an element that isn't
+  // interactive yet (compactInteractive/expandedInteractive are each true
+  // only once settled, in the direction that matches).
+  const focusedIdRef = useRef(null);
   const onFocusCapture = (e) => {
     const id = e.target.id;
     const match = id && /^(nav-(?:item|arena)-.+)-(?:compact|expanded)$/.exec(id);
-    if (match) focusedKeyRef.current = match[1];
+    if (match) focusedIdRef.current = match[1];
   };
   useEffect(() => {
-    if (phase !== RAIL_PHASE.EXPANDED && phase !== RAIL_PHASE.COLLAPSED) return;
-    const key = focusedKeyRef.current;
+    if (!settled) return;
+    const key = focusedIdRef.current;
     if (!key) return;
-    const suffix = phase === RAIL_PHASE.EXPANDED ? "expanded" : "compact";
+    const suffix = desiredExpanded ? "expanded" : "compact";
     document.getElementById(`${key}-${suffix}`)?.focus();
-  }, [phase]);
+  }, [settled, desiredExpanded]);
 
   // Announce meaningful nav-state changes only — keyed on the raw
-  // requested target, matching what the user actually asked for, not the
-  // internal phase sequence.
+  // requested target, matching what the user actually asked for.
   const [announcement, setAnnouncement] = useState("");
   const prevDesiredExpanded = useRef(desiredExpanded);
   useEffect(() => {
@@ -436,15 +395,14 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
           `<aside>`: this whole rail IS the app's primary navigation (arena
           switcher + section links), not supplementary/tangential content. */}
       <nav
-        data-sidebar-phase={phase}
+        data-sidebar-state={!settled ? "transitioning" : desiredExpanded ? "expanded" : "collapsed"}
         aria-label="Casino sidebar"
         onFocusCapture={onFocusCapture}
-        onTransitionEnd={onWidthEnd}
         className={cn(
-          "hidden shrink-0 overflow-hidden border-e bg-sidebar transition-[width] duration-200 motion-reduce:transition-none md:block",
+          "hidden shrink-0 overflow-hidden border-e bg-sidebar transition-[width] motion-reduce:transition-none md:block",
           widthExpanded ? "md:w-[220px]" : "md:w-[60px]"
         )}
-        style={{ transitionDuration: `${RAIL_WIDTH_MS}ms`, transitionTimingFunction: "var(--ease-emphasized)" }}
+        style={{ transitionDuration: `${SIDEBAR_SHELL_DURATION_MS}ms`, transitionDelay: `${SIDEBAR_SHELL_START_DELAY_MS}ms`, transitionTimingFunction: "var(--ease-emphasized)" }}
       >
         {/* Positioning context for the two absolutely-positioned layers
             below — each is pinned to its OWN fixed width, never the
@@ -456,8 +414,9 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
               width: SIDEBAR_COLLAPSED_WIDTH_PX,
               opacity: compactOpacity,
               pointerEvents: compactInteractive ? undefined : "none",
-              transitionDuration: `${compactFadeMs}ms`,
-              transitionTimingFunction: "var(--ease-emphasized)",
+              transitionDuration: `${compactTiming.durationMs}ms`,
+              transitionDelay: `${compactTiming.delayMs}ms`,
+              transitionTimingFunction: "ease-out",
             }}
             inert={!compactInteractive || undefined}
             aria-hidden={!compactInteractive || undefined}
@@ -469,7 +428,7 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
               selected={selected}
               onSelect={onSelect}
               platformScope={platformScope}
-              tooltipsEnabled={phase === RAIL_PHASE.COLLAPSED}
+              tooltipsEnabled={compactInteractive}
             />
           </div>
           <div
@@ -478,8 +437,9 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
               width: SIDEBAR_EXPANDED_WIDTH_PX,
               opacity: expandedOpacity,
               pointerEvents: expandedInteractive ? undefined : "none",
-              transitionDuration: `${expandedFadeMs}ms`,
-              transitionTimingFunction: "var(--ease-emphasized)",
+              transitionDuration: `${expandedTiming.durationMs}ms`,
+              transitionDelay: `${expandedTiming.delayMs}ms`,
+              transitionTimingFunction: "ease-out",
             }}
             inert={!expandedInteractive || undefined}
             aria-hidden={!expandedInteractive || undefined}
