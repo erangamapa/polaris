@@ -1,6 +1,7 @@
 import { cloneElement, isValidElement, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { GAME_LAUNCH_STATUS, FAILED_ERROR_CODE, isLoadingStatus } from "@/lib/casinoGameLaunch";
+import { getGameDisplayMetadata } from "@/lib/gameDisplay";
 import { CasinoGameplayFrame } from "./CasinoGameplayFrame";
 
 // Copy + actions for every non-loading, non-ready outcome — pure lookup, no
@@ -102,6 +103,17 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
   const mode = game?.kind === "onchain" ? "first-party" : "embedded";
   const title = game?.title ?? "Game";
   const outcome = resolveLaunchOutcome({ status, errorCode });
+  // "intrinsic" (Tribet Originals' compact profile, see lib/gameDisplay.js):
+  // BetSwirlGame's own root already self-constrains to max-w-md and has no
+  // reason to stretch to the box's full height — center it in the box
+  // instead of pinning it to the top (this file's default flex-col
+  // behavior otherwise leaves it flush against the header with empty
+  // space below, the exact "excessive empty space" case the inventory
+  // doc's audit found). "fill" profiles (landscape-wide/flexible) keep
+  // today's exact unchanged behavior: the iframe fills the whole box.
+  const readyWrapperClassName = getGameDisplayMetadata(game).sizingMode === "intrinsic"
+    ? "flex h-full w-full flex-col items-center justify-center"
+    : "flex h-full w-full flex-col";
 
   const runAction = (action) => {
     if (action === "retry") onRetry();
@@ -118,7 +130,7 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
   return (
     <CasinoGameplayFrame game={game} mode={mode} onClose={onClose} closeDisabled={escapeSuppressed} onOpenInfo={game ? onOpenInfo : undefined}>
       {showChildren && (
-        <div className={status === GAME_LAUNCH_STATUS.READY ? "flex h-full w-full flex-col" : "absolute inset-0 flex flex-col"}>
+        <div className={status === GAME_LAUNCH_STATUS.READY ? readyWrapperClassName : "absolute inset-0 flex flex-col"}>
           {content}
         </div>
       )}

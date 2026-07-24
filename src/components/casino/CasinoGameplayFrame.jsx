@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
-import { Info, RotateCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Info, Maximize, Minimize, RotateCw } from "lucide-react";
 import { useCasinoViewportInfo, needsRotateHint } from "@/lib/casinoGameplayViewport";
+import { getGameDisplayMetadata } from "@/lib/gameDisplay";
 import { track } from "@/lib/telemetry";
 
 // The one outer chrome every Casino launch state renders inside — loading,
@@ -30,6 +31,29 @@ export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, onOpen
   const frameRef = useRef(null);
   const { orientation, viewportClass } = useCasinoViewportInfo();
   const rotateHint = needsRotateHint(game, orientation);
+  // Per-game viewport profile (see lib/gameDisplay.js) — the ONE place the
+  // content-box's max width/height/aspect-ratio and the host's fullscreen
+  // availability are decided, replacing the previous single hardcoded box
+  // applied identically to every game (see TRIBET GAME DISPLAY SYSTEM task).
+  const displayMeta = getGameDisplayMetadata(game);
+
+  // Host-level fullscreen control (item: "host controls" + "fullscreen").
+  // Targets the frame element itself (header + content-box together) —
+  // this is the top-level app DOM, not inside any provider iframe's own
+  // sandbox, so it's unaffected by that iframe's own permissions. Gated by
+  // the profile's declared `hostControls.fullscreen` so a deliberately
+  // small, centered Tribet Originals form never offers a control that
+  // doesn't serve it (see VIEWPORT_PROFILES' compact profile comment).
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(document.fullscreenElement === frameRef.current);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    else frameRef.current?.requestFullscreen?.().catch(() => {});
+  };
 
   // ACCESSIBILITY: focus lands on the frame itself when it opens (not deep
   // inside whatever status content happens to be showing first) — a stable,
@@ -104,6 +128,18 @@ export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, onOpen
               across every status this frame renders (loading/ready/failed/
               unavailable), since App.jsx only omits `onOpenInfo` when there's
               truly no resolved game to show info about (NOT_FOUND). */}
+          {displayMeta.hostControls.fullscreen && (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              data-test-id="gameplay-frame-fullscreen"
+              className="grid h-11 w-11 place-items-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {isFullscreen ? <Minimize className="size-4" aria-hidden="true" /> : <Maximize className="size-4" aria-hidden="true" />}
+            </button>
+          )}
           {onOpenInfo && (
             <button
               type="button"
@@ -146,9 +182,26 @@ export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, onOpen
         )}
         <div
           data-test-id="gameplay-content-box"
-          className="relative flex h-full w-full flex-col overflow-hidden bg-[var(--neutral-900)] md:mx-auto md:h-[min(100%,720px)] md:w-[min(92vw,1100px)] md:rounded-2xl md:ring-1 md:ring-white/5"
+          data-display-profile={displayMeta.displayProfile}
+          // Box shape is entirely profile-driven (see lib/gameDisplay.js) —
+          // mobile stays h-full/w-full for every profile (unchanged, a
+          // fullscreen sheet regardless of shape); only the desktop (md:)
+          // box differs. A declared `preferredAspectRatio` (today, only
+          // landscape-wide) lets height derive from the ratio instead of
+          // being forced to fill the max-height, so a wide dashboard game
+          // isn't stretched taller than its own preferred shape; every
+          // other profile keeps today's exact "fill available height" rule.
+          className={
+            "relative flex h-full w-full flex-col overflow-hidden bg-[var(--neutral-900)] md:mx-auto md:w-[min(92vw,var(--gp-max-w))] md:rounded-2xl md:ring-1 md:ring-white/5 " +
+            (displayMeta.preferredAspectRatio
+              ? "md:h-auto md:max-h-[min(100%,var(--gp-max-h))]"
+              : "md:h-[min(100%,var(--gp-max-h))]")
+          }
           style={{
             paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            "--gp-max-w": `${displayMeta.contentBoxMaxWidthPx}px`,
+            "--gp-max-h": `${displayMeta.contentBoxMaxHeightPx}px`,
+            ...(displayMeta.preferredAspectRatio ? { aspectRatio: displayMeta.preferredAspectRatio } : {}),
           }}
         >
           {children}
