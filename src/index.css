@@ -64,6 +64,87 @@ html {
      the existing Tooltip/ui-dialog z-50 convention, not the mobile
      full-screen layers above. */
   --z-header-popover: 50;
+
+  /* ── THEME READINESS: full documented z-index scale ─────────────────────
+     The four vars above already covered the mobile-shell layers. This
+     names the REST of the app's actual stacking values (found by auditing
+     every z-* utility in src/) so the whole scale lives in one place —
+     without renumbering anything ("do not change behavior unless a real
+     collision is found"; none was). Current real usage, low to high:
+       10  --z-sticky            DevPanel's own sticky header; a rotate-hint
+                                  banner inside the gameplay frame;
+                                  focus-visible bump on grouped HUD buttons
+       20  --z-card-action       Game card favorite-star button above artwork
+       30  --z-local-dropdown    PromoStrip's own local expanding list
+       40  --z-header            TopBar itself; BalancePill's own backdrop
+       50  --z-dialog            Shared ui/dialog.jsx, Tooltip, BalancePill's
+                                  popover content — ALSO the gameplay frame's
+                                  own layer (CasinoGameplayFrame/GameLauncher):
+                                  they're mutually exclusive in practice, so
+                                  sharing a tier is intentional, not a
+                                  collision
+       70  --z-game-info         GameInfoPanel / CasinoRoundReceipt — a info
+                                  drawer that must sit above gameplay (z-50)
+                                  — coincidentally the same numeric value as
+                                  --z-fullscreen-menu (70) above, but a
+                                  SEPARATE token: the two are conceptually
+                                  unrelated (one is "info over gameplay", the
+                                  other is "mobile nav over everything") and
+                                  are never mounted at once today, so sharing
+                                  a number is harmless, but they should not
+                                  be collapsed into one shared variable —
+                                  that would make future changes couple two
+                                  unrelated surfaces by accident
+       85  --z-sports-sticky-cta SportsArena's mobile sticky bet-slip CTA
+       90  --z-transaction-overlay  (existing, above)
+       100 --z-critical-alert      Developer Panel, Toaster (existing, above)
+     Not migrated onto named variables everywhere yet (~15 call sites still
+     use the bare number) — see docs/design/theme-readiness.md's remaining-
+     debt section. GameInfoPanel.jsx and CasinoRoundReceipt.jsx below ARE
+     migrated onto --z-game-info as a worked example, since both already
+     modeled the identical concept with a duplicated raw value. */
+  --z-sticky: 10;
+  --z-card-action: 20;
+  --z-local-dropdown: 30;
+  --z-header: 40;
+  --z-dialog: 50;
+  --z-game-info: 70;
+  --z-sports-sticky-cta: 85;
+}
+
+/* ── THEME READINESS: typography roles ────────────────────────────────────
+   No font-family change here (out of scope) — this documents the repeated
+   TEXT PATTERNS already in consistent use across the app as named roles,
+   per docs/design/theme-readiness.md, so the eventual type-scale pass has
+   a checklist instead of having to rediscover these by re-auditing.
+     display        — not currently used anywhere (no full-bleed hero
+                      numeral/wordmark exists yet); reserved for later
+     page title      text-lg font-bold (category/Favorites/Recently Played
+                      headings, dialog titles)
+     section title   text-sm font-bold (rail headers, "Balances" heading)
+     card title      text-sm font-semibold / font-medium (game card titles)
+     body            text-sm (default body copy, no class needed)
+     body small       text-xs (secondary descriptions)
+     label           see .text-label below — the one pattern common enough
+                      (6 verbatim repeats) to actually deserve a shared class
+     metadata        text-[11px] / text-xs text-muted-foreground (timestamps,
+                      network names, counts)
+     numeric primary   font-mono tabular-nums text-sm/base/lg font-semibold
+                        /font-bold — balance, stake, payout headline values
+     numeric secondary font-mono tabular-nums text-xs/sm — odds, secondary
+                        receipt amounts, table values
+     button label     text-sm font-semibold/bold (already Button's own
+                       default via ui/button.jsx — not duplicated here)
+   Numeric roles were already consistently `font-mono tabular-nums` at
+   ~44 call sites before this pass — already correct, documented rather
+   than re-abstracted into a single rigid class (context legitimately
+   needs different sizes/weights). */
+.text-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--muted-foreground);
 }
 
 /* Shared bottom clearance for any mobile scroll container that sits above
@@ -274,6 +355,12 @@ html {
   --warning-bg: rgba(214, 168, 74, 0.14);
   --danger: #D65A70;
   --danger-bg: rgba(214, 90, 112, 0.14);
+  /* Dark contrast text for a SOLID --danger background (e.g. the "No"
+     side's confirm button in Predictions) — previously #2a0c11 copy-pasted
+     across PositionTicket.jsx (x2) and MarketDetail.jsx with no shared
+     name, unlike --success/--warning which never needed one since they're
+     only ever used as soft-background text, not solid-button fills. */
+  --danger-foreground: #2a0c11;
 
   /* StatusBadge — semantic, not arena-based: same meaning on every product
      surface regardless of which arena (casino/predictions/sports) renders
@@ -391,6 +478,205 @@ html {
   background-repeat: no-repeat;
   background-attachment: fixed;
   transition: background-image 220ms var(--ease-out);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   THEME-READINESS TOKEN ARCHITECTURE
+   ════════════════════════════════════════════════════════════════════════
+   Added for the theme-readiness pass (see docs/design/theme-readiness.md
+   for the full writeup). This is NOT the final Tribet visual system — it's
+   the plumbing so that system can be dropped in later by editing values in
+   ONE place instead of hunting through every feature file. Four layers,
+   smallest first:
+
+   1. FOUNDATION  — raw neutral scale + elevation/shadow scale (this block)
+   2. SEMANTIC     — background/surface/border/text/status roles (this block)
+   3. BRANCH       — Casino/Predictions/Sports accent roles (this block)
+   4. COMPONENT    — only where a shared component's own contract needs one
+                     (kept in the components themselves, e.g. --badge-*
+                     above, not duplicated here)
+
+   Every color value below is the CURRENT app's existing color, just given
+   a semantic name — this pass intentionally does NOT introduce the
+   approved future branch palette (Casino ultraviolet / Predictions racing
+   green / Sports cobalt blue). Swapping to that later means editing the
+   "BRANCH" block below, nothing else. See the file's own migration note
+   at each TEMP-marked value. */
+:root {
+  /* ── FOUNDATION: neutral scale ──────────────────────────────────────────
+     Named equivalents of the zinc-* Tailwind stops this app already uses
+     directly in ~190 places (bg-zinc-900, text-zinc-400, etc.). These
+     don't replace those utilities today — Tailwind's own zinc scale is
+     already centrally controlled — they exist so the SEMANTIC surface/text
+     roles below have one thing to point at, and so a future pass can
+     migrate call sites from `bg-zinc-900` to `bg-surface-raised` without
+     also having to decide a new numeric value at the same time. */
+  --neutral-950: #09090b;
+  --neutral-900: #18181b;
+  --neutral-800: #27272a;
+  --neutral-700: #3f3f46;
+  --neutral-500: #71717a;
+  --neutral-400: #a1a1aa;
+  --neutral-300: #d4d4d8;
+
+  /* ── FOUNDATION: elevation / shadow scale ───────────────────────────────
+     Consolidates the handful of one-off box-shadow values already in use
+     (Toaster's card shadow, Dev Panel's edge shadow) into named steps.
+     Restrained on purpose — this pass doesn't add new glows or richer
+     shadows, just names for the ones already shipping. */
+  --elevation-none: none;
+  --elevation-low: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --elevation-medium: 0 10px 28px rgba(0, 0, 0, 0.55);
+  --elevation-high: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --elevation-focus: 0 0 0 2px var(--ring);
+
+  /* ── SEMANTIC: surface roles ─────────────────────────────────────────────
+     Existing shadcn tokens (--background/--card/--popover/--secondary/
+     --muted/--accent, all defined in the .dark block below) already cover
+     most of these roles and are left untouched. The additions here are
+     the roles that had no existing home and were being reinvented ad hoc
+     per component (Dev Panel's own #1a1b1f/#24252b/#3a3b42, Tooltip's
+     bg-zinc-900, CasinoGameplayFrame's bg-zinc-950). Values chosen to match
+     what's already on screen, not a new palette. */
+  --surface-base: var(--background);
+  --surface-raised: var(--card);
+  --surface-overlay-panel: #1a1b1f; /* Dev Panel / other edge-anchored panels */
+  --surface-interactive: #24252b; /* Dev Panel controls, hover-able compact surfaces */
+  --surface-interactive-hover: #2c2d33;
+  --surface-tooltip: var(--neutral-900);
+  --surface-gameplay: var(--neutral-950); /* CasinoGameplayFrame's outer frame + content box */
+  --surface-inset: rgba(255, 255, 255, 0.04); /* faint recessed fill, e.g. empty-state wells */
+
+  /* ── COMPONENT: game card ────────────────────────────────────────────────
+     CasinoGameCard (CasinoCatalog.jsx) is the single most-repeated visual
+     unit in the app (every rail, every category page, every lobby
+     section) and had its own literal bg-zinc-900/bg-zinc-800, distinct
+     from --card (#15171C, close but not identical — kept separate rather
+     than merged onto --card so this pass changes zero pixels; only the
+     next design pass should decide whether "dialog card" and "game card"
+     ought to share one tone). */
+  --surface-game-card: var(--neutral-900);
+  --surface-game-card-fallback: var(--neutral-800);
+
+  /* ── SEMANTIC: border roles ──────────────────────────────────────────────
+     Maps the handful of border expressions actually in use
+     (border-white/5, border-white/10, plus Dev Panel's #3a3b42) onto named
+     roles. Contrast unchanged — this only names what already renders. */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-standard: var(--border); /* rgba(255,255,255,0.10) — existing shadcn token */
+  --border-emphasized: rgba(255, 255, 255, 0.15);
+  --border-interactive: #3a3b42; /* Dev Panel's own panel border */
+  --border-selected: var(--product-border); /* branch-tinted, see BRANCH below */
+  --border-focus: var(--ring);
+
+  /* ── SEMANTIC: status roles (independent of branch — see STATUS below) ──
+     --success/--warning/--danger already existed; --info and --pending are
+     new names for values that were previously copy-pasted hex (Toaster.jsx/
+     DevPanel.jsx's toast preview both hardcoded #4FA7B8 for "info", which
+     is coincidentally the CURRENT Predictions branch hex — a real risk if
+     left as-is: rebranding Predictions would silently recolor every info
+     toast. Naming it --info separately breaks that accidental coupling. */
+  --info: #4FA7B8;
+  --info-bg: rgba(79, 167, 184, 0.14);
+  --pending: #D6883E; /* matches --badge-pending-* already defined above */
+  --pending-bg: rgba(214, 136, 62, 0.14);
+
+  /* ── SEMANTIC: outcome/direction pair ─────────────────────────────────────
+     A third category, distinct from both branch and win/loss status:
+     Predictions' Yes/Bid side vs. No/Ask side, and Sports odds' up/down
+     movement (OddsButton.jsx, OrderBook.jsx, MarketCard.jsx,
+     PositionsTable.jsx, PositionTicket.jsx, MarketDetail.jsx previously
+     each hardcoded these same two hex values independently). Deliberately
+     NOT aliased to --success/--danger: a market's "No" side isn't a loss,
+     and a losing bet isn't the same concept as a down-trending price. */
+  --outcome-affirmative: #78CAD7;
+  --outcome-negative: #E17B8D;
+
+  /* ── KNOWN INCONSISTENCY, NOT SILENTLY RESOLVED ──────────────────────────
+     ActivityDialog.jsx's arena chips (#5eead4/#c4b5fd/#fcd34d — teal/violet/
+     amber) are a COMPLETELY DIFFERENT set of arena-identity colors than
+     Sidebar.jsx/MobileBottomNav.jsx's --casino-text-accent/
+     --predictions-text-accent/--sports-text-accent (rose/steel-cyan/
+     chartreuse) — a real, pre-existing drift between two independent
+     "what color is this arena" implementations, not something this pass
+     invented or should silently pick a winner for (that's a design
+     decision for the real Figma pass, not an engineering one). Named here
+     only so the values are in one place instead of inline hex, WITHOUT
+     changing what's rendered — see docs/design/theme-readiness.md's
+     remaining-debt section for the actual decision this needs. */
+  --activity-chip-casino: #5eead4;
+  --activity-chip-predictions: #c4b5fd;
+  --activity-chip-sports: #fcd34d;
+  --activity-chip-neutral: #a1a1aa;
+}
+
+/* Registers the new tokens above as real Tailwind utilities (bg-surface-*,
+   text-outcome-*, etc.) via Tailwind v4's @theme inline, the same
+   mechanism already used for --color-background/--color-card/etc. below —
+   not a new styling system, just extending the existing one. */
+@theme inline {
+  --color-surface-base: var(--surface-base);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay-panel: var(--surface-overlay-panel);
+  --color-surface-interactive: var(--surface-interactive);
+  --color-surface-interactive-hover: var(--surface-interactive-hover);
+  --color-surface-tooltip: var(--surface-tooltip);
+  --color-surface-gameplay: var(--surface-gameplay);
+  --color-surface-inset: var(--surface-inset);
+  --color-surface-game-card: var(--surface-game-card);
+  --color-surface-game-card-fallback: var(--surface-game-card-fallback);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-standard: var(--border-standard);
+  --color-border-emphasized: var(--border-emphasized);
+  --color-border-interactive: var(--border-interactive);
+  --color-border-selected: var(--border-selected);
+
+  --color-info: var(--info);
+  --color-pending: var(--pending);
+  --color-outcome-affirmative: var(--outcome-affirmative);
+  --color-outcome-negative: var(--outcome-negative);
+
+  --color-casino-accent: var(--casino-accent);
+  --color-casino-accent-muted: var(--casino-accent-muted);
+  --color-predictions-accent: var(--predictions-accent);
+  --color-predictions-accent-muted: var(--predictions-accent-muted);
+  --color-sports-accent: var(--sports-accent);
+  --color-sports-accent-muted: var(--sports-accent-muted);
+}
+
+/* ── BRANCH: named per-arena accent roles ──────────────────────────────────
+   The task's exact requested vocabulary (Casino accent / accent-muted /
+   accent-foreground, etc.), aliased onto the arena hex values that already
+   exist above (--casino-primary/--predictions-primary/--sports-primary and
+   friends) rather than duplicating a second set of raw colors. This is the
+   ONLY place the eventual Casino-ultraviolet / Predictions-racing-green /
+   Sports-cobalt-blue swap needs to happen — every consumer should reach
+   these names, never the raw --casino-primary/etc. or a literal hex,
+   going forward. TEMP: current values are the existing rose/steel-cyan/
+   chartreuse accents, not the approved future palette — see
+   docs/design/theme-readiness.md §"how to apply the future chosen theme". */
+:root {
+  --casino-accent: var(--casino-primary); /* TEMP: existing rose accent, NOT ultraviolet yet */
+  --casino-accent-hover: var(--casino-primary-hover);
+  --casino-accent-active: var(--casino-primary-active);
+  --casino-accent-muted: var(--casino-primary-soft);
+  --casino-accent-subtle: var(--casino-primary-subtle);
+  --casino-accent-foreground: var(--casino-cta-text);
+
+  --predictions-accent: var(--predictions-primary); /* TEMP: existing steel-cyan, NOT racing green yet */
+  --predictions-accent-hover: var(--predictions-primary-hover);
+  --predictions-accent-active: var(--predictions-primary-active);
+  --predictions-accent-muted: var(--predictions-primary-soft);
+  --predictions-accent-subtle: var(--predictions-primary-subtle);
+  --predictions-accent-foreground: var(--predictions-cta-text);
+
+  --sports-accent: var(--sports-primary); /* TEMP: existing chartreuse, NOT cobalt blue yet */
+  --sports-accent-hover: var(--sports-primary-hover);
+  --sports-accent-active: var(--sports-primary-active);
+  --sports-accent-muted: var(--sports-primary-soft);
+  --sports-accent-subtle: var(--sports-primary-subtle);
+  --sports-accent-foreground: var(--sports-cta-text);
 }
 
 :root {

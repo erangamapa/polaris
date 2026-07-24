@@ -12,7 +12,7 @@ export function OddsButton({ label, odds, selected, onClick, dir, disabled }) {
         disabled
           ? "cursor-not-allowed border-border bg-muted/20 opacity-50"
           : selected
-            ? "border-[rgba(175,195,74,0.52)] bg-[rgba(175,195,74,0.12)] text-[#D7E78A]"
+            ? "border-[rgba(175,195,74,0.52)] bg-[rgba(175,195,74,0.12)] text-[var(--sports-text-accent)]"
             : "border-border bg-[#1A1C20] hover:border-[rgba(175,195,74,0.34)] hover:bg-[#20241C]"
       )}
     >
@@ -20,8 +20,8 @@ export function OddsButton({ label, odds, selected, onClick, dir, disabled }) {
       <span
         className={cn(
           "flex items-center gap-0.5 font-mono text-sm font-semibold tabular-nums transition-colors",
-          dir === "up" && "text-[#D7E78A]",
-          dir === "down" && "text-[#E17B8D]"
+          dir === "up" && "text-[var(--sports-text-accent)]",
+          dir === "down" && "text-[var(--outcome-negative)]"
         )}
       >
         {dir === "up" && <span className="text-[9px] leading-none">▲</span>}

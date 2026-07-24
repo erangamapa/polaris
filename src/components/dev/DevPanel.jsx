@@ -47,10 +47,10 @@ export function DevPanel() {
 
   const noop = () => {};
   const toastButtons = [
-    { label: "Success", cls: "text-[#49B889]", fn: () => toast.success("Bet placed", { message: "#B7F3K · $10 → $21.00" }) },
-    { label: "Error", cls: "text-[#D65A70]", fn: () => toast.error("Insufficient balance", { message: "Add funds to place this bet." }) },
-    { label: "Warning", cls: "text-[#D6A84A]", fn: () => toast.warning("Odds changed", { message: "Arsenal 2.10 → 2.05", action: { label: "Accept & place", onClick: noop } }) },
-    { label: "Info", cls: "text-[#4FA7B8]", fn: () => toast.info("Verify to withdraw", { message: "KYC required before cashing out.", action: { label: "Verify now", onClick: noop } }) },
+    { label: "Success", cls: "text-[var(--success)]", fn: () => toast.success("Bet placed", { message: "#B7F3K · $10 → $21.00" }) },
+    { label: "Error", cls: "text-[var(--danger)]", fn: () => toast.error("Insufficient balance", { message: "Add funds to place this bet." }) },
+    { label: "Warning", cls: "text-[var(--warning)]", fn: () => toast.warning("Odds changed", { message: "Arsenal 2.10 → 2.05", action: { label: "Accept & place", onClick: noop } }) },
+    { label: "Info", cls: "text-[var(--info)]", fn: () => toast.info("Verify to withdraw", { message: "KYC required before cashing out.", action: { label: "Verify now", onClick: noop } }) },
   ];
 
   // MOTION QUALITY PASS — entrance-only slide+fade from its own right edge
@@ -63,9 +63,9 @@ export function DevPanel() {
       ref={panelRef}
       role="complementary"
       aria-label="Developer Panel"
-      className="tribet-scrollbar fixed inset-y-0 right-0 z-[var(--z-critical-alert)] flex w-[340px] max-w-[92vw] flex-col overflow-y-auto border-l border-[#3a3b42] bg-[#1a1b1f] text-foreground shadow-[-8px_0_28px_rgba(0,0,0,0.45)] panel-enter-right motion-reduce:animate-none"
+      className="tribet-scrollbar fixed inset-y-0 right-0 z-[var(--z-critical-alert)] flex w-[340px] max-w-[92vw] flex-col overflow-y-auto border-l border-[var(--border-interactive)] bg-[var(--surface-overlay-panel)] text-foreground shadow-[-8px_0_28px_rgba(0,0,0,0.45)] panel-enter-right motion-reduce:animate-none"
     >
-      <div className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b border-[#3a3b42] bg-[#1a1b1f] px-3 py-3">
+      <div className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b border-[var(--border-interactive)] bg-[var(--surface-overlay-panel)] px-3 py-3">
         <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Dev</span>
         <h2 className="text-sm font-bold">Developer Panel</h2>
         <button
@@ -174,7 +174,7 @@ export function DevPanel() {
               id="dev-game-state"
               value={mock.gameStatus}
               onChange={(e) => set({ gameStatus: e.target.value })}
-              className="w-full rounded-lg border border-[#3a3b42] bg-[#24252b] px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="default">Default</option>
               <option value="loading">Loading</option>
@@ -216,7 +216,7 @@ export function DevPanel() {
               id="dev-transaction-status"
               value={mock.transactionStatus}
               onChange={(e) => set({ transactionStatus: e.target.value })}
-              className="w-full rounded-lg border border-[#3a3b42] bg-[#24252b] px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="none">None</option>
               <option value="deposit-pending">Deposit pending</option>
@@ -248,7 +248,7 @@ export function DevPanel() {
               <button
                 key={b.label}
                 onClick={b.fn}
-                className={cn("rounded-lg border border-[#3a3b42] bg-[#24252b] py-1.5 text-xs font-medium transition hover:bg-[#2c2d33]", b.cls)}
+                className={cn("rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] py-1.5 text-xs font-medium transition hover:bg-[var(--surface-interactive-hover)]", b.cls)}
               >
                 {b.label}
               </button>
@@ -257,10 +257,10 @@ export function DevPanel() {
         </Section>
       </div>
 
-      <div className="sticky bottom-0 shrink-0 border-t border-[#3a3b42] bg-[#1a1b1f] p-3">
+      <div className="sticky bottom-0 shrink-0 border-t border-[var(--border-interactive)] bg-[var(--surface-overlay-panel)] p-3">
         <button
           onClick={resetDevMockState}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#3a3b42] bg-[#24252b] py-2 text-sm font-medium text-muted-foreground transition hover:bg-[#2c2d33] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] py-2 text-sm font-medium text-muted-foreground transition hover:bg-[var(--surface-interactive-hover)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <RotateCcw className="size-4" aria-hidden="true" /> Reset all
         </button>
@@ -272,7 +272,7 @@ export function DevPanel() {
 function Section({ title, children }) {
   return (
     <section aria-labelledby={`dev-section-${title}`} className="space-y-2">
-      <h3 id={`dev-section-${title}`} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+      <h3 id={`dev-section-${title}`} className="text-label">{title}</h3>
       <div className="space-y-2.5">{children}</div>
     </section>
   );
@@ -307,7 +307,7 @@ function Segmented({ value, onChange, options, groupLabel }) {
               "rounded-md border px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
                 ? "border-[var(--global-cta)] bg-[var(--global-cta)]/15 text-[var(--global-cta)]"
-                : "border-[#3a3b42] bg-[#24252b] text-muted-foreground hover:bg-[#2c2d33] hover:text-foreground"
+                : "border-[var(--border-interactive)] bg-[var(--surface-interactive)] text-muted-foreground hover:bg-[var(--surface-interactive-hover)] hover:text-foreground"
             )}
           >
             {opt.label}
@@ -325,7 +325,7 @@ function Checkbox({ label, checked, onChange }) {
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="size-4 shrink-0 rounded border-[#3a3b42] accent-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="size-4 shrink-0 rounded border-[var(--border-interactive)] accent-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
       {label}
     </label>

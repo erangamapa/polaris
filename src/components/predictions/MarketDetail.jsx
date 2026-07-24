@@ -41,14 +41,14 @@ export function MarketDetail({ market, onBack, onBuy }) {
       <div className="grid grid-cols-2 gap-3">
         <Button
           size="lg"
-          className="h-12 bg-[var(--predictions-primary)] text-base font-bold text-[#081214] hover:bg-[var(--predictions-primary-hover)]"
+          className="h-12 bg-[var(--predictions-primary)] text-base font-bold text-[var(--predictions-cta-text)] hover:bg-[var(--predictions-primary-hover)]"
           onClick={() => onBuy(market, "Yes")}
         >
           Buy Yes · {fmtCents(market.yes)}
         </Button>
         <Button
           size="lg"
-          className="h-12 bg-[var(--danger)] text-base font-bold text-[#2a0c11] hover:brightness-110"
+          className="h-12 bg-[var(--danger)] text-base font-bold text-[var(--danger-foreground)] hover:brightness-110"
           onClick={() => onBuy(market, "No")}
         >
           Buy No · {fmtCents(market.no)}

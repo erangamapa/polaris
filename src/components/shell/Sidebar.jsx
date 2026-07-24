@@ -15,21 +15,45 @@ const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id] }));
 
 // Subtle per-product accents (no left bar) — tint + tinted text only.
 // Each product keeps its OWN colour even when another product is active.
+// THEME READINESS: previously three copies of the same rgba(<channel>,<own
+// opacity>) shape, each hardcoding the exact channel values of
+// --casino-accent/--predictions-accent/--sports-accent (index.css) a
+// second time. `color-mix()` reads the branch token directly at the SAME
+// opacity ratios these already used (12%/16%/42% — deliberately its own,
+// slightly different opacities than the shared --*-soft/-subtle tokens,
+// so left as distinct mixes rather than forced onto a token whose exact
+// value would visibly change this contrast) — the eventual Casino-
+// ultraviolet/Predictions-racing-green/Sports-cobalt swap now only means
+// editing --casino-accent/etc. in index.css, not touching this file.
+// (Already an established pattern in this codebase — see index.css's
+// --scrollbar-thumb, built the same way.)
 const ACCENTS = {
   casino: {
-    tab: { background: "rgba(184,92,142,0.12)", color: "#D99AB9", border: "1px solid rgba(184,92,142,0.42)" },
-    item: { background: "rgba(184,92,142,0.16)", color: "#D99AB9" },
-    bar: "#D99AB9",
+    tab: {
+      background: "color-mix(in srgb, var(--casino-accent) 12%, transparent)",
+      color: "var(--casino-text-accent)",
+      border: "1px solid color-mix(in srgb, var(--casino-accent) 42%, transparent)",
+    },
+    item: { background: "color-mix(in srgb, var(--casino-accent) 16%, transparent)", color: "var(--casino-text-accent)" },
+    bar: "var(--casino-text-accent)",
   },
   predictions: {
-    tab: { background: "rgba(79,167,184,0.12)", color: "#92D4DF", border: "1px solid rgba(79,167,184,0.42)" },
-    item: { background: "rgba(79,167,184,0.16)", color: "#92D4DF" },
-    bar: "#92D4DF",
+    tab: {
+      background: "color-mix(in srgb, var(--predictions-accent) 12%, transparent)",
+      color: "var(--predictions-text-accent)",
+      border: "1px solid color-mix(in srgb, var(--predictions-accent) 42%, transparent)",
+    },
+    item: { background: "color-mix(in srgb, var(--predictions-accent) 16%, transparent)", color: "var(--predictions-text-accent)" },
+    bar: "var(--predictions-text-accent)",
   },
   sports: {
-    tab: { background: "rgba(175,195,74,0.12)", color: "#D7E78A", border: "1px solid rgba(175,195,74,0.42)" },
-    item: { background: "rgba(175,195,74,0.16)", color: "#D7E78A" },
-    bar: "#D7E78A",
+    tab: {
+      background: "color-mix(in srgb, var(--sports-accent) 12%, transparent)",
+      color: "var(--sports-text-accent)",
+      border: "1px solid color-mix(in srgb, var(--sports-accent) 42%, transparent)",
+    },
+    item: { background: "color-mix(in srgb, var(--sports-accent) 16%, transparent)", color: "var(--sports-text-accent)" },
+    bar: "var(--sports-text-accent)",
   },
 };
 
@@ -175,7 +199,7 @@ function RailItems({ items, product, selected, onSelect, expanded, tooltipsEnabl
       {items.map((it) => {
         if (it.sectionLabel) {
           return expanded ? (
-            <div key={it.id} className="px-2.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div key={it.id} className="text-label px-2.5 pb-1 pt-2">
               {it.sectionLabel}
             </div>
           ) : null;

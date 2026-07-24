@@ -1117,7 +1117,17 @@ export default function App() {
   }
 
   return (
-    <div data-product={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+    // THEME READINESS: `data-arena` is the one authoritative branch-context
+    // attribute this task asks for — aliased onto the SAME `product` value
+    // `data-product` already carries (see index.css's [data-product]
+    // blocks, which drive --product-primary/etc.), not a second state
+    // store. `data-product` stays too: existing CSS selectors and two
+    // component comments (ArenaPromoTile.jsx/PromoStrip.jsx) already
+    // reference it, and nothing is served by breaking that just to rename
+    // it. New token consumers should prefer reading via [data-arena] (or
+    // the --casino-accent/--predictions-accent/--sports-accent names
+    // directly, which don't care which attribute resolved them).
+    <div data-product={product} data-arena={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <TopBar
         onBurger={toggleSidebar}
         burgerLabel={sidebarLabel}

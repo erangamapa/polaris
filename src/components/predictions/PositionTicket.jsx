@@ -27,14 +27,14 @@ export function PositionTicket({ market, side, setSide, open, onOpenChange, bala
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant={side === "Yes" ? "default" : "outline"}
-            className={side === "Yes" ? "bg-[var(--predictions-primary)] text-[#081214] hover:bg-[var(--predictions-primary-hover)]" : ""}
+            className={side === "Yes" ? "bg-[var(--predictions-primary)] text-[var(--predictions-cta-text)] hover:bg-[var(--predictions-primary-hover)]" : ""}
             onClick={() => setSide("Yes")}
           >
             Yes {fmtCents(market.yes)}
           </Button>
           <Button
             variant={side === "No" ? "default" : "outline"}
-            className={side === "No" ? "bg-[var(--danger)] text-[#2a0c11] hover:brightness-110" : ""}
+            className={side === "No" ? "bg-[var(--danger)] text-[var(--danger-foreground)] hover:brightness-110" : ""}
             onClick={() => setSide("No")}
           >
             No {fmtCents(market.no)}
@@ -72,8 +72,8 @@ export function PositionTicket({ market, side, setSide, open, onOpenChange, bala
         <DialogFooter>
           <Button
             className={side === "No"
-              ? "w-full bg-[var(--danger)] font-bold text-[#2a0c11] hover:brightness-110"
-              : "w-full bg-[var(--predictions-primary)] font-bold text-[#081214] hover:bg-[var(--predictions-primary-hover)]"}
+              ? "w-full bg-[var(--danger)] font-bold text-[var(--danger-foreground)] hover:brightness-110"
+              : "w-full bg-[var(--predictions-primary)] font-bold text-[var(--predictions-cta-text)] hover:bg-[var(--predictions-primary-hover)]"}
             disabled={insufficient || amount <= 0}
             onClick={() => onConfirm({ market, side, amount, shares, price })}
           >

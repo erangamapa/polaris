@@ -5,16 +5,22 @@ import { Loader2 } from "lucide-react";
 import { fmt } from "@/lib/format";
 import { useCurrency } from "@/lib/currency";
 
+// THEME READINESS: these colors are a KNOWN, pre-existing inconsistency
+// with Sidebar.jsx/MobileBottomNav.jsx's arena accent (--casino-text-accent
+// & co in index.css) — deliberately not merged onto those here, since
+// picking a winner between two already-shipped color choices is a design
+// decision, not this pass's to make silently. See index.css's own
+// "KNOWN INCONSISTENCY" comment and docs/design/theme-readiness.md.
 const PRODUCT = {
-  casino: { label: "Casino", color: "#5eead4" },
-  predictions: { label: "Predictions", color: "#c4b5fd" },
-  sports: { label: "Sports", color: "#fcd34d" },
+  casino: { label: "Casino", color: "var(--activity-chip-casino)" },
+  predictions: { label: "Predictions", color: "var(--activity-chip-predictions)" },
+  sports: { label: "Sports", color: "var(--activity-chip-sports)" },
 };
 
 function Chip({ product }) {
-  const p = PRODUCT[product] ?? { label: product, color: "#a1a1aa" };
+  const p = PRODUCT[product] ?? { label: product, color: "var(--activity-chip-neutral)" };
   return (
-    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ color: p.color, background: `${p.color}1f` }}>
+    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ color: p.color, background: `color-mix(in srgb, ${p.color} 12%, transparent)` }}>
       {p.label}
     </span>
   );

@@ -3,11 +3,17 @@ import { CircleCheck, CircleX, TriangleAlert, Info, X } from "lucide-react";
 import { toast, useToasts } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
+// THEME READINESS: these used to hardcode the same hex the shared
+// --success/--warning/--danger/--info status tokens (index.css) already
+// define — including "info" duplicating the CURRENT Predictions branch
+// accent's exact value, an accidental coupling that would have silently
+// recolored every info toast the day Predictions' branch color changes.
+// Referencing the tokens by name breaks that coupling.
 const CFG = {
-  success: { Icon: CircleCheck, color: "#49B889", tint: "rgba(73,184,137,0.14)" },
-  error: { Icon: CircleX, color: "#D65A70", tint: "rgba(214,90,112,0.14)" },
-  warning: { Icon: TriangleAlert, color: "#D6A84A", tint: "rgba(214,168,74,0.14)" },
-  info: { Icon: Info, color: "#4FA7B8", tint: "rgba(79,167,184,0.14)" },
+  success: { Icon: CircleCheck, color: "var(--success)", tint: "var(--success-bg)" },
+  error: { Icon: CircleX, color: "var(--danger)", tint: "var(--danger-bg)" },
+  warning: { Icon: TriangleAlert, color: "var(--warning)", tint: "var(--warning-bg)" },
+  info: { Icon: Info, color: "var(--info)", tint: "var(--info-bg)" },
 };
 
 function ToastCard({ t, leaving }) {

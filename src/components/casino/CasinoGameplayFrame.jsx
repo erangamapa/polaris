@@ -89,7 +89,7 @@ export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, onOpen
       data-test-id="casino-gameplay-frame"
       data-viewport-class={viewportClass}
       data-orientation={orientation}
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-zinc-950 outline-none"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface-gameplay outline-none"
     >
       <header
         className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-3"
@@ -146,7 +146,7 @@ export function CasinoGameplayFrame({ game, mode, onClose, closeDisabled, onOpen
         )}
         <div
           data-test-id="gameplay-content-box"
-          className="relative flex h-full w-full flex-col overflow-hidden bg-zinc-900 md:mx-auto md:h-[min(100%,720px)] md:w-[min(92vw,1100px)] md:rounded-2xl md:ring-1 md:ring-white/5"
+          className="relative flex h-full w-full flex-col overflow-hidden bg-[var(--neutral-900)] md:mx-auto md:h-[min(100%,720px)] md:w-[min(92vw,1100px)] md:rounded-2xl md:ring-1 md:ring-white/5"
           style={{
             paddingBottom: "env(safe-area-inset-bottom, 0px)",
           }}

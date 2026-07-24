@@ -98,7 +98,7 @@ export function BalanceControl({ open, onOpenChange, casinoBalance, casinoSymbol
           onCloseAutoFocus={(e) => { e.preventDefault(); triggerRef.current?.focus(); }}
           className="z-[var(--z-header-popover)] w-64 rounded-lg border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
-          <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Balances</div>
+          <div className="text-label px-2 py-1.5">Balances</div>
           <BalanceRow label="Casino" network={baseSepolia.name} dot="#0052ff" amount={casinoBalance} symbol={casinoSymbol} decimals={4} error={casinoBalanceError && !isStale} />
           <BalanceRow label="Sports" network={polygonAmoy.name} dot="#8247e5" amount={sportsBalance} symbol={sportsSymbol} decimals={2} />
           {isStale && (

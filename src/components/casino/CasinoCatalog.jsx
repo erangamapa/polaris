@@ -161,7 +161,7 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
   return (
     <div
       className={cn(
-        "group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/5 transition",
+        "group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl bg-surface-game-card ring-1 ring-white/5 transition",
         playable && "hover:ring-[var(--casino-primary)]"
       )}
     >
@@ -177,7 +177,7 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
         )}
       >
         {broken ? (
-          <div className="grid h-full w-full place-items-center bg-zinc-800">
+          <div className="grid h-full w-full place-items-center bg-surface-game-card-fallback">
             <Gamepad2 className="size-6 text-zinc-600" aria-hidden="true" />
           </div>
         ) : (

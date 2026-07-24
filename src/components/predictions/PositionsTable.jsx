@@ -43,7 +43,7 @@ export function PositionsTable({ positions }) {
               <TableRow key={p.id}>
                 <TableCell className="max-w-[220px] truncate text-sm">{p.question}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={p.side === "Yes" ? "text-[#78CAD7]" : "text-[#E17B8D]"}>
+                  <Badge variant="outline" className={p.side === "Yes" ? "text-[var(--outcome-affirmative)]" : "text-[var(--outcome-negative)]"}>
                     {p.side}
                   </Badge>
                 </TableCell>

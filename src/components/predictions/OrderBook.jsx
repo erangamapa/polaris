@@ -9,7 +9,7 @@ function Row({ price, size, max, side }) {
         className={`absolute inset-y-0 right-0 ${isAsk ? "bg-[rgba(214,90,112,0.10)]" : "bg-[rgba(79,167,184,0.12)]"}`}
         style={{ width: `${pct}%` }}
       />
-      <span className={`relative font-medium ${isAsk ? "text-[#E17B8D]" : "text-[#78CAD7]"}`}>
+      <span className={`relative font-medium ${isAsk ? "text-[var(--outcome-negative)]" : "text-[var(--outcome-affirmative)]"}`}>
         {fmtCents(price)}
       </span>
       <span className="relative text-right text-muted-foreground">{size.toLocaleString()}</span>

@@ -54,7 +54,7 @@ export function CasinoRoundReceipt({ round, open, notFound, onClose, onPlayAgain
   };
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={round ? `${round.gameName} round receipt` : "Round details"} data-test-id="round-receipt" className="fixed inset-0 z-[70] flex justify-end bg-black/40">
+    <div role="dialog" aria-modal="true" aria-label={round ? `${round.gameName} round receipt` : "Round details"} data-test-id="round-receipt" className="fixed inset-0 z-[var(--z-game-info)] flex justify-end bg-black/40">
       <button type="button" aria-label="Close receipt" onClick={onClose} className="absolute inset-0 h-full w-full cursor-default" tabIndex={-1} />
       <div
         ref={panelRef}

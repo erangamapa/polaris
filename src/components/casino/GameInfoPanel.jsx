@@ -61,7 +61,7 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
       aria-modal="true"
       aria-label={details ? `${details.name} info` : "Game information"}
       data-test-id="game-info-panel"
-      className="fixed inset-0 z-[70] flex justify-end bg-black/40 panel-backdrop-fade-in motion-reduce:animate-none"
+      className="fixed inset-0 z-[var(--z-game-info)] flex justify-end bg-black/40 panel-backdrop-fade-in motion-reduce:animate-none"
     >
       <button
         type="button"

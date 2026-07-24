@@ -149,7 +149,7 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
               <div key={i}>
                 <div className="my-3 border-t" aria-hidden="true" />
                 {group.label && (
-                  <div className="px-2.5 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</div>
+                  <div className="text-label px-2.5 pb-1.5 pt-1">{group.label}</div>
                 )}
                 <ul className="space-y-0.5">
                   {group.rows.map((item) => (
@@ -171,7 +171,7 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
             {accountItems?.length > 0 && (
               <>
                 <div className="my-3 border-t" aria-hidden="true" />
-                <div className="px-2.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Account</div>
+                <div className="text-label px-2.5 pb-1.5">Account</div>
                 <ul className="space-y-0.5">
                   {accountItems.map((item) => (
                     <MenuRow key={item.id} item={item} active={false} onClick={() => handleItemClick(item)} />

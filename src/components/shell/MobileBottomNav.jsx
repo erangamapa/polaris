@@ -12,7 +12,11 @@ import { ARENAS } from "@/lib/arenas";
 // polish, not a desktop navigation change. Icons/colors are presentation,
 // not "availability" data — see lib/arenas.js for why id/label live there.
 const ARENA_ICONS = { casino: Dices, predictions: TrendingUp, sports: Trophy };
-const ARENA_COLORS = { casino: "#D99AB9", predictions: "#92D4DF", sports: "#D7E78A" };
+// THEME READINESS: aliases the same --casino-text-accent/etc. tokens
+// Sidebar.jsx's ACCENTS reads (index.css) instead of re-hardcoding the
+// identical hex a second time — one source for "what does this arena's
+// active-state accent look like".
+const ARENA_COLORS = { casino: "var(--casino-text-accent)", predictions: "var(--predictions-text-accent)", sports: "var(--sports-text-accent)" };
 const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id], color: ARENA_COLORS[a.id] }));
 
 // Shared indicator geometry — every item (Menu or arena) uses the exact
