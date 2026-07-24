@@ -61,7 +61,7 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
       aria-modal="true"
       aria-label={details ? `${details.name} info` : "Game information"}
       data-test-id="game-info-panel"
-      className="fixed inset-0 z-[70] flex justify-end bg-black/40"
+      className="fixed inset-0 z-[70] flex justify-end bg-black/40 panel-backdrop-fade-in motion-reduce:animate-none"
     >
       <button
         type="button"
@@ -70,11 +70,18 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
         className="absolute inset-0 h-full w-full cursor-default"
         tabIndex={-1}
       />
+      {/* MOTION QUALITY PASS — entrance-only slide+fade from the panel's own
+          right edge (this is a right-side drawer, matching its actual
+          panel direction). Exit stays an instant unmount, deliberately not
+          animated: this component's focus-restore/Escape-suppression logic
+          (see App.jsx/GameLaunchSurface.jsx) is keyed directly to its mount
+          state, and delaying that for a close animation risks reopening
+          the exact class of focus race this app already had to fix once. */}
       <div
         ref={panelRef}
         tabIndex={-1}
         data-test-id="game-info-content"
-        className="relative flex h-full w-full flex-col overflow-hidden bg-zinc-950 outline-none md:w-[420px] md:border-l md:border-white/10"
+        className="relative flex h-full w-full flex-col overflow-hidden bg-zinc-950 outline-none panel-enter-right motion-reduce:animate-none md:w-[420px] md:border-l md:border-white/10"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <header

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleCheck, CircleX, TriangleAlert, Info, X } from "lucide-react";
 import { toast, useToasts } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 
 const CFG = {
   success: { Icon: CircleCheck, color: "#49B889", tint: "rgba(73,184,137,0.14)" },
@@ -9,7 +10,7 @@ const CFG = {
   info: { Icon: Info, color: "#4FA7B8", tint: "rgba(79,167,184,0.14)" },
 };
 
-function ToastCard({ t }) {
+function ToastCard({ t, leaving }) {
   const cfg = CFG[t.type] ?? CFG.info;
   const duration = t.duration ?? (t.type === "error" ? 6000 : 4000);
   const sticky = duration === Infinity || t.sticky;
@@ -31,10 +32,14 @@ function ToastCard({ t }) {
   const Icon = cfg.Icon;
   return (
     <div
-      onMouseEnter={!sticky ? pause : undefined}
-      onMouseLeave={!sticky ? resume : undefined}
+      onMouseEnter={!sticky && !leaving ? pause : undefined}
+      onMouseLeave={!sticky && !leaving ? resume : undefined}
       data-state="open"
-      className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-xl border border-[#3a3b42] bg-[#24252b] shadow-[0_10px_28px_rgba(0,0,0,0.55)] duration-200 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
+      aria-hidden={leaving || undefined}
+      className={cn(
+        "w-full max-w-sm overflow-hidden rounded-xl border border-[#3a3b42] bg-[#24252b] shadow-[0_10px_28px_rgba(0,0,0,0.55)] duration-200 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2",
+        leaving ? "toast-leaving pointer-events-none" : "pointer-events-auto"
+      )}
     >
       <div className="flex items-start gap-3 p-3">
         <span className="grid size-6 shrink-0 place-items-center rounded-lg" style={{ background: cfg.tint }}>
@@ -67,9 +72,48 @@ function ToastCard({ t }) {
   );
 }
 
+// MOTION QUALITY PASS — the store (lib/toast.jsx) removes a dismissed toast
+// from `list` immediately; rendering that removal as an instant list-splice
+// made every toast below the dismissed one snap up into the gap in the same
+// frame. This keeps a locally-rendered superset of `list` (`rendered`):
+// items still in `list` render normally, and an id that just DROPPED OUT of
+// `list` is kept mounted one extra beat with `.toast-leaving` (fade + small
+// upward settle, see index.css) before finally being dropped from local
+// state — the store itself needs no change, this is purely a render-timing
+// buffer around it.
+const TOAST_LEAVE_MS = 130;
+
 export function Toaster() {
   const list = useToasts();
-  if (!list.length) return null;
+  const [rendered, setRendered] = useState(list);
+  const leavingRef = useRef(new Set());
+  const timersRef = useRef(new Map());
+
+  useEffect(() => {
+    const currentIds = new Set(list.map((t) => t.id));
+    const stillRendered = rendered.filter((t) => currentIds.has(t.id) || leavingRef.current.has(t.id));
+    // New items from the store that aren't rendered yet.
+    const incoming = list.filter((t) => !stillRendered.some((r) => r.id === t.id));
+    // Items present a moment ago but now gone from the store: mark leaving
+    // (once) and schedule their real removal.
+    for (const t of stillRendered) {
+      if (!currentIds.has(t.id) && !leavingRef.current.has(t.id)) {
+        leavingRef.current.add(t.id);
+        const timer = setTimeout(() => {
+          leavingRef.current.delete(t.id);
+          timersRef.current.delete(t.id);
+          setRendered((prev) => prev.filter((r) => r.id !== t.id));
+        }, TOAST_LEAVE_MS);
+        timersRef.current.set(t.id, timer);
+      }
+    }
+    setRendered([...incoming, ...stillRendered]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list]);
+
+  useEffect(() => () => { for (const timer of timersRef.current.values()) clearTimeout(timer); }, []);
+
+  if (!rendered.length) return null;
   return (
     <div
       role="status"
@@ -77,7 +121,7 @@ export function Toaster() {
       aria-atomic="false"
       className="pointer-events-none fixed inset-x-0 top-16 z-[var(--z-critical-alert)] flex flex-col items-center gap-2 px-4"
     >
-      {list.map((t) => <ToastCard key={t.id} t={t} />)}
+      {rendered.map((t) => <ToastCard key={t.id} t={t} leaving={leavingRef.current.has(t.id)} />)}
     </div>
   );
 }

@@ -209,7 +209,7 @@ function ItemIcon({ icon }) {
 // Splits a flat items array into groups at `divider` pseudo-items, capturing
 // any `sectionLabel` pseudo-item that immediately precedes a group as that
 // group's heading. Groups with zero real rows are dropped (a lone trailing
-// divider produces nothing). Mirrors Sidebar.jsx's ExpandedRail handling of
+// divider produces nothing). Mirrors Sidebar.jsx's RailItems handling of
 // the exact same pseudo-item convention, just producing discrete groups
 // instead of one continuous list, since each group needs its own <ul>.
 function segmentUtilityItems(items) {
@@ -236,8 +236,15 @@ function MenuRow({ item, active, onClick }) {
         onClick={onClick}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "relative flex w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          active ? "min-h-[64px] bg-secondary/80 font-semibold text-foreground" : "min-h-[56px] text-muted-foreground active:bg-secondary/40 active:text-foreground"
+          // MOTION QUALITY PASS: both states now share one min-h-[64px] —
+          // previously active was 64px and inactive 56px, so the row
+          // ABOVE/BELOW whichever one became active/inactive visibly
+          // shifted by 8px (a real geometry shift, not an animation issue:
+          // there's no transition here to soften, the DOM just reflowed).
+          // Selecting a different arena/section while this menu is open
+          // was the one path that could trigger it live.
+          "relative flex min-h-[64px] w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          active ? "bg-secondary/80 font-semibold text-foreground" : "text-muted-foreground active:bg-secondary/40 active:text-foreground"
         )}
       >
         {active && (

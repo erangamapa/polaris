@@ -53,12 +53,17 @@ export function DevPanel() {
     { label: "Info", cls: "text-[#4FA7B8]", fn: () => toast.info("Verify to withdraw", { message: "KYC required before cashing out.", action: { label: "Verify now", onClick: noop } }) },
   ];
 
+  // MOTION QUALITY PASS — entrance-only slide+fade from its own right edge
+  // (same treatment as GameInfoPanel, the app's other plain right-side
+  // drawer). Exit stays an instant unmount deliberately: see
+  // GameInfoPanel.jsx's identical comment — this panel's focus-restore is
+  // keyed to its mount state too.
   return (
     <aside
       ref={panelRef}
       role="complementary"
       aria-label="Developer Panel"
-      className="tribet-scrollbar fixed inset-y-0 right-0 z-[var(--z-critical-alert)] flex w-[340px] max-w-[92vw] flex-col overflow-y-auto border-l border-[#3a3b42] bg-[#1a1b1f] text-foreground shadow-[-8px_0_28px_rgba(0,0,0,0.45)]"
+      className="tribet-scrollbar fixed inset-y-0 right-0 z-[var(--z-critical-alert)] flex w-[340px] max-w-[92vw] flex-col overflow-y-auto border-l border-[#3a3b42] bg-[#1a1b1f] text-foreground shadow-[-8px_0_28px_rgba(0,0,0,0.45)] panel-enter-right motion-reduce:animate-none"
     >
       <div className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b border-[#3a3b42] bg-[#1a1b1f] px-3 py-3">
         <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Dev</span>

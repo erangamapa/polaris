@@ -19,6 +19,18 @@ html {
 /* Shared motion values (Apple-quality: gentle ease-out, small distance, short duration). */
 :root {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* MOTION QUALITY PASS — a small, deliberately separate token set for
+     layout-affecting motion (sidebar width/labels, panel slide-ins), kept
+     apart from --ease-out above so none of --ease-out's existing consumers
+     (favorite pop, arena fade-in-up, mobile menu) change feel. Durations are
+     named by ROLE, not by pixel value, so a future retune only touches this
+     block. See docs' motion audit for why these specific ranges were chosen
+     (Sidebar.jsx: rail width 260-300ms, label fade-out 90-120ms, label
+     reveal 120-160ms with a short delay). */
+  --motion-fast: 110ms;
+  --motion-standard: 200ms;
+  --motion-layout: 280ms;
+  --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
   /* Visual content height of MobileBottomNav (excludes the safe-area inset,
      which is added on top by consumers) — one source of truth so page
      content, footers and the full-screen menu never guess this number
@@ -182,6 +194,47 @@ html {
 /* Subtle section/content enter. Never blocks clicks; opacity + transform only. */
 .animate-fade-in-up {
   animation: fade-in-up 220ms var(--ease-out) both;
+}
+
+/* MOTION QUALITY PASS — Game Info / Developer Panel are plain custom
+   overlays (not Radix Dialog), so they previously had zero open transition:
+   `if (!open) return null` snapped straight to full-visible. Entrance-only
+   (mount-triggered) fade + short slide from the panel's own edge — exit
+   stays an instant unmount, deliberately: both panels carry careful,
+   previously-fixed focus-restoration/Escape-suppression logic keyed
+   directly to their mount state (see GameInfoPanel.jsx/App.jsx), and
+   delaying that unmount for a close animation would reopen exactly the
+   class of race this app's motion already had to fix once — not worth the
+   risk for a close transition nobody reported as broken. `both` fill mode
+   so the panel starts pre-transition-state on the very first frame (no
+   flash of the final state before the animation begins). */
+@keyframes panel-slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.panel-enter-right {
+  animation: panel-slide-in-right var(--motion-layout) var(--ease-emphasized) both;
+}
+@keyframes panel-backdrop-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.panel-backdrop-fade-in {
+  animation: panel-backdrop-fade-in var(--motion-standard) var(--ease-out) both;
+}
+
+/* MOTION QUALITY PASS — toast removal used to be an instant list-splice:
+   the dismissed card vanished and every toast below it snapped up into the
+   gap in the same frame. `.toast-leaving` gives Toaster.jsx a brief,
+   deliberate exit state (opacity + small upward translate + height
+   collapse) to animate through before it actually removes the item from
+   render state, so the stack re-flows smoothly instead of jumping. */
+@keyframes toast-leave {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+.toast-leaving {
+  animation: toast-leave var(--motion-fast) var(--ease-emphasized) both;
 }
 
 /* Toast auto-dismiss progress (visual only; JS timer handles actual dismissal). */

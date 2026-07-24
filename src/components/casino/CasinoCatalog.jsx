@@ -654,13 +654,24 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
 // description, kind filter chips, plain grid. Never the top promo tiles
 // (those are Lobby-only), never deduped against "Your games" — a full
 // category listing should always be the complete, real list.
+//
+// MOTION QUALITY PASS: this (and FavoritesPage/RecentlyPlayedPage below)
+// used to carry their own `animate-fade-in-up` on the outer <section>.
+// Since CasinoCatalog's caller (App.jsx) already wraps ALL Casino content
+// in one `animate-fade-in-up`, keyed only on a genuine arena switch (see
+// App.jsx's `ArenaErrorBoundary key={product}`), these inner copies only
+// ever fired on TOP of that when switching between Lobby/a category/
+// Favorites/Recently Played — different pages, but still "routine category
+// browsing within Casino", exactly what this task asks to stop replaying
+// an entrance animation for. Removed; the outer wrapper already covers a
+// genuine "arrived at Casino" moment.
 function CategoryPage({ category, tileProps, onBrowseGames }) {
   const [chip, setChip] = useState("all");
   const meta = CATEGORY_META[category];
   const games = ALL_GAMES.filter((g) => g.tags?.includes(meta.tag)).filter((g) => chip === "all" || g.kind === chip);
 
   return (
-    <section className="animate-fade-in-up">
+    <section>
       <h1 className="text-lg font-bold">{displayLabel(category)}</h1>
       {meta.description && <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>}
 
@@ -715,7 +726,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   // toggling a favorite while already here doesn't re-fire it.
   useEffect(() => { track("casino_favorites_opened", {}); }, []);
   return (
-    <section className="animate-fade-in-up">
+    <section>
       <div className="mb-4 flex items-center gap-2">
         <Star className="size-5 fill-amber-400 text-amber-400" />
         <h1 className="text-lg font-bold">Favorites</h1>
@@ -760,7 +771,7 @@ function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, p
   useEffect(() => { track("casino_recently_played_opened", {}); }, []);
   const copy = recentlyPlayedEmptyCopy(profileVariant);
   return (
-    <section className="animate-fade-in-up">
+    <section>
       <div className="mb-4 flex items-center gap-2">
         <History className="size-5 text-zinc-300" />
         <h1 className="text-lg font-bold">Recently Played</h1>
