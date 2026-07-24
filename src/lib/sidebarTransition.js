@@ -1,122 +1,145 @@
-// SIDEBAR COLLAPSE/EXPANSION — PERMANENT TRANSITION FIX.
+// SIDEBAR COLLAPSE/EXPANSION — SEQUENTIAL HANDOFF (no crossfade).
 //
-// Root cause of the prior jumpiness: the rail's width transition and its
-// label-reveal transition were two INDEPENDENT CSS transitions started at
-// (almost) the same instant, coordinated only by a hand-picked delay
-// number (labels started revealing 90ms into a 280ms width animation —
-// i.e. while the rail was still visibly only ~1/3 of the way open).
-// That's an approximation of sequencing via timing constants, not real
-// sequencing — under any drift (a slow frame, a redirected/reversed
-// toggle, reduced motion) the two could desync and the label would appear
-// mid-resize, which reads exactly as "the menu reformatting itself".
+// This replaces an earlier crossfade design (compact and expanded both
+// visible at overlapping opacity for a brief window) that turned out to
+// look busy and cluttered in practice — two full navigation layouts with
+// text/headings partially overlapping reads very differently than a
+// simple photo crossfade. This version is strictly SEQUENTIAL: at no
+// point are both layers' target opacity non-zero at the same time.
 //
-// This file is the actual fix: a small, pure, explicit state machine with
-// SIX phases (not a boolean), so the two properties that must never move
-// at the same time — rail WIDTH and CONTENT (label/heading) visibility —
-// are structurally forced into non-overlapping windows. Reversing
-// direction mid-transition, rapid toggling, and reduced motion all fall
-// out of the same four functions below with no special-casing, because
-// every phase has an exact, provable next-phase for every input.
+// Eight phases, one clear thing happening in each:
 //
-//                     ┌────────────┐
-//        desired=true │            │ desired=false
-//        (from COLLAPSED)          (from EXPANDED)
-//                     ▼            ▼
-//   COLLAPSED → OPENING → REVEALING → EXPANDED
-//       ▲          │           │          │
-//       │          │ desired=false        │ desired=false
-//       │          ▼           ▼          ▼
-//       └── CLOSING ◄──────── HIDING ◄────┘
-//              ▲                  │
-//              └── desired=true ──┘ (reverses back to REVEALING)
+//   COLLAPSED → COMPACT_HIDING → OPENING → EXPANDED_REVEALING → EXPANDED
+//       ▲             │                            │              │
+//       │             ▼ reverse                    ▼ reverse      │
+//       │      COMPACT_REVEALING ◄─── CLOSING ◄─── EXPANDED_HIDING ◄┘
+//       └──────────────┘
 //
-// WIDTH only ever moves during OPENING/CLOSING. CONTENT only ever moves
-// during REVEALING/HIDING. Reversing mid-transition always lands on the
-// OTHER phase for whichever property was already in motion (OPENING <->
-// CLOSING, REVEALING <-> HIDING) — the CSS transition itself reverses
-// smoothly from its current computed value the moment the target class
-// flips, so no JS interpolation math is needed.
+//   COMPACT_HIDING       — compact fading 1→0; width still collapsed
+//   OPENING              — width animating collapsed→expanded; BOTH menus
+//                          invisible (opacity 0) — this is the "empty
+//                          shell" step the task asks for
+//   EXPANDED_REVEALING   — expanded fading 0→1; width already expanded
+//   EXPANDED_HIDING      — expanded fading 1→0; width still expanded
+//   CLOSING              — width animating expanded→collapsed; BOTH menus
+//                          invisible
+//   COMPACT_REVEALING    — compact fading 0→1; width already collapsed
+//
+// Reversing direction mid-transition lands on the "mirror" phase for
+// whichever single property (compact opacity / width / expanded opacity)
+// was actually in motion — COMPACT_HIDING<->COMPACT_REVEALING,
+// OPENING<->CLOSING, EXPANDED_REVEALING<->EXPANDED_HIDING — the same
+// technique the previous (crossfade) version used, just with four mirror
+// pairs instead of two, since compact-fade and expanded-fade are now
+// fully separate, non-overlapping motions rather than one shared "content"
+// motion.
 
 export const RAIL_PHASE = {
   COLLAPSED: "collapsed",
-  OPENING: "opening", // width animating toward expanded; content stays hidden
-  REVEALING: "revealing", // width already at expanded; content animating in
-  EXPANDED: "expanded", // steady state, fully open
-  HIDING: "hiding", // width still at expanded; content animating out
-  CLOSING: "closing", // width animating toward collapsed; content stays hidden
+  COMPACT_HIDING: "compact-hiding",
+  OPENING: "opening",
+  EXPANDED_REVEALING: "expanded-revealing",
+  EXPANDED: "expanded",
+  EXPANDED_HIDING: "expanded-hiding",
+  CLOSING: "closing",
+  COMPACT_REVEALING: "compact-revealing",
 };
 
-// Hydration/first-render safety: the phase machine must start in a STEADY
-// state that exactly matches the real initial preference, never in a
-// transitional phase — otherwise first paint would animate from a phase
-// that was never actually requested (see FIRST RENDER requirements).
+// Hydration/first-render safety: start in a steady state that exactly
+// matches the real initial preference, never mid-sequence.
 export function initialRailPhase(desiredExpanded) {
   return desiredExpanded ? RAIL_PHASE.EXPANDED : RAIL_PHASE.COLLAPSED;
 }
 
 // A fresh target arrived (toggle click, cross-tab storage sync, etc.).
-// Pure: same (phase, desiredExpanded) always yields the same next phase.
 export function onDesiredChange(phase, desiredExpanded) {
   switch (phase) {
     case RAIL_PHASE.COLLAPSED:
-      return desiredExpanded ? RAIL_PHASE.OPENING : phase;
+      return desiredExpanded ? RAIL_PHASE.COMPACT_HIDING : phase;
+    case RAIL_PHASE.COMPACT_HIDING:
+      return desiredExpanded ? phase : RAIL_PHASE.COMPACT_REVEALING;
     case RAIL_PHASE.OPENING:
       return desiredExpanded ? phase : RAIL_PHASE.CLOSING;
-    case RAIL_PHASE.REVEALING:
-      return desiredExpanded ? phase : RAIL_PHASE.HIDING;
+    case RAIL_PHASE.EXPANDED_REVEALING:
+      return desiredExpanded ? phase : RAIL_PHASE.EXPANDED_HIDING;
     case RAIL_PHASE.EXPANDED:
-      return desiredExpanded ? phase : RAIL_PHASE.HIDING;
-    case RAIL_PHASE.HIDING:
-      return desiredExpanded ? RAIL_PHASE.REVEALING : phase;
+      return desiredExpanded ? phase : RAIL_PHASE.EXPANDED_HIDING;
+    case RAIL_PHASE.EXPANDED_HIDING:
+      return desiredExpanded ? RAIL_PHASE.EXPANDED_REVEALING : phase;
     case RAIL_PHASE.CLOSING:
       return desiredExpanded ? RAIL_PHASE.OPENING : phase;
+    case RAIL_PHASE.COMPACT_REVEALING:
+      return desiredExpanded ? RAIL_PHASE.COMPACT_HIDING : phase;
     default:
       return phase;
   }
 }
 
-// The rail's real `transitionend` (width) fired. Guarded against staleness:
-// if the desired direction already flipped since this phase started (which
-// would already have moved us to a different phase via onDesiredChange),
-// this is a no-op rather than a bogus advance — defensive, since the
-// primary staleness protection is React's own effect-cleanup cancelling
-// the listener/timer for a phase we've already left (see Sidebar.jsx).
-export function onWidthTransitionEnd(phase, desiredExpanded) {
-  if (phase === RAIL_PHASE.OPENING && desiredExpanded) return RAIL_PHASE.REVEALING;
-  if (phase === RAIL_PHASE.CLOSING && !desiredExpanded) return RAIL_PHASE.COLLAPSED;
+// Compact layer's own fade finished (a centralized timer, not a per-
+// element `transitionend` — see Sidebar.jsx for why). Guarded against
+// staleness: a late/duplicate firing that no longer matches the direction
+// we're actually headed is a no-op (React's effect cleanup on phase change
+// is the PRIMARY protection — this is a defensive second layer).
+export function onCompactFadeEnd(phase, desiredExpanded) {
+  if (phase === RAIL_PHASE.COMPACT_HIDING && desiredExpanded) return RAIL_PHASE.OPENING;
+  if (phase === RAIL_PHASE.COMPACT_REVEALING && !desiredExpanded) return RAIL_PHASE.COLLAPSED;
   return phase;
 }
 
-// Content's transition duration elapsed (centralized timer, not a DOM
-// `transitionend` — content spans many separate label elements sharing
-// one duration/easing, so no single element's event is authoritative;
-// see Sidebar.jsx's useRailTransition for why a shared, cleanup-guarded
-// timeout is the correct tool here per this task's own "if using timers
-// as fallback, centralize them" guidance). Same staleness guard as above.
-export function onContentTransitionEnd(phase, desiredExpanded) {
-  if (phase === RAIL_PHASE.REVEALING && desiredExpanded) return RAIL_PHASE.EXPANDED;
-  if (phase === RAIL_PHASE.HIDING && !desiredExpanded) return RAIL_PHASE.CLOSING;
+// Expanded layer's own fade finished. Same staleness guard.
+export function onExpandedFadeEnd(phase, desiredExpanded) {
+  if (phase === RAIL_PHASE.EXPANDED_REVEALING && desiredExpanded) return RAIL_PHASE.EXPANDED;
+  if (phase === RAIL_PHASE.EXPANDED_HIDING && !desiredExpanded) return RAIL_PHASE.CLOSING;
+  return phase;
+}
+
+// The rail's real `transitionend` (width, a single element — reliable).
+// Same staleness guard.
+export function onWidthTransitionEnd(phase, desiredExpanded) {
+  if (phase === RAIL_PHASE.OPENING && desiredExpanded) return RAIL_PHASE.EXPANDED_REVEALING;
+  if (phase === RAIL_PHASE.CLOSING && !desiredExpanded) return RAIL_PHASE.COMPACT_REVEALING;
   return phase;
 }
 
 // Pure derivation: everything the rendered rail needs, as a function of
-// phase alone — no component should compute these booleans any other way.
+// phase alone. The critical property this whole redesign exists for:
+// compactOpacity and expandedOpacity are NEVER both non-zero for the same
+// phase — see the "no crossfade" test in sidebarTransition.test.js, which
+// asserts this across the entire cycle.
 export function railPhaseVisuals(phase) {
-  return {
-    // Width sits at the expanded target for every phase except the two
-    // where it's explicitly supposed to be collapsed/collapsing.
-    widthExpanded: phase !== RAIL_PHASE.COLLAPSED && phase !== RAIL_PHASE.CLOSING,
-    // Content is only ever the *target* of "visible" while REVEALING
-    // (animating toward visible) or EXPANDED (settled visible).
-    contentVisible: phase === RAIL_PHASE.REVEALING || phase === RAIL_PHASE.EXPANDED,
-    // Collapsed-only tooltips may ONLY appear once fully settled collapsed
-    // — never mid-OPENING/CLOSING, never while any content is mid-motion.
-    tooltipsEnabled: phase === RAIL_PHASE.COLLAPSED,
-  };
+  switch (phase) {
+    case RAIL_PHASE.COLLAPSED:
+      return { widthExpanded: false, compactOpacity: 1, expandedOpacity: 0, compactInteractive: true, expandedInteractive: false };
+    case RAIL_PHASE.COMPACT_HIDING:
+      return { widthExpanded: false, compactOpacity: 0, expandedOpacity: 0, compactInteractive: false, expandedInteractive: false };
+    case RAIL_PHASE.OPENING:
+      return { widthExpanded: true, compactOpacity: 0, expandedOpacity: 0, compactInteractive: false, expandedInteractive: false };
+    case RAIL_PHASE.EXPANDED_REVEALING:
+      return { widthExpanded: true, compactOpacity: 0, expandedOpacity: 1, compactInteractive: false, expandedInteractive: false };
+    case RAIL_PHASE.EXPANDED:
+      return { widthExpanded: true, compactOpacity: 0, expandedOpacity: 1, compactInteractive: false, expandedInteractive: true };
+    case RAIL_PHASE.EXPANDED_HIDING:
+      return { widthExpanded: true, compactOpacity: 0, expandedOpacity: 0, compactInteractive: false, expandedInteractive: false };
+    case RAIL_PHASE.CLOSING:
+      return { widthExpanded: false, compactOpacity: 0, expandedOpacity: 0, compactInteractive: false, expandedInteractive: false };
+    case RAIL_PHASE.COMPACT_REVEALING:
+      return { widthExpanded: false, compactOpacity: 1, expandedOpacity: 0, compactInteractive: false, expandedInteractive: false };
+    default:
+      return { widthExpanded: false, compactOpacity: 1, expandedOpacity: 0, compactInteractive: true, expandedInteractive: false };
+  }
 }
 
-// Whether `phase` currently has a pending, timed advance in flight — used
-// by Sidebar.jsx to decide whether to schedule a content-duration timer.
-export function isContentInMotion(phase) {
-  return phase === RAIL_PHASE.REVEALING || phase === RAIL_PHASE.HIDING;
+// Whether `phase` has a pending compact-fade timer in flight.
+export function isCompactFading(phase) {
+  return phase === RAIL_PHASE.COMPACT_HIDING || phase === RAIL_PHASE.COMPACT_REVEALING;
+}
+
+// Whether `phase` has a pending expanded-fade timer in flight.
+export function isExpandedFading(phase) {
+  return phase === RAIL_PHASE.EXPANDED_REVEALING || phase === RAIL_PHASE.EXPANDED_HIDING;
+}
+
+// Whether `phase` has a pending width-transition in flight.
+export function isWidthInMotion(phase) {
+  return phase === RAIL_PHASE.OPENING || phase === RAIL_PHASE.CLOSING;
 }

@@ -11,10 +11,13 @@ import {
   RAIL_PHASE,
   initialRailPhase,
   onDesiredChange,
+  onCompactFadeEnd,
+  onExpandedFadeEnd,
   onWidthTransitionEnd,
-  onContentTransitionEnd,
   railPhaseVisuals,
-  isContentInMotion,
+  isCompactFading,
+  isExpandedFading,
+  isWidthInMotion,
 } from "@/lib/sidebarTransition";
 
 // Icons are desktop-rail-specific presentation, not "availability" data —
@@ -55,26 +58,39 @@ const ACCENTS = {
   },
 };
 
-// SIDEBAR HANDOFF FIX — same timing system as the prior transition-state-
-// machine pass (lib/sidebarTransition.js), unchanged. What changed in THIS
-// pass is what the rail actually RENDERS in response to that phase — see
-// the big comment above `Sidebar` below for why a single shared-DOM row
-// (the previous approach) could not satisfy "compact rows do not stretch"
-// and "no menu item changes y-position" at the same time.
+// SIDEBAR SEQUENTIAL HANDOFF — one source of truth for both the shell's
+// own width and each layer's own FIXED width (see CompactSidebarLayer/
+// ExpandedSidebarLayer below — this is what makes "collapsed icons remain
+// in their original left-anchored position" true regardless of the
+// shell's own current, possibly-animating width, rather than true only
+// when timing happens to line up).
+const SIDEBAR_COLLAPSED_WIDTH_PX = 60;
+const SIDEBAR_EXPANDED_WIDTH_PX = 220;
+
+// Durations reused unchanged from the prior passes (this is a structural/
+// sequencing fix, not a retune). COMPACT_FADE_MS/EXPANDED_FADE_MS map onto
+// the same "fast fade out, slightly slower reveal" feel as before.
 const RAIL_WIDTH_MS = 280;
-const CONTENT_REVEAL_MS = 140;
-const CONTENT_HIDE_MS = 100;
+const COMPACT_FADE_OUT_MS = 100;
+const COMPACT_FADE_IN_MS = 140;
+const EXPANDED_FADE_IN_MS = 140;
+const EXPANDED_FADE_OUT_MS = 100;
 const WIDTH_FALLBACK_SLACK_MS = 150;
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-// The phase-machine wiring for one <nav> rail — unchanged from the prior
-// pass. Pure phase logic lives in lib/sidebarTransition.js (unit-tested
-// there, 31 cases); this hook is just the React glue. See that file for
-// the full phase diagram and the reasoning behind transitionend-for-width
-// vs a centralized timer for content.
+// The phase-machine wiring for one <nav> rail. Pure phase logic lives in
+// lib/sidebarTransition.js (unit-tested there, 37 cases); this hook is
+// just the React glue — one `useEffect` per real event source (a fresh
+// desired target, the compact fade's own timer, the expanded fade's own
+// timer, and the width's real `transitionend` + a fallback timer), each
+// owning and cleaning up its own timer/listener. Rapid toggling and
+// mid-transition reversal need no special-casing here: every effect below
+// tears down its previous timer (React's normal cleanup-on-dependency-
+// change) before a new one runs, so a stale timer can never fire into a
+// phase this hook has already left.
 function useRailTransition(desiredExpanded) {
   const [phase, setPhase] = useState(() => initialRailPhase(desiredExpanded));
 
@@ -87,14 +103,21 @@ function useRailTransition(desiredExpanded) {
   }, [desiredExpanded]);
 
   useEffect(() => {
-    if (!isContentInMotion(phase)) return undefined;
-    const duration = phase === RAIL_PHASE.REVEALING ? CONTENT_REVEAL_MS : CONTENT_HIDE_MS;
-    const t = setTimeout(() => setPhase((p) => onContentTransitionEnd(p, desiredExpanded)), duration);
+    if (!isCompactFading(phase)) return undefined;
+    const duration = phase === RAIL_PHASE.COMPACT_HIDING ? COMPACT_FADE_OUT_MS : COMPACT_FADE_IN_MS;
+    const t = setTimeout(() => setPhase((p) => onCompactFadeEnd(p, desiredExpanded)), duration);
     return () => clearTimeout(t);
   }, [phase, desiredExpanded]);
 
   useEffect(() => {
-    if (phase !== RAIL_PHASE.OPENING && phase !== RAIL_PHASE.CLOSING) return undefined;
+    if (!isExpandedFading(phase)) return undefined;
+    const duration = phase === RAIL_PHASE.EXPANDED_REVEALING ? EXPANDED_FADE_IN_MS : EXPANDED_FADE_OUT_MS;
+    const t = setTimeout(() => setPhase((p) => onExpandedFadeEnd(p, desiredExpanded)), duration);
+    return () => clearTimeout(t);
+  }, [phase, desiredExpanded]);
+
+  useEffect(() => {
+    if (!isWidthInMotion(phase)) return undefined;
     const t = setTimeout(() => setPhase((p) => onWidthTransitionEnd(p, desiredExpanded)), RAIL_WIDTH_MS + WIDTH_FALLBACK_SLACK_MS);
     return () => clearTimeout(t);
   }, [phase, desiredExpanded]);
@@ -124,14 +147,15 @@ function SideIndicator({ color }) {
 const tooltipSide = () => (typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right");
 
 // ════════════════════════════════════════════════════════════════════════
-// COMPACT LAYER — icon-only. Every row is a fixed size-11 (44px) square;
-// nothing here ever measures or reacts to the rail's current width, so
-// nothing in this layer can "stretch" as the shell widens (the bug this
-// pass fixes: the previous single-shared-row design used a `w-full`
-// button whose own background/hit-area grew right along with the shell).
-// Tooltip open state is fully controlled by `tooltipsEnabled` (true only
-// once RAIL_PHASE.COLLAPSED is fully settled — see Sidebar below) so it
-// can never appear mid-transition.
+// COMPACT LAYER — icon-only. Every row is a fixed size-11 (44px) square.
+// The LAYER ITSELF (see CompactSidebarLayer's own wrapping div, rendered
+// by Sidebar below) is absolutely positioned at a FIXED
+// SIDEBAR_COLLAPSED_WIDTH_PX, pinned to the left edge — not sized to
+// whatever the shell's own (possibly-animating) current width happens to
+// be. That is what makes "collapsed icons never travel toward the
+// centre" true unconditionally: `items-center` here only ever centers
+// icons within this layer's own constant 60px box, never within a
+// growing container (the bug the previous version had — see the report).
 // ════════════════════════════════════════════════════════════════════════
 function CompactButton({ id, icon, label, active, accentColor, onClick, disabled, disabledLabel, badge, ariaCurrent, testId, tooltipsEnabled }) {
   const [tipOpen, setTipOpen] = useState(false);
@@ -164,11 +188,11 @@ function CompactButton({ id, icon, label, active, accentColor, onClick, disabled
 }
 
 // The whole compact composition: arena-tab icon column, a short boundary
-// rule, then the item icons — every id suffixed `-compact` (see Sidebar's
-// own comment on why: this layer and the expanded layer below are BOTH
-// permanently mounted at once, so the same logical nav destination needs
-// two distinct DOM ids, one per layer — two elements sharing one id would
-// be invalid HTML and break `getElementById`-based focus restoration).
+// rule, then the item icons — every id suffixed `-compact` (this layer
+// and the expanded layer below are BOTH permanently mounted at once, so
+// the same logical nav destination needs two distinct DOM ids — two
+// elements sharing one id would be invalid HTML and break
+// `getElementById`-based focus restoration).
 function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, platformScope, tooltipsEnabled }) {
   return (
     <div className="flex flex-col items-center gap-1 p-3">
@@ -190,18 +214,10 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
           />
         );
       })}
-      {/* Arena/section boundary — short and centered, matching this
-          layer's own compact width, not the full-width rule the expanded
-          layer uses (that's ExpandedSidebarLayer's own separate element,
-          not a shared/resized one — see the file-level comment on why
-          each layer owns its complete composition independently). */}
       <div aria-hidden="true" className="my-1 h-px w-8 bg-white/25" />
       {items.map((it) => {
         // Section labels have no compact equivalent (nowhere to put text,
-        // not focusable) — simply omitted, never a source of geometry
-        // shift since this layer's OWN rows never had a heading-shaped gap
-        // to begin with, unlike the previous single-shared-tree design
-        // where a heading could pop into a list that ALSO held icon rows.
+        // not focusable) — simply omitted.
         if (it.sectionLabel) return null;
         if (it.divider) return <div key={it.id} aria-hidden="true" className="my-1 h-px w-5 bg-white/10" />;
         return (
@@ -235,11 +251,11 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
 
 // ════════════════════════════════════════════════════════════════════════
 // EXPANDED LAYER — full labeled rows, section headings, dividers, the
-// three-tile arena-tab row. A complete, independent composition: nothing
-// here is shared with CompactSidebarLayer's DOM, so nothing this layer
-// does (a heading appearing, a row being full-width) can ever push or
-// resize anything in the compact layer — they only ever interact via a
-// plain opacity crossfade at the Sidebar level (see below).
+// three-tile arena-tab row. Also absolutely positioned at its own FIXED
+// SIDEBAR_EXPANDED_WIDTH_PX (see Sidebar below) — by the time this layer
+// is ever visible (opacity > 0), the shell has already fully finished
+// widening (OPENING always completes before EXPANDED_REVEALING begins —
+// see lib/sidebarTransition.js), so its width never has to "catch up".
 // ════════════════════════════════════════════════════════════════════════
 function ExpandedItemRow({ id, icon, label, active, accentColor, onClick, badge, ariaCurrent, testId }) {
   return (
@@ -349,50 +365,28 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
 // per `railMode`. Below 768px this renders nothing: mobile navigation is
 // the bottom nav + MobileFullScreenMenu, untouched by this pass.
 //
-// SIDEBAR HANDOFF FIX — root cause of the remaining jumpiness the prior
-// pass left behind: that pass unified compact and expanded into ONE
-// shared row per item (a persistent button whose LABEL faded in/out).
-// That fixed the *timing* (width vs. label motion no longer overlapped)
-// but not the *geometry*:
-//   - the shared button was `w-full`, so as the shell widened, the
-//     button's own background/hit-area visibly stretched into a long
-//     empty bar before the label ever appeared — "compact rows do not
-//     stretch" was violated by construction
-//   - section headings only exist in expanded mode, so they still had to
-//     conditionally MOUNT the instant content became visible — a plain
-//     `{condition && <div>heading</div>}` with no transition of its own,
-//     which both popped in abruptly AND, being a real flex sibling, pushed
-//     every item below it down by its own height in the same frame —
-//     "no section headings push existing icons downward" was violated
+// SIDEBAR SEQUENTIAL HANDOFF — replaces an earlier crossfade design that
+// made things worse in practice: that version stacked both layers in one
+// shared CSS grid cell (so the compact layer's `items-center` centered its
+// icons within the CURRENT, growing cell width — icons visibly drifted
+// toward the centre as the shell widened) and cross-faded both layers'
+// opacity during the SAME phase window (so a brief span existed where a
+// dense expanded menu and a compact icon column were both partially
+// visible and overlapping — busier and less polished than a plain state
+// change, not a subtle blend).
 //
-// The fix: two COMPLETE, independent, PERMANENTLY MOUNTED layers
-// (CompactSidebarLayer / ExpandedSidebarLayer above), stacked in one CSS
-// grid cell (both children placed at the same row/column, so the taller
-// one — expanded, with its headings — sizes the shared track without
-// either layer's content ever being able to move or resize the other),
-// crossfaded via opacity alone. Neither layer's rows ever change width or
-// position because of the OTHER layer's content — they simply aren't in
-// each other's layout tree at all. `inert` (+ mirrored `aria-hidden`)
-// keeps whichever layer isn't the current settled/target one out of the
-// tab order and accessibility tree entirely, so there is never a moment
-// with two "live" copies of the navigation — see the derived
-// `compactInert`/`expandedInert` below, which force BOTH layers inert
-// during the brief crossfade itself (REVEALING/HIDING), since no realistic
-// interaction needs to land in that ~100-140ms window and doing so avoids
-// ever exposing two simultaneously-interactive navigations.
+// This version: each layer is absolutely positioned at its OWN fixed
+// width (SIDEBAR_COLLAPSED_WIDTH_PX / SIDEBAR_EXPANDED_WIDTH_PX) — never
+// sized to the shell's current width, so nothing can ever drift — and the
+// phase machine (lib/sidebarTransition.js) makes the two layers' opacity
+// changes strictly SEQUENTIAL: compact fades out completely, THEN (only
+// once compact is fully gone) the shell width changes with neither layer
+// visible, THEN expanded fades in. See that file's own phase diagram.
 export function Sidebar({ railMode, product, setProduct, items, selected, onSelect }) {
   const desiredExpanded = railMode === "expanded";
-  const { phase, onWidthEnd, widthExpanded, contentVisible, tooltipsEnabled } = useRailTransition(desiredExpanded);
-  const contentDurationMs = phase === RAIL_PHASE.REVEALING ? CONTENT_REVEAL_MS : CONTENT_HIDE_MS;
-  const isCrossfading = phase === RAIL_PHASE.REVEALING || phase === RAIL_PHASE.HIDING;
-  // Compact is the target/settled layer through COLLAPSED/OPENING/CLOSING
-  // (opacity 1, interactive); expanded is the target/settled layer through
-  // EXPANDED (opacity 1, interactive). Both are forced inert during the
-  // crossfade itself — see the file comment above.
-  const compactOpacity = contentVisible ? 0 : 1;
-  const expandedOpacity = contentVisible ? 1 : 0;
-  const compactInert = isCrossfading || contentVisible;
-  const expandedInert = isCrossfading || !contentVisible;
+  const { phase, onWidthEnd, widthExpanded, compactOpacity, expandedOpacity, compactInteractive, expandedInteractive } = useRailTransition(desiredExpanded);
+  const compactFadeMs = phase === RAIL_PHASE.COMPACT_REVEALING ? COMPACT_FADE_IN_MS : COMPACT_FADE_OUT_MS;
+  const expandedFadeMs = phase === RAIL_PHASE.EXPANDED_REVEALING ? EXPANDED_FADE_IN_MS : EXPANDED_FADE_OUT_MS;
 
   // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
   // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
@@ -404,10 +398,11 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
   // `-compact`/`-expanded` for the SAME logical destination (two elements
   // can't share one id), so this tracks the LOGICAL key (id minus suffix)
   // continuously, and only actually refocuses once the rail has reached a
-  // real steady endpoint (COLLAPSED or EXPANDED) — refocusing mid-
-  // crossfade would target an element that's still `inert` at that exact
-  // moment (both layers are inert throughout REVEALING/HIDING), and an
-  // inert element cannot receive focus at all per the HTML spec.
+  // real steady endpoint (COLLAPSED or EXPANDED) — refocusing any earlier
+  // would target an element that isn't interactive yet (both layers are
+  // non-interactive through every in-between phase — see
+  // compactInteractive/expandedInteractive above, each true in exactly
+  // one steady phase and false everywhere else).
   const focusedKeyRef = useRef(null);
   const onFocusCapture = (e) => {
     const id = e.target.id;
@@ -423,8 +418,8 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
   }, [phase]);
 
   // Announce meaningful nav-state changes only — keyed on the raw
-  // requested target (what the user actually asked for), not the internal
-  // phase sequence.
+  // requested target, matching what the user actually asked for, not the
+  // internal phase sequence.
   const [announcement, setAnnouncement] = useState("");
   const prevDesiredExpanded = useRef(desiredExpanded);
   useEffect(() => {
@@ -451,54 +446,52 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
         )}
         style={{ transitionDuration: `${RAIL_WIDTH_MS}ms`, transitionTimingFunction: "var(--ease-emphasized)" }}
       >
-        <div className="h-full overflow-y-auto overflow-x-hidden">
-          {/* The grid stack: both layers occupy the same single cell
-              (col-start-1 row-start-1 on both), so the track's height is
-              simply the taller of the two — neither layer's content can
-              push, resize, or reflow the other, they only ever overlap
-              visually, blended by opacity alone. */}
-          <div className="grid min-w-0">
-            <div
-              className="col-start-1 row-start-1 min-w-0 transition-opacity motion-reduce:transition-none"
-              style={{
-                opacity: compactOpacity,
-                pointerEvents: compactInert ? "none" : undefined,
-                transitionDuration: `${contentDurationMs}ms`,
-                transitionTimingFunction: "var(--ease-emphasized)",
-              }}
-              inert={compactInert || undefined}
-              aria-hidden={compactInert || undefined}
-            >
-              <CompactSidebarLayer
-                product={product}
-                setProduct={setProduct}
-                items={items}
-                selected={selected}
-                onSelect={onSelect}
-                platformScope={platformScope}
-                tooltipsEnabled={tooltipsEnabled}
-              />
-            </div>
-            <div
-              className="col-start-1 row-start-1 min-w-0 transition-opacity motion-reduce:transition-none"
-              style={{
-                opacity: expandedOpacity,
-                pointerEvents: expandedInert ? "none" : undefined,
-                transitionDuration: `${contentDurationMs}ms`,
-                transitionTimingFunction: "var(--ease-emphasized)",
-              }}
-              inert={expandedInert || undefined}
-              aria-hidden={expandedInert || undefined}
-            >
-              <ExpandedSidebarLayer
-                product={product}
-                setProduct={setProduct}
-                items={items}
-                selected={selected}
-                onSelect={onSelect}
-                platformScope={platformScope}
-              />
-            </div>
+        {/* Positioning context for the two absolutely-positioned layers
+            below — each is pinned to its OWN fixed width, never the
+            shell's own current (possibly still-animating) width. */}
+        <div className="relative h-full">
+          <div
+            className="absolute inset-y-0 start-0 overflow-y-auto overflow-x-hidden transition-opacity motion-reduce:transition-none"
+            style={{
+              width: SIDEBAR_COLLAPSED_WIDTH_PX,
+              opacity: compactOpacity,
+              pointerEvents: compactInteractive ? undefined : "none",
+              transitionDuration: `${compactFadeMs}ms`,
+              transitionTimingFunction: "var(--ease-emphasized)",
+            }}
+            inert={!compactInteractive || undefined}
+            aria-hidden={!compactInteractive || undefined}
+          >
+            <CompactSidebarLayer
+              product={product}
+              setProduct={setProduct}
+              items={items}
+              selected={selected}
+              onSelect={onSelect}
+              platformScope={platformScope}
+              tooltipsEnabled={phase === RAIL_PHASE.COLLAPSED}
+            />
+          </div>
+          <div
+            className="absolute inset-y-0 start-0 overflow-y-auto overflow-x-hidden transition-opacity motion-reduce:transition-none"
+            style={{
+              width: SIDEBAR_EXPANDED_WIDTH_PX,
+              opacity: expandedOpacity,
+              pointerEvents: expandedInteractive ? undefined : "none",
+              transitionDuration: `${expandedFadeMs}ms`,
+              transitionTimingFunction: "var(--ease-emphasized)",
+            }}
+            inert={!expandedInteractive || undefined}
+            aria-hidden={!expandedInteractive || undefined}
+          >
+            <ExpandedSidebarLayer
+              product={product}
+              setProduct={setProduct}
+              items={items}
+              selected={selected}
+              onSelect={onSelect}
+              platformScope={platformScope}
+            />
           </div>
         </div>
       </nav>
