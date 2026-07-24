@@ -208,7 +208,10 @@ function SearchResultsBody({
   const announcement = mode === "no-results"
     ? `No Casino results found for ${query}`
     : mode === "results"
-      ? `${groups.games.length} game${groups.games.length === 1 ? "" : "s"}, ${groups.providers.length} provider${groups.providers.length === 1 ? "" : "s"}, ${groups.categories.length} categor${groups.categories.length === 1 ? "y" : "ies"} found`
+      // No providers clause — see lib/casinoSearch.js: `groups.providers`
+      // is always empty (no real, multi-provider inventory yet), so
+      // announcing "0 providers" every time would just be confusing noise.
+      ? `${groups.games.length} game${groups.games.length === 1 ? "" : "s"}, ${groups.categories.length} categor${groups.categories.length === 1 ? "y" : "ies"} found`
       : "";
   const liveRegion = <div role="status" aria-live="polite" className="sr-only">{announcement}</div>;
 
@@ -494,7 +497,7 @@ function CasinoMobileSearchDialog({ open, onClose, query, onQuery, onOpen, child
           className="fixed inset-x-0 top-0 z-[var(--z-fullscreen-menu)] flex h-dvh flex-col bg-background outline-none"
           onOpenAutoFocus={(e) => { e.preventDefault(); inputRef.current?.focus(); onOpen(); }}
         >
-          <DialogPrimitive.Description className="sr-only">Search Casino games, providers and categories.</DialogPrimitive.Description>
+          <DialogPrimitive.Description className="sr-only">Search Casino games and categories.</DialogPrimitive.Description>
           <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))]">
             <DialogPrimitive.Close
               aria-label="Close search"
@@ -510,7 +513,7 @@ function CasinoMobileSearchDialog({ open, onClose, query, onQuery, onOpen, child
                   ref={inputRef}
                   value={query}
                   onChange={(e) => onQuery(e.target.value)}
-                  placeholder="Search games or providers"
+                  placeholder="Search games or categories"
                   aria-label="Search Casino"
                   data-test-id="casino-mobile-search-input"
                   autoComplete="off"

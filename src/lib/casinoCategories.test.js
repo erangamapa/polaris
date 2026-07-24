@@ -20,8 +20,8 @@ import { CASINO_CATEGORIES, CATEGORY_LABEL, ROUTED_CATEGORIES, CASINO_PROVIDERS,
 //  7.  A disabled category's route still resolves its real label            -> unit test (CATEGORY_LABEL.Slots)
 
 describe("CASINO_CATEGORIES", () => {
-  it("has exactly seven nav-visible entries, in the target sidebar/pill order", () => {
-    expect(CASINO_CATEGORIES).toHaveLength(7);
+  it("has exactly six nav-visible entries, in the target sidebar/pill order", () => {
+    expect(CASINO_CATEGORIES).toHaveLength(6);
     expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
       "Lobby",
       "Originals",
@@ -29,13 +29,18 @@ describe("CASINO_CATEGORIES", () => {
       "New",
       "Live Casino",
       "Game Shows",
-      "Providers",
     ]);
   });
 
-  it("never includes Slots or Table Games (no supported inventory for either)", () => {
+  it("never includes Slots, Table Games, or Providers (no supported inventory/real provider data for any)", () => {
+    // Providers: this app has no real, multi-provider inventory yet — its
+    // "two providers" are really just its own onchain vs. vendored demo
+    // games, not distinct third parties worth a browsing destination (see
+    // FINAL QA's PROVIDERS section). Disabled the same way as Slots/Table
+    // Games — code (ProviderTiles, CASINO_PROVIDERS) is preserved, unused.
     expect(CASINO_CATEGORIES.some((c) => c.id === "Slots")).toBe(false);
     expect(CASINO_CATEGORIES.some((c) => c.id === "Table Games")).toBe(false);
+    expect(CASINO_CATEGORIES.some((c) => c.id === "Providers")).toBe(false);
   });
 
   it("still resolves a disabled category's real label (Slots stays a working direct link)", () => {
@@ -135,8 +140,12 @@ describe("activateCasinoCategory", () => {
     vi.stubGlobal("requestAnimationFrame", (cb) => cb());
     vi.stubGlobal("document", { querySelector: () => null });
     const onSelectCategory = vi.fn();
-    const providers = CASINO_CATEGORIES.find((c) => c.id === "Providers");
-    activateCasinoCategory(providers, onSelectCategory);
+    // "Providers" itself is disabled (see FINAL QA fix) and no longer in
+    // CASINO_CATEGORIES, but this test is really about "rail"-kind
+    // categories in general redirecting to Lobby — "Originals" is the
+    // same kind and still enabled, so it exercises the identical branch.
+    const originals = CASINO_CATEGORIES.find((c) => c.id === "Originals");
+    activateCasinoCategory(originals, onSelectCategory);
     expect(onSelectCategory).toHaveBeenCalledWith("Lobby");
     expect(onSelectCategory).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();

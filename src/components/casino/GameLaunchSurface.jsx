@@ -36,7 +36,7 @@ const ACTION_LABEL = { retry: "Try again", browse: "Browse games", close: "Close
 // makes loading -> ready -> failed all share identical outer bounds: every
 // status mounts the exact same <CasinoGameplayFrame>, only the content
 // inside its content-box differs.
-export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGames, onOpenInfo, children }) {
+export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGames, onOpenInfo, gameInfoOpen, devPanelOpen, children }) {
   const { status, delayed, errorCode } = launch;
   const headingRef = useRef(null);
   // Set only by BetSwirlGame (via the cloned `onBusyChange` prop below) while
@@ -45,7 +45,35 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
   // confirmation unless abandoning gameplay has real consequences" — this IS
   // one). ProviderGame never calls it, so this stays false for every
   // provider game, matching its previous (unconditional) close behavior.
+  //
+  // FINAL QA fix: also true whenever Game Info is open on top of gameplay
+  // (`gameInfoOpen`, from App.jsx's `infoFavId`). CasinoGameplayFrame's own
+  // Escape-closes-the-game listener and GameInfoPanel's own Escape-closes-
+  // itself listener are both bound to `window`, so without this a single
+  // Escape press fired both at once — closing Game Info AND the whole game
+  // underneath it, instead of Escape closing only the topmost surface like
+  // every other stacked overlay in this app. `closeDisabled` already existed
+  // for exactly this class of "something on top has a reason to own Escape
+  // right now" case, so this reuses it rather than adding a second signal.
+  //
+  // Also true whenever the Developer Panel is open (`devPanelOpen`, from
+  // App.jsx's devMock.panelOpen — the Panel visually sits above the game,
+  // z-[var(--z-critical-alert)] vs. this frame's z-50). Without this, the
+  // SAME collision existed here too: both the Panel's own Escape-closes-
+  // itself listener (useDevPanelShortcut.js) and this frame's Escape-
+  // closes-the-game listener are bound to `window`. It happened to not be
+  // visibly reachable before this fix only by accident — a real Playwright
+  // trace showed the Panel's synchronous `useSyncExternalStore` update was
+  // tearing down and re-adding this frame's own listener (its effect deps
+  // churn on every App re-render) DURING the same event dispatch, and per
+  // DOM semantics a listener removed before its turn during dispatch is
+  // simply skipped — not a deliberate guarantee, and it would silently stop
+  // holding the moment those effect deps were ever stabilized (e.g. a future
+  // `useCallback` "cleanup"). Suppressing explicitly here makes the already-
+  // correct "Escape closes only the topmost overlay" behavior deterministic
+  // instead of an accident of render timing.
   const [closeDisabled, setCloseDisabled] = useState(false);
+  const escapeSuppressed = closeDisabled || gameInfoOpen || devPanelOpen;
 
   // ACCESSIBILITY: "failure state receives focus" — the status heading is
   // the one focus target across every non-ready branch; ready hands focus
@@ -88,7 +116,7 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
   const content = isValidElement(children) ? cloneElement(children, { onBusyChange: setCloseDisabled }) : children;
 
   return (
-    <CasinoGameplayFrame game={game} mode={mode} onClose={onClose} closeDisabled={closeDisabled} onOpenInfo={game ? onOpenInfo : undefined}>
+    <CasinoGameplayFrame game={game} mode={mode} onClose={onClose} closeDisabled={escapeSuppressed} onOpenInfo={game ? onOpenInfo : undefined}>
       {showChildren && (
         <div className={status === GAME_LAUNCH_STATUS.READY ? "flex h-full w-full flex-col" : "absolute inset-0 flex flex-col"}>
           {content}

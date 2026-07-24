@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { gameProviderName, ALL_GAMES, railCardsPerPage } from "./CasinoCatalog";
+import { CATEGORY_LABEL } from "@/lib/casinoCategories";
 
 // CASINO GAME-CARD SYSTEM AUDIT AND CLEANUP — scenario coverage. The only
 // genuinely pure logic this task introduces is gameProviderName (relocated
@@ -32,15 +33,18 @@ import { gameProviderName, ALL_GAMES, railCardsPerPage } from "./CasinoCatalog";
 //  20. Reduced motion is respected                                                      -> Playwright (motion-reduce:animate-none on the skeleton; computed animation-name is "none" under reduced-motion emulation)
 
 describe("gameProviderName", () => {
-  it("labels every onchain game BetSwirl", () => {
+  // FINAL QA fix: no longer the internal SDK name "BetSwirl" — see
+  // gameProviderName's own comment for why "Tribet Originals" is the
+  // correct, non-invented, already-approved label instead.
+  it("labels every onchain game Tribet Originals", () => {
     for (const game of ALL_GAMES.filter((g) => g.kind === "onchain")) {
-      expect(gameProviderName(game)).toBe("BetSwirl");
+      expect(gameProviderName(game)).toBe(CATEGORY_LABEL.Originals);
     }
   });
 
-  it("labels every provider game with its real badge (TriBet Studio today)", () => {
+  it("labels every provider game with its real badge (Tribet Studio today)", () => {
     for (const game of ALL_GAMES.filter((g) => g.kind === "provider")) {
-      expect(gameProviderName(game)).toBe(game.badge ?? "TriBet Studio");
+      expect(gameProviderName(game)).toBe(game.badge ?? "Tribet Studio");
     }
   });
 
@@ -61,9 +65,9 @@ describe("gameProviderName", () => {
 // running dev server, driven through the Developer Panel's Favorites/
 // Recently Played presets:
 //
-//  1.  Shared rail is used by core Casino sections            -> code review (CasinoGameRail is the only rail component; every Lobby section — Favorites, Recently Played, Originals, Popular, New Releases, Live Casino, Game Shows, Providers — renders it, none hand-roll their own)
+//  1.  Shared rail is used by core Casino sections            -> code review (CasinoGameRail is the only rail component; every Lobby section — Favorites, Recently Played, Originals, Popular, New Releases, Live Casino, Game Shows, Tribet Studio — renders it, none hand-roll their own; the Providers row is intentionally not rendered — see FINAL QA fix)
 //  2.  Section headers align consistently                       -> Playwright (every header: title left, min-w-0/truncate on the badge, controls right, items-center)
-//  3.  See all only renders with valid destination                -> Playwright (Originals/Providers never show it — no destination beyond the rail itself; Popular/New Releases/Live Casino/Game Shows show it only when dedup actually removed something, i.e. the category page reveals more)
+//  3.  See all only renders with valid destination                -> Playwright (Originals never shows it — no destination beyond the rail itself; Popular/New Releases/Live Casino/Game Shows show it only when dedup actually removed something, i.e. the category page reveals more)
 //  4.  Previous arrow is disabled at start                          -> Playwright (disabled on initial render)
 //  5.  Next arrow is disabled at end                                 -> Playwright (disabled after scrolling to the true end, verified via scrollWidth-clientWidth)
 //  6.  Arrow navigation scrolls predictably                           -> unit test (railCardsPerPage) + Playwright (each click lands at a fixed offset from the current position — the baseline + N*cardStep — never a fractional card)
@@ -129,14 +133,14 @@ describe("gameProviderName", () => {
 //  5.  Only the populated personalized row appears                                          -> Playwright (Dev Panel: one populated, one empty -> exactly one personalized rail renders)
 //  6.  Tribet Originals naming is correct everywhere                                         -> unit test (lib/casinoCategories.test.js: CATEGORY_LABEL.Originals) + Playwright (rail heading text)
 //  7.  Technical Originals badge is removed                                                   -> Playwright (originals-rail badge reads "Provably fair", never "BetSwirl"/"Base Sepolia"/"Chainlink VRF")
-//  8.  Discovery row order is Originals -> Popular -> New Releases -> Live Casino -> Game Shows -> Providers -> code review (LobbyDashboard JSX order) + Playwright (rail order top to bottom)
+//  8.  Discovery row order is Originals -> Popular -> New Releases -> Live Casino -> Game Shows -> Tribet Studio -> code review (LobbyDashboard JSX order) + Playwright (rail order top to bottom) — the Providers row is intentionally not rendered (see FINAL QA fix: no real, multi-provider inventory yet; disabled the same way Slots/Table Games already are)
 //  9.  Slots row does not render (no supported inventory)                                       -> code review (no "slots" tag exists anywhere in BETSWIRL_GAMES/PROVIDER_GAMES; CASINO_CATEGORIES already excludes it)
 //  10. Table Games row does not render (no supported inventory)                                  -> code review (no "table-games" tag exists anywhere in the catalog)
 //  11. Empty generic rows do not render                                                            -> code review (CasinoGameRail returns null when games.length === 0 and no emptyState is passed — Recently Played/Favorites no longer pass one)
-//  12. Providers is a true provider-browsing row, not a mislabeled game rail                        -> Playwright (providers-rail renders exactly 2 provider tiles, not game cards) + unit test (lib/casinoCategories.test.js: CASINO_PROVIDERS)
-//  13. Selecting a provider tile opens a real destination                                            -> Playwright (BetSwirl tile scrolls to originals-rail, TriBet Studio tile scrolls to tribet-studio-rail)
-//  14. Search category results use the shared taxonomy                                                -> code review (casinoSearch.js's SEARCH_CATEGORIES/SEARCH_PROVIDERS both derive from lib/casinoCategories.js)
-//  15. See all hides when it adds no value                                                             -> code review (Originals/Providers/TriBet Studio never pass onSeeAll; Popular/New Releases/Live Casino/Game Shows only when dedup removed something)
+//  12. Providers row does not render at all                                                         -> Playwright (0 providers-rail nodes) + unit test (lib/casinoCategories.test.js: "Providers" category is disabled) — ProviderTiles/CASINO_PROVIDERS code is preserved, unused, for when real provider inventory exists
+//  13. N/A — no provider tile exists to select (see #12)
+//  14. Search category results use the shared taxonomy                                                -> code review (casinoSearch.js's SEARCH_CATEGORIES derives from lib/casinoCategories.js; SEARCH_PROVIDERS is preserved but never surfaced in a search result — see casinoSearch.test.js)
+//  15. See all hides when it adds no value                                                             -> code review (Originals/Tribet Studio never pass onSeeAll; Popular/New Releases/Live Casino/Game Shows only when dedup removed something)
 //  16. Favorites See all rule is correct                                                                -> Playwright (3 or fewer favorites -> no See all; 4+ -> See all appears)
 //  17. Arrows hide when all items fit                                                                    -> Playwright (unchanged CasinoGameRail behavior — canScrollLeft/Right both false, arrows disabled)
 //  18. Mobile row order matches desktop                                                                  -> Playwright (390px, same top-to-bottom rail order as 1440px)

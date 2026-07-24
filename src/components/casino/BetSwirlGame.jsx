@@ -5,6 +5,7 @@ import { useCasinoBalance, BALANCE_STATUS } from "@/lib/casinoBalance";
 import { baseSepolia } from "@shared/chains";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/telemetry";
+import { CATEGORY_LABEL } from "@/lib/casinoCategories";
 
 const txUrl = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
 const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
@@ -158,13 +159,18 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
     }
   };
 
+  // FINAL QA fix: no longer names the internal RNG/oracle vendor
+  // ("Chainlink VRF") in ordinary gameplay status text — real fairness/
+  // verification detail belongs in Game Info's advanced section (see
+  // CasinoRoundReceipt.jsx's own "Verification details" disclosure for the
+  // same pattern), not a routine pending-status label.
   const statusText = phase === "confirming" ? "Confirm in your wallet…"
-    : phase === "rolling" ? "Round pending — Chainlink VRF…" : null;
+    : phase === "rolling" ? "Round pending…" : null;
 
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-4 py-2">
-        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · BetSwirl</span>
+        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · {CATEGORY_LABEL.Originals}</span>
         <div className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white" data-test-id="betswirl-balance" data-balance-status={balanceStatus}>
           {balanceStatus === BALANCE_STATUS.LOADING ? (
             <span className="text-zinc-400">Loading…</span>
@@ -273,7 +279,7 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
               <button type="button" onClick={reduceBet} data-test-id="betswirl-reduce-bet" className="shrink-0 font-semibold underline-offset-2 hover:underline">Reduce bet</button>
             </div>
           )}
-          <p className="text-center text-[11px] text-zinc-500">Each bet is an on-chain transaction (gas + Chainlink VRF fee).</p>
+          <p className="text-center text-[11px] text-zinc-500">Each bet is an on-chain transaction (gas + randomness fee).</p>
         </div>
       </div>
     </div>

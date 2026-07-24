@@ -25,9 +25,19 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
     if (open) panelRef.current?.focus();
   }, [open]);
 
+  // FINAL QA fix: CasinoGameplayFrame.jsx has its own global Escape-closes-
+  // the-game listener (also on `window`). Game Info can open ON TOP of a
+  // live game (the gameplay-frame entry point), so without
+  // stopImmediatePropagation() a single Escape press fired BOTH listeners
+  // at once — closing Game Info AND the whole game underneath it — instead
+  // of Escape closing only the topmost surface, as every other stacked
+  // overlay in this app already does. Regular stopPropagation() would not
+  // have helped here: both listeners are bound to the exact same target
+  // (`window`), so only stopImmediatePropagation() prevents a sibling
+  // listener at that same target from also firing.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e) => { if (e.key === "Escape") { e.stopImmediatePropagation(); onClose(); } };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);

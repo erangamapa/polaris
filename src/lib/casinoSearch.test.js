@@ -10,12 +10,12 @@ import { matchTier, searchCasino, hasAnyResults, SEARCH_PROVIDERS, SEARCH_CATEGO
 //  2.  Search remains Casino-scoped                      -> code review (casinoSearch.js only reads Casino data) + Playwright (Sports/Predictions ScopedSearch has no panel/combobox role)
 //  3.  Exact game match ranks first                      -> unit test (searchCasino: exact above partial)
 //  4.  Prefix game match ranks above partial match        -> unit test (matchTier tiers) + Playwright
-//  5.  Provider results group renders                     -> unit test (searchCasino matches providers) + Playwright ("betswirl" -> Providers group)
+//  5.  No Providers group ever renders                     -> unit test (searchCasino always returns providers: []) + Playwright ("betswirl"/"tribet studio" surface no Providers group)
 //  6.  Category results group renders                     -> unit test (searchCasino matches categories) + Playwright ("live" -> Categories group)
 //  7.  Empty groups do not render                          -> Playwright (only matching groups show a heading)
 //  8.  Duplicate results are removed                        -> unit test (never returns duplicate favIds; structurally guaranteed, see searchCasino's own comment)
 //  9.  Selecting game launches game                          -> Playwright (URL updates to ?play=<favId>, panel closes)
-//  10. Selecting provider opens valid destination/filter       -> Playwright (scrolls Lobby to the Originals/Providers rail — no dead link)
+//  10. N/A — no Providers group exists to select from (see #5)
 //  11. Selecting category opens valid destination                -> Playwright (routes to the real category page, e.g. /casino/popular)
 //  12. Clear action resets query                                   -> Playwright (arena-search-clear button)
 //  13. No-result state renders                                      -> Playwright ("No Casino results found" + recovery)
@@ -77,9 +77,12 @@ describe("searchCasino", () => {
     expect(groups.games[0]?.title.toLowerCase()).toContain("roul");
   });
 
-  it("matches providers by name", () => {
-    const groups = searchCasino("betswirl");
-    expect(groups.providers.map((p) => p.name)).toContain("BetSwirl");
+  it("never returns a providers group — no real, multi-provider inventory yet (see FINAL QA's PROVIDERS section)", () => {
+    // Even a query that would match SEARCH_PROVIDERS' own raw list (still
+    // exported/preserved below) must not surface a Providers group in an
+    // actual search result.
+    expect(searchCasino("betswirl").providers).toEqual([]);
+    expect(searchCasino("tribet studio").providers).toEqual([]);
   });
 
   it("matches categories by label or id", () => {

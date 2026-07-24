@@ -33,8 +33,9 @@ bounded scope — no popup per round — while custody stays with the player.
 ## Wallet connection
 
 - **Reown AppKit** (formerly WalletConnect/Web3Modal) + **wagmi + viem** in `apps/web`.
-- Supports MetaMask, Coinbase Wallet, WalletConnect, and others (matches the current mock's
-  `WALLETS` list in `src/lib/session.js`).
+- Supports MetaMask, Coinbase Wallet, WalletConnect, and others — AppKit's own default wallet
+  list, not a hardcoded app-level list (the old mock's `WALLETS` array in `src/lib/session.js`
+  was removed once this real connection landed — see `10`'s component-mapping table).
 - Requires a Reown **Project ID** (see `11`).
 
 ## Session-key lifecycle

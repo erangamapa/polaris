@@ -23,7 +23,7 @@ import { ComplianceBlock } from "./ComplianceBlock";
 // of those editable controls exist here anymore — only a plain,
 // once-stated note that they aren't available yet, plus the one real,
 // working thing this app can offer: Support access.
-export function ResponsibleGamblingDialog({ open, onClose, complianceStatus, onSupport }) {
+export function ResponsibleGamblingDialog({ open, onClose, complianceStatus, onSupport, onCloseAutoFocus }) {
   useEffect(() => {
     if (open) track("responsible_gaming_opened", {});
   }, [open]);
@@ -33,7 +33,7 @@ export function ResponsibleGamblingDialog({ open, onClose, complianceStatus, onS
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-[var(--success)]" /> Responsible Gaming</DialogTitle>
           <DialogDescription>Tools and information to help you stay in control of your play.</DialogDescription>

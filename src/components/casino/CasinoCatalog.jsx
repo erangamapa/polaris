@@ -2,7 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Star, History, ChevronLeft, ChevronRight, Gamepad2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
-import { BETSWIRL_GAMES } from "@/web3/useBetSwirl";
+// Imported from betswirlCatalog.js directly, NOT useBetSwirl.js — that file
+// pulls in the real @betswirl/sdk-core SDK (needed to place bets), which
+// this catalog listing must never require just to show card metadata (see
+// PERFORMANCE task: "Lobby cards do not import full game implementations").
+import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
 import { PROVIDER_GAMES } from "./ProviderGame";
 import { EmptyState } from "@/components/ui/empty-state";
 import { takeUnclaimed } from "@/lib/casinoDedup";
@@ -13,12 +17,20 @@ import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from
 
 // Onchain games carry no provider field of their own (BETSWIRL_GAMES has
 // none — see useBetSwirl.js); provider-kind games carry an identical
-// "TriBet Studio" `badge` on every entry. Two real studios exist in this
+// "Tribet Studio" `badge` on every entry. Two real studios exist in this
 // catalog today, not eleven — deriving anything more granular would be
 // inventing providers that don't exist. Lives here (not in casinoSearch.js,
 // which already imports FROM this file) so both CasinoGameCard and search
 // can use the exact same label without a circular import.
-export const gameProviderName = (game) => (game.kind === "onchain" ? "BetSwirl" : (game.badge ?? "TriBet Studio"));
+//
+// FINAL QA fix: onchain games previously showed the internal SDK/vendor
+// name "BetSwirl" here — exactly the kind of exposed technical prototype
+// terminology the naming audit rules out. "Tribet Originals" is not
+// invented for this fix — it's the exact same label these games' own
+// Lobby rail already uses (see casinoCategories.js's CATEGORY_LABEL_OVERRIDE),
+// so this now agrees with, rather than contradicts, the section heading
+// these cards sit under.
+export const gameProviderName = (game) => (game.kind === "onchain" ? CATEGORY_LABEL.Originals : (game.badge ?? "Tribet Studio"));
 
 // Shared broken-image detection — one `onError` state machine, reused by
 // every place a game's artwork renders (full cards here, the compact search
@@ -832,17 +844,16 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
   );
 }
 
-// Compact provider-browsing tiles — the real destination for the "Providers"
-// category (see CASINO_PROVIDERS in lib/casinoCategories.js): exactly the
-// two real studios behind this catalog, not a generic mixed game rail
-// wearing that label (see PROVIDER MODEL: "the current row titled Providers
-// must not remain a normal game rail"). Selecting a tile scrolls to that
-// studio's own rail — the same scrollToRail behavior CategoryNav and Casino
-// search's provider results use (see casinoSearch.js's SEARCH_PROVIDERS),
-// so all three entry points land in the same place. No real per-studio logo
-// assets exist in this app, so every tile uses the same neutral icon rather
-// than a fabricated brand mark ("real logo where available, neutral
-// fallback where unavailable" — neither has one available today).
+// Compact provider-browsing tiles — was the "Providers" category's Lobby
+// destination. Deliberately unused/unreferenced now (see the disabled
+// "Providers" entry in lib/casinoCategories.js): there is no real,
+// multi-provider inventory yet, so this whole browsable-providers concept
+// is dormant, not deleted, for when real provider inventory exists (see
+// FINAL QA's PROVIDERS section: "preserve future provider architecture
+// privately"). No real per-studio logo assets exist in this app either, so
+// every tile would use the same neutral icon rather than a fabricated
+// brand mark, same reasoning as everywhere else in this app.
+// eslint-disable-next-line no-unused-vars -- intentionally dormant, not dead code to delete
 function ProviderTiles() {
   return (
     <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
@@ -1006,8 +1017,11 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
       <CasinoGameRail sectionId="casino-section-new-releases" testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={newReleasesHasMore ? seeAll("New") : undefined} />
       <CasinoGameRail sectionId="casino-section-live-casino" testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined} />
       <CasinoGameRail sectionId="casino-section-game-shows" testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined} />
-      {!q && <ProviderTiles />}
-      <CasinoGameRail testId="tribet-studio-rail" title="TriBet Studio" games={tribetStudio} tileProps={tileProps} context="home" />
+      {/* ProviderTiles is intentionally not rendered — see the "Providers"
+          category's own disabled entry in lib/casinoCategories.js for why
+          (no real, multi-provider inventory yet). Kept defined below, not
+          deleted, for when real provider inventory exists. */}
+      <CasinoGameRail testId="tribet-studio-rail" title="Tribet Studio" games={tribetStudio} tileProps={tileProps} context="home" />
     </div>
   );
 }

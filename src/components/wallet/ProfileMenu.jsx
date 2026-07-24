@@ -142,7 +142,15 @@ function MenuItem({ icon: Icon, label, onSelect, testId }) {
     <DropdownMenuPrimitive.Item
       onSelect={onSelect}
       data-test-id={testId}
-      className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground"
+      // `hover:bg-secondary`/`focus:bg-secondary` alone is not a reliable
+      // focus indicator here: --secondary and --popover are the identical
+      // color in this app's theme, so that background tint is invisible
+      // against this menu's own popover background — a real
+      // `focus-visible:ring` (same pattern BalanceControl's menu items
+      // already use) is what actually makes keyboard focus visible (see
+      // FOCUS VISIBILITY: "avoid focus styles that rely only on subtle
+      // color changes").
+      className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" /> {label}
     </DropdownMenuPrimitive.Item>

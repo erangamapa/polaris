@@ -11,14 +11,14 @@ const TOPICS = [
   "Responsible gambling & account limits",
 ];
 
-export function SupportDialog({ open, onClose }) {
+export function SupportDialog({ open, onClose, onCloseAutoFocus }) {
   const [caseId, setCaseId] = useState(null);
 
   const contact = () => setCaseId("#SUP-" + Math.random().toString(36).slice(2, 7).toUpperCase());
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && (onClose(), setCaseId(null))}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><LifeBuoy className="size-4 text-[var(--global-cta)]" /> Help &amp; support</DialogTitle>
           <DialogDescription>Find an answer or contact our team. Demo — no live agents.</DialogDescription>

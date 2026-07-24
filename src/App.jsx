@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, lazy, Suspense, Component } from "react";
 import {
   LayoutGrid, Radio,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
-  ShieldCheck, LifeBuoy, LogOut, LogIn, Settings,
+  ShieldCheck, LifeBuoy, LogOut, LogIn, Settings, Loader2,
 } from "lucide-react";
 import { TopBar } from "./components/shell/TopBar";
 import { Sidebar } from "./components/shell/Sidebar";
@@ -12,25 +12,44 @@ import { Footer } from "./components/shell/Footer";
 import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
 import { PromoStrip } from "./components/casino/PromoStrip";
-import { BetSwirlGame } from "./components/casino/BetSwirlGame";
-import { ProviderGame } from "./components/casino/ProviderGame";
 import { CasinoCatalog, CategoryNav, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
+// Not lazy-loaded: this component has no heavy dependencies of its own (a
+// small iframe wrapper — the actual weight for provider games is each
+// vendored game's own HTML/JS under public/games/*, already loaded
+// on-demand via the iframe's `src`, unrelated to JS bundling), and its
+// module also exports PROVIDER_GAMES, which CasinoCatalog needs eagerly
+// for every Lobby render — Rolldown correctly flagged splitting it as
+// ineffective (see betswirlCatalog.js for the equivalent, genuinely
+// effective split on the BetSwirl side, where the catalog data and the SDK
+// really were separable).
+import { ProviderGame } from "./components/casino/ProviderGame";
 import { CASINO_CATEGORIES, CASINO_PERSONAL_DESTINATIONS, activateCasinoCategory } from "./lib/casinoCategories";
 import { useCasinoSearch } from "./components/casino/CasinoSearch";
-import { FundsDialog } from "./components/wallet/FundsDialog";
-import { AccountDialog } from "./components/wallet/AccountDialog";
-import { BetHistoryDialog } from "./components/activity/BetHistoryDialog";
-import { ResponsibleGamblingDialog } from "./components/trust/ResponsibleGamblingDialog";
-import { ComplianceBlockDialog } from "./components/trust/ComplianceBlockDialog";
-import { SupportDialog } from "./components/trust/SupportDialog";
 import { useWallet } from "./web3/useWallet";
 import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { isArenaAllowed, resolveScopedProduct } from "./lib/platformScope";
-import { PredictionsApp } from "./components/predictions/PredictionsApp";
-import { SportsArena } from "./components/sports/SportsArena";
-import { DesktopBetslipPanel } from "./components/sports/DesktopBetslipPanel";
+// PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
+// React.lazy rather than statically imported, so their code (and, for
+// Sports/Predictions, their SDK dependencies — @azuro-org/sdk,
+// @azuro-org/toolkit, @apollo/client, graphql; for game clients,
+// @betswirl/sdk-core and each dialog's own weight) never ships in the
+// initial Casino MVP bundle. Each is already either conditionally rendered
+// (Sports/Predictions/DesktopBetslipPanel, gated on `product`) or gated
+// behind its own `open` boolean (the dialogs below) — see each render call
+// site further down for the matching Suspense boundary.
+const PredictionsApp = lazy(() => import("./components/predictions/PredictionsApp").then((m) => ({ default: m.PredictionsApp })));
+const SportsArena = lazy(() => import("./components/sports/SportsArena").then((m) => ({ default: m.SportsArena })));
+const DesktopBetslipPanel = lazy(() => import("./components/sports/DesktopBetslipPanel").then((m) => ({ default: m.DesktopBetslipPanel })));
+const BetSwirlGame = lazy(() => import("./components/casino/BetSwirlGame").then((m) => ({ default: m.BetSwirlGame })));
+const FundsDialog = lazy(() => import("./components/wallet/FundsDialog").then((m) => ({ default: m.FundsDialog })));
+const AccountDialog = lazy(() => import("./components/wallet/AccountDialog").then((m) => ({ default: m.AccountDialog })));
+const BetHistoryDialog = lazy(() => import("./components/activity/BetHistoryDialog").then((m) => ({ default: m.BetHistoryDialog })));
+const ResponsibleGamblingDialog = lazy(() => import("./components/trust/ResponsibleGamblingDialog").then((m) => ({ default: m.ResponsibleGamblingDialog })));
+const ComplianceBlockDialog = lazy(() => import("./components/trust/ComplianceBlockDialog").then((m) => ({ default: m.ComplianceBlockDialog })));
+const SupportDialog = lazy(() => import("./components/trust/SupportDialog").then((m) => ({ default: m.SupportDialog })));
+const GameInfoPanel = lazy(() => import("./components/casino/GameInfoPanel").then((m) => ({ default: m.GameInfoPanel })));
 import { useSportsDesktopBetslipUi, useIsDesktopBetslipLayout } from "./lib/sportsDesktopBetslipUi";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
 import { nowLabel } from "./lib/walletData";
@@ -55,7 +74,6 @@ import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
 import { GAME_LAUNCH_STATUS, isLaunchActive } from "./lib/casinoGameLaunch";
 import { GameLaunchSurface } from "./components/casino/GameLaunchSurface";
-import { GameInfoPanel } from "./components/casino/GameInfoPanel";
 import { normalizePendingRound, normalizeLiveResultRound } from "./lib/casinoRounds";
 
 // Module-load-time, not inside the component — idempotent (see its own
@@ -78,6 +96,63 @@ installDevFetchInterceptor();
 // wiring below), so delayed/timeout states can be exercised through the real
 // timers instead of being faked.
 const DEV_UNAVAILABLE_GAME_STATUSES = new Set(["provider-error", "maintenance", "region-restricted", "insufficient-balance"]);
+
+// Shared fallback for every lazy-loaded dialog below — the page underneath
+// stays fully rendered/interactive the whole time (only the not-yet-open
+// dialog's own chunk is loading), so there is no full-page blank flash to
+// avoid; an sr-only status is still announced for screen-reader users per
+// LOADING FALLBACKS: "accessible text status... no duplicate spinners".
+// First open of a given dialog after a fresh page load briefly fetches its
+// chunk; every subsequent open in the same session is instant (cached).
+const DIALOG_SUSPENSE_FALLBACK = <div role="status" aria-live="polite" className="sr-only">Loading…</div>;
+
+// Gates a lazy dialog's FIRST mount on real open-intent (so its chunk is
+// never fetched until the user actually asks for it), while never
+// unmounting it again afterwards — every dialog in this app relies on
+// Radix's own `data-[state=closed]:animate-out` close transition, which
+// requires staying mounted (with `open` flipping to false) rather than
+// disappearing immediately (see DO NOT CHANGE: "visual design" — losing
+// the close animation on every dialog would be exactly that). The real
+// `open` boolean is still what the caller passes down and what controls
+// Radix's actual visible open/close state; this only ever decides whether
+// to render the component (and therefore fetch its chunk) at all yet.
+function useLazyMount(isOpen) {
+  const [everOpened, setEverOpened] = useState(isOpen);
+  useEffect(() => { if (isOpen) setEverOpened(true); }, [isOpen]);
+  return everOpened;
+}
+
+// Sports/Predictions arena chunks are a full main-content-area surface, not
+// a small dialog — an sr-only-only fallback would leave <main> visibly
+// blank for a moment (see LOADING FALLBACKS: "no full-page blank flash"),
+// so this one is visibly present with real text, matching the same
+// spinner+text pattern GameLaunchSurface's own loading state already uses.
+function ArenaLoadingFallback({ label }) {
+  return (
+    <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3 py-24 text-center text-muted-foreground">
+      <Loader2 className="size-8 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+      <p className="text-sm">Loading {label}…</p>
+    </div>
+  );
+}
+
+// Maps a game CLIENT chunk load failure (BetSwirlGame/ProviderGame's own
+// dynamic import rejecting — a network hiccup, not a game-specific error)
+// onto the exact same FAILED launch state ProviderGame's own onFailed/
+// onError already produces (see CHUNK LOAD ERRORS: "map to existing Unable
+// to launch game state... allow retry... no Recently Played update" — all
+// of that already falls out of the existing launch state machine once this
+// dispatches the same action). Renders nothing itself: GameLaunchSurface's
+// own status overlay takes over the instant `launch.state.status` becomes
+// FAILED, which un-mounts this boundary's subtree (showChildren becomes
+// false), so there's no stale error UI to reset on retry — the next
+// attempt remounts a fresh instance (keyed by `${favId}:${attempt}`).
+class GameChunkErrorBoundary extends Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch() { this.props.onChunkError(); }
+  render() { return this.state.hasError ? null : this.props.children; }
+}
 
 // Favorites persist across sessions in localStorage, keyed by the game's favId.
 const FAVS_KEY = "tribet_favs";
@@ -248,21 +323,41 @@ export default function App() {
     const path = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname !== path) window.history.pushState({}, "", path);
   }, [product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId]);
+  // FINAL QA fix: this listener is attached once ([] deps — re-adding it
+  // every render would be wasteful, and every setter below is already
+  // stable) but its body calls `resolveLaunchFromUrl`/`resolveInfoFromUrl`,
+  // which read `launch.state` — a plain `const` re-created fresh each
+  // render, NOT stable across renders. With the body inlined directly in
+  // the effect, the closure captured at mount would freeze `launch.state`
+  // at its INITIAL (idle, no gameId) value forever, so every later
+  // `popstate` (e.g. Game Info's own close-via-`history.back()`) would see
+  // a permanently stale "idle" launch state, fail resolveLaunchFromUrl's
+  // "already on this game" guard, and force a full spurious relaunch of
+  // the game underneath it — confirmed via a real Playwright trace: after
+  // Game Info's close-button/back path, `launch.state.status` read as
+  // "idle" no matter how long the game had actually been running, and the
+  // game visibly reloaded from scratch. A ref updated every render (not
+  // the listener itself) keeps the listener registration stable while the
+  // body it calls always sees the latest state — the same "ref holds the
+  // latest, effect subscribes once" idea already used for `lastFocusedRef`
+  // above.
+  const onPopRef = useRef(null);
+  onPopRef.current = () => {
+    const nav = parsePath(window.location.pathname);
+    const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
+    setProduct(resolveScopedProduct(nav.product, scope));
+    setCasinoCategory(nav.casinoCategory);
+    setPredSection(nav.predSection);
+    setSportsView(nav.sportsView);
+    setSportsSport(nav.sportsSport);
+    setSportsCountry(nav.sportsCountry);
+    setSportsLeague(nav.sportsLeague);
+    setSportsEventId(nav.sportsEventId);
+    resolveLaunchFromUrl();
+    resolveInfoFromUrl();
+  };
   useEffect(() => {
-    const onPop = () => {
-      const nav = parsePath(window.location.pathname);
-      const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
-      setProduct(resolveScopedProduct(nav.product, scope));
-      setCasinoCategory(nav.casinoCategory);
-      setPredSection(nav.predSection);
-      setSportsView(nav.sportsView);
-      setSportsSport(nav.sportsSport);
-      setSportsCountry(nav.sportsCountry);
-      setSportsLeague(nav.sportsLeague);
-      setSportsEventId(nav.sportsEventId);
-      resolveLaunchFromUrl();
-      resolveInfoFromUrl();
-    };
+    const onPop = () => onPopRef.current?.();
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -434,6 +529,19 @@ export default function App() {
   // Back really does "close info before closing gameplay" (see ESCAPE AND
   // BROWSER BACK) without ever assuming history-stack shape it can't verify.
   const infoPushedRef = useRef(false);
+  // Its own dedicated trigger ref, NOT the shared `lastFocusedRef` above —
+  // that tracker freezes capture as soon as ANY `[role="dialog"]` is
+  // present, which is correct for the 7 Radix dialogs (each opened from a
+  // trigger with no other dialog yet open) but wrong here: Game Info's own
+  // gameplay-frame trigger button lives INSIDE CasinoGameplayFrame, which
+  // is itself `role="dialog"` and already mounted by the time that button
+  // is clicked — so the shared tracker had already frozen and never saw
+  // that click (confirmed empirically: focus restored to whatever was
+  // focused before gameplay opened, not the Game Info trigger). Capturing
+  // `document.activeElement` synchronously inside openGameInfo's own click
+  // handler sidesteps the freeze entirely and is exact regardless of
+  // nesting depth.
+  const gameInfoTriggerRef = useRef(null);
 
   const [fundsOpen, setFundsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -441,6 +549,16 @@ export default function App() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [complianceBlockOpen, setComplianceBlockOpen] = useState(false);
+
+  // PERFORMANCE task: each of these lazy dialogs' chunk is only fetched
+  // once it's genuinely been requested open — see useLazyMount above.
+  const infoMounted = useLazyMount(!!infoFavId);
+  const historyMounted = useLazyMount(historyOpen);
+  const accountMounted = useLazyMount(accountOpen);
+  const rgMounted = useLazyMount(rgOpen);
+  const supportMounted = useLazyMount(supportOpen);
+  const complianceBlockMounted = useLazyMount(complianceBlockOpen);
+  const fundsMounted = useLazyMount(fundsOpen);
 
   // OVERLAY OWNERSHIP: the one place every other App-level overlay gets
   // closed from, so opening any of them (including the mobile menu, see
@@ -482,6 +600,51 @@ export default function App() {
   // decorative unread dot (see ACTIVITY ACCESS: "no decorative unread dot
   // without data").
   const openPositionsCount = activity.filter((a) => a.status === "open").length;
+
+  // FINAL QA fix — focus-restore regression from lazy-loading these
+  // dialogs (see PERFORMANCE task's useLazyMount): Radix's own default
+  // focus-restore-on-close only works reliably when the Dialog has been
+  // mounted continuously since before it opened, so its FocusScope can
+  // correctly capture "what was focused right before I opened." On a
+  // dialog's very FIRST open, useLazyMount mounts it for the first time at
+  // the exact moment `open` becomes true, which is too late to correctly
+  // capture the real trigger when the trigger is a ProfileMenu item:
+  // clicking "Account" moves DOM focus onto that menu item first (Radix's
+  // own roving focus), the item is removed the instant the dropdown
+  // closes, and — traced via a real focusin listener — the dropdown's own
+  // onCloseAutoFocus DOES correctly refocus the profile-trigger button
+  // moments later, but only AFTER this new Dialog has already opened and
+  // moved focus into its own content, so that correct intermediate
+  // "back to the trigger" moment is immediately overwritten and lost.
+  // Fix: track the most recent focusin target continuously, but FREEZE
+  // that tracking once a Dialog has actually MOUNTED in the DOM (checked
+  // directly, not via React's `accountOpen`-style state — that flips true
+  // immediately on click, well before the lazy chunk resolves, whereas the
+  // real race is against the closing dropdown's own async
+  // onCloseAutoFocus, which runs DURING that gap and correctly refocuses
+  // the profile-trigger button — freezing on the state flip alone missed
+  // that event every time, confirmed via a real focusin trace). Once the
+  // new Dialog's own content actually mounts (`[role="dialog"]` — Radix's
+  // own default role, true for all of these), it starts auto-focusing its
+  // own content, which must NOT overwrite the frozen "restore to" value.
+  // Same manual capture/restore idea MobileFullScreenMenu.jsx already uses
+  // for an analogous problem, delivered here via `onCloseAutoFocus`.
+  const lastFocusedRef = useRef(null);
+  useEffect(() => {
+    const onFocusIn = (e) => {
+      if (document.querySelector('[role="dialog"]')) return;
+      lastFocusedRef.current = e.target instanceof HTMLElement ? e.target : null;
+    };
+    window.addEventListener("focusin", onFocusIn, true);
+    return () => window.removeEventListener("focusin", onFocusIn, true);
+  }, []);
+  const restoreFocusFrom = (ref) => (e) => {
+    e?.preventDefault?.();
+    const el = ref.current;
+    if (el && document.contains(el)) el.focus();
+    ref.current = null;
+  };
+  const restoreFocus = restoreFocusFrom(lastFocusedRef);
 
   // Only one overlay owns focus/scroll-lock at a time — any dialog opening
   // closes the mobile drawer first so they never stack.
@@ -602,6 +765,7 @@ export default function App() {
   useEffect(() => { resolveInfoFromUrl(); }, []);
 
   const openGameInfo = (favId, source) => {
+    gameInfoTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     infoPushedRef.current = true;
     const params = new URLSearchParams(window.location.search);
     params.set("info", favId);
@@ -622,6 +786,24 @@ export default function App() {
     }
     setInfoFavId(null);
   };
+
+  // FINAL QA fix — GameInfoPanel is a plain custom overlay (role="dialog",
+  // not a Radix Dialog), so it has no `onCloseAutoFocus` prop to hook
+  // focus-restore into the way the other 7 dialogs do; this effect plus
+  // `gameInfoTriggerRef` above is its equivalent. Watching `infoFavId`
+  // itself (not wrapping closeGameInfo) is what makes this correct
+  // regardless of HOW the panel closed — the X button, the backdrop,
+  // Escape (all call closeGameInfo, which sets infoFavId null
+  // synchronously — see closeGameInfo above), or a direct browser Back
+  // press (which never calls closeGameInfo at all, only
+  // resolveInfoFromUrl's own setInfoFavId via the popstate listener — in
+  // that case `gameInfoTriggerRef.current` is already null since
+  // openGameInfo never ran, so restoreFocusFrom is a harmless no-op).
+  const prevInfoFavIdRef = useRef(infoFavId);
+  useEffect(() => {
+    if (prevInfoFavIdRef.current && !infoFavId) restoreFocusFrom(gameInfoTriggerRef)();
+    prevInfoFavIdRef.current = infoFavId;
+  }, [infoFavId]);
 
   const activityRef = useRef([]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
@@ -925,7 +1107,11 @@ export default function App() {
     return (
       <>
         <GeoBlock reason={geo.reason} onContactSupport={() => setSupportOpen(true)} />
-        <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+        {supportMounted && (
+          <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+            <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+          </Suspense>
+        )}
       </>
     );
   }
@@ -973,30 +1159,34 @@ export default function App() {
                 />
               )}
               {product === "predictions" && (
-                <PredictionsSection
-                  predSection={predSection}
-                  balance={balance}
-                  setBalance={setBalance}
-                  onBet={placeBet}
-                  ensureAuth={ensureAuth}
-                />
+                <Suspense fallback={<ArenaLoadingFallback label="Predictions" />}>
+                  <PredictionsSection
+                    predSection={predSection}
+                    balance={balance}
+                    setBalance={setBalance}
+                    onBet={placeBet}
+                    ensureAuth={ensureAuth}
+                  />
+                </Suspense>
               )}
               {product === "sports" && (
-                <SportsArena
-                  view={sportsView}
-                  sport={sportsSport}
-                  country={sportsCountry}
-                  league={sportsLeague}
-                  eventId={sportsEventId}
-                  events={sportsEvents}
-                  loading={sportsLoading}
-                  betslip={sportsBetslip}
-                  onNavigate={navigateSports}
-                  activity={activity}
-                  onBetPlaced={logRound}
-                  onDemoBetPlaced={placeBet}
-                  onBetslipWillOpen={() => { setMobileMenuOpen(false); closeOtherOverlays(); }}
-                />
+                <Suspense fallback={<ArenaLoadingFallback label="Sports" />}>
+                  <SportsArena
+                    view={sportsView}
+                    sport={sportsSport}
+                    country={sportsCountry}
+                    league={sportsLeague}
+                    eventId={sportsEventId}
+                    events={sportsEvents}
+                    loading={sportsLoading}
+                    betslip={sportsBetslip}
+                    onNavigate={navigateSports}
+                    activity={activity}
+                    onBetPlaced={logRound}
+                    onDemoBetPlaced={placeBet}
+                    onBetslipWillOpen={() => { setMobileMenuOpen(false); closeOtherOverlays(); }}
+                  />
+                </Suspense>
               )}
             </div>
           </ArenaErrorBoundary>
@@ -1014,13 +1204,22 @@ export default function App() {
             memory via sportsBetslip/sportsDesktopUi above, ready to restore
             when the user returns to Sports). */}
         {product === "sports" && isDesktopBetslipLayout && (
-          <DesktopBetslipPanel
-            betslip={sportsBetslip}
-            uiState={sportsDesktopUi}
-            onBetPlaced={logRound}
-            onDemoBetPlaced={placeBet}
-            onDone={sportsBetslip.clearSelections}
-          />
+          // Its own error boundary + Suspense: unlike SportsArena above, this
+          // panel is a sibling of <main>, not a descendant of
+          // ArenaErrorBoundary, so a chunk-load failure here would otherwise
+          // have nothing to catch it (see CHUNK LOAD ERRORS: "do not crash
+          // the full application").
+          <ArenaErrorBoundary key="sports-betslip">
+            <Suspense fallback={null}>
+              <DesktopBetslipPanel
+                betslip={sportsBetslip}
+                uiState={sportsDesktopUi}
+                onBetPlaced={logRound}
+                onDemoBetPlaced={placeBet}
+                onDone={sportsBetslip.clearSelections}
+              />
+            </Suspense>
+          </ArenaErrorBoundary>
         )}
       </div>
 
@@ -1076,15 +1275,25 @@ export default function App() {
           onRetry={launch.retryLaunch}
           onBrowseGames={() => { closeGame(); setCasinoCategory("Lobby"); }}
           onOpenInfo={launchedGame ? () => openGameInfo(launchedGame.favId, "gameplay-frame") : undefined}
+          gameInfoOpen={!!infoFavId}
+          devPanelOpen={DEV_PANEL_ENABLED && devMock.panelOpen}
         >
           {launchedGame?.kind === "onchain" ? (
-            <BetSwirlGame
+            <GameChunkErrorBoundary
               key={`${launchedGame.favId}:${launch.state.attempt}`}
-              game={launchedGame}
-              onRound={(e) => { logRound(e); recordCasinoRoundResolved(e); }}
-              onRoundPending={recordCasinoRoundPending}
-            />
+              onChunkError={() => launch.markFailed(launchedGame.favId)}
+            >
+              <Suspense fallback={null}>
+                <BetSwirlGame
+                  game={launchedGame}
+                  onRound={(e) => { logRound(e); recordCasinoRoundResolved(e); }}
+                  onRoundPending={recordCasinoRoundPending}
+                />
+              </Suspense>
+            </GameChunkErrorBoundary>
           ) : launchedGame ? (
+            // Not lazy — see the eager import above for why (no heavy deps,
+            // metadata entanglement makes splitting it ineffective anyway).
             <ProviderGame
               key={`${launchedGame.favId}:${launch.state.attempt}`}
               game={launchedGame}
@@ -1098,48 +1307,84 @@ export default function App() {
           ) : null}
         </GameLaunchSurface>
       )}
-      <GameInfoPanel
-        game={infoGame}
-        open={!!infoFavId}
-        notFound={Boolean(infoFavId) && !infoGame}
-        onClose={closeGameInfo}
-        onResponsibleGaming={() => { closeGameInfo(); openRg(); }}
-      />
-      <BetHistoryDialog
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        casinoPendingRounds={casinoPendingRounds}
-        casinoLiveResults={casinoLiveResults}
-        profileVariant={profileVariant}
-        onLogin={openFunds}
-        onPlayAgain={(gameId) => {
-          const game = findGameByFavId(gameId);
-          if (game) launchGame(game, "receipt");
-        }}
-        onViewGameInfo={(gameId) => openGameInfo(gameId, "receipt")}
-      />
-      <AccountDialog
-        open={accountOpen}
-        onClose={() => setAccountOpen(false)}
-        variant={profileVariant}
-        address={devWallet.address}
-        isConnected={devWallet.isConnected}
-        authStatus={authStatus}
-        onSignOut={signOut}
-        onManageWallet={openFunds}
-        onResponsibleGambling={openRg}
-        onSupport={openSupport}
-      />
-      <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} complianceStatus={devMock.complianceStatus} onSupport={openSupport} />
-      <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
-      <ComplianceBlockDialog
-        open={complianceBlockOpen}
-        onClose={() => setComplianceBlockOpen(false)}
-        complianceStatus={devMock.complianceStatus}
-        onSupport={openSupport}
-        onResponsibleGaming={openRg}
-      />
-      <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} />
+      {/* PERFORMANCE task: each dialog below is only mounted (and its chunk
+          only fetched) once its own `open` condition is actually true —
+          previously all were unconditionally mounted with `open={false}`,
+          so React.lazy alone would have fetched every chunk on first
+          Casino render regardless of whether the user ever opened them. */}
+      {infoMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <GameInfoPanel
+            game={infoGame}
+            open={!!infoFavId}
+            notFound={Boolean(infoFavId) && !infoGame}
+            onClose={closeGameInfo}
+            onResponsibleGaming={() => { closeGameInfo(); openRg(); }}
+          />
+        </Suspense>
+      )}
+      {historyMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <BetHistoryDialog
+            open={historyOpen}
+            onClose={() => setHistoryOpen(false)}
+            onCloseAutoFocus={restoreFocus}
+            casinoPendingRounds={casinoPendingRounds}
+            casinoLiveResults={casinoLiveResults}
+            profileVariant={profileVariant}
+            onLogin={openFunds}
+            onPlayAgain={(gameId) => {
+              const game = findGameByFavId(gameId);
+              if (game) launchGame(game, "receipt");
+            }}
+            onViewGameInfo={(gameId) => openGameInfo(gameId, "receipt")}
+          />
+        </Suspense>
+      )}
+      {accountMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <AccountDialog
+            open={accountOpen}
+            onClose={() => setAccountOpen(false)}
+            onCloseAutoFocus={restoreFocus}
+            variant={profileVariant}
+            address={devWallet.address}
+            isConnected={devWallet.isConnected}
+            authStatus={authStatus}
+            onSignOut={signOut}
+            onManageWallet={openFunds}
+            onResponsibleGambling={openRg}
+            onSupport={openSupport}
+          />
+        </Suspense>
+      )}
+      {rgMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} onCloseAutoFocus={restoreFocus} complianceStatus={devMock.complianceStatus} onSupport={openSupport} />
+        </Suspense>
+      )}
+      {supportMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} onCloseAutoFocus={restoreFocus} />
+        </Suspense>
+      )}
+      {complianceBlockMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <ComplianceBlockDialog
+            open={complianceBlockOpen}
+            onClose={() => setComplianceBlockOpen(false)}
+            onCloseAutoFocus={restoreFocus}
+            complianceStatus={devMock.complianceStatus}
+            onSupport={openSupport}
+            onResponsibleGaming={openRg}
+          />
+        </Suspense>
+      )}
+      {fundsMounted && (
+        <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
+          <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} onCloseAutoFocus={restoreFocus} />
+        </Suspense>
+      )}
     </div>
   );
 }

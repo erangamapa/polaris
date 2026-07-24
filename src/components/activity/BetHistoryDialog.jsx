@@ -22,7 +22,7 @@ const fmtTime = (ms) => (ms ? new Date(ms).toLocaleString() : "");
 // untouched BetChain rendering below) keeps its own existing receipt model
 // per that task's explicit "do not redesign Sports' receipt model."
 export function BetHistoryDialog({
-  open, onClose, casinoPendingRounds = [], casinoLiveResults = [], onPlayAgain, onViewGameInfo, profileVariant, onLogin,
+  open, onClose, casinoPendingRounds = [], casinoLiveResults = [], onPlayAgain, onViewGameInfo, profileVariant, onLogin, onCloseAutoFocus,
 }) {
   const { address, isConnected } = useWallet();
   const [casinoBets, setCasinoBets] = useState([]);
@@ -91,7 +91,7 @@ export function BetHistoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <div className="flex items-center justify-between pr-8">
             <DialogTitle className="flex items-center gap-2"><Blocks className="size-4" /> My Bets</DialogTitle>

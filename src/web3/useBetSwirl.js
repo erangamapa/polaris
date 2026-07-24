@@ -10,22 +10,14 @@ import {
   getKenoConfigurationFunctionData, parseRawKenoConfiguration,
 } from '@betswirl/sdk-core';
 import { CASINO_CHAIN_ID } from '@shared/chains';
+// Re-exported for backward compatibility with any existing import of
+// BETSWIRL_GAMES from this file — see betswirlCatalog.js for why the data
+// itself now lives there (so importing just the catalog doesn't pull in
+// this file's own @betswirl/sdk-core dependency).
+export { BETSWIRL_GAMES } from './betswirlCatalog';
 
 const AFFILIATE = import.meta.env.VITE_AFFILIATE_ADDRESS;
 const ETH_TOKEN = { symbol: 'ETH', address: GAS_TOKEN_ADDRESS, decimals: 18 };
-
-// The full BetSwirl catalog on Base Sepolia. `image` = self-hosted BetSwirl card
-// art (public/img/games). `playable` games are wired + verified on-chain; the
-// weighted games (wheel/plinko) revert on this testnet deployment, so they show
-// in the catalog but aren't bettable here.
-export const BETSWIRL_GAMES = [
-  { key: 'dice', title: 'Dice', image: '/img/games/dice.webp', playable: true, control: 'dice', tags: ['popular'] },
-  { key: 'coin-toss', title: 'Coin Toss', image: '/img/games/coin-toss.webp', playable: true, control: 'coin', tags: ['popular'] },
-  { key: 'roulette', title: 'Roulette', image: '/img/games/roulette.webp', playable: true, control: 'roulette', tags: ['popular', 'live-casino'] },
-  { key: 'keno', title: 'Keno', image: '/img/games/keno.webp', playable: true, control: 'keno', tags: ['game-shows'] },
-  { key: 'wheel', title: 'Wheel', image: '/img/games/wheel.webp', playable: false, control: 'weighted', tags: ['new'] },
-  { key: 'plinko', title: 'Plinko', image: '/img/games/plinko.webp', playable: false, control: 'weighted', tags: ['new'] },
-];
 
 export function useBetSwirl() {
   const { isConnected } = useAccount();

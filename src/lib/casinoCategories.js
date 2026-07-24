@@ -74,7 +74,17 @@ const ALL_CASINO_CATEGORIES = [
   { id: "Live Casino", label: "Live Casino", kind: "routed", sectionId: "casino-section-live-casino", icon: Radio, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 5 },
   { id: "Game Shows", label: "Game Shows", kind: "routed", sectionId: "casino-section-game-shows", icon: Tv, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 6 },
   { id: "Table Games", label: "Table Games", kind: "unsupported", icon: Spade, enabled: false, showInSidebar: false, showInTopNav: false, showAsLobbyRow: false, order: 7 },
-  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail", sectionId: "casino-section-providers", icon: Building2, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 8 },
+  // FINAL QA fix: there is no real, multi-provider inventory yet — this
+  // app's "two providers" are really just its own onchain games (Tribet
+  // Originals) vs. its own vendored demo games (Tribet Studio), not
+  // distinct third parties worth a dedicated browsing destination (see
+  // FINAL QA's own PROVIDERS section: "no visible Providers row... no
+  // provider pill... no provider grouping in search... preserve future
+  // provider architecture privately"). Disabled the same way Slots/Table
+  // Games already are — code (ProviderTiles, CASINO_PROVIDERS,
+  // SEARCH_PROVIDERS) stays intact for when real provider inventory
+  // exists, it just isn't offered anywhere active right now.
+  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail", sectionId: "casino-section-providers", icon: Building2, enabled: false, showInSidebar: false, showInTopNav: false, showAsLobbyRow: false, order: 8 },
 ].sort((a, b) => a.order - b.order);
 
 // Nav-visible categories only — every enabled entry, in order. This is what
@@ -130,6 +140,13 @@ export const CASINO_PERSONAL_DESTINATIONS = [
   { id: "My Bets", label: "My Bets", icon: ReceiptText, kind: "action" },
 ];
 
+// Not imported from lib/casinoLobbyScroll.js's identical check — that file
+// already imports CASINO_CATEGORIES from here, so importing back would
+// create a cycle (see this file's own top-of-file note on why ALL_GAMES
+// isn't imported here for the same reason).
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 // Scrolls the Lobby to a rail rather than opening a dedicated page — the
 // real, working destination for "Originals"/"Providers" category selections
 // and for individual provider results (see CASINO_CATEGORIES/CASINO_PROVIDERS
@@ -138,7 +155,10 @@ export const CASINO_PERSONAL_DESTINATIONS = [
 // provider tiles all share one implementation instead of several.
 export function scrollToRail(railTestId) {
   requestAnimationFrame(() => {
-    document.querySelector(`[data-test-id="${railTestId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelector(`[data-test-id="${railTestId}"]`)?.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start",
+    });
   });
 }
 

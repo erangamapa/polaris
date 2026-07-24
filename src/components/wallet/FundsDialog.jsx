@@ -5,11 +5,12 @@ import {
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { baseSepolia } from "@shared/chains";
 import { toast } from "@/lib/toast";
+import { BRAND_NAME } from "@/lib/brand";
 
 // Non-custodial Funds panel: shows the player's own on-chain balances across the
 // two chains (casino = Base Sepolia, sports = Polygon Amoy) and links to faucets.
-// TriBet never holds funds — no deposit-to-us.
-export function FundsDialog({ open, onClose }) {
+// Tribet never holds funds — no deposit-to-us.
+export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const {
     address, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
   } = useWallet();
@@ -27,11 +28,11 @@ export function FundsDialog({ open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Funds</DialogTitle>
           <DialogDescription>
-            Your funds stay in your own wallet. {"TriBet"} is non-custodial — play settles on-chain.
+            Your funds stay in your own wallet. {BRAND_NAME} is non-custodial — play settles on-chain.
           </DialogDescription>
         </DialogHeader>
 
@@ -48,8 +49,8 @@ export function FundsDialog({ open, onClose }) {
         </div>
 
         <div className="space-y-2">
-          <BalanceRow label="Casino (BetSwirl · Base Sepolia)" symbol={casinoSymbol} amount={casinoBalance} decimals={5} note="native — bets + gas" />
-          <BalanceRow label="Sports (Azuro · Polygon Amoy)" symbol={sportsSymbol} amount={sportsBalance} decimals={2} note="bet token — mint from Sports tab" />
+          <BalanceRow label="Casino (Base Sepolia)" symbol={casinoSymbol} amount={casinoBalance} decimals={5} note="native — bets + gas" />
+          <BalanceRow label="Sports (Polygon Amoy)" symbol={sportsSymbol} amount={sportsBalance} decimals={2} note="bet token — mint from Sports tab" />
           <BalanceRow label="Sports gas" symbol={sportsGasSymbol} amount={sportsGas} decimals={4} note="Polygon Amoy native" />
         </div>
 

@@ -298,8 +298,14 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
     <>
       <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
 
-      {/* desktop/tablet persistent rail — never fully hidden at md+, never rendered below it */}
-      <aside
+      {/* desktop/tablet persistent rail — never fully hidden at md+, never
+          rendered below it. `<nav>` with an accessible name, not a bare
+          `<aside>`: this whole rail IS the app's primary navigation (arena
+          switcher + section links), not supplementary/tangential content,
+          so `nav` is the correct landmark role here (see LANDMARKS: "Casino
+          sidebar navigation... use concise accessible names"). */}
+      <nav
+        aria-label="Casino sidebar"
         onFocusCapture={onFocusCapture}
         className={cn(
           "hidden shrink-0 overflow-hidden border-e bg-sidebar transition-[width] duration-200 motion-reduce:transition-none md:block",
@@ -313,7 +319,7 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
             <CollapsedRail product={product} setProduct={setProduct} items={items} selected={selected} onSelect={onSelect} platformScope={platformScope} />
           )}
         </div>
-      </aside>
+      </nav>
     </>
   );
 }

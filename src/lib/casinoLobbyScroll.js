@@ -67,7 +67,11 @@ export function scrollTargetFor(container, target, offset = LOBBY_SECTION_SCROLL
   return Math.max(0, container.scrollTop + delta);
 }
 
-const prefersReducedMotion = () =>
+// Exported so every other real (non-CSS-transition) scroll call in the
+// Casino codebase — see casinoCategories.js's scrollToRail — shares this one
+// check rather than re-implementing the same media query (see REDUCED
+// MOTION: "no forced smooth scrolling").
+export const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Smoothly (or, under reduced motion, immediately) scrolls `container` to

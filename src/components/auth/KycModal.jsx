@@ -1,3 +1,16 @@
+// Intentionally dormant, not dead code — do not delete without updating
+// docs/architecture/10-frontend-integration.md and 13-security-compliance.md
+// first. This app's testnet build has no real KYC/identity-verification
+// backend and collects no PII (see 13-security-compliance.md: "Mainnet
+// compliance — gaming licence, KYC/AML, geoblocking — is out of scope" /
+// "No KYC/PII collected in the testnet build"), so this component is never
+// imported or rendered anywhere today. 10-frontend-integration.md's own
+// component-mapping table explicitly calls this out as "dormant
+// (mainnet-only)" and says to "keep the component dormant for later" — a
+// deliberate placeholder for a possible future mainnet phase, unlike
+// AuthModal.jsx/AccountDialog.jsx/lib/session.js (the other files that used
+// to live alongside this one), which that same doc explicitly marked
+// "removed"/superseded and which were deleted in this cleanup pass.
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

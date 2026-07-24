@@ -20,7 +20,7 @@ import { ComplianceBlock } from "./ComplianceBlock";
 // work").
 const RG_RELEVANT = new Set(["restricted", "self-excluded", "cool-off"]);
 
-export function ComplianceBlockDialog({ open, onClose, complianceStatus, onSupport, onResponsibleGaming }) {
+export function ComplianceBlockDialog({ open, onClose, complianceStatus, onSupport, onResponsibleGaming, onCloseAutoFocus }) {
   const compliance = getComplianceState({ complianceStatus });
   if (compliance.status === "clear") return null;
 
@@ -30,7 +30,7 @@ export function ComplianceBlockDialog({ open, onClose, complianceStatus, onSuppo
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader className="sr-only">
           <DialogTitle>{compliance.title}</DialogTitle>
         </DialogHeader>

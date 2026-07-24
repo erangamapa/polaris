@@ -23,7 +23,7 @@ const AUTH_METHOD_LABEL = { wallet: "Wallet", unknown: "Unknown" };
 // ever has the current session (no device list exists to show).
 export function AccountDialog({
   open, onClose, variant, address, isConnected, authStatus,
-  onSignOut, onManageWallet, onResponsibleGambling, onSupport,
+  onSignOut, onManageWallet, onResponsibleGambling, onSupport, onCloseAutoFocus,
 }) {
   const [tab, setTab] = useState("profile");
   const { currency, setCurrency } = useCurrency();
@@ -47,7 +47,7 @@ export function AccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg" data-test-id="account-dialog">
+      <DialogContent className="max-w-lg" data-test-id="account-dialog" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="size-4" aria-hidden="true" /> Account
