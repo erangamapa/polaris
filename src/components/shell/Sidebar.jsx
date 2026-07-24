@@ -23,19 +23,8 @@ const ARENA_ICONS = { casino: Dices, predictions: TrendingUp, sports: SoccerBall
 const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id] }));
 
 // Subtle per-product accents (no left bar) — tint + tinted text only.
-// Each product keeps its OWN colour even when another product is active.
-// THEME READINESS: previously three copies of the same rgba(<channel>,<own
-// opacity>) shape, each hardcoding the exact channel values of
-// --casino-accent/--predictions-accent/--sports-accent (index.css) a
-// second time. `color-mix()` reads the branch token directly at the SAME
-// opacity ratios these already used (12%/16%/42% — deliberately its own,
-// slightly different opacities than the shared --*-soft/-subtle tokens,
-// so left as distinct mixes rather than forced onto a token whose exact
-// value would visibly change this contrast) — the eventual Casino-
-// ultraviolet/Predictions-racing-green/Sports-cobalt swap now only means
-// editing --casino-accent/etc. in index.css, not touching this file.
-// (Already an established pattern in this codebase — see index.css's
-// --scrollbar-thumb, built the same way.)
+// THEME READINESS: color-mix() against --casino-accent/etc. (index.css)
+// rather than hardcoded hex — see that pass's own notes.
 const ACCENTS = {
   casino: {
     tab: {
@@ -66,45 +55,29 @@ const ACCENTS = {
   },
 };
 
-// SIDEBAR TRANSITION FIX — one shared timing system, consumed by the
-// state machine (lib/sidebarTransition.js) and this file's CSS. WIDTH and
-// CONTENT never animate at the same time (see that file's own diagram) —
-// there is no "delay" number trying to approximate that anymore; the
-// phase machine enforces it structurally. Durations themselves are
-// unchanged from the prior motion pass (this fix is architectural, not a
-// retune — see this task's own "do not solve this by merely increasing
-// duration or changing easing").
+// SIDEBAR HANDOFF FIX — same timing system as the prior transition-state-
+// machine pass (lib/sidebarTransition.js), unchanged. What changed in THIS
+// pass is what the rail actually RENDERS in response to that phase — see
+// the big comment above `Sidebar` below for why a single shared-DOM row
+// (the previous approach) could not satisfy "compact rows do not stretch"
+// and "no menu item changes y-position" at the same time.
 const RAIL_WIDTH_MS = 280;
-const CONTENT_REVEAL_MS = 140; // labels fading IN, once width has already finished opening
-const CONTENT_HIDE_MS = 100; // labels fading OUT, before width starts closing
-// Safety-net fallback in case the real `transitionend` never fires for the
-// nav's width (a backgrounded tab throttling timers, or any other browser
-// quirk) — without this, OPENING/CLOSING could get stuck forever with no
-// other recovery path. Slack is generous on purpose; this should basically
-// never actually fire in normal use.
+const CONTENT_REVEAL_MS = 140;
+const CONTENT_HIDE_MS = 100;
 const WIDTH_FALLBACK_SLACK_MS = 150;
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-// The actual phase-machine wiring for one <nav> rail. Pure phase logic
-// lives in lib/sidebarTransition.js (unit-tested there); this hook is just
-// the React glue — one `useEffect` per real event source (a fresh desired
-// target, the width's real `transitionend`, and content's centralized
-// duration timer), each owning and cleaning up its own timer/listener.
-// Rapid toggling and mid-transition reversal need NO special-casing here:
-// every `useEffect` below reacts to `phase`/`desiredExpanded` changing by
-// tearing down its previous timer (React's normal cleanup-on-dependency-
-// change) before the new one runs, so a stale timer can never fire into a
-// phase this hook has already left.
+// The phase-machine wiring for one <nav> rail — unchanged from the prior
+// pass. Pure phase logic lives in lib/sidebarTransition.js (unit-tested
+// there, 31 cases); this hook is just the React glue. See that file for
+// the full phase diagram and the reasoning behind transitionend-for-width
+// vs a centralized timer for content.
 function useRailTransition(desiredExpanded) {
   const [phase, setPhase] = useState(() => initialRailPhase(desiredExpanded));
 
-  // A fresh target arrived (toggle click, cross-tab storage sync, browser
-  // back/forward, whatever). Reduced-motion users skip the whole
-  // multi-phase sequence entirely — straight to the steady end state, no
-  // intermediate opening/revealing/hiding/closing ever rendered.
   useEffect(() => {
     if (prefersReducedMotion()) {
       setPhase(desiredExpanded ? RAIL_PHASE.EXPANDED : RAIL_PHASE.COLLAPSED);
@@ -113,10 +86,6 @@ function useRailTransition(desiredExpanded) {
     setPhase((p) => onDesiredChange(p, desiredExpanded));
   }, [desiredExpanded]);
 
-  // Content-duration timer (REVEALING/HIDING only) — see
-  // sidebarTransition.js's own comment on why a centralized timer, not a
-  // per-element `transitionend`, is the right tool for content (it spans
-  // many separate label elements sharing one duration, not one element).
   useEffect(() => {
     if (!isContentInMotion(phase)) return undefined;
     const duration = phase === RAIL_PHASE.REVEALING ? CONTENT_REVEAL_MS : CONTENT_HIDE_MS;
@@ -124,18 +93,12 @@ function useRailTransition(desiredExpanded) {
     return () => clearTimeout(t);
   }, [phase, desiredExpanded]);
 
-  // Width fallback timer (OPENING/CLOSING only) — see WIDTH_FALLBACK_SLACK_MS.
   useEffect(() => {
     if (phase !== RAIL_PHASE.OPENING && phase !== RAIL_PHASE.CLOSING) return undefined;
     const t = setTimeout(() => setPhase((p) => onWidthTransitionEnd(p, desiredExpanded)), RAIL_WIDTH_MS + WIDTH_FALLBACK_SLACK_MS);
     return () => clearTimeout(t);
   }, [phase, desiredExpanded]);
 
-  // The real, primary width-transitionend handler — attached to the <nav>
-  // itself by the caller. Firing this after the fallback above already
-  // fired is harmless: onWidthTransitionEnd is a pure, idempotent check
-  // against the CURRENT phase, so a redundant call once we've already
-  // moved on is a no-op.
   const onWidthEnd = (e) => {
     if (e.propertyName !== "width") return;
     setPhase((p) => onWidthTransitionEnd(p, desiredExpanded));
@@ -153,152 +116,111 @@ function ItemIcon({ icon, className = "size-4" }) {
 
 // Active state is never colour-only: an accent background PLUS a left-edge
 // bar, so it still reads correctly for colour-blind users / high-contrast
-// mode. Shared by every rail item (arena tab, section item, collapsed icon).
+// mode. Shared by every rail item (arena tab, section item, both layers).
 function SideIndicator({ color }) {
   return <span aria-hidden="true" className="absolute inset-y-1 start-0 w-[3px] rounded-full" style={{ background: color }} />;
 }
 
-// One persistent row for both collapsed and expanded content states —
-// exactly ONE button per item, always mounted: the icon sits in a
-// fixed-width slot that never moves horizontally, and only the label's
-// opacity/transform animate, gated entirely by `contentVisible` (a
-// phase-derived value from the parent's useRailTransition — see there for
-// why this is NOT the same thing as "is expanded currently requested").
-// This is what makes "icon does not jump", "no duplicated focusable
-// controls", and "focus identity stable" true by construction.
-//
-// Tooltip is likewise always mounted (never conditionally wrapped/
-// unwrapped — that would risk recreating the trigger's DOM node), but its
-// open state is fully controlled: `tooltipsEnabled` (true ONLY in the
-// fully-settled RAIL_PHASE.COLLAPSED phase — see sidebarTransition.js)
-// gates whether hover/focus can ever actually show it, so it can't appear
-// mid-collapse, mid-expand, or while expanded, and a stale hover-intent
-// from just before collapsing can't cause a delayed pop-open once
-// `tooltipsEnabled` flips true (see the reset effect below).
-function RailItemRow({ navId, icon, label, active, accentColor, onClick, badge, ariaCurrent, testId, disabled, disabledLabel, contentVisible, contentDurationMs, tooltipsEnabled }) {
+const tooltipSide = () => (typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right");
+
+// ════════════════════════════════════════════════════════════════════════
+// COMPACT LAYER — icon-only. Every row is a fixed size-11 (44px) square;
+// nothing here ever measures or reacts to the rail's current width, so
+// nothing in this layer can "stretch" as the shell widens (the bug this
+// pass fixes: the previous single-shared-row design used a `w-full`
+// button whose own background/hit-area grew right along with the shell).
+// Tooltip open state is fully controlled by `tooltipsEnabled` (true only
+// once RAIL_PHASE.COLLAPSED is fully settled — see Sidebar below) so it
+// can never appear mid-transition.
+// ════════════════════════════════════════════════════════════════════════
+function CompactButton({ id, icon, label, active, accentColor, onClick, disabled, disabledLabel, badge, ariaCurrent, testId, tooltipsEnabled }) {
   const [tipOpen, setTipOpen] = useState(false);
   useEffect(() => { if (!tooltipsEnabled) setTipOpen(false); }, [tooltipsEnabled]);
 
-  const button = (
-    <button
-      id={navId}
-      onClick={disabled ? undefined : onClick}
-      aria-current={ariaCurrent}
-      aria-disabled={disabled || undefined}
-      aria-label={!contentVisible ? (disabled ? `${label}, ${disabledLabel}` : label) : undefined}
-      data-test-id={testId}
-      className={cn(
-        "relative flex h-11 w-full shrink-0 items-center gap-2.5 overflow-hidden rounded-lg px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        disabled ? "cursor-not-allowed" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-      )}
-      style={!disabled && active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
-    >
-      {!disabled && active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
-      {/* Fixed-width icon slot — this is the element that must never move
-          horizontally between modes. Its own left inset (via the button's
-          constant px-2.5) is identical whether the rail is 60px or 220px
-          wide, so the icon's on-screen X position is stable through the
-          whole width transition, not just at the two endpoints. */}
-      <span className="grid size-6 shrink-0 place-items-center">
-        <ItemIcon icon={icon} className={cn("size-4", disabled && "opacity-50")} />
-      </span>
-      {/* Label — the ONLY thing that actually animates here, and ONLY once
-          `contentVisible` says it's safe to (i.e. the rail has already
-          finished widening, for reveal; or is about to start narrowing,
-          for hide — see sidebarTransition.js). No text wrapping is
-          possible: overflow-hidden on the button + truncate/whitespace-
-          nowrap here. aria-hidden while not visible so this text never
-          contributes a second, duplicate accessible name alongside the
-          tooltip/aria-label above. */}
-      <span
-        aria-hidden={!contentVisible || undefined}
-        className={cn(
-          "min-w-0 flex-1 truncate whitespace-nowrap text-start text-sm motion-reduce:transition-none motion-reduce:duration-0",
-          contentVisible ? "opacity-100" : "pointer-events-none max-w-0 -translate-x-1 opacity-0"
-        )}
-        style={{
-          transitionProperty: "opacity, transform",
-          transitionDuration: `${contentDurationMs}ms`,
-          transitionTimingFunction: "var(--ease-emphasized)",
-          transitionDelay: "0ms",
-        }}
-      >
-        {label}
-      </span>
-      {badge && (
-        <span
-          className={cn(
-            "shrink-0 transition-[opacity,transform] motion-reduce:transition-none",
-            contentVisible ? "static ms-auto opacity-100" : "absolute -end-1 -top-1 opacity-100"
-          )}
-          style={{ transitionDuration: "var(--motion-fast)", transitionTimingFunction: "var(--ease-emphasized)" }}
-        >
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-
   return (
     <Tooltip open={tooltipsEnabled && tipOpen} onOpenChange={setTipOpen}>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>
-        {disabled ? disabledLabel : label}
-      </TooltipContent>
+      <TooltipTrigger asChild>
+        <button
+          id={id}
+          onClick={disabled ? undefined : onClick}
+          aria-label={disabled ? `${label}, ${disabledLabel}` : label}
+          aria-current={ariaCurrent}
+          aria-disabled={disabled || undefined}
+          data-test-id={testId}
+          className={cn(
+            "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            disabled ? "cursor-not-allowed" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+          )}
+          style={!disabled && active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
+        >
+          {!disabled && active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
+          <ItemIcon icon={icon} className={cn("size-4", disabled && "opacity-50")} />
+          {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side={tooltipSide()}>{disabled ? disabledLabel : label}</TooltipContent>
     </Tooltip>
   );
 }
 
-// The items list (Favorites/Recently Played/section labels/dividers) —
-// one shared render for both content states. Section labels have no
-// collapsed equivalent (there is nowhere to put the text, and they're not
-// focusable/interactive) so they still unmount when content isn't
-// visible; that's the one place this list still relies on React's normal
-// mount/unmount rather than an animated element, which is fine — nothing
-// about a plain heading's disappearance can "jump" an icon or drop focus.
-function RailItems({ items, product, selected, onSelect, contentVisible, contentDurationMs, tooltipsEnabled }) {
+// The whole compact composition: arena-tab icon column, a short boundary
+// rule, then the item icons — every id suffixed `-compact` (see Sidebar's
+// own comment on why: this layer and the expanded layer below are BOTH
+// permanently mounted at once, so the same logical nav destination needs
+// two distinct DOM ids, one per layer — two elements sharing one id would
+// be invalid HTML and break `getElementById`-based focus restoration).
+function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, platformScope, tooltipsEnabled }) {
   return (
-    <div className="flex flex-col gap-1 px-2">
-      {items.map((it) => {
-        if (it.sectionLabel) {
-          return contentVisible ? (
-            <div key={it.id} className="text-label px-2.5 pb-1 pt-2">
-              {it.sectionLabel}
-            </div>
-          ) : null;
-        }
-        if (it.divider) {
-          return (
-            <div
-              key={it.id}
-              aria-hidden="true"
-              className={cn(
-                "my-1 h-px self-center bg-white/10 transition-[width] motion-reduce:transition-none",
-                contentVisible ? "w-full" : "w-5"
-              )}
-              style={{ transitionDuration: "var(--motion-layout)", transitionTimingFunction: "var(--ease-emphasized)" }}
-            />
-          );
-        }
+    <div className="flex flex-col items-center gap-1 p-3">
+      {PRODUCTS.map((p) => {
+        const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
         return (
-          <RailItemRow
+          <CompactButton
+            key={p.id}
+            id={`nav-arena-${p.id}-compact`}
+            icon={p.icon}
+            label={p.label}
+            active={product === p.id}
+            accentColor={p.id}
+            ariaCurrent={product === p.id ? "page" : undefined}
+            onClick={() => setProduct(p.id)}
+            disabled={disabled}
+            disabledLabel={DEV_PANEL_ENABLED ? "Coming soon" : undefined}
+            tooltipsEnabled={tooltipsEnabled}
+          />
+        );
+      })}
+      {/* Arena/section boundary — short and centered, matching this
+          layer's own compact width, not the full-width rule the expanded
+          layer uses (that's ExpandedSidebarLayer's own separate element,
+          not a shared/resized one — see the file-level comment on why
+          each layer owns its complete composition independently). */}
+      <div aria-hidden="true" className="my-1 h-px w-8 bg-white/25" />
+      {items.map((it) => {
+        // Section labels have no compact equivalent (nowhere to put text,
+        // not focusable) — simply omitted, never a source of geometry
+        // shift since this layer's OWN rows never had a heading-shaped gap
+        // to begin with, unlike the previous single-shared-tree design
+        // where a heading could pop into a list that ALSO held icon rows.
+        if (it.sectionLabel) return null;
+        if (it.divider) return <div key={it.id} aria-hidden="true" className="my-1 h-px w-5 bg-white/10" />;
+        return (
+          <CompactButton
             key={it.id}
-            navId={`nav-item-${it.id}`}
+            id={`nav-item-${it.id}-compact`}
             icon={it.icon}
             label={it.label}
             active={selected === it.id}
             accentColor={product}
             ariaCurrent={selected === it.id ? "page" : undefined}
             onClick={() => (it.action ? it.action() : onSelect(it.id))}
-            testId={it.id === "Favorites" ? (contentVisible ? "sidebar-favorites-count" : "sidebar-favorites-collapsed") : undefined}
-            contentVisible={contentVisible}
-            contentDurationMs={contentDurationMs}
+            testId={it.id === "Favorites" ? "sidebar-favorites-collapsed" : undefined}
             tooltipsEnabled={tooltipsEnabled}
             badge={
               it.count > 0 ? (
                 <StatusBadge
                   variant="neutral"
-                  size={contentVisible ? "medium" : "small"}
+                  size="small"
                   count={it.count}
                   ariaLabel={it.id === "Favorites" ? `${it.count} favorite${it.count === 1 ? "" : "s"}` : `${it.count} ${it.label}`}
                 />
@@ -311,53 +233,41 @@ function RailItems({ items, product, selected, onSelect, contentVisible, content
   );
 }
 
-// Product/arena tabs (Casino/Predictions/Sports switcher) genuinely change
-// SHAPE between the two content states — a row of three wide tiles (icon
-// over label) versus a column of three icon-only squares — not just "same
-// layout, hide text". Forcing that into one shared element tree would mean
-// redesigning one of the two shapes (out of scope: "do not redesign the
-// sidebar"), so this keeps both renderers, but the swap is now driven
-// entirely by the SAME phase-derived `contentVisible`/`showExpandedShape`
-// the rest of the rail uses — no independent timer of its own anymore.
-// `showExpandedShape` stays true through HIDING (the tile row keeps
-// rendering while it fades OUT) and only flips once CLOSING begins — the
-// DOM swap always happens at the exact instant the outgoing shape has
-// already reached opacity 0, so the swap itself is invisible by
-// construction, the same trick RailItemRow's label uses.
-function ProductTabs({ product, setProduct, platformScope, showExpandedShape, contentVisible, contentDurationMs }) {
-  // The row shape mounts fresh at the exact render where `showExpandedShape`
-  // first becomes true — a brand-new element has no "previous frame" to
-  // transition FROM, so setting its opacity straight to 1 on that first
-  // paint would just snap into view with no fade at all. `entered` starts
-  // false on that mounting render (forcing the first paint to opacity 0),
-  // then flips true one frame later via requestAnimationFrame, giving the
-  // browser two real, distinct paints to interpolate between — the
-  // standard technique for animating a freshly-inserted element. Lazily
-  // initialized to `showExpandedShape` itself (not a hardcoded `false`) so
-  // a COLD LOAD that starts already expanded renders fully visible on the
-  // very first frame with no unwanted fade-in flash (see FIRST RENDER
-  // requirements — first paint must never animate from the wrong default).
-  const [entered, setEntered] = useState(() => showExpandedShape);
-  useEffect(() => {
-    if (!showExpandedShape) { setEntered(false); return undefined; }
-    const raf = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(raf);
-  }, [showExpandedShape]);
-
-  // `contentVisible` only ever describes the ROW shape's target opacity —
-  // the icon column (rendered whenever `!showExpandedShape`) is always
-  // fully visible and steady; it has nothing to do with the expanded
-  // content's own fade at all, so it must not be gated by `contentVisible`
-  // (which is false through COLLAPSED/OPENING/CLOSING — exactly when the
-  // icon column is the one actually on screen).
-  const opacity = !showExpandedShape ? 1 : entered && contentVisible ? 1 : 0;
-
+// ════════════════════════════════════════════════════════════════════════
+// EXPANDED LAYER — full labeled rows, section headings, dividers, the
+// three-tile arena-tab row. A complete, independent composition: nothing
+// here is shared with CompactSidebarLayer's DOM, so nothing this layer
+// does (a heading appearing, a row being full-width) can ever push or
+// resize anything in the compact layer — they only ever interact via a
+// plain opacity crossfade at the Sidebar level (see below).
+// ════════════════════════════════════════════════════════════════════════
+function ExpandedItemRow({ id, icon, label, active, accentColor, onClick, badge, ariaCurrent, testId }) {
   return (
-    <div
-      className="transition-opacity motion-reduce:transition-none"
-      style={{ opacity, transitionDuration: `${contentDurationMs}ms`, transitionTimingFunction: "var(--ease-emphasized)" }}
+    <button
+      id={id}
+      onClick={onClick}
+      aria-current={ariaCurrent}
+      data-test-id={testId}
+      className={cn(
+        "relative flex h-11 w-full shrink-0 items-center gap-2.5 overflow-hidden rounded-lg px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+      )}
+      style={active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
     >
-      {showExpandedShape ? (
+      {active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
+      <span className="grid size-6 shrink-0 place-items-center">
+        <ItemIcon icon={icon} className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1 truncate whitespace-nowrap text-start text-sm">{label}</span>
+      {badge && <span className="ms-auto shrink-0">{badge}</span>}
+    </button>
+  );
+}
+
+function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, platformScope }) {
+  return (
+    <div>
+      <div className="p-3">
         <div className="flex gap-1.5">
           {PRODUCTS.map((p) => {
             const Icon = p.icon;
@@ -366,7 +276,7 @@ function ProductTabs({ product, setProduct, platformScope, showExpandedShape, co
             const tile = (
               <button
                 key={p.id}
-                id={`nav-arena-${p.id}`}
+                id={`nav-arena-${p.id}-expanded`}
                 onClick={disabled ? undefined : () => setProduct(p.id)}
                 aria-current={active ? "page" : undefined}
                 aria-disabled={disabled || undefined}
@@ -392,80 +302,97 @@ function ProductTabs({ product, setProduct, platformScope, showExpandedShape, co
             return tile;
           })}
         </div>
-      ) : (
-        <div className="flex flex-col items-center gap-1.5">
-          {PRODUCTS.map((p) => {
-            const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
+        <div className="my-2 w-full border-t-2 border-white/15" aria-hidden="true" />
+      </div>
+      <div className="flex flex-col gap-1 px-2">
+        {items.map((it) => {
+          if (it.sectionLabel) {
             return (
-              <RailIconOnly
-                key={p.id}
-                navId={`nav-arena-${p.id}`}
-                icon={p.icon}
-                label={p.label}
-                active={product === p.id}
-                accentColor={p.id}
-                ariaCurrent={product === p.id ? "page" : undefined}
-                onClick={() => setProduct(p.id)}
-                disabled={disabled}
-                disabledLabel={DEV_PANEL_ENABLED ? "Coming soon" : undefined}
-              />
+              <div key={it.id} className="text-label px-2.5 pb-1 pt-2">
+                {it.sectionLabel}
+              </div>
             );
-          })}
-        </div>
-      )}
+          }
+          if (it.divider) return <div key={it.id} aria-hidden="true" className="my-1 h-px w-full bg-white/10" />;
+          return (
+            <ExpandedItemRow
+              key={it.id}
+              id={`nav-item-${it.id}-expanded`}
+              icon={it.icon}
+              label={it.label}
+              active={selected === it.id}
+              accentColor={product}
+              ariaCurrent={selected === it.id ? "page" : undefined}
+              onClick={() => (it.action ? it.action() : onSelect(it.id))}
+              testId={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
+              badge={
+                it.count > 0 ? (
+                  <StatusBadge
+                    variant="neutral"
+                    size="medium"
+                    count={it.count}
+                    ariaLabel={it.id === "Favorites" ? `${it.count} favorite${it.count === 1 ? "" : "s"}` : `${it.count} ${it.label}`}
+                    className="ms-auto"
+                  />
+                ) : null
+              }
+            />
+          );
+        })}
+      </div>
     </div>
-  );
-}
-
-// Plain icon-only rail button (collapsed product tabs only — the items
-// list uses the unified RailItemRow above instead). Tooltip here is a
-// straightforward hover/focus one: the product row's own opacity gate
-// already keeps it non-interactive mid-swap, so it doesn't need the
-// settle-gated controlled-open treatment RailItemRow uses.
-function RailIconOnly({ navId, icon, label, active, accentColor, onClick, disabled, disabledLabel }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          id={navId}
-          onClick={disabled ? undefined : onClick}
-          aria-label={disabled ? `${label}, ${disabledLabel}` : label}
-          aria-current={active ? "page" : undefined}
-          aria-disabled={disabled || undefined}
-          className={cn(
-            "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            disabled ? "cursor-not-allowed" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-          )}
-          style={!disabled && active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
-        >
-          {!disabled && active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
-          <ItemIcon icon={icon} className={cn("size-4", disabled && "opacity-50")} />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side={typeof document !== "undefined" && document.dir === "rtl" ? "left" : "right"}>{disabled ? disabledLabel : label}</TooltipContent>
-    </Tooltip>
   );
 }
 
 // Desktop/tablet only (≥768px) — never fully hidden; burger toggles between
 // an expanded rail (~220px, full labels) and a collapsed icon rail (~60px),
-// per `railMode`. Below 768px this renders nothing: mobile navigation is the
-// bottom nav + MobileFullScreenMenu (a dedicated mobile-first component, not
-// this desktop rail reused as an overlay).
+// per `railMode`. Below 768px this renders nothing: mobile navigation is
+// the bottom nav + MobileFullScreenMenu, untouched by this pass.
 //
-// SIDEBAR TRANSITION FIX: `railMode` is only ever the DESIRED target now —
-// the actual rendered width/content/tooltip state all come from
-// `useRailTransition`'s phase machine (see above), which is what
-// structurally guarantees width and content motion never overlap. See
-// lib/sidebarTransition.js for the full phase diagram and reasoning.
+// SIDEBAR HANDOFF FIX — root cause of the remaining jumpiness the prior
+// pass left behind: that pass unified compact and expanded into ONE
+// shared row per item (a persistent button whose LABEL faded in/out).
+// That fixed the *timing* (width vs. label motion no longer overlapped)
+// but not the *geometry*:
+//   - the shared button was `w-full`, so as the shell widened, the
+//     button's own background/hit-area visibly stretched into a long
+//     empty bar before the label ever appeared — "compact rows do not
+//     stretch" was violated by construction
+//   - section headings only exist in expanded mode, so they still had to
+//     conditionally MOUNT the instant content became visible — a plain
+//     `{condition && <div>heading</div>}` with no transition of its own,
+//     which both popped in abruptly AND, being a real flex sibling, pushed
+//     every item below it down by its own height in the same frame —
+//     "no section headings push existing icons downward" was violated
+//
+// The fix: two COMPLETE, independent, PERMANENTLY MOUNTED layers
+// (CompactSidebarLayer / ExpandedSidebarLayer above), stacked in one CSS
+// grid cell (both children placed at the same row/column, so the taller
+// one — expanded, with its headings — sizes the shared track without
+// either layer's content ever being able to move or resize the other),
+// crossfaded via opacity alone. Neither layer's rows ever change width or
+// position because of the OTHER layer's content — they simply aren't in
+// each other's layout tree at all. `inert` (+ mirrored `aria-hidden`)
+// keeps whichever layer isn't the current settled/target one out of the
+// tab order and accessibility tree entirely, so there is never a moment
+// with two "live" copies of the navigation — see the derived
+// `compactInert`/`expandedInert` below, which force BOTH layers inert
+// during the brief crossfade itself (REVEALING/HIDING), since no realistic
+// interaction needs to land in that ~100-140ms window and doing so avoids
+// ever exposing two simultaneously-interactive navigations.
 export function Sidebar({ railMode, product, setProduct, items, selected, onSelect }) {
   const desiredExpanded = railMode === "expanded";
   const { phase, onWidthEnd, widthExpanded, contentVisible, tooltipsEnabled } = useRailTransition(desiredExpanded);
   const contentDurationMs = phase === RAIL_PHASE.REVEALING ? CONTENT_REVEAL_MS : CONTENT_HIDE_MS;
-  // The tile-row shape (ProductTabs) keeps rendering through HIDING (mid
-  // fade-out) and only swaps to the icon column once CLOSING begins — see
-  // ProductTabs' own comment.
-  const showProductTabsExpandedShape = phase === RAIL_PHASE.REVEALING || phase === RAIL_PHASE.EXPANDED || phase === RAIL_PHASE.HIDING;
+  const isCrossfading = phase === RAIL_PHASE.REVEALING || phase === RAIL_PHASE.HIDING;
+  // Compact is the target/settled layer through COLLAPSED/OPENING/CLOSING
+  // (opacity 1, interactive); expanded is the target/settled layer through
+  // EXPANDED (opacity 1, interactive). Both are forced inert during the
+  // crossfade itself — see the file comment above.
+  const compactOpacity = contentVisible ? 0 : 1;
+  const expandedOpacity = contentVisible ? 1 : 0;
+  const compactInert = isCrossfading || contentVisible;
+  const expandedInert = isCrossfading || !contentVisible;
 
   // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
   // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
@@ -473,37 +400,37 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
   const mock = useDevMockState();
   const platformScope = DEV_PANEL_ENABLED ? mock.platformScope : "full";
 
-  // Focus retention across the product-tabs shape swap — that's the one
-  // remaining place this rail still swaps real DOM elements (see
-  // ProductTabs' own comment on why merging the two shapes would be a
-  // redesign). Re-keyed on the actual swap boundary (`showProductTabsExpandedShape`
-  // flipping), not the raw `railMode` prop, so a focused product tab is
-  // reliably refocused in its new form the instant the new shape mounts —
-  // not one phase early (DOM not there yet) or one phase late (a visible
-  // focus drop in between).
-  const focusedIdRef = useRef(null);
+  // Focus retention across the layer swap. Both layers use ids suffixed
+  // `-compact`/`-expanded` for the SAME logical destination (two elements
+  // can't share one id), so this tracks the LOGICAL key (id minus suffix)
+  // continuously, and only actually refocuses once the rail has reached a
+  // real steady endpoint (COLLAPSED or EXPANDED) — refocusing mid-
+  // crossfade would target an element that's still `inert` at that exact
+  // moment (both layers are inert throughout REVEALING/HIDING), and an
+  // inert element cannot receive focus at all per the HTML spec.
+  const focusedKeyRef = useRef(null);
   const onFocusCapture = (e) => {
-    if (e.target.id?.startsWith("nav-")) focusedIdRef.current = e.target.id;
+    const id = e.target.id;
+    const match = id && /^(nav-(?:item|arena)-.+)-(?:compact|expanded)$/.exec(id);
+    if (match) focusedKeyRef.current = match[1];
   };
   useEffect(() => {
-    const id = focusedIdRef.current;
-    if (!id) return;
-    document.getElementById(id)?.focus();
-  }, [showProductTabsExpandedShape]);
+    if (phase !== RAIL_PHASE.EXPANDED && phase !== RAIL_PHASE.COLLAPSED) return;
+    const key = focusedKeyRef.current;
+    if (!key) return;
+    const suffix = phase === RAIL_PHASE.EXPANDED ? "expanded" : "compact";
+    document.getElementById(`${key}-${suffix}`)?.focus();
+  }, [phase]);
 
-  // Announce meaningful nav-state changes only (not every phase-machine
-  // step, and not duplicating the burger button's own aria-label, which
-  // describes the *next* action rather than the state just entered) — keyed
-  // on the raw requested target, matching what the user actually asked for,
-  // not the internal phase sequence.
+  // Announce meaningful nav-state changes only — keyed on the raw
+  // requested target (what the user actually asked for), not the internal
+  // phase sequence.
   const [announcement, setAnnouncement] = useState("");
   const prevDesiredExpanded = useRef(desiredExpanded);
   useEffect(() => {
     if (prevDesiredExpanded.current !== desiredExpanded) setAnnouncement(desiredExpanded ? "Navigation expanded" : "Navigation collapsed");
     prevDesiredExpanded.current = desiredExpanded;
   }, [desiredExpanded]);
-
-  const navRef = useRef(null);
 
   return (
     <>
@@ -512,11 +439,8 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
       {/* desktop/tablet persistent rail — never fully hidden at md+, never
           rendered below it. `<nav>` with an accessible name, not a bare
           `<aside>`: this whole rail IS the app's primary navigation (arena
-          switcher + section links), not supplementary/tangential content,
-          so `nav` is the correct landmark role here (see LANDMARKS: "Casino
-          sidebar navigation... use concise accessible names"). */}
+          switcher + section links), not supplementary/tangential content. */}
       <nav
-        ref={navRef}
         data-sidebar-phase={phase}
         aria-label="Casino sidebar"
         onFocusCapture={onFocusCapture}
@@ -528,32 +452,54 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
         style={{ transitionDuration: `${RAIL_WIDTH_MS}ms`, transitionTimingFunction: "var(--ease-emphasized)" }}
       >
         <div className="h-full overflow-y-auto overflow-x-hidden">
-          <div className="p-3">
-            <ProductTabs
-              product={product}
-              setProduct={setProduct}
-              platformScope={platformScope}
-              showExpandedShape={showProductTabsExpandedShape}
-              contentVisible={contentVisible}
-              contentDurationMs={contentDurationMs}
-            />
-            {/* Arena/section boundary — same distinct, more opaque rule in
-                both content states (width itself is the only thing that
-                changes). */}
+          {/* The grid stack: both layers occupy the same single cell
+              (col-start-1 row-start-1 on both), so the track's height is
+              simply the taller of the two — neither layer's content can
+              push, resize, or reflow the other, they only ever overlap
+              visually, blended by opacity alone. */}
+          <div className="grid min-w-0">
             <div
-              className={cn("my-2 border-t-2 border-white/15 transition-[width] motion-reduce:transition-none", contentVisible ? "w-full" : "mx-auto w-8")}
-              style={{ transitionDuration: "var(--motion-layout)", transitionTimingFunction: "var(--ease-emphasized)" }}
-            />
+              className="col-start-1 row-start-1 min-w-0 transition-opacity motion-reduce:transition-none"
+              style={{
+                opacity: compactOpacity,
+                pointerEvents: compactInert ? "none" : undefined,
+                transitionDuration: `${contentDurationMs}ms`,
+                transitionTimingFunction: "var(--ease-emphasized)",
+              }}
+              inert={compactInert || undefined}
+              aria-hidden={compactInert || undefined}
+            >
+              <CompactSidebarLayer
+                product={product}
+                setProduct={setProduct}
+                items={items}
+                selected={selected}
+                onSelect={onSelect}
+                platformScope={platformScope}
+                tooltipsEnabled={tooltipsEnabled}
+              />
+            </div>
+            <div
+              className="col-start-1 row-start-1 min-w-0 transition-opacity motion-reduce:transition-none"
+              style={{
+                opacity: expandedOpacity,
+                pointerEvents: expandedInert ? "none" : undefined,
+                transitionDuration: `${contentDurationMs}ms`,
+                transitionTimingFunction: "var(--ease-emphasized)",
+              }}
+              inert={expandedInert || undefined}
+              aria-hidden={expandedInert || undefined}
+            >
+              <ExpandedSidebarLayer
+                product={product}
+                setProduct={setProduct}
+                items={items}
+                selected={selected}
+                onSelect={onSelect}
+                platformScope={platformScope}
+              />
+            </div>
           </div>
-          <RailItems
-            items={items}
-            product={product}
-            selected={selected}
-            onSelect={onSelect}
-            contentVisible={contentVisible}
-            contentDurationMs={contentDurationMs}
-            tooltipsEnabled={tooltipsEnabled}
-          />
         </div>
       </nav>
     </>
