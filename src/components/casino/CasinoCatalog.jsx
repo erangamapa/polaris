@@ -9,6 +9,7 @@ import { track } from "@/lib/telemetry";
 import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
 import { PROVIDER_GAMES } from "./ProviderGame";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MicroLabel } from "@/components/ui/micro-label";
 import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
@@ -96,15 +97,18 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
             {SPARKS.map((a, i) => (
               <span
                 key={i}
-                className="fav-spark absolute size-1 rounded-full bg-amber-300"
+                className="fav-spark absolute size-1 rounded-full bg-[var(--global-cta)]"
                 style={{ left: "50%", top: "50%", marginLeft: -2, marginTop: -2, "--ang": `${a}deg` }}
               />
             ))}
           </span>
         )}
+        {/* RESKIN (guide §1.5/§7): the star is Halo when filled, --ink-dim
+            (--muted-foreground) when empty — never yellow. --global-cta is
+            this app's existing "Halo" token (see index.css). */}
         <Star
           key={`${faved}-${burst}`}
-          className={`size-4 transition-transform group-hover/fav:scale-125 ${faved ? "fav-pop fill-amber-400 text-amber-400" : ""}`}
+          className={`size-4 transition-transform group-hover/fav:scale-125 ${faved ? "fav-pop fill-[var(--global-cta)] text-[var(--global-cta)]" : "text-[var(--muted-foreground)]"}`}
         />
       </span>
     </span>
@@ -161,8 +165,17 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
   return (
     <div
       className={cn(
-        "group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl bg-surface-game-card ring-1 ring-white/5 transition",
-        playable && "hover:ring-[var(--casino-primary)]"
+        // RESKIN v2 (guide §5.2): "Border 1px solid var(--rule) (was
+        // borderless or subtle glow)" — a real border, not a soft
+        // low-contrast ring, for a flatter/less "soft casino-card" edge.
+        // CARD POLISH: a very subtle resting shadow (--elevation-low, a
+        // 1px/2px near-invisible shadow already defined but unused
+        // anywhere) instead of a perfectly flat surface — reads as
+        // slightly raised without adding visual noise. Hover deepens it
+        // a touch (still small — the modal/popover shadow would be far
+        // too heavy for a card).
+        "group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-surface-game-card shadow-[var(--elevation-low)] transition duration-150 hover:shadow-[0_2px_8px_rgba(0,0,0,0.4)]",
+        playable && "hover:border-[var(--casino-primary)]"
       )}
     >
       <a
@@ -197,13 +210,14 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
           {showProvider && <div className="truncate text-[10px] leading-snug text-zinc-400">{gameProviderName(game)}</div>}
         </div>
       </a>
+      {/* Semi-transparent black background is a deliberate exception (needs
+          to stay legible over arbitrary colorful game artwork, not a
+          neutral card surface) — font/weight/size/tracking/radius/case
+          still come from the one shared MicroLabel. */}
       {statusLabel && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white"
-        >
+        <MicroLabel aria-hidden="true" className="pointer-events-none absolute left-1.5 top-1.5 bg-black/80 text-white">
           {statusLabel}
-        </span>
+        </MicroLabel>
       )}
       {/* Favorite is hidden (not just disabled) on an unavailable card — a
           consistent single rule rather than the previous unconditional
@@ -226,7 +240,7 @@ export function CasinoGameCardSkeleton() {
     <div
       data-test-id="game-card-skeleton"
       aria-hidden="true"
-      className="aspect-[3/4] animate-pulse rounded-xl bg-zinc-900 ring-1 ring-white/5 motion-reduce:animate-none"
+      className="aspect-[3/4] animate-pulse rounded-xl border border-[var(--border)] bg-zinc-900 motion-reduce:animate-none"
     >
       <div className="flex h-full flex-col justify-end gap-1.5 p-2">
         <div className="h-3 w-3/4 rounded bg-white/10" />
@@ -360,7 +374,10 @@ export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testI
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="shrink-0 text-sm font-bold">{title}</h2>
-          {badge && <span className="min-w-0 truncate rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{badge}</span>}
+          {/* ONE micro-label component — was its own one-off pill (not
+              uppercase, different radius/background than every other
+              small top badge in the app). */}
+          {badge && <MicroLabel className="min-w-0 truncate">{badge}</MicroLabel>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {onSeeAll && (
@@ -368,7 +385,11 @@ export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testI
               type="button"
               onClick={onSeeAll}
               data-test-id={testId ? `${testId}-see-all` : undefined}
-              className="mr-1 text-xs font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              // Arena color as text is banned — this appears on every rail
+              // across the whole lobby (Popular/New Releases/Live Casino/
+              // Game Shows/Favorites), so it was the single most-repeated
+              // instance of this violation in the app.
+              className="mr-1 text-xs font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               See all
             </button>
@@ -429,7 +450,7 @@ function RailEmptyCard({ icon: Icon, title, description, actionLabel, actionAria
         onClick={onAction}
         aria-label={actionAria}
         data-test-id={testId}
-        className="-my-1 py-1 text-[10px] font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="-my-1 py-1 text-[10px] font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {actionLabel} →
       </button>
@@ -636,9 +657,11 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
             aria-current={isSelected ? "page" : undefined}
             data-test-id={`category-nav-${category.id.toLowerCase().replace(/\s+/g, "-")}`}
             className={cn(
+              // RESKIN (guide §5.3, verbatim call-out): "retire the maroon
+              // 'Lobby' active state" — this is that exact row.
               "flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isSelected
-                ? "border-[var(--casino-primary-border)] bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]"
+                ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
                 : "border-white/10 text-zinc-400 hover:text-white"
             )}
           >
@@ -683,9 +706,12 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
             aria-pressed={chip === c.id}
             data-test-id={`category-chip-${c.id}`}
             className={cn(
+              // RESKIN (guide §5.3): active chip is neutral surface-2/
+              // ink-high, not an arena-tinted fill — "retire the maroon
+              // 'Lobby' active state" applies to every chip like this one.
               "rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               chip === c.id
-                ? "border-[var(--casino-primary-border)] bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]"
+                ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
                 : "border-white/10 text-zinc-400 hover:text-white"
             )}
           >
@@ -728,12 +754,12 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   return (
     <section>
       <div className="mb-4 flex items-center gap-2">
-        <Star className="size-5 fill-amber-400 text-amber-400" />
+        <Star className="size-5 fill-[var(--global-cta)] text-[var(--global-cta)]" />
         <h1 className="text-lg font-bold">Favorites</h1>
         {favorites.length > 0 && (
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+          <MicroLabel>
             {favorites.length} game{favorites.length === 1 ? "" : "s"}
-          </span>
+          </MicroLabel>
         )}
       </div>
       {favorites.length ? (
@@ -748,7 +774,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
         />
       ) : (
         <EmptyState
-          icon={<Star className="size-5 text-amber-400" aria-hidden="true" />}
+          icon={<Star className="size-5 fill-[var(--global-cta)] text-[var(--global-cta)]" aria-hidden="true" />}
           title="No favorite games yet"
           description="Tap the star on any game to save it here."
           cta={<BrowseGamesButton onClick={onBrowseGames} testId="favorites-browse-games" />}
@@ -776,9 +802,9 @@ function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, p
         <History className="size-5 text-zinc-300" />
         <h1 className="text-lg font-bold">Recently Played</h1>
         {recentGames.length > 0 && (
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+          <MicroLabel>
             {recentGames.length} game{recentGames.length === 1 ? "" : "s"}
-          </span>
+          </MicroLabel>
         )}
       </div>
       {recentGames.length ? (
@@ -883,7 +909,7 @@ function ProviderTiles() {
               data-test-id={`provider-tile-${provider.id}`}
               className={cn(
                 RAIL_TILE,
-                "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-zinc-900 px-3 py-4 text-center ring-1 ring-white/5 transition hover:ring-[var(--casino-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-zinc-900 px-3 py-4 text-center transition hover:border-[var(--casino-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               )}
             >
               <Building2 className="size-5 text-zinc-500" aria-hidden="true" />

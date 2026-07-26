@@ -29,7 +29,7 @@ export function LivePage({ events, loading, onOpen, onPick, isSelected }) {
           return (
             <section key={sport.id}>
               <h2 className="mb-2 flex items-center gap-2 text-sm font-bold">
-                <span aria-hidden="true">{sport.icon}</span> {sport.name}
+                <sport.icon className="size-4 text-[var(--ink-dim)]" aria-hidden="true" /> {sport.name}
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {sportEvents.map((e) => (

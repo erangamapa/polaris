@@ -262,7 +262,9 @@ function SearchResultsBody({
           type="button"
           onClick={onClearQuery}
           data-test-id="casino-search-clear-query"
-          className="mt-3 text-sm font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          // RESKIN: arena color as TEXT is explicitly banned by the
+          // guide's arena-color rules — was casino-text-accent.
+          className="mt-3 text-sm font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Clear search
         </button>

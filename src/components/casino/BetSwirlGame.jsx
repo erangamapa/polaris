@@ -6,6 +6,7 @@ import { baseSepolia } from "@shared/chains";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/telemetry";
 import { CATEGORY_LABEL } from "@/lib/casinoCategories";
+import { MicroLabel } from "@/components/ui/micro-label";
 
 const txUrl = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
 const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
@@ -170,7 +171,7 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-4 py-2">
-        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">On-chain · {CATEGORY_LABEL.Originals}</span>
+        <MicroLabel>On-chain · {CATEGORY_LABEL.Originals}</MicroLabel>
         <div className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white" data-test-id="betswirl-balance" data-balance-status={balanceStatus}>
           {balanceStatus === BALANCE_STATUS.LOADING ? (
             <span className="text-zinc-400">Loading…</span>
@@ -268,8 +269,12 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
                 <button onClick={() => setBetEth((b) => +(b * 2).toFixed(6))} disabled={busy} className="px-2 text-xs text-zinc-400 hover:text-white">2×</button>
               </div>
             </label>
+            {/* CTA OWNERSHIP SYSTEM: placing a bet is an ARENA action (it
+                belongs to the Casino game experience, not the platform),
+                so this is Casino Action Purple, not Mint — reverses an
+                earlier pass's call before this system existed. */}
             <button onClick={play_} disabled={insufficient || busy || !ready || balanceUnknown || phase === "uncertain"} data-test-id="betswirl-play"
-              className="h-[44px] rounded-lg bg-[var(--casino-primary)] px-8 font-bold text-white transition hover:bg-[var(--casino-primary-hover)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">
+              className="h-[44px] rounded-lg bg-[var(--casino-action)] px-8 font-bold text-[var(--casino-action-text)] transition-colors hover:bg-[var(--casino-action-hover)] active:bg-[var(--casino-action-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">
               {busy ? "…" : insufficient ? "Low balance" : "Bet"}
             </button>
           </div>

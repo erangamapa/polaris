@@ -188,20 +188,15 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
   );
 }
 
-// Section icons come from two different sources in this app: lucide
-// components (Casino/Predictions categories) and plain emoji strings
-// (Sports, e.g. "⚽" — see lib/sportsData.js). Rendering a string directly
-// as `<Icon />` would try to mount an HTML element named "⚽", which is
-// invalid — branch on the type like the desktop sidebar's ItemIcon does.
-// Fixed-width slot so labels align regardless of which icon variant renders.
-function ItemIcon({ icon }) {
+// RESKIN (product-language unification): every section icon is now a
+// Lucide component — Sports' sport icons were the one remaining plain-
+// emoji source (see lib/sportsModel.js) and are Lucide components too now,
+// so the string-vs-component branch this used to need is gone. Fixed-width
+// slot so labels align regardless of icon.
+function ItemIcon({ icon: Icon }) {
   return (
     <span className="grid size-6 shrink-0 place-items-center" aria-hidden="true">
-      {!icon ? null : typeof icon === "string" ? (
-        <span className="text-base">{icon}</span>
-      ) : (
-        (() => { const Icon = icon; return <Icon className="size-5" />; })()
-      )}
+      {Icon && <Icon className="size-5" />}
     </span>
   );
 }

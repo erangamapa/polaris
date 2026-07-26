@@ -173,9 +173,12 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
                     type="button"
                     onClick={() => runAction(action)}
                     data-test-id={`game-launch-${action}`}
+                    // CTA OWNERSHIP SYSTEM: retrying a game load belongs to
+                    // the Casino game experience (an arena action), not a
+                    // platform-wide action — Casino Action Purple.
                     className={
                       action === "retry"
-                        ? "rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        ? "rounded-lg bg-[var(--casino-action)] px-4 py-2 text-sm font-bold text-[var(--casino-action-text)] hover:bg-[var(--casino-action-hover)] active:bg-[var(--casino-action-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         : "rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     }
                   >

@@ -90,9 +90,13 @@ function useSidebarSettled(desiredExpanded) {
   return settled;
 }
 
+// RESKIN (product-language unification): the string-icon branch this used
+// to have (rendering a raw emoji glyph as text) is gone — Sports' sport
+// icons were the only caller ever passing a string, and those are now
+// Lucide components too (see sportsModel.js), matching every other
+// arena's icon system. No emoji anywhere in the icon system now.
 function ItemIcon({ icon, className = "size-4" }) {
   if (!icon) return <span className={className} />;
-  if (typeof icon === "string") return <span className={cn("grid place-items-center text-sm", className)}>{icon}</span>;
   const Icon = icon;
   return <Icon className={className} />;
 }

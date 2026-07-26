@@ -42,10 +42,16 @@ function ToastCard({ t, leaving }) {
       onMouseLeave={!sticky && !leaving ? resume : undefined}
       data-state="open"
       aria-hidden={leaving || undefined}
+      // RESKIN v2: was hardcoded #3a3b42/#24252b (a stale literal that
+      // predates the token pass, never picked up the surface-3/border-
+      // interactive tokens) plus a private shadow value — toast is one of
+      // the guide's own two named shadow exceptions (§4), so it now shares
+      // --elevation-high with Dev Panel instead of duplicating the number.
       className={cn(
-        "w-full max-w-sm overflow-hidden rounded-xl border border-[#3a3b42] bg-[#24252b] shadow-[0_10px_28px_rgba(0,0,0,0.55)] duration-200 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2",
+        "w-full max-w-sm overflow-hidden rounded-xl border border-[var(--border-interactive)] bg-[var(--surface-interactive)] duration-200 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2",
         leaving ? "toast-leaving pointer-events-none" : "pointer-events-auto"
       )}
+      style={{ boxShadow: "var(--elevation-high)" }}
     >
       <div className="flex items-start gap-3 p-3">
         <span className="grid size-6 shrink-0 place-items-center rounded-lg" style={{ background: cfg.tint }}>

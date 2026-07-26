@@ -1,3 +1,5 @@
+import { Goal, CircleDot, Activity, Target, Shield } from "lucide-react";
+
 // Normalized Sports UI data model — the single shape every presentation
 // component consumes, regardless of whether an event came from the real
 // Azuro provider feed or curated placeholder inventory. See
@@ -32,12 +34,19 @@
 // navigation because activeGamesCount is 0 today (see INVENTORY STABILITY).
 // `templateFamily` selects which of the three event-layout families (see
 // eventTemplates.js) renders this sport's rows/detail page.
+// RESKIN (product-language unification): emoji sport icons ("⚽🎾🏀⚾🏈")
+// were the one place in the app rendering literal emoji as real UI content
+// — every other arena (Predictions, Casino) already uses Lucide icon
+// components exclusively. Lucide has no sport-ball-specific glyphs, so
+// these are reasonable distinct line-icon stand-ins rather than a perfect
+// per-sport match — documented here since it's a judgment call, not a
+// literal guide instruction.
 export const MVP_SPORTS = [
-  { id: "soccer", slug: "soccer", name: "Soccer", icon: "⚽", templateFamily: "soccer" },
-  { id: "tennis", slug: "tennis", name: "Tennis", icon: "🎾", templateFamily: "tennis" },
-  { id: "basketball", slug: "basketball", name: "Basketball", icon: "🏀", templateFamily: "team" },
-  { id: "baseball", slug: "baseball", name: "Baseball", icon: "⚾", templateFamily: "team" },
-  { id: "american-football", slug: "american-football", name: "American Football", icon: "🏈", templateFamily: "team" },
+  { id: "soccer", slug: "soccer", name: "Soccer", icon: Goal, templateFamily: "soccer" },
+  { id: "tennis", slug: "tennis", name: "Tennis", icon: CircleDot, templateFamily: "tennis" },
+  { id: "basketball", slug: "basketball", name: "Basketball", icon: Activity, templateFamily: "team" },
+  { id: "baseball", slug: "baseball", name: "Baseball", icon: Target, templateFamily: "team" },
+  { id: "american-football", slug: "american-football", name: "American Football", icon: Shield, templateFamily: "team" },
 ];
 export const MVP_SPORT_IDS = MVP_SPORTS.map((s) => s.id);
 export const sportById = (id) => MVP_SPORTS.find((s) => s.id === id);

@@ -96,7 +96,8 @@ export function BalanceControl({ open, onOpenChange, casinoBalance, casinoSymbol
           align="start"
           sideOffset={8}
           onCloseAutoFocus={(e) => { e.preventDefault(); triggerRef.current?.focus(); }}
-          className="z-[var(--z-header-popover)] w-64 rounded-lg border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          className="z-[var(--z-header-popover)] w-64 rounded-lg border bg-popover p-1.5 text-popover-foreground outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          style={{ boxShadow: "var(--elevation-medium)" }}
         >
           <div className="text-label px-2 py-1.5">Balances</div>
           <BalanceRow label="Casino" network={baseSepolia.name} dot="#0052ff" amount={casinoBalance} symbol={casinoSymbol} decimals={4} error={casinoBalanceError && !isStale} />

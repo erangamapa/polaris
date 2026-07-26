@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
-import { fmt } from "@/lib/format";
 import { useCurrency } from "@/lib/currency";
 
 // THEME READINESS: these colors are a KNOWN, pre-existing inconsistency
@@ -144,5 +143,5 @@ export function ActivityDialog({ open, onClose, activity, onCashOut, cashoutValu
 }
 
 function Empty({ text }) {
-  return <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{text}</div>;
+  return <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">{text}</div>;
 }

@@ -29,7 +29,7 @@ export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpe
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center gap-2">
-        <span className="text-xl" aria-hidden="true">{sport?.icon}</span>
+        {sport?.icon && <sport.icon className="size-5 text-[var(--ink-dim)]" aria-hidden="true" />}
         <h1 className="text-lg font-bold">{sport?.name}</h1>
       </div>
 

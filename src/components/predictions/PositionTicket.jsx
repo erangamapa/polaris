@@ -70,10 +70,13 @@ export function PositionTicket({ market, side, setSide, open, onOpenChange, bala
         </div>
 
         <DialogFooter>
+          {/* CTA OWNERSHIP SYSTEM: this is the actual "Buy Yes/Buy No"
+              action (the toggle above just picks which side you're
+              viewing) — Predictions Action Green regardless of side, same
+              as MarketDetail/MarketCard's buy buttons. */}
           <Button
-            className={side === "No"
-              ? "w-full bg-[var(--danger)] font-bold text-[var(--danger-foreground)] hover:brightness-110"
-              : "w-full bg-[var(--predictions-primary)] font-bold text-[var(--predictions-cta-text)] hover:bg-[var(--predictions-primary-hover)]"}
+            variant="action"
+            className="w-full"
             disabled={insufficient || amount <= 0}
             onClick={() => onConfirm({ market, side, amount, shares, price })}
           >

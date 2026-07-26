@@ -4,16 +4,43 @@ import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
+// RESKIN (CTA system + interaction polish pass): the ONE canonical Button
+// — every promo card, dialog, and CTA in the app renders through this
+// component rather than a hand-rolled className string.
+//
+// Interaction: 160ms transitions, a small hover lift + brightening, a
+// slight press scale-down, 40% opacity when disabled. This deliberately
+// REVERSES an earlier pass's "no scale hover, no transform" rule — that
+// rule is superseded by this pass's explicit "hover: small lift (1-2px)
+// / pressed: slight scale down" instruction. `transition` (not
+// `transition-all`) is Tailwind's curated common-properties list, which
+// already includes transform — still not literally animating every CSS
+// property.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40 disabled:hover:translate-y-0 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Primary — the platform's Mint action color. CTA OWNERSHIP
+        // SYSTEM: use this ONLY for actions that belong to Tribet itself,
+        // not the current arena — Wallet, Deposit, Withdraw, Connect
+        // Wallet, Continue, Confirm, Profile, Settings, KYC, Support,
+        // Transaction History, Copy Address, Network Selection. These
+        // stay Mint on every arena page, never the local arena color.
+        default: "bg-[var(--global-cta)] text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)]",
+        // Arena action — CTA OWNERSHIP SYSTEM: use this for actions that
+        // belong to the CURRENT arena experience (Claim Bonus, Play Now,
+        // Spin, Bet Now, Cash Out, Buy YES/NO, Trade, View Market, etc.).
+        // Reads --product-action-*, which [data-product="casino|sports|
+        // predictions"] on the page root resolves automatically — no
+        // per-arena variant needed, no special-casing at the call site.
+        action: "bg-[var(--product-action)] text-[var(--product-action-text)] hover:bg-[var(--product-action-hover)] active:bg-[var(--product-action-active)]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        success:
+          "bg-[var(--success)] text-[var(--global-cta-text)] hover:bg-[var(--success)]/90",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:

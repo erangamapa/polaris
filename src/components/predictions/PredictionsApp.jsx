@@ -43,7 +43,7 @@ export function PredictionsApp({ section, balance, setBalance, onBet, ensureAuth
       ) : isPositions ? (
         <>
           <div>
-            <h1 className="text-xl font-bold">My Positions</h1>
+            <h1 className="text-lg font-bold">My Positions</h1>
             <p className="text-sm text-muted-foreground">Your open and settled prediction positions.</p>
           </div>
           <PositionsTable positions={positions} />
@@ -51,7 +51,7 @@ export function PredictionsApp({ section, balance, setBalance, onBet, ensureAuth
       ) : (
         <>
           <div>
-            <h1 className="text-xl font-bold">{section}</h1>
+            <h1 className="text-lg font-bold">{section}</h1>
             <p className="text-sm text-muted-foreground">Take a Yes/No position on real-world events.</p>
           </div>
           {!ready ? (

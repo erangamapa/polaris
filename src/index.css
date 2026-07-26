@@ -3,6 +3,89 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ══════════════════════════════════════════════════════════════════════
+   TRIBET RESKIN — Ultimate Reskin Specification v1 ("Tribet Reskin Guide
+   (2).md"). STATUS: Authoritative, overrides all prior visual guidance
+   in this file, INCLUDING the previous "Combined Direction v2" pass's
+   typography direction (Barlow / Barlow Condensed / Barlow Semi
+   Condensed is retired — this doc's own §2.1 restores Söhne/Onest as
+   the font stack, explicitly "never fall back to Inter").
+   ══════════════════════════════════════════════════════════════════════
+   LOCAL/UNCOMMITTED EXPERIMENT — not yet pushed. Revert by discarding
+   changes to this file (and the component files touched in this and
+   prior reskin passes) via `git checkout -- <file>` or `git stash`.
+
+   This overrides Tailwind's OWN built-in theme keys (--color-zinc-*,
+   --font-sans, --font-mono, --font-weight-bold/semibold, --radius-*),
+   not just this app's custom design tokens further below — the
+   overwhelming majority of the app's actual dark-chrome styling is
+   literal Tailwind utilities (`bg-zinc-900`, `text-zinc-400`,
+   `border-white/10`, etc.), not the app's own CSS custom properties, so
+   a reskin that only touched the custom tokens below would visibly
+   change almost nothing. Retargeting Tailwind's built-in zinc ramp is
+   the one lever that reaches all of it without a hundred-file sweep. */
+@theme {
+  /* Neutral ramp reinterpreted as the guide's cool-toned near-black
+     progression (bg -> surface-1/2/3 -> ink-dim -> ink-high), not a
+     literal recolor of each existing zinc stop — chosen so that
+     bg-zinc-900 (the app's most common dark surface utility) lands on
+     the guide's --surface-1, text-zinc-400/500 (the app's most common
+     secondary-text utilities) land near the guide's --ink-dim, etc. */
+  --color-zinc-950: #0A0C10; /* guide --bg */
+  --color-zinc-900: #131720; /* guide --surface-1 (default card/panel) */
+  --color-zinc-800: #1A1F2A; /* guide --surface-2 (raised/active) */
+  --color-zinc-700: #242A37; /* guide --surface-3 / --rule */
+  --color-zinc-600: #3A4152;
+  --color-zinc-500: #8F97A8; /* guide --ink-dim */
+  --color-zinc-400: #9BA3B4;
+  --color-zinc-300: #C3C8D2;
+  --color-zinc-200: #D7DAE2;
+  --color-zinc-100: #ECEEF2; /* guide --ink-high */
+  --color-zinc-50: #F5F6F8;
+
+  /* RESKIN (product-language unification, final pass) — ONE typography
+     system: Onest for everything except data (headings, promo titles,
+     cards, buttons, navigation, body copy all use --font-sans),
+     JetBrains Mono only for balances/odds/percentages/timestamps/ids/
+     scores/amounts/probabilities/tables. Söhne is the licensed target
+     (unavailable in this environment) — Onest is its named free stand-in,
+     loaded via Google Fonts in index.html. Never Inter.
+
+     REMOVED as design debt: separate --font-ui/--font-display/
+     --font-heading tokens (all three were identical or trivial aliases of
+     --font-sans, kept alive only by the now-deleted .text-title-m/-s,
+     .font-heading and .font-display-xl classes above — once those were
+     collapsed onto the app's one plain text-lg/font-bold recipe, these
+     tokens had zero remaining consumers; grep-confirmed before removal).
+     --font-sans changes Tailwind's default body font (Preflight reads
+     this key directly) app-wide. --font-mono is unchanged — JetBrains
+     Mono was never in question across any pass. */
+  --font-sans: 'Söhne', 'Onest', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Doc §2.2: "Never use 700+. Never italic." Every heading-ish role in
+     the app (Tailwind's font-semibold/font-bold/font-extrabold) is capped
+     at weight 500. */
+  --font-weight-semibold: 500;
+  --font-weight-bold: 500;
+  --font-weight-extrabold: 500;
+}
+
+/* RESKIN (product-language unification, final pass) — REMOVED: the custom
+   type-scale utility classes that used to live here (.font-display-xl,
+   .text-title-m, .text-title-s, .font-heading), each implementing one row
+   of the design guide's §2.3 type-scale table as its own CSS class. Every
+   real call site (promo card titles, the shared DialogTitle, Predictions'
+   market question) has been collapsed onto the one plain recipe already
+   used everywhere else in the app — text-lg font-bold, Onest, weight
+   capped at 500 app-wide via --font-weight-bold below — per this pass's
+   explicit mandate: "create ONE typography system," not several
+   selectively-applied scales. None of the four classes had any remaining
+   caller by the end of this pass (grep-confirmed) and none were a true
+   hero/marketing moment the app actually has, so nothing was deleted out
+   from under real content — this removed dead code, not a live pattern. */
+
+
 body {
   margin: 0;
 }
@@ -196,35 +279,11 @@ html {
   background-color: var(--scrollbar-thumb-active);
 }
 
-/* Hero artwork as a CSS background (never an <img>). Gradients (fallback slides)
-   fill the frame; photo slides are scaled to fit (contain) and anchored right so
-   the whole object shows without heavy cropping. */
-.hero-bg {
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-}
-.hero-bg--img {
-  background-size: contain;
-  background-position: right center;
-}
-.hero-bg--fallback {
-  background-size: cover;
-  background-image:
-    radial-gradient(120% 150% at 16% 18%, rgba(184, 92, 142, 0.24), transparent 55%),
-    linear-gradient(135deg, #1B1017 0%, #120D12 100%);
-}
-/* Left-to-right darkening so the left ~40% stays readable for text. */
-.hero-overlay {
-  background: linear-gradient(90deg, rgba(12, 8, 12, 0.82) 0%, rgba(12, 8, 12, 0.45) 38%, rgba(12, 8, 12, 0.02) 72%);
-}
-@media (max-width: 640px) {
-  /* Centre the fitted art and darken more behind text. */
-  .hero-bg--img { background-position: center; }
-  .hero-overlay {
-    background: linear-gradient(90deg, rgba(12, 8, 12, 0.92) 0%, rgba(12, 8, 12, 0.62) 46%, rgba(12, 8, 12, 0.18) 86%);
-  }
-}
+/* RESKIN: .hero-bg/.hero-bg--img/.hero-bg--fallback/.hero-overlay removed
+   here — they were only ever consumed by PromoStrip.jsx's PromoTile
+   (grep-confirmed, no other caller), which no longer renders hero
+   photography/gradient washes per the guide's §5.2/§7 "plain surface,
+   no maroon wash" instruction. See PromoStrip.jsx for the replacement. */
 
 /* Favourite star: pop on toggle + a small sparkle burst on add. */
 @keyframes fav-pop {
@@ -337,24 +396,37 @@ html {
    Product accents switch via [data-product] on the app root. Section colour
    is an accent signal only — ~85% of the UI stays neutral dark. */
 :root {
-  --brand-logo: #19C7C5;
-  --brand-logo-hover: #31D6D4;
-  --brand-logo-dark: #0E8F90;
-  --brand-logo-text: #071012;
+  /* RESKIN (Platform Action color migration: Mint -> Cyan): --brand-logo/
+     --global-cta were Tribet Halo (ivory/pearl), then Mint (#4CF2B4) —
+     Mint sat too close to Predictions' racing green for the ownership
+     model's visual separation to read clearly, so it's replaced with
+     Cyan. The ownership logic itself is unchanged — this is a value-only
+     swap, same as every prior recolor in this file. Names unchanged so
+     every existing var(--global-cta)/var(--brand-logo)/var(--halo)
+     consumer (logo tile, wallet button, connect/deposit/confirm/platform
+     CTAs, focus rings) picks up Cyan with no call-site edits. Arena
+     Action colors (--casino-action/--sports-action/--predictions-action)
+     are untouched — only the platform tier moves. */
+  --brand-logo: #38BDF8;
+  --brand-logo-hover: #55C9FB;
+  --brand-logo-dark: #1FAAE6;
+  --brand-logo-text: #06131A;
 
-  --global-cta: #19C7A5;
-  --global-cta-hover: #28D8B4;
-  --global-cta-active: #13A98B;
-  --global-cta-text: #06110E;
-  --global-cta-soft-bg: rgba(25, 199, 165, 0.14);
-  --global-cta-soft-border: rgba(25, 199, 165, 0.28);
+  --global-cta: #38BDF8;
+  --global-cta-hover: #55C9FB;
+  --global-cta-active: #1FAAE6;
+  --global-cta-text: #06131A;
+  --global-cta-soft-bg: rgba(56, 189, 248, 0.14);
+  --global-cta-soft-border: rgba(56, 189, 248, 0.28);
 
-  --success: #49B889;
-  --success-bg: rgba(73, 184, 137, 0.14);
-  --warning: #D6A84A;
-  --warning-bg: rgba(214, 168, 74, 0.14);
-  --danger: #D65A70;
-  --danger-bg: rgba(214, 90, 112, 0.14);
+  /* RESKIN: guide's ok/warn/err (--ok/--warn/--err in the guide's own
+     naming) — ok intentionally shares Predictions' racing green. */
+  --success: #4FA37A;
+  --success-bg: rgba(79, 163, 122, 0.14);
+  --warning: #D9A55A;
+  --warning-bg: rgba(217, 165, 90, 0.14);
+  --danger: #D9605A;
+  --danger-bg: rgba(217, 96, 90, 0.14);
   /* Dark contrast text for a SOLID --danger background (e.g. the "No"
      side's confirm button in Predictions) — previously #2a0c11 copy-pasted
      across PositionTicket.jsx (x2) and MarketDetail.jsx with no shared
@@ -396,35 +468,60 @@ html {
   --badge-muted-border: rgba(255, 255, 255, 0.08);
   --badge-muted-text: var(--muted-foreground);
 
-  /* casino — muted berry / rose-magenta */
-  --casino-primary: #B85C8E;
-  --casino-primary-hover: #C96B9F;
-  --casino-primary-active: #99466F;
-  --casino-primary-soft: rgba(184, 92, 142, 0.14);
-  --casino-primary-subtle: rgba(184, 92, 142, 0.08);
-  --casino-primary-border: rgba(184, 92, 142, 0.30);
-  --casino-text-accent: #D99AB9;
+  /* RESKIN: casino — ultraviolet (was muted berry/rose-magenta). This is
+     exactly the swap the THEME READINESS pass below (see --casino-accent
+     etc.) already anticipated: "swapping to that later means editing
+     the BRANCH block below, nothing else" — editing the raw values here
+     achieves the same thing since BRANCH aliases straight onto these. */
+  --casino-primary: #8B6DD0;
+  --casino-primary-hover: #A488DC;
+  --casino-primary-active: #7454C0; /* RESKIN CORRECTION: matches doc's exact --casino-deep */
+  --casino-primary-soft: rgba(139, 109, 208, 0.14);
+  --casino-primary-subtle: rgba(139, 109, 208, 0.08);
+  --casino-primary-border: rgba(139, 109, 208, 0.30);
+  --casino-text-accent: #B69EE8;
   --casino-cta-text: #FFFFFF;
+  /* CTA OWNERSHIP SYSTEM: --casino-primary above is the BRAND tone (nav,
+     active states, section indicators, rails — identity). This is the
+     separate ACTION tone (arena-owned primary CTAs only: Claim Bonus,
+     Play Now, Spin, Place bet) — brighter/more vibrant, never used for
+     navigation. Reuses the existing brighter/lighter tones already
+     computed for this arena rather than inventing new hex: active
+     (pressed) settles back to the brand tone itself. */
+  --casino-action: #A488DC; /* = existing casino-primary-hover tone */
+  --casino-action-hover: #B69EE8; /* = existing casino-text-accent/light tone, even brighter */
+  --casino-action-active: #8B6DD0; /* = casino-primary (brand) — pressed settles toward identity */
+  --casino-action-text: #FFFFFF;
 
-  /* predictions — steel-cyan / petrol-blue */
-  --predictions-primary: #4FA7B8;
-  --predictions-primary-hover: #63BACB;
-  --predictions-primary-active: #3A8595;
-  --predictions-primary-soft: rgba(79, 167, 184, 0.14);
-  --predictions-primary-subtle: rgba(79, 167, 184, 0.08);
-  --predictions-primary-border: rgba(79, 167, 184, 0.30);
-  --predictions-text-accent: #92D4DF;
-  --predictions-cta-text: #081214;
+  /* RESKIN: predictions — racing green (was steel-cyan/petrol-blue). */
+  --predictions-primary: #4FA37A;
+  --predictions-primary-hover: #63B78E;
+  --predictions-primary-active: #3D8562; /* RESKIN CORRECTION: matches doc's exact --pred-deep */
+  --predictions-primary-soft: rgba(79, 163, 122, 0.14);
+  --predictions-primary-subtle: rgba(79, 163, 122, 0.08);
+  --predictions-primary-border: rgba(79, 163, 122, 0.30);
+  --predictions-text-accent: #7CC69A;
+  --predictions-cta-text: #081410;
+  /* CTA OWNERSHIP SYSTEM — see --casino-action above for the rationale. */
+  --predictions-action: #63B78E;
+  --predictions-action-hover: #7CC69A;
+  --predictions-action-active: #4FA37A;
+  --predictions-action-text: #081410;
 
-  /* sports — chartreuse / olive-lime */
-  --sports-primary: #AFC34A;
-  --sports-primary-hover: #C2D75D;
-  --sports-primary-active: #8FA334;
-  --sports-primary-soft: rgba(175, 195, 74, 0.14);
-  --sports-primary-subtle: rgba(175, 195, 74, 0.08);
-  --sports-primary-border: rgba(175, 195, 74, 0.30);
-  --sports-text-accent: #D7E78A;
-  --sports-cta-text: #111509;
+  /* RESKIN: sports — cobalt (was chartreuse/olive-lime). */
+  --sports-primary: #5A87D4;
+  --sports-primary-hover: #7099DC;
+  --sports-primary-active: #4670BF; /* RESKIN CORRECTION: matches doc's exact --sports-deep */
+  --sports-primary-soft: rgba(90, 135, 212, 0.14);
+  --sports-primary-subtle: rgba(90, 135, 212, 0.08);
+  --sports-primary-border: rgba(90, 135, 212, 0.30);
+  --sports-text-accent: #8AAAE4;
+  --sports-cta-text: #0A1220;
+  /* CTA OWNERSHIP SYSTEM — see --casino-action above for the rationale. */
+  --sports-action: #7099DC;
+  --sports-action-hover: #8AAAE4;
+  --sports-action-active: #5A87D4;
+  --sports-action-text: #0A1220;
 
   /* default product tokens (overridden by [data-product]) */
   --product-primary: var(--global-cta);
@@ -436,6 +533,17 @@ html {
   --product-accent-text: var(--global-cta);
   --product-cta-text: var(--global-cta-text);
   --product-ambient: none;
+  /* CTA OWNERSHIP SYSTEM: resolved per-arena below by [data-product] —
+     this is what the "action" Button variant reads, so an arena-owned
+     CTA (Claim Bonus, Bet Now, Buy YES) automatically renders in
+     whichever arena's Action color the page is currently in, with no
+     per-component special-casing. Defaults to the platform Mint action
+     color when no [data-product] ancestor is set (there should always
+     be one on a real arena page; this is a safe fallback only). */
+  --product-action: var(--global-cta);
+  --product-action-hover: var(--global-cta-hover);
+  --product-action-active: var(--global-cta-active);
+  --product-action-text: var(--global-cta-text);
 }
 
 [data-product="casino"] {
@@ -447,7 +555,18 @@ html {
   --product-border: var(--casino-primary-border);
   --product-accent-text: var(--casino-text-accent);
   --product-cta-text: var(--casino-cta-text);
-  --product-ambient: radial-gradient(circle at 20% 20%, rgba(184, 92, 142, 0.10), transparent 34%);
+  --product-action: var(--casino-action);
+  --product-action-hover: var(--casino-action-hover);
+  --product-action-active: var(--casino-action-active);
+  --product-action-text: var(--casino-action-text);
+  /* RESKIN v2: was a stale hardcoded rgba(184,92,142,...) — the OLD
+     casino rose, left behind by the v1 token pass since this literal
+     never referenced var(--casino-primary). Rather than recolor it to
+     the new ultraviolet, it's removed outright: a full-page radial brand
+     glow is exactly the "neon crypto aesthetic" this v2 pass explicitly
+     avoids, and works against "restrained graphite foundation" / "flatter,
+     more intentional surfaces" — same call as --product-ambient: none above. */
+  --product-ambient: none;
 }
 [data-product="predictions"] {
   --product-primary: var(--predictions-primary);
@@ -458,7 +577,11 @@ html {
   --product-border: var(--predictions-primary-border);
   --product-accent-text: var(--predictions-text-accent);
   --product-cta-text: var(--predictions-cta-text);
-  --product-ambient: radial-gradient(circle at 10% 75%, rgba(79, 167, 184, 0.10), transparent 36%);
+  --product-action: var(--predictions-action);
+  --product-action-hover: var(--predictions-action-hover);
+  --product-action-active: var(--predictions-action-active);
+  --product-action-text: var(--predictions-action-text);
+  --product-ambient: none; /* RESKIN v2: was a stale hardcoded old-steel-cyan glow, removed — see casino block above */
 }
 [data-product="sports"] {
   --product-primary: var(--sports-primary);
@@ -469,7 +592,11 @@ html {
   --product-border: var(--sports-primary-border);
   --product-accent-text: var(--sports-text-accent);
   --product-cta-text: var(--sports-cta-text);
-  --product-ambient: radial-gradient(circle at 75% 40%, rgba(175, 195, 74, 0.10), transparent 36%);
+  --product-action: var(--sports-action);
+  --product-action-hover: var(--sports-action-hover);
+  --product-action-active: var(--sports-action-active);
+  --product-action-text: var(--sports-action-text);
+  --product-ambient: none; /* RESKIN v2: was a stale hardcoded old-chartreuse glow, removed — see casino block above */
 }
 
 /* Ambient section glow — subtle, only behind the app frame, never per-card. */
@@ -511,24 +638,143 @@ html {
      roles below have one thing to point at, and so a future pass can
      migrate call sites from `bg-zinc-900` to `bg-surface-raised` without
      also having to decide a new numeric value at the same time. */
-  --neutral-950: #09090b;
-  --neutral-900: #18181b;
-  --neutral-800: #27272a;
-  --neutral-700: #3f3f46;
-  --neutral-500: #71717a;
-  --neutral-400: #a1a1aa;
-  --neutral-300: #d4d4d8;
+  /* RESKIN: reinterpreted onto the guide's surface progression rather
+     than a literal zinc-shade recolor (see the --color-zinc-* override
+     above for the same idea applied to Tailwind's own utilities). */
+  --neutral-950: #0A0C10; /* guide --bg */
+  --neutral-900: #131720; /* guide --surface-1 */
+  --neutral-800: #1A1F2A; /* guide --surface-2 */
+  --neutral-700: #242A37; /* guide --surface-3 / --rule */
+  --neutral-500: #8F97A8; /* guide --ink-dim */
+  --neutral-400: #9BA3B4;
+  --neutral-300: #C3C8D2;
 
   /* ── FOUNDATION: elevation / shadow scale ───────────────────────────────
-     Consolidates the handful of one-off box-shadow values already in use
-     (Toaster's card shadow, Dev Panel's edge shadow) into named steps.
-     Restrained on purpose — this pass doesn't add new glows or richer
-     shadows, just names for the ones already shipping. */
+     RESKIN BUG FOUND: --elevation-high (Toaster's shadow) was set to the
+     EXACT SAME value as --elevation-medium (Dialog/Dropdown's shadow) —
+     the doc's own §5 gives toast a genuinely distinct, tighter shadow
+     (--shadow-toast) from the modal/popover one (--shadow-overlay).
+     Fixing --elevation-high's value alone fixes Toaster.jsx with no
+     component edit, since it already reads var(--elevation-high).
+     --elevation-focus now points at --halo directly (doc's exact
+     --shadow-focus: "0 0 0 2px var(--halo)"), not the alpha-tinted --ring
+     — see --shadow-focus-danger below for the destructive-control variant
+     the doc adds that didn't exist before. */
   --elevation-none: none;
   --elevation-low: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --elevation-medium: 0 10px 28px rgba(0, 0, 0, 0.55);
-  --elevation-high: 0 12px 32px rgba(0, 0, 0, 0.6);
-  --elevation-focus: 0 0 0 2px var(--ring);
+  --elevation-medium: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 2px 4px rgba(0, 0, 0, 0.4); /* doc --shadow-overlay: modal, popover, dropdown */
+  --elevation-high: 0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4); /* doc --shadow-toast */
+  --elevation-focus: 0 0 0 2px var(--global-cta); /* doc --shadow-focus */
+  --elevation-focus-danger: 0 0 0 2px var(--danger); /* doc --shadow-focus-danger — new, no prior call site yet */
+
+  /* ── APPENDIX A — canonical token names, verbatim from the Ultimate
+     Reskin Specification (doc rule 2: never rename; rule 3: never
+     introduce a token not in this document). Everything above/below this
+     block is this app's own pre-existing semantic layer (--background,
+     --card, --casino-primary, --elevation-*, etc.) — kept because
+     hundreds of call sites already reach for those names, and because
+     several of them (e.g. --casino-primary-hover, --global-cta-active)
+     cover real UI states the doc's own leaner palette doesn't separately
+     name. This block exists so the doc's OWN names are also real,
+     queryable values in the codebase, not just a paper spec — most
+     already match the app's existing hex 1:1 (confirmed while auditing),
+     a few genuinely didn't (--ink-quiet, --rule-quiet, --rule-focus,
+     --rule-danger, --halo-alpha-24, --casino/pred/sports-alpha-12,
+     --pred-alpha-24, --overlay-*, --shadow-focus-danger — all newly added
+     here since nothing in the app defined them before this pass). */
+  --bg: var(--background);
+  --surface-0: var(--sidebar); /* #0E1116 — matches the app's existing sidebar tone exactly */
+  --surface-1: var(--card);
+  --surface-2: var(--secondary);
+  --surface-3: var(--accent);
+  --surface-4: var(--surface-interactive-hover); /* #2E3543 — already defined above under SEMANTIC surface roles */
+
+  --ink-high: var(--foreground);
+  --ink-dim: var(--muted-foreground);
+  --ink-quiet: #545C6E;
+  --ink-inverse: var(--global-cta-text);
+
+  --rule: var(--border);
+  --rule-quiet: #1B2029;
+  --rule-focus: var(--global-cta);
+  --rule-danger: var(--danger);
+
+  --halo: var(--global-cta);
+  --halo-hover: var(--global-cta-hover);
+  --halo-dim: var(--global-cta-active);
+  /* RESKIN BUG FOUND: --halo-quiet/--halo-alpha-24 were literal hex (not
+     var() aliases like the three lines above), so neither the Mint pass
+     nor this Cyan pass ever touched them — still the original ivory
+     Halo values. Fixed to derive from the live --global-cta the same way
+     --halo/-hover/-dim already do. */
+  --halo-quiet: color-mix(in srgb, var(--global-cta) 45%, var(--ink-quiet));
+  --halo-alpha-24: rgba(56, 189, 248, 0.24);
+
+  --casino: var(--casino-primary);
+  --casino-light: var(--casino-text-accent);
+  --casino-deep: var(--casino-primary-active);
+  --casino-alpha-12: rgba(139, 109, 208, 0.12);
+
+  --pred: var(--predictions-primary);
+  --pred-light: var(--predictions-text-accent);
+  --pred-deep: var(--predictions-primary-active);
+  --pred-alpha-12: rgba(79, 163, 122, 0.12);
+  --pred-alpha-24: rgba(79, 163, 122, 0.24);
+
+  --sports: var(--sports-primary);
+  --sports-light: var(--sports-text-accent);
+  --sports-deep: var(--sports-primary-active);
+  --sports-alpha-12: rgba(90, 135, 212, 0.12);
+
+  --ok: var(--success);
+  --ok-fg: var(--predictions-text-accent); /* #7CC69A — doc: "positive shares Predictions' green" */
+  --warn: var(--warning);
+  --warn-fg: #E5BC7A;
+  --err: var(--danger);
+  --err-fg: #E58279;
+  /* --info already defined above (fixed the stale-hex bug) */
+
+  --overlay-modal: rgba(10, 12, 16, 0.72);
+  --overlay-toast: rgba(10, 12, 16, 0.90);
+  --overlay-loading: rgba(10, 12, 16, 0.60);
+  --overlay-blur: blur(8px);
+
+  --shadow-overlay: var(--elevation-medium);
+  --shadow-toast: var(--elevation-high);
+  --shadow-focus: var(--elevation-focus);
+  --shadow-focus-danger: var(--elevation-focus-danger);
+
+  /* Doc §3.1's 4px-based spacing scale — reference tokens only. The doc's
+     own rule 1 ("never touch layout, spacing, composition") and §3.2
+     ("composition is frozen... only replace token VALUES if they map
+     cleanly") means this is NOT a license to retrofit every padding/gap
+     utility across the app onto these; Tailwind's own default spacing
+     scale is already 4px-based and already used everywhere, so no
+     migration is needed for the numbers to already match. Defined here
+     for any future non-Tailwind spacing need and for documentation
+     parity with the doc. */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+
+  /* Doc §6 motion additions — kept SEPARATE from --motion-fast/-standard/
+     -layout and --ease-emphasized above, which are load-bearing, already-
+     tuned values several fragile, previously-debugged animations key off
+     directly (sidebar transition, panel enter, toast leave) — retuning
+     those to the doc's slightly different numbers risks reopening a class
+     of visual bug this session already spent multiple passes fixing, for
+     an imperceptible ms difference. These are the doc's own new roles
+     that had no prior equivalent at all. */
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-instant: 80ms;
+  --dur-flash: 400ms;
 
   /* ── SEMANTIC: surface roles ─────────────────────────────────────────────
      Existing shadcn tokens (--background/--card/--popover/--secondary/
@@ -540,9 +786,9 @@ html {
      what's already on screen, not a new palette. */
   --surface-base: var(--background);
   --surface-raised: var(--card);
-  --surface-overlay-panel: #1a1b1f; /* Dev Panel / other edge-anchored panels */
-  --surface-interactive: #24252b; /* Dev Panel controls, hover-able compact surfaces */
-  --surface-interactive-hover: #2c2d33;
+  --surface-overlay-panel: #1A1F2A; /* Dev Panel / other edge-anchored panels — guide --surface-2 */
+  --surface-interactive: #242A37; /* Dev Panel controls, hover-able compact surfaces — guide --surface-3 */
+  --surface-interactive-hover: #2E3543;
   --surface-tooltip: var(--neutral-900);
   --surface-gameplay: var(--neutral-950); /* CasinoGameplayFrame's outer frame + content box */
   --surface-inset: rgba(255, 255, 255, 0.04); /* faint recessed fill, e.g. empty-state wells */
@@ -563,21 +809,28 @@ html {
      (border-white/5, border-white/10, plus Dev Panel's #3a3b42) onto named
      roles. Contrast unchanged — this only names what already renders. */
   --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-standard: var(--border); /* rgba(255,255,255,0.10) — existing shadcn token */
+  --border-standard: var(--border); /* guide --rule, #242A37 — see .dark block */
   --border-emphasized: rgba(255, 255, 255, 0.15);
-  --border-interactive: #3a3b42; /* Dev Panel's own panel border */
+  --border-interactive: #3A4152; /* Dev Panel's own panel border */
   --border-selected: var(--product-border); /* branch-tinted, see BRANCH below */
   --border-focus: var(--ring);
 
   /* ── SEMANTIC: status roles (independent of branch — see STATUS below) ──
      --success/--warning/--danger already existed; --info and --pending are
-     new names for values that were previously copy-pasted hex (Toaster.jsx/
-     DevPanel.jsx's toast preview both hardcoded #4FA7B8 for "info", which
-     is coincidentally the CURRENT Predictions branch hex — a real risk if
-     left as-is: rebranding Predictions would silently recolor every info
-     toast. Naming it --info separately breaks that accidental coupling. */
-  --info: #4FA7B8;
-  --info-bg: rgba(79, 167, 184, 0.14);
+     new names for values that were previously copy-pasted hex. RESKIN BUG
+     FOUND: --info was still #4FA7B8 — the OLD pre-reskin Predictions
+     steel-cyan — left behind by every color pass so far since this was
+     never repointed at an arena token, just hardcoded. The doc's own §1.6
+     defines --info as "reuses --sports" (cobalt) — matched here as a
+     literal hex snapshot of --sports-primary's current value, same
+     established convention as --success below mirroring Predictions'
+     green, rather than a live var() reference: a themeTokens.test.js
+     assertion specifically guards against a status token becoming
+     literally coupled to a branch token's own reference chain (so
+     rebranding an arena later can't silently recolor status semantics
+     too) — intentional value-sharing today, not a live coupling. */
+  --info: #5A87D4;
+  --info-bg: rgba(90, 135, 212, 0.14);
   --pending: #D6883E; /* matches --badge-pending-* already defined above */
   --pending-bg: rgba(214, 136, 62, 0.14);
 
@@ -727,44 +980,63 @@ html {
 }
 
 .dark {
-  --background: #090A0B;
-  --foreground: #F2F3F5;
-  --card: #15171C;
-  --card-foreground: #F2F3F5;
-  --popover: #1A1C22;
-  --popover-foreground: #F2F3F5;
-  /* primary = global teal CTA (Deposit / Register / Confirm) */
-  --primary: #19C7A5;
-  --primary-foreground: #06110E;
-  --secondary: #1A1C22;
-  --secondary-foreground: #E5E7EB;
-  --muted: #1A1C22;
-  --muted-foreground: #A9ADB7;
-  --accent: #20232A;
-  --accent-foreground: #F2F3F5;
-  --destructive: #D65A70;
-  --border: rgba(255, 255, 255, 0.10);
+  /* RESKIN: guide §1.1 surface progression (bg/surface-1/surface-2/
+     surface-3) mapped onto the existing shadcn-style role names —
+     names unchanged, values only. */
+  --background: #0A0C10; /* guide --bg */
+  --foreground: #ECEEF2; /* guide --ink-high */
+  --card: #131720; /* guide --surface-1 */
+  --card-foreground: #ECEEF2;
+  --popover: #1A1F2A; /* guide --surface-2 (floating-ish role) */
+  --popover-foreground: #ECEEF2;
+  /* primary = global CTA — Platform Action color, now Cyan (was Mint,
+     before that ivory Halo) */
+  --primary: #38BDF8;
+  --primary-foreground: #06131A;
+  --secondary: #1A1F2A; /* guide --surface-2 */
+  --secondary-foreground: #ECEEF2;
+  --muted: #1A1F2A;
+  --muted-foreground: #8F97A8; /* guide --ink-dim */
+  --accent: #242A37; /* guide --surface-3 */
+  --accent-foreground: #ECEEF2;
+  --destructive: #D9605A; /* guide --err */
+  --border: #242A37; /* guide --rule */
   --input: rgba(255, 255, 255, 0.14);
-  --ring: rgba(255, 255, 255, 0.26);
-  --chart-1: #4FA7B8;
-  --chart-2: #49B889;
-  --chart-3: #AFC34A;
-  --chart-4: #B85C8E;
-  --chart-5: #D6A84A;
-  --sidebar: #121318;
-  --sidebar-foreground: #F2F3F5;
-  --sidebar-primary: #19C7A5;
-  --sidebar-primary-foreground: #06110E;
-  --sidebar-accent: #1A1D22;
-  --sidebar-accent-foreground: #F2F3F5;
-  --sidebar-border: rgba(255, 255, 255, 0.07);
-  --sidebar-ring: rgba(255, 255, 255, 0.26);
+  --ring: rgba(56, 189, 248, 0.5); /* Cyan-tinted keyboard focus ring only */
+  --chart-1: #5A87D4;
+  --chart-2: #4FA37A;
+  --chart-3: #8B6DD0;
+  --chart-4: #D9A55A;
+  --chart-5: #D9605A;
+  --sidebar: #0E1116; /* guide --surface-0 */
+  --sidebar-foreground: #ECEEF2;
+  --sidebar-primary: #38BDF8;
+  --sidebar-primary-foreground: #06131A;
+  --sidebar-accent: #1A1F2A;
+  --sidebar-accent-foreground: #ECEEF2;
+  --sidebar-border: #242A37;
+  /* RESKIN BUG FOUND: this was still rgba(230,228,218,0.5) — the ivory
+     Halo value from before the Mint pass even existed, never updated in
+     either color migration since --sidebar-ring wasn't grepped for at
+     the time. Fixed to match --ring (Cyan-tinted) now. */
+  --sidebar-ring: rgba(56, 189, 248, 0.5);
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  /* RESKIN (doc §4): default radius is --radius-md (6px); hero cards/
+     modals get --radius-lg (10px); game tiles get --radius-xl (14px —
+     doc's own exact value, and calc(var(--radius) + 4px) with --radius
+     at its existing 10px already lands on 14px too, so left as a calc
+     rather than a duplicate literal). --radius-none/-xs are new additions
+     (data grid cells/image tiles that must square-fit; engraved data
+     pills) — nothing in the app needed them named before this pass.
+     --radius-pill isn't a separate token: Tailwind's built-in `rounded-
+     full` (9999px) already covers it exactly. */
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
   --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);

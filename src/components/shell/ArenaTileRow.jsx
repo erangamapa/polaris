@@ -4,9 +4,12 @@ import { ArenaPromoTile } from "./ArenaPromoTile";
 // The one shared top-section system for Casino, Sports and Predictions:
 // [ wallet tile ] [ arena promo 1 ] [ arena promo 2 ] + scoped search below,
 // sharing one wrapper so the row's edges always line up with the search
-// control's edges. Casino keeps its own bespoke PromoStrip (full-bleed photo
-// promo cards, untouched) — this is what Sports and Predictions render
-// instead of their old single oversized SectionHero.
+// control's edges. Casino's own PromoStrip.jsx renders the same layout
+// directly rather than through this component (it needs the richer
+// combobox search panel Sports/Predictions don't use) but both call sites
+// render promo content through the same shared PromoCard (see
+// ArenaPromoTile.jsx/PromoCard.jsx) — this is what Sports and Predictions
+// render instead of their old single oversized SectionHero.
 //
 // `promos` is a 2-item array shaped like the entries in src/lib/arenaPromos.js
 // ({ id, label, title, metadata?, ctaLabel, href, artwork, ariaLabel? }).

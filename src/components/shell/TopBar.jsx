@@ -118,7 +118,15 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
         </button>
 
         <div className="flex shrink-0 select-none items-center gap-2" onClick={onLogoTap}>
-          <div className="grid size-8 place-items-center rounded-lg bg-[var(--brand-logo)] font-black text-[var(--brand-logo-text)]" aria-hidden="true">{BRAND_NAME[0]}</div>
+          {/* LOGO IMPROVEMENT: a solid bright-Mint tile read as too loud/
+              neon for a small brand mark — kept understated per this
+              pass's own instruction ("premium, not playful, not neon"):
+              a dark tile, white glyph, and a thin Mint accent bar along
+              the bottom edge (one of the suggested subtle treatments). */}
+          <div className="relative grid size-8 place-items-center overflow-hidden rounded-lg bg-[var(--secondary)] font-black text-[var(--foreground)]" aria-hidden="true">
+            {BRAND_NAME[0]}
+            <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[var(--brand-logo)]" />
+          </div>
           <span className="text-sm font-bold tracking-tight">
             <span className="sr-only">{BRAND_NAME} — </span>
             {BRAND_NAME}

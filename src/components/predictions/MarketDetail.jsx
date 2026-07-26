@@ -17,9 +17,19 @@ export function MarketDetail({ market, onBack, onBuy }) {
       </Button>
 
       <div className="flex items-start gap-3">
-        <div className={`size-12 shrink-0 rounded-xl bg-gradient-to-br ${market.hue}`} />
+        {/* RESKIN: was bg-gradient-to-br ${market.hue} — same arbitrary
+            rainbow swatch as MarketCard's list view, flattened to match
+            (neutral, --radius-lg to align with MarketCard's own swatch). */}
+        <div className="size-12 shrink-0 rounded-lg bg-[var(--secondary)]" />
         <div>
-          <h1 className="text-lg font-bold leading-snug">{market.question}</h1>
+          {/* RESKIN (product-language unification): was .text-title-s — a
+              one-off richer scale only Predictions' detail page used.
+              Sports' equivalent single-item detail header (EventDetail.jsx)
+              uses plain text-lg font-bold, same as every list-page h1
+              across all three arenas; matching that instead of maintaining
+              a second scale for one page. Simplicity over an unnecessary
+              extra type role — see final report. */}
+          <h1 className="text-lg font-bold">{market.question}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="secondary">{market.category}</Badge>
             <span className="flex items-center gap-1"><TrendingUp className="size-3.5" />{fmtCompact(market.volumeTotal)} Vol</span>
@@ -27,7 +37,12 @@ export function MarketDetail({ market, onBack, onBuy }) {
           </div>
         </div>
         <div className="ml-auto text-right">
-          <div className="text-2xl font-black tabular-nums text-[#92D4DF]">{fmtPct(market.yes)}</div>
+          {/* RESKIN v2 CALIBRATION: was font-black (weight 900, unaffected
+              by the app-wide font-weight-bold override) and a hardcoded
+              #92D4DF — the OLD predictions steel-cyan text-accent, never
+              updated to the token when the arena colors were recolored to
+              racing green. A percentage is DATA (font-mono), not display. */}
+          <div className="font-mono text-2xl font-semibold tabular-nums text-[var(--predictions-text-accent)]">{fmtPct(market.yes)}</div>
           <div className="text-[11px] text-muted-foreground">Yes chance</div>
         </div>
       </div>
@@ -38,17 +53,23 @@ export function MarketDetail({ market, onBack, onBuy }) {
         </CardContent>
       </Card>
 
+      {/* CTA OWNERSHIP SYSTEM: "Buy YES / Buy NO" are both Predictions
+          arena actions — the ownership rule cares who owns the action
+          (Predictions), not which side of the trade it is, so both use
+          the same Predictions Action Green rather than a semantic
+          yes=green/no=red pair. The button label ("Buy Yes"/"Buy No")
+          is what disambiguates the two, by design. */}
       <div className="grid grid-cols-2 gap-3">
         <Button
           size="lg"
-          className="h-12 bg-[var(--predictions-primary)] text-base font-bold text-[var(--predictions-cta-text)] hover:bg-[var(--predictions-primary-hover)]"
+          className="h-12 bg-[var(--predictions-action)] text-base font-bold text-[var(--predictions-action-text)] hover:bg-[var(--predictions-action-hover)] active:bg-[var(--predictions-action-active)]"
           onClick={() => onBuy(market, "Yes")}
         >
           Buy Yes · {fmtCents(market.yes)}
         </Button>
         <Button
           size="lg"
-          className="h-12 bg-[var(--danger)] text-base font-bold text-[var(--danger-foreground)] hover:brightness-110"
+          className="h-12 bg-[var(--predictions-action)] text-base font-bold text-[var(--predictions-action-text)] hover:bg-[var(--predictions-action-hover)] active:bg-[var(--predictions-action-active)]"
           onClick={() => onBuy(market, "No")}
         >
           Buy No · {fmtCents(market.no)}
@@ -65,7 +86,7 @@ export function MarketDetail({ market, onBack, onBuy }) {
           <Separator />
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Resolution source</div>
-            <p className="mt-1 text-[#92D4DF]">{market.resolutionSource}</p>
+            <p className="mt-1 text-[var(--foreground)]">{market.resolutionSource}</p>
           </div>
           <Separator />
           <div className="flex items-center justify-between text-muted-foreground">

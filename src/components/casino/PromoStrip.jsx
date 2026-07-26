@@ -8,66 +8,39 @@ import { toast } from "@/lib/toast";
 import { track } from "@/lib/telemetry";
 import { CASINO_CHAIN_ID } from "@shared/chains";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { PromoCard, CARD_H } from "@/components/shell/PromoCard";
+import { MicroLabel } from "@/components/ui/micro-label";
 import { useDevMockState } from "@/lib/devMock";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { isArenaAllowed } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
 
-// All three top cards share this fixed height at every breakpoint — identical
-// width comes from the grid (grid-cols-3 = repeat(3, minmax(0, 1fr))), identical
-// height comes from here. Neither is allowed to grow from content or artwork.
-// Exported so Sports/Predictions can build their own tiles at the exact same
-// dimensions (see ArenaPromoTile) without duplicating the constant.
-export const CARD_H = "h-40"; // 160px — inside the 150-170px desktop target
-
-// Compact promo tile — same art/overlay treatment as the old full hero, just
-// clamped to CARD_H instead of a min-h-[300px+] banner.
-function PromoTile({ promo }) {
-  return (
-    <div className={cn(CARD_H, "relative w-full min-w-0 overflow-hidden rounded-xl border border-[var(--casino-primary-border)] bg-[#0C080C]")}>
-      <div
-        className={cn("hero-bg absolute inset-0", promo.image ? "hero-bg--img" : "hero-bg--fallback")}
-        style={promo.image ? { backgroundImage: `url(${promo.image})` } : undefined}
-      />
-      <div className="hero-overlay pointer-events-none absolute inset-0" />
-      <div className="relative flex h-full min-w-0 flex-col justify-between p-4">
-        <div className="min-w-0">
-          <span className="inline-block rounded-full bg-[var(--casino-primary-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--casino-text-accent)]">
-            {promo.eyebrow}
-          </span>
-          <h3
-            className="mt-1.5 text-base font-bold leading-tight text-[#F2F3F5]"
-            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-          >
-            {promo.title}
-          </h3>
-        </div>
-        <button className="w-fit shrink-0 rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[var(--casino-primary-hover)] active:bg-[var(--casino-primary-active)]">
-          {promo.cta}
-        </button>
-      </div>
-    </div>
-  );
-}
+export { CARD_H };
 
 // A clearly legible wallet mark — inspired by the reference art (dark bifold +
-// a coin catching a teal glow), built as an inline SVG (no generated text, no
-// background, no branded logos), sized to actually fill its column rather
-// than fade away. Only a soft radial glow behind it, full-opacity clean edges.
+// a coin catching a glow tinted with the current Platform Action color),
+// built as an inline SVG (no generated text, no background, no branded
+// logos), sized to actually fill its column rather than fade away. RESKIN
+// BUG FOUND: this had been hardcoded to a literal hex (first ivory Halo,
+// then Mint) rather than a var() reference, so it silently survived two
+// prior color migrations unnoticed. Now reads var(--global-cta) directly
+// (color-mix() for the partial-opacity strokes/glow) so a future Platform
+// Action color change reaches this automatically — no more stale copies.
 function WalletMark() {
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
       <div
         className="absolute inset-0"
-        style={{ background: "radial-gradient(65% 65% at 50% 45%, rgba(25,199,165,0.22), transparent 72%)" }}
+        style={{ background: "radial-gradient(65% 65% at 50% 45%, color-mix(in srgb, var(--global-cta) 14%, transparent), transparent 72%)" }}
       />
       <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-28 max-w-28">
-        <rect x="12" y="32" width="76" height="52" rx="10" fill="#101C22" stroke="rgba(25,199,165,0.45)" strokeWidth="2" />
-        <path d="M12 47 h76" stroke="rgba(25,199,165,0.3)" strokeWidth="1.2" />
-        <circle cx="76" cy="60" r="6" fill="#19C7A5" />
-        <rect x="26" y="12" width="36" height="24" rx="5" fill="#16262E" stroke="rgba(25,199,165,0.4)" strokeWidth="1.5" transform="rotate(-8 44 24)" />
+        <rect x="12" y="32" width="76" height="52" rx="10" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
+        <path d="M12 47 h76" stroke="color-mix(in srgb, var(--global-cta) 24%, transparent)" strokeWidth="1.2" />
+        <circle cx="76" cy="60" r="6" fill="var(--global-cta)" />
+        <rect x="26" y="12" width="36" height="24" rx="5" fill="#181C22" stroke="color-mix(in srgb, var(--global-cta) 30%, transparent)" strokeWidth="1.5" transform="rotate(-8 44 24)" />
         <circle cx="54" cy="20" r="13" fill="#FFD36B" />
-        <circle cx="54" cy="20" r="7.5" fill="none" stroke="#16262E" strokeOpacity="0.55" strokeWidth="1.2" />
+        <circle cx="54" cy="20" r="7.5" fill="none" stroke="#181C22" strokeOpacity="0.55" strokeWidth="1.2" />
       </svg>
     </div>
   );
@@ -77,18 +50,21 @@ function WalletMark() {
 // own justify-between so heading/body/CTA space out instead of clustering at
 // the top) + a fixed-width illustration column (~36-40%) that can never be
 // overlapped by text since they're separate flex children, not a text-over-
-// image overlay. Same CARD_H/width as a promo tile — a bare <button> is
-// inline-block and won't stretch on its own, which is why the outer div (not
-// the button) owns `w-full`. Illustration hidden below `sm:`: at the ~110px
-// mobile card width fixed by the existing 3-col grid there isn't room for a
-// legible illustration alongside readable text and a tappable CTA.
+// image overlay. Same CARD_H/radius/border/background tokens as PromoCard
+// (this tile sits in the exact same row) — a bare <button> is inline-block
+// and won't stretch on its own, which is why the outer div (not the button)
+// owns `w-full`. Illustration hidden below `sm:`: at the ~110px mobile card
+// width fixed by the existing 3-col grid there isn't room for a legible
+// illustration alongside readable text and a tappable CTA.
 function WalletCard({ children, tone = "neutral" }) {
   return (
     <div
+      // CARD POLISH: same subtle resting elevation as the promo cards
+      // beside it in this row (--elevation-low).
       className={cn(
         CARD_H,
-        "relative flex w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-xl border p-4 text-left transition",
-        tone === "warning" ? "border-amber-500/25 bg-zinc-900" : "border-white/10 bg-zinc-900"
+        "relative flex w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-lg border p-4 text-left shadow-[var(--elevation-low)] transition duration-150",
+        tone === "warning" ? "border-[var(--warning)]/30 bg-[var(--card)]" : "border-[var(--border)] bg-[var(--card)]"
       )}
     >
       <div className="flex h-full min-w-0 flex-1 flex-col justify-between">{children}</div>
@@ -99,17 +75,7 @@ function WalletCard({ children, tone = "neutral" }) {
   );
 }
 
-// Shared shape/size for every promo-style CTA in the app (Casino's "Claim
-// bonus"/"View race", the wallet tile, and Sports/Predictions' arena promos)
-// — same rounded-lg, px-3 py-1.5, text-xs font-bold everywhere. Callers add
-// their own color classes (this has none baked in).
-export const PROMO_CTA_BASE = "w-fit shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900";
-
-// The wallet tile's own CTA: PROMO_CTA_BASE recoloured teal (--global-cta) so
-// it still reads as product utility rather than a promotion, never visually
-// heavier than "Claim bonus" / "View race" beside it.
-const PROMO_BTN = "w-fit shrink-0 flex items-center gap-1.5 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-xs font-bold text-[var(--global-cta-text)] transition hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900";
-const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-zinc-500";
+const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-dim)]";
 
 // Exported: this is the one shared "Tribet infrastructure" tile reused as the
 // first card on Casino, Sports and Predictions (see ArenaTileRow). It has no
@@ -133,10 +99,10 @@ export function PlayerTile() {
           <h3 className="mt-1 text-base font-bold leading-snug text-[#F2F3F5]">Connecting…</h3>
           <p className="mt-1 text-xs leading-snug text-zinc-400">Approve the request in your wallet.</p>
         </div>
-        <button type="button" disabled className={PROMO_BTN} aria-label="Connecting to wallet">
+        <Button size="sm" disabled className="w-fit" aria-label="Connecting to wallet">
           <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
           Connecting…
-        </button>
+        </Button>
       </WalletCard>
     );
   }
@@ -151,9 +117,9 @@ export function PlayerTile() {
           <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1.5 sm:leading-snug">One wallet. Every game.</h3>
           <p className="mt-1.5 hidden text-xs leading-snug text-zinc-400 xl:block">Play, earn and withdraw with one connection.</p>
         </div>
-        <button type="button" onClick={connect} data-test-id="wallet-tile-connect" className={PROMO_BTN}>
+        <Button size="sm" onClick={connect} data-test-id="wallet-tile-connect" className="w-fit">
           Connect wallet
-        </button>
+        </Button>
       </WalletCard>
     );
   }
@@ -167,16 +133,16 @@ export function PlayerTile() {
           <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1 sm:leading-snug">Wrong network</h3>
           <p className="mt-1 hidden text-xs leading-snug text-zinc-400 sm:block">Switch to Base Sepolia to continue.</p>
         </div>
-        <button
-          type="button"
+        <Button
+          size="sm"
           onClick={() => switchTo(CASINO_CHAIN_ID)}
           disabled={isSwitching}
           data-test-id="wallet-tile-switch-network"
-          className={PROMO_BTN}
+          className="w-fit"
         >
           {isSwitching && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
           {isSwitching ? "Switching…" : "Switch network"}
-        </button>
+        </Button>
       </WalletCard>
     );
   }
@@ -194,10 +160,10 @@ export function PlayerTile() {
   return (
     <WalletCard>
       <div className="min-w-0">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-          <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+        <MicroLabel className="inline-flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" />
           Wallet connected
-        </span>
+        </MicroLabel>
         <div className="mt-1 truncate font-mono text-xs text-zinc-400">{shortAddress(address)}</div>
         <div className="mt-1.5">
           {casinoBalanceLoading ? (
@@ -210,7 +176,10 @@ export function PlayerTile() {
               </button>
             </div>
           ) : (
-            <div className="truncate text-lg font-black text-white">
+            // RESKIN v2 CALIBRATION: was font-black (weight 900, unaffected
+            // by the app-wide font-weight-bold override) — a balance is
+            // DATA (JetBrains Mono, tabular numerics), not display text.
+            <div className="truncate font-mono text-lg font-semibold tabular-nums text-white">
               {casinoBalance.toFixed(5)} <span className="text-xs font-semibold text-zinc-400">{casinoSymbol}</span>
             </div>
           )}
@@ -218,18 +187,18 @@ export function PlayerTile() {
       </div>
 
       <div className="flex items-center gap-2">
-        <button type="button" onClick={openAccount} data-test-id="wallet-tile-view" className={PROMO_BTN}>
+        <Button size="sm" onClick={openAccount} data-test-id="wallet-tile-view" className="w-fit">
           View wallet
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
           onClick={copyAddress}
           aria-label="Copy wallet address"
           data-test-id="wallet-tile-copy"
-          className="grid size-9 shrink-0 place-items-center rounded-lg border border-white/10 text-zinc-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)]"
         >
           <Copy className="size-4" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </WalletCard>
   );
@@ -374,7 +343,8 @@ export function ScopedSearch({
                 <DropdownMenuPrimitive.Content
                   align="start"
                   sideOffset={8}
-                  className="z-[var(--z-header-popover)] min-w-[10rem] overflow-hidden rounded-lg border border-white/10 bg-zinc-900 p-1 text-white shadow-[0_12px_28px_rgba(0,0,0,0.5)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                  className="z-[var(--z-header-popover)] min-w-[10rem] overflow-hidden rounded-lg border border-white/10 bg-zinc-900 p-1 text-white outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                  style={{ boxShadow: "var(--elevation-medium)" }}
                 >
                   <DropdownMenuPrimitive.RadioGroup
                     value={scope}
@@ -456,7 +426,8 @@ export function ScopedSearch({
           <div
             id={panelId}
             data-test-id="arena-search-panel"
-            className="tribet-scrollbar absolute inset-x-0 top-[calc(100%+6px)] z-30 max-h-[28rem] overflow-y-auto rounded-lg border border-white/10 bg-zinc-900 shadow-[0_12px_28px_rgba(0,0,0,0.5)]"
+            className="tribet-scrollbar absolute inset-x-0 top-[calc(100%+6px)] z-30 max-h-[28rem] overflow-y-auto rounded-lg border border-white/10 bg-zinc-900"
+            style={{ boxShadow: "var(--elevation-medium)" }}
           >
             {panel}
           </div>
@@ -480,8 +451,12 @@ export function PromoStrip({ query, onQuery, searchPanelProps }) {
     <div className="casino-content-column w-full space-y-3">
       <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PlayerTile /></div>
-        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PromoTile promo={p1} /></div>
-        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PromoTile promo={p2} /></div>
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
+          <PromoCard eyebrow={p1.eyebrow} title={p1.title} cta={p1.cta} />
+        </div>
+        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
+          <PromoCard eyebrow={p2.eyebrow} title={p2.title} cta={p2.cta} />
+        </div>
       </div>
       <ScopedSearch
         query={query}

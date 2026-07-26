@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { fmtCompact, fmtPct, fmtCents } from "@/lib/format";
 
 export function MarketCard({ market, onOpen, onQuickBuy }) {
@@ -11,7 +11,12 @@ export function MarketCard({ market, onOpen, onQuickBuy }) {
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className={`size-10 shrink-0 rounded-lg bg-gradient-to-br ${market.hue}`} />
+          {/* RESKIN: was bg-gradient-to-br ${market.hue} — an arbitrary
+              rainbow swatch (8 unrelated Tailwind gradient pairs across
+              predictionsData.js's markets) sitting beside two more colors
+              in the footer below. "One card language... everything else
+              becomes quieter" — flattened to a plain neutral swatch. */}
+          <div className="size-10 shrink-0 rounded-lg bg-[var(--secondary)]" />
           <div className="min-w-0">
             <div className="line-clamp-2 text-sm font-semibold leading-snug">{market.question}</div>
             <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -25,17 +30,22 @@ export function MarketCard({ market, onOpen, onQuickBuy }) {
           </div>
         </div>
       </CardContent>
+      {/* CTA OWNERSHIP SYSTEM: quick-buy Yes/No is the same arena action as
+          MarketDetail's "Buy Yes/Buy No" (just condensed for a list card)
+          — both use Predictions Action Green via the shared "action"
+          variant, not a semantic yes/no color pair, for the same reason
+          MarketDetail's buttons do (see that file). Previously these also
+          carried a stale hardcoded steel-cyan/rose color-mix as a
+          left-over from before this system existed. */}
       <CardFooter className="grid grid-cols-2 gap-2 border-t bg-muted/30 p-3">
         <Button
-          variant="ghost"
-          className="bg-[rgba(79,167,184,0.16)] text-[var(--outcome-affirmative)] hover:bg-[rgba(79,167,184,0.24)] hover:text-[var(--predictions-text-accent)]"
+          variant="action"
           onClick={(e) => { e.stopPropagation(); onQuickBuy(market, "Yes"); }}
         >
           Yes {fmtCents(market.yes)}
         </Button>
         <Button
-          variant="ghost"
-          className="bg-[var(--danger-bg)] text-[var(--outcome-negative)] hover:bg-[rgba(214,90,112,0.22)] hover:text-[#eb93a3]"
+          variant="action"
           onClick={(e) => { e.stopPropagation(); onQuickBuy(market, "No"); }}
         >
           No {fmtCents(market.no)}

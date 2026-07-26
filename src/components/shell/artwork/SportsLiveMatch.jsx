@@ -10,20 +10,20 @@ export function SportsLiveMatch() {
       />
       <svg viewBox="0 0 100 100" className="relative h-[84%] w-[84%] max-h-28 max-w-28">
         {/* floodlight cones from top corners */}
-        <path d="M6 4 L46 40 L2 46 Z" fill="#AFC34A" opacity="0.10" />
-        <path d="M94 2 L58 38 L96 44 Z" fill="#AFC34A" opacity="0.14" />
+        <path d="M6 4 L46 40 L2 46 Z" fill="var(--sports-primary)" opacity="0.10" />
+        <path d="M94 2 L58 38 L96 44 Z" fill="var(--sports-primary)" opacity="0.14" />
         {/* motion streaks trailing the ball */}
-        <g stroke="#AFC34A" strokeLinecap="round" opacity="0.5">
+        <g stroke="var(--sports-primary)" strokeLinecap="round" opacity="0.5">
           <path d="M4 66 L34 60" strokeWidth="2" />
           <path d="M0 76 L28 71" strokeWidth="2" opacity="0.7" />
           <path d="M8 86 L32 82" strokeWidth="1.6" opacity="0.5" />
         </g>
         {/* ball */}
         <g transform="translate(62,58)">
-          <circle r="26" fill="#0E1408" stroke="#D7E78A" strokeWidth="1.4" />
-          <circle r="26" fill="none" stroke="#AFC34A" strokeWidth="1" opacity="0.35" />
+          <circle r="26" fill="#0E1408" stroke="var(--sports-text-accent)" strokeWidth="1.4" />
+          <circle r="26" fill="none" stroke="var(--sports-primary)" strokeWidth="1" opacity="0.35" />
           {/* pentagon seam pattern (simplified) */}
-          <g stroke="#D7E78A" strokeWidth="1.1" fill="#1B2410" opacity="0.9">
+          <g stroke="var(--sports-text-accent)" strokeWidth="1.1" fill="#1B2410" opacity="0.9">
             <polygon points="0,-11 10,-4 6,8 -6,8 -10,-4" />
             <path d="M0,-11 L0,-26" />
             <path d="M10,-4 L23,-9" />
@@ -41,9 +41,9 @@ export function SportsLiveMatch() {
         </g>
         {/* subtle scoreboard corner, bottom-left */}
         <g transform="translate(4,80)" opacity="0.55">
-          <rect width="20" height="12" rx="1.5" fill="#0E1408" stroke="#AFC34A" strokeWidth="1" />
-          <rect x="2.5" y="3" width="6" height="6" fill="#AFC34A" opacity="0.7" />
-          <rect x="11.5" y="3" width="6" height="6" fill="#D7E78A" opacity="0.5" />
+          <rect width="20" height="12" rx="1.5" fill="#0E1408" stroke="var(--sports-primary)" strokeWidth="1" />
+          <rect x="2.5" y="3" width="6" height="6" fill="var(--sports-primary)" opacity="0.7" />
+          <rect x="11.5" y="3" width="6" height="6" fill="var(--sports-text-accent)" opacity="0.5" />
         </g>
       </svg>
     </div>

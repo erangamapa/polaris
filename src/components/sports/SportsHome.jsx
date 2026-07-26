@@ -90,16 +90,19 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
           <section>
             <h2 className="mb-2 text-sm font-bold">Sports</h2>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-              {MVP_SPORTS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => onOpenSport(s.id)}
-                  className="flex flex-col items-center gap-1.5 rounded-lg border bg-card py-3 transition hover:border-[var(--sports-primary)]"
-                >
-                  <span className="text-xl" aria-hidden="true">{s.icon}</span>
-                  <span className="text-xs font-medium">{s.name}</span>
-                </button>
-              ))}
+              {MVP_SPORTS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => onOpenSport(s.id)}
+                    className="flex flex-col items-center gap-1.5 rounded-lg border bg-card py-3 transition-colors hover:border-[var(--sports-primary)]"
+                  >
+                    <Icon className="size-5 text-[var(--ink-dim)]" aria-hidden="true" />
+                    <span className="text-xs font-medium">{s.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </section>
 

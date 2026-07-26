@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { attachMockHost } from "@/lib/gameBridge";
+import { MicroLabel } from "@/components/ui/micro-label";
 
 // Vendored provider games (self-contained apps under public/games/*).
 // Served as static assets and embedded via iframe, loaded on demand.
@@ -47,7 +48,7 @@ export function ProviderGame({ game, onReady, onFailed }) {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-4 py-2">
-        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{game.badge ?? "Provider game"}</span>
+        <MicroLabel>{game.badge ?? "Provider game"}</MicroLabel>
         {balance !== null && (
           <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{balance.toFixed(2)} TBET</div>
         )}

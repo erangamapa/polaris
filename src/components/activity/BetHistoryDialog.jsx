@@ -121,7 +121,10 @@ export function BetHistoryDialog({
                       onClick={() => selectFilter(id)}
                       aria-pressed={statusFilter === id}
                       data-test-id={`casino-activity-filter-${id}`}
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${statusFilter === id ? "border-[var(--casino-primary-border)] bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]" : "border-white/10 text-zinc-400 hover:text-white"}`}
+                      // Active filter chip is neutral, not arena-tinted —
+                      // same "retire the maroon active state" rule already
+                      // applied to Casino's category chips.
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${statusFilter === id ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]" : "border-white/10 text-zinc-400 hover:text-white"}`}
                     >
                       {label}
                     </button>
@@ -218,7 +221,7 @@ function ListSkeleton() {
 
 function ListError({ onRetry, onBrowseGames }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center" data-test-id="casino-activity-error">
+    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-8 text-center" data-test-id="casino-activity-error">
       <AlertTriangle className="size-6 text-amber-400" aria-hidden="true" />
       <p className="text-sm font-semibold">Unable to load your bets</p>
       <p className="text-xs text-muted-foreground">Try again in a moment.</p>
@@ -232,10 +235,10 @@ function ListError({ onRetry, onBrowseGames }) {
 
 function CasinoEmpty({ onBrowseGames, filtered }) {
   if (filtered) {
-    return <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No bets match this filter.</div>;
+    return <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">No bets match this filter.</div>;
   }
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center" data-test-id="casino-activity-empty">
+    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-8 text-center" data-test-id="casino-activity-empty">
       <Gamepad2 className="size-6 text-zinc-500" aria-hidden="true" />
       <p className="text-sm font-semibold">No Casino bets yet</p>
       <p className="text-xs text-muted-foreground">Your completed and pending game rounds will appear here.</p>
@@ -248,7 +251,7 @@ function AuthGateEmpty({ kind, onLogin }) {
   const title = kind === "session-expired" ? "Session expired" : "Sign in to view your bets";
   const actionLabel = kind === "session-expired" ? "Sign in again" : "Sign in";
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center" data-test-id={`casino-activity-${kind}`}>
+    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-8 text-center" data-test-id={`casino-activity-${kind}`}>
       <p className="text-sm font-semibold">{title}</p>
       <button type="button" onClick={onLogin} className="mt-1 rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white">{actionLabel}</button>
     </div>
@@ -263,7 +266,7 @@ function BetChain({ loading, bets, chain, render, empty }) {
     return <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Reading chain…</div>;
   }
   if (bets.length === 0) {
-    return <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{empty}</div>;
+    return <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">{empty}</div>;
   }
   return (
     <div className="relative space-y-2 pl-6">

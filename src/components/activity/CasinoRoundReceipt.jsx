@@ -162,7 +162,7 @@ export function CasinoRoundReceipt({ round, open, notFound, onClose, onPlayAgain
                         target="_blank"
                         rel="noreferrer"
                         data-test-id="round-receipt-explorer-link"
-                        className="inline-flex items-center gap-1 text-[var(--casino-text-accent)] hover:underline"
+                        className="inline-flex items-center gap-1 text-[var(--foreground)] hover:underline"
                       >
                         <ExternalLink className="size-3" aria-hidden="true" /> View on block explorer
                       </a>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MicroLabel } from "@/components/ui/micro-label";
 import { User, ShieldCheck, ShieldAlert, LifeBuoy, LogOut, LogIn, Clock, AlertTriangle, ExternalLink } from "lucide-react";
 import { shortAddress } from "@/web3/useWallet";
 import { PROFILE_VARIANT, getAccountAuthMethod } from "@/lib/profileState";
@@ -100,7 +101,7 @@ export function AccountDialog({
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="size-4 text-muted-foreground" aria-hidden="true" />
                     <span>Current session</span>
-                    <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">This device</span>
+                    <MicroLabel>This device</MicroLabel>
                   </div>
                   <button
                     type="button"

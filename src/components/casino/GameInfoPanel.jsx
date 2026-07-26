@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AlertTriangle, ExternalLink, ShieldCheck } from "lucide-react";
 import { getGameDetails, resolveFairnessSummary, formatRtp, RTP_EXPLANATION } from "@/lib/casinoGameDetails";
 import { gameProviderName } from "./CasinoCatalog";
+import { MicroLabel } from "@/components/ui/micro-label";
 
 const STATUS_LABEL = { available: null, "coming-soon": "Coming soon", unavailable: "Unavailable" };
 
@@ -121,12 +122,15 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
               {/* 1. Identity + 3. status */}
               <div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* ONE micro-label component for both badges — "Tribet
+                      Originals" genuinely identifies the game as Tribet's
+                      own (a defensible arena-identity exception), kept
+                      casino-tinted via an explicit override rather than
+                      assuming ambient [data-product] context here. */}
                   {game.kind === "onchain" && (
-                    <span className="rounded bg-[var(--casino-primary-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--casino-text-accent)]">Tribet Originals</span>
+                    <MicroLabel className="bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]">Tribet Originals</MicroLabel>
                   )}
-                  {statusLabel && (
-                    <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">{statusLabel}</span>
-                  )}
+                  {statusLabel && <MicroLabel>{statusLabel}</MicroLabel>}
                 </div>
                 <h2 className="mt-1 text-lg font-bold text-white">{details.name}</h2>
               </div>
@@ -230,7 +234,9 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
                   type="button"
                   onClick={onResponsibleGaming}
                   data-test-id="game-info-responsible-gaming"
-                  className="text-sm font-semibold text-[var(--casino-text-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  // RESKIN: arena color as TEXT is explicitly banned by the
+                  // guide's arena-color rules — was casino-text-accent.
+                  className="text-sm font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Responsible gaming
                 </button>

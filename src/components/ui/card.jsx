@@ -6,11 +6,15 @@ function Card({
   className,
   ...props
 }) {
+  // CARD POLISH: was shadow-sm (a generic shadcn default) — same subtle
+  // resting elevation (--elevation-low) as every other card in the app
+  // (game cards, promo cards, wallet tile), so this shared primitive
+  // (used by MarketCard, EventRow, and others) matches them too.
   return (
     <div
       data-slot="card"
       className={cn(
-        "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+        "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-[var(--elevation-low)] transition-shadow duration-150",
         className
       )}
       {...props} />

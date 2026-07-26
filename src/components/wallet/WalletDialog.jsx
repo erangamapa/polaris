@@ -115,7 +115,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
         </DialogHeader>
 
         {/* balance breakdown */}
-        <div className="rounded-xl border bg-card p-3">
+        <div className="rounded-md border bg-card p-3">
           <div className="mb-2 flex items-baseline justify-between">
             <span className="text-xs text-muted-foreground">Total balance</span>
             <span className="font-mono text-xl font-semibold tabular-nums">{fmtMoney(total)}</span>
@@ -150,7 +150,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
             </div>
 
             {depStage !== null ? (
-              <div className="space-y-3 rounded-xl border bg-card p-3">
+              <div className="space-y-3 rounded-md border bg-card p-3">
                 <div className="text-sm font-medium">Depositing ${fmt(depAmt)} {asset.label}</div>
                 <StageTracker stages={DEPOSIT_STAGES} current={depStage} />
               </div>
@@ -159,8 +159,8 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
                 <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning-bg)] p-2 text-center text-[11px] text-[var(--warning)]">
                   Send only <span className="font-semibold">{asset.label} · {asset.network}</span> to this address
                 </div>
-                <div className="grid place-items-center rounded-xl bg-zinc-950 p-5">
-                  <div className="grid size-28 place-items-center rounded-lg bg-white/90 text-xs text-zinc-500">QR</div>
+                <div className="grid place-items-center rounded-md bg-zinc-950 p-5">
+                  <div className="grid size-28 place-items-center rounded-sm bg-white/90 text-xs text-zinc-500">QR</div>
                 </div>
                 <div className="flex items-center gap-2 rounded-lg border bg-background p-2 text-xs">
                   <span className="truncate font-mono">{ADDRESS}</span>
@@ -188,7 +188,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
           {/* WITHDRAW */}
           <TabsContent value="withdraw" className="mt-3 space-y-3">
             {wStage !== null ? (
-              <div className="space-y-3 rounded-xl border bg-card p-3">
+              <div className="space-y-3 rounded-md border bg-card p-3">
                 <div className="text-sm font-medium">Withdrawing ${fmt(wAmt)} → {asset.network}</div>
                 <StageTracker stages={WITHDRAW_STAGES} current={wStage} />
                 {wHash && <div className="rounded-md bg-background p-2 font-mono text-[11px] text-muted-foreground">tx {wHash}</div>}
@@ -256,7 +256,7 @@ export function WalletDialog({ open, onClose, initialTab = "deposit", balance, i
           {/* HISTORY */}
           <TabsContent value="history" className="mt-3">
             {txns.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No transactions yet.</div>
+              <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">No transactions yet.</div>
             ) : (
               <div className="space-y-2">
                 {txns.map((t) => (

@@ -5,8 +5,11 @@ function Row({ price, size, max, side }) {
   const isAsk = side === "ask";
   return (
     <div className="relative grid grid-cols-2 px-3 py-1 text-xs tabular-nums">
+      {/* RESKIN: was hardcoded rgba(214,90,112,*)/rgba(79,167,184,*) — the
+          same stale untokenized rose/OLD-steel-cyan pair as MarketCard's
+          Yes/No buttons, now derived from the live outcome tokens. */}
       <div
-        className={`absolute inset-y-0 right-0 ${isAsk ? "bg-[rgba(214,90,112,0.10)]" : "bg-[rgba(79,167,184,0.12)]"}`}
+        className={`absolute inset-y-0 right-0 ${isAsk ? "bg-[color-mix(in_srgb,var(--outcome-negative)_10%,transparent)]" : "bg-[color-mix(in_srgb,var(--outcome-affirmative)_12%,transparent)]"}`}
         style={{ width: `${pct}%` }}
       />
       <span className={`relative font-medium ${isAsk ? "text-[var(--outcome-negative)]" : "text-[var(--outcome-affirmative)]"}`}>
