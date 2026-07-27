@@ -243,6 +243,9 @@ export default function App() {
   // needed). Toggling overflow never touches scrollTop, so the exact scroll
   // position is preserved automatically with no jump on close.
   const mainRef = useRef(null);
+  // CASINO GAME EXPERIENCE (routing): <main>'s scroll position captured on
+  // game launch, restored on close — see launchGame/closeGame below.
+  const lobbyScrollTopRef = useRef(null);
   useEffect(() => {
     const el = mainRef.current;
     if (el) el.style.overflowY = mobileMenuOpen ? "hidden" : "";
@@ -734,6 +737,11 @@ export default function App() {
     // surface of its own, so it's still closed explicitly rather than
     // relying on paint order.
     setMobileMenuOpen(false);
+    // ROUTING (game page repair): CasinoLobby now fully unmounts while a
+    // game is open (it used to stay mounted underneath the old full-
+    // viewport modal, so <main>'s scroll position was preserved for free).
+    // Capture it here so `closeGame` can restore it — see there.
+    lobbyScrollTopRef.current = mainRef.current?.scrollTop ?? null;
     window.history.pushState({}, "", gameHref(game));
     attemptLaunch(game, context, casinoCategory);
   };
@@ -741,6 +749,17 @@ export default function App() {
     launch.closeLaunch();
     const bare = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
+    // Restore the scroll position captured in `launchGame` — CasinoLobby is
+    // about to remount fresh (same category, per the lifted `casinoCategory`
+    // state above) one frame from now; wait for its real content/height
+    // before assigning scrollTop, or it would just clamp back to 0.
+    const savedScrollTop = lobbyScrollTopRef.current;
+    lobbyScrollTopRef.current = null;
+    if (savedScrollTop != null) {
+      requestAnimationFrame(() => {
+        if (mainRef.current) mainRef.current.scrollTop = savedScrollTop;
+      });
+    }
   };
   // CASINO GAME EXPERIENCE — "Retry" during the Slow Loading sub-state
   // (see GameLoading.jsx): the reducer's own RETRY action only accepts a
@@ -1169,7 +1188,7 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main ref={mainRef} tabIndex={-1} data-test-id="main-content" className="tribet-scrollbar min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable] focus:outline-none">
+        <main ref={mainRef} tabIndex={-1} data-test-id="main-content" className="tribet-scrollbar min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable] [overflow-anchor:none] focus:outline-none">
           {/* STABLE ARENA CONTENT STAGE — see ArenaContentStage.jsx for the
               full crossfade architecture. `arenaKey={product}` is the ONLY
               thing that tells the stage a transition should happen; the

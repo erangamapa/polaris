@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useDevMockState } from "@/lib/devMock";
 
 const FADE_MS = 120;
 const OUTGOING_FADE_MS = 100;
@@ -43,6 +44,15 @@ function prefersReducedMotion() {
 // is removed in the same tick instead of lingering (invisibly) for the
 // normal fade window.
 export function ArenaContentStage({ arenaKey, children, className, minHeight }) {
+  // GAME PAGE REPAIR — the dev-only diagnostic overlay below now needs an
+  // EXPLICIT opt-in via the Dev Panel (mock.arenaDebug, default off) on
+  // top of the pre-existing `import.meta.env.DEV` gate, so a plain `npm
+  // run dev` session doesn't show it unless a developer actually asks for
+  // it. `import.meta.env.DEV` alone already made this impossible to reach
+  // in any production build (Vite dead-code-eliminates the whole branch
+  // outside dev mode) — this fixes the separate "shows up unconditionally
+  // in local dev" complaint, not a production leak.
+  const mock = useDevMockState();
   const [slots, setSlots] = useState(() => ({
     a: { key: arenaKey, node: children },
     b: { key: null, node: null },
@@ -199,7 +209,7 @@ export function ArenaContentStage({ arenaKey, children, className, minHeight }) 
           </div>
         );
       })}
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && mock.arenaDebug && (
         <StageDebugOverlay
           stageRef={stageRef}
           slotElRefs={slotElRefs}
@@ -219,10 +229,12 @@ export function ArenaContentStage({ arenaKey, children, className, minHeight }) 
 // TEMPORARY DEV DIAGNOSTIC — `import.meta.env.DEV` is Vite's own build-time
 // constant (true only under `npm run dev`, always false in a production
 // build), so this can never render outside local development regardless of
-// any other runtime flag. Purely a readout — renders nothing interactive,
-// changes no transition behavior. Safe to delete once the transition is
-// trusted, or leave in place indefinitely since it's already inert in
-// every real deployment.
+// any other runtime flag — verified by grepping the built dist/ bundle.
+// ALSO requires `mock.arenaDebug` (Dev Panel > System, default off) so it
+// doesn't show up unconditionally just from running the dev server. Purely
+// a readout — renders nothing interactive, changes no transition behavior.
+// Safe to delete once the transition is trusted, or leave in place
+// indefinitely since it's already inert in every real deployment.
 function StageDebugOverlay({ stageRef, slotElRefs, currentKey, previousKey, fadeState, stageHeight, activeSlot, outgoingSlotName, isTransitioning }) {
   const [reading, setReading] = useState(null);
 

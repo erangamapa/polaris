@@ -77,10 +77,38 @@ export function GameStage({
       // border, no shadow (see VISUAL DESIGN). Fullscreen removes the max-
       // width/height caps and radius: native fullscreen already IS the
       // whole screen, so the box shouldn't visually stay "boxed" inside it.
+      //
+      // ROOT CAUSE FIX (game stage cropping): height behavior now branches
+      // on `sizingMode` explicitly, one real case per mode, instead of
+      // inferring from `preferredAspectRatio`'s truthiness:
+      //   "fill"      (FLEXIBLE — most provider games, e.g. Tumble): NO
+      //               height class at all. `flex-1` alone fills exactly
+      //               100% of the hero wrapper's real height (see
+      //               CasinoGamePage's useAvailableHeight) — this used to
+      //               also carry `md:h-[min(100%,var(--gs-max-h))]`, an
+      //               explicit height capped at a flat 720px left over
+      //               from the old full-viewport-modal design, which is
+      //               almost always shorter than the real available space
+      //               on a normal desktop screen (the actual "shallow
+      //               strip" bug — the box never got a chance to dominate
+      //               the page because it was never asked to).
+      //   "contain"   (LANDSCAPE_WIDE — aspect-ratio games, e.g. Crash):
+      //               unchanged — letterbox from the declared aspect
+      //               ratio, clamped so it can't exceed the (now genuinely
+      //               resolvable) available height.
+      //   "intrinsic" (COMPACT — Tribet Originals' small centered forms):
+      //               unchanged — a real, deliberate max-size cap; these
+      //               are simple bet forms that should stay small and
+      //               centered (see readyWrapperClassName below), never
+      //               "dominate" the page the way an iframe game should.
       className={
         "relative flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-[var(--neutral-900)] " +
         (isFullscreen ? "" : "mx-auto rounded-lg md:w-[min(100%,var(--gs-max-w))] " +
-          (displayMeta.preferredAspectRatio ? "md:h-auto md:max-h-[min(100%,var(--gs-max-h))]" : "md:h-[min(100%,var(--gs-max-h))]"))
+          (displayMeta.sizingMode === "contain"
+            ? "md:h-auto md:max-h-[min(100%,var(--gs-max-h))]"
+            : displayMeta.sizingMode === "intrinsic"
+              ? "md:h-[min(100%,var(--gs-max-h))]"
+              : ""))
       }
       style={
         isFullscreen
@@ -98,7 +126,7 @@ export function GameStage({
           : {
               "--gs-max-w": `${displayMeta.contentBoxMaxWidthPx}px`,
               "--gs-max-h": `${displayMeta.contentBoxMaxHeightPx}px`,
-              ...(displayMeta.preferredAspectRatio ? { aspectRatio: displayMeta.preferredAspectRatio } : {}),
+              ...(displayMeta.sizingMode === "contain" ? { aspectRatio: displayMeta.preferredAspectRatio } : {}),
             }
       }
     >

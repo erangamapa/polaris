@@ -17,6 +17,20 @@ import { getGameDisplayMetadata } from "@/lib/gameDisplay";
 // change only (matching the app's one existing viewport-read convention,
 // see lib/casinoGameplayViewport.js's own "do not introduce multiple
 // competing resize systems" note) — not on every scroll frame.
+//
+// ROOT CAUSE FIX (game stage cropping): this value used to be applied as
+// the page wrapper's `minHeight` while the wrapper itself stayed a plain
+// `flex flex-col` with an otherwise-auto height. A flex column with only a
+// min-height FLOOR (not a definite height) never gives its `flex-1`
+// children a real size to grow into — each flex-grow descendant instead
+// falls back to its own intrinsic content size, and that collapse
+// cascades all the way down through GameStage's `flex-1`/`h-full` chain to
+// the iframe's native ~150px UA default (verified empirically: every
+// ancestor down from this wrapper measured `height:auto`/small, and the
+// iframe rendered at exactly 150px regardless of viewport size). The fix
+// is applying this measured value as a real `height` (see below) on the
+// one wrapper that actually needs to fill the viewport — not a CSS
+// work-around on GameStage itself, which was never the actual problem.
 function useAvailableHeight(ref) {
   const [height, setHeight] = useState(null);
   useLayoutEffect(() => {
@@ -93,55 +107,65 @@ export function CasinoGamePage({
   const tileProps = { onLaunchOnchain, onLaunchProvider, isFav, onFav };
 
   return (
-    <div
-      ref={wrapperRef}
-      data-test-id="casino-game-page"
-      data-theatre-mode={theatreMode || undefined}
-      className="animate-game-page-fade-in flex w-full flex-col"
-      style={{ minHeight: availableHeight != null ? `${availableHeight}px` : undefined }}
-    >
-      {/* `onBack` (header) vs `onBrowseGames` (stage's error/unavailable
-          actions) are deliberately different callbacks, matching the
-          previous CasinoGameplayFrame/GameLaunchSurface split: leaving a
-          READY game via the header keeps whatever Casino category you
-          launched from; recovering from an error/unavailable game
-          explicitly returns to the Lobby (see App.jsx's closeGame vs
-          `() => { closeGame(); setCasinoCategory("Lobby"); }`). */}
-      <GameHeader
-        game={game}
-        onBack={onBack}
-        backDisabled={busy}
-        isFav={isFav}
-        onFav={onFav}
-        onOpenMenu={onOpenGameInfo}
-      />
-
-      <div className={"flex min-h-0 flex-1 flex-col " + (theatreMode ? "py-1" : "py-3")}>
-        <GameStage
-          stageRef={stageRef}
+    <div data-test-id="casino-game-page" className="animate-game-page-fade-in flex w-full flex-col">
+      {/* HERO — Header + Stage + Toolbar get a real, definite `height`
+          (not `minHeight`) computed from the actual remaining viewport, so
+          the game dominates the first screen regardless of its own
+          loading/ready/error status — status changes inside GameStage
+          never resize this box. Recommendations render as a plain sibling
+          BELOW this block (not nested inside it), in normal flow, so they
+          extend <main>'s scrollable length rather than being squeezed
+          into — or clipped by — a fixed-height box. */}
+      <div
+        ref={wrapperRef}
+        data-test-id="casino-game-hero"
+        data-theatre-mode={theatreMode || undefined}
+        className="flex min-h-0 w-full flex-col"
+        style={{ height: availableHeight != null ? `${availableHeight}px` : undefined }}
+      >
+        {/* `onBack` (header) vs `onBrowseGames` (stage's error/unavailable
+            actions) are deliberately different callbacks, matching the
+            previous CasinoGameplayFrame/GameLaunchSurface split: leaving a
+            READY game via the header keeps whatever Casino category you
+            launched from; recovering from an error/unavailable game
+            explicitly returns to the Lobby (see App.jsx's closeGame vs
+            `() => { closeGame(); setCasinoCategory("Lobby"); }`). */}
+        <GameHeader
           game={game}
-          launch={launch}
-          isFullscreen={isFullscreen}
-          onRestartFromLoading={onRestartFromLoading}
-          onRetryFailed={onRetryFailed}
           onBack={onBack}
-          onBrowseGames={onBrowseGames}
-          onReportIssue={onReportIssue}
-          onBusyChange={setBusy}
-        >
-          {children}
-        </GameStage>
-      </div>
+          backDisabled={busy}
+          isFav={isFav}
+          onFav={onFav}
+          onOpenMenu={onOpenGameInfo}
+        />
 
-      <GameToolbar
-        onOpenInfo={onOpenGameInfo}
-        onReportIssue={onReportIssue}
-        theatreMode={theatreMode}
-        onToggleTheatre={() => setTheatreMode((v) => !v)}
-        supportsFullscreen={supportsFullscreen}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={toggleFullscreen}
-      />
+        <div className={"flex min-h-0 flex-1 flex-col " + (theatreMode ? "py-1" : "py-3")}>
+          <GameStage
+            stageRef={stageRef}
+            game={game}
+            launch={launch}
+            isFullscreen={isFullscreen}
+            onRestartFromLoading={onRestartFromLoading}
+            onRetryFailed={onRetryFailed}
+            onBack={onBack}
+            onBrowseGames={onBrowseGames}
+            onReportIssue={onReportIssue}
+            onBusyChange={setBusy}
+          >
+            {children}
+          </GameStage>
+        </div>
+
+        <GameToolbar
+          onOpenInfo={onOpenGameInfo}
+          onReportIssue={onReportIssue}
+          theatreMode={theatreMode}
+          onToggleTheatre={() => setTheatreMode((v) => !v)}
+          supportsFullscreen={supportsFullscreen}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+        />
+      </div>
 
       {status === GAME_LAUNCH_STATUS.READY && !theatreMode && (
         <GameRecommendations game={game} recentIds={recentIds} tileProps={tileProps} />

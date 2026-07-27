@@ -240,6 +240,11 @@ export function DevPanel() {
             checked={mock.forceApiError}
             onChange={(v) => set({ forceApiError: v })}
           />
+          <Checkbox
+            label="Arena Stage debug overlay (dev server only)"
+            checked={mock.arenaDebug}
+            onChange={(v) => set({ arenaDebug: v })}
+          />
         </Section>
 
         <Section title="Toasts">

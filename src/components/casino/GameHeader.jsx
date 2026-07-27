@@ -1,12 +1,14 @@
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { FavStar, gameProviderName } from "./CasinoCatalog";
 
-// Minimal, compact header (target 56-64px, see spec) — never a hero. The
-// one place "where am I / how do I leave" is answered: back control,
-// thumbnail, name, provider, favorite, and the "..." menu (opens
-// GameInfoPanel — already a full game-details drawer, see App.jsx). No
-// wallet/balance here — those live in the persistent TopBar above, which
-// this page never covers or duplicates.
+// Minimal, compact header (56px, see spec) — never a hero. The one place
+// "where am I / how do I leave" is answered: back control, name, provider,
+// favorite, and the "..." menu (opens GameInfoPanel — already a full
+// game-details drawer, see App.jsx). Deliberately no thumbnail — the game
+// name/provider text already answers "what game is this," and repeating
+// the artwork here duplicated what GameStage itself is about to show. No
+// wallet/balance here either — those live in the persistent TopBar above,
+// which this page never covers or duplicates.
 export function GameHeader({ game, onBack, backDisabled, isFav, onFav, onOpenMenu }) {
   // `game` is null for NOT_FOUND (a bad/unknown ?play= favId) — no real
   // game to check favorite status for, so this must short-circuit before
@@ -29,12 +31,6 @@ export function GameHeader({ game, onBack, backDisabled, isFav, onFav, onOpenMen
       >
         <ArrowLeft className="size-5" aria-hidden="true" />
       </button>
-
-      <div
-        aria-hidden="true"
-        className="size-8 shrink-0 rounded-md bg-cover bg-center"
-        style={game?.image ? { backgroundImage: `url(${game.image})` } : { background: "var(--secondary)" }}
-      />
 
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold leading-tight text-white">{game?.title ?? "Game"}</div>

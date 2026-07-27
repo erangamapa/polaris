@@ -60,6 +60,15 @@ export const DEFAULT_DEV_MOCK_STATE = {
   // only preview of what the shared ComplianceBlock/gating would look like
   // if a real signal existed.
   complianceStatus: "clear", // clear | kyc-required | kyc-pending | kyc-failed | restricted | region-blocked | age-restricted | self-excluded | cool-off | loading | error
+  // GAME PAGE REPAIR — gates ArenaContentStage's dev-only diagnostic
+  // overlay (see that file's StageDebugOverlay). That overlay was already
+  // unreachable in any production build (it's wrapped in `import.meta.env
+  // .DEV`, which Vite dead-code-eliminates entirely outside `npm run dev`
+  // — verified by grepping the built dist/ bundle), but it had no opt-in
+  // gate of its OWN beyond that, so anyone running the dev server saw it
+  // unconditionally. Defaults OFF, same as every other mock override here
+  // — a developer must explicitly flip it on via the Dev Panel to see it.
+  arenaDebug: false,
 };
 
 function safeLoad() {
