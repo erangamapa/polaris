@@ -5,6 +5,7 @@ import { useIsDesktopBetslipLayout } from "@/lib/sportsDesktopBetslipUi";
 import { shouldShowReopenPill } from "@/lib/sportsMobileBetslipUi";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { MobileBetslipSheet } from "./MobileBetslipSheet";
+import { ArenaPageColumn } from "@/components/shell/ArenaPageColumn";
 import { SportsHome } from "./SportsHome";
 import { LivePage } from "./LivePage";
 import { SportLanding } from "./SportLanding";
@@ -175,9 +176,19 @@ export function SportsArena({
   // betslip is opened or emptied.
   const showReopenPill = shouldShowReopenPill({ isDesktopLayout, slipOpen, selectionCount: betslip.selectionCount });
 
+  // LAYOUT STABILITY: the shared content column is wrapped ONCE here, for
+  // every view this component routes to (home/live/sport/league/event/
+  // my-bets/dev) — see ArenaPageColumn.jsx for why. Previously each of
+  // SportsHome/SportLanding/LeaguePage/LivePage duplicated an identical
+  // `mx-auto max-w-6xl space-y-6` wrapper by hand, MyBets/
+  // ProviderDiagnostics each had their own narrower (and inconsistent)
+  // max-w-3xl copy, and EventDetail/EmptyEventFallback had no width cap
+  // at all — six independently-authored copies of geometry that should
+  // never have differed. `showReopenPill`'s button is a `fixed`-position
+  // floating element, not page content, so it stays outside the column.
   return (
     <>
-      {body}
+      <ArenaPageColumn>{body}</ArenaPageColumn>
 
       {showReopenPill && (
         <button

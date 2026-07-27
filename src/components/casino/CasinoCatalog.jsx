@@ -175,7 +175,7 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
         // a touch (still small — the modal/popover shadow would be far
         // too heavy for a card).
         "group relative flex aspect-[3/4] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-surface-game-card shadow-[var(--elevation-low)] transition duration-150 hover:shadow-[0_2px_8px_rgba(0,0,0,0.4)]",
-        playable && "hover:border-[var(--casino-primary)]"
+        playable && "hover:border-[var(--global-cta)]"
       )}
     >
       <a
@@ -679,15 +679,15 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
 // category listing should always be the complete, real list.
 //
 // MOTION QUALITY PASS: this (and FavoritesPage/RecentlyPlayedPage below)
-// used to carry their own `animate-fade-in-up` on the outer <section>.
-// Since CasinoCatalog's caller (App.jsx) already wraps ALL Casino content
-// in one `animate-fade-in-up`, keyed only on a genuine arena switch (see
-// App.jsx's `ArenaErrorBoundary key={product}`), these inner copies only
-// ever fired on TOP of that when switching between Lobby/a category/
+// used to carry their own `animate-fade-in-up` on the outer <section>,
+// removed since it only ever fired on TOP of the (also since-removed)
+// outer wrapper's own copy when switching between Lobby/a category/
 // Favorites/Recently Played — different pages, but still "routine category
-// browsing within Casino", exactly what this task asks to stop replaying
-// an entrance animation for. Removed; the outer wrapper already covers a
-// genuine "arrived at Casino" moment.
+// browsing within Casino", not a genuine "arrived at Casino" moment. A
+// real arena switch's entrance is now the shared ArenaContentStage's
+// opacity-only crossfade (see App.jsx/ArenaContentStage.jsx) — an
+// in-Casino category change like this one intentionally has no transition
+// of its own at all.
 function CategoryPage({ category, tileProps, onBrowseGames }) {
   const [chip, setChip] = useState("all");
   const meta = CATEGORY_META[category];
@@ -740,7 +740,7 @@ function BrowseGamesButton({ onClick, testId }) {
     <button
       onClick={onClick}
       data-test-id={testId}
-      className="rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       Browse games
     </button>
@@ -909,7 +909,7 @@ function ProviderTiles() {
               data-test-id={`provider-tile-${provider.id}`}
               className={cn(
                 RAIL_TILE,
-                "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-zinc-900 px-3 py-4 text-center transition hover:border-[var(--casino-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-zinc-900 px-3 py-4 text-center transition hover:border-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               )}
             >
               <Building2 className="size-5 text-zinc-500" aria-hidden="true" />

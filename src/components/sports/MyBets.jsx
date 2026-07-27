@@ -16,8 +16,13 @@ export function MyBets({ activity }) {
 
   useEffect(() => { track("sports_my_bets_viewed", { openCount: open.length, settledCount: settled.length }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // LAYOUT STABILITY: was its own mx-auto max-w-3xl wrapper — narrower than
+  // every other Sports page (max-w-6xl) and genuinely inconsistent. No
+  // longer has its own wrapper at all; SportsArena.jsx wraps every view in
+  // the one shared ArenaPageColumn, so this page is now the same width as
+  // the rest of Sports (and Casino/Predictions).
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <>
       <div className="flex items-center gap-2">
         <h1 className="text-lg font-bold">My Bets</h1>
         {open.length > 0 && (
@@ -49,7 +54,7 @@ export function MyBets({ activity }) {
           )}
         </>
       )}
-    </div>
+    </>
   );
 }
 

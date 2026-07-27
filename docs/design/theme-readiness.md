@@ -1,5 +1,7 @@
 # Tribet Theme-Readiness
 
+**⚠ SUPERSEDED (ONE-BRAND UNIFICATION).** The premise of this whole document — that Casino/Predictions/Sports would each get an approved, distinct "Branch" accent color dropped into §4 — did not happen. The product decision went the other way: Tribet is one brand color (`#10C7B2`) everywhere, no per-arena accent at all. The "Branch" layer (§4, `--casino-accent`/`--predictions-accent`/`--sports-accent` and friends) has been **deleted** from `src/index.css`, not filled in. See `docs/design/Tribet Reskin Guide.md`'s **Appendix D** for the authoritative current state (what was removed, what's kept for decorative artwork only, the Prediction Markets YES/NO exception). The rest of this document (Foundation/Semantic layers, §1–3, §5+) is still accurate — only §4 and any reference to a future per-arena palette are obsolete.
+
 Status: **infrastructure only** — no final visual direction has been chosen or applied here. This document describes the token plumbing added so the eventual Figma-approved theme can be dropped in centrally, and inventories what's still hardcoded, placeholder, or inconsistent. It is not a design spec and contains no approved final colors beyond the three named brand identities (see §4).
 
 ## 1. Token Architecture

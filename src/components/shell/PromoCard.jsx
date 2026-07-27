@@ -50,9 +50,9 @@ export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCt
           </h3>
           {metadata && <p className="mt-1 hidden truncate text-xs text-[var(--ink-dim)] sm:block">{metadata}</p>}
         </div>
-        {/* CTA OWNERSHIP SYSTEM: an arena action, so variant="action" —
-            resolves to the current [data-product] arena's Action color. */}
-        <Button variant="action" size="sm" onClick={onCtaClick} className="w-fit">
+        {/* ONE-BRAND UNIFICATION: every primary action uses the single
+            Tribet brand colour now — no arena-owned "action" tone. */}
+        <Button variant="default" size="sm" onClick={onCtaClick} className="w-fit">
           {cta}
         </Button>
       </div>

@@ -226,7 +226,7 @@ function ListError({ onRetry, onBrowseGames }) {
       <p className="text-sm font-semibold">Unable to load your bets</p>
       <p className="text-xs text-muted-foreground">Try again in a moment.</p>
       <div className="mt-2 flex gap-2">
-        <button type="button" onClick={onRetry} className="rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white">Try again</button>
+        <button type="button" onClick={onRetry} className="rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-xs font-bold text-white">Try again</button>
         <button type="button" onClick={onBrowseGames} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-300">Browse games</button>
       </div>
     </div>
@@ -242,7 +242,7 @@ function CasinoEmpty({ onBrowseGames, filtered }) {
       <Gamepad2 className="size-6 text-zinc-500" aria-hidden="true" />
       <p className="text-sm font-semibold">No Casino bets yet</p>
       <p className="text-xs text-muted-foreground">Your completed and pending game rounds will appear here.</p>
-      <button type="button" onClick={onBrowseGames} className="mt-1 rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white">Browse games</button>
+      <button type="button" onClick={onBrowseGames} className="mt-1 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-xs font-bold text-white">Browse games</button>
     </div>
   );
 }
@@ -253,7 +253,7 @@ function AuthGateEmpty({ kind, onLogin }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-8 text-center" data-test-id={`casino-activity-${kind}`}>
       <p className="text-sm font-semibold">{title}</p>
-      <button type="button" onClick={onLogin} className="mt-1 rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-xs font-bold text-white">{actionLabel}</button>
+      <button type="button" onClick={onLogin} className="mt-1 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-xs font-bold text-white">{actionLabel}</button>
     </div>
   );
 }

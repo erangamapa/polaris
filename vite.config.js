@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
@@ -50,5 +51,11 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+  },
+  test: {
+    // e2e/** holds Playwright specs (npx playwright test), a separate
+    // runner from vitest — without this, vitest's default include glob
+    // picks up *.spec.js too and fails trying to run test.describe().
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })

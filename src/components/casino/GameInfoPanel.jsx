@@ -123,12 +123,10 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* ONE micro-label component for both badges — "Tribet
-                      Originals" genuinely identifies the game as Tribet's
-                      own (a defensible arena-identity exception), kept
-                      casino-tinted via an explicit override rather than
-                      assuming ambient [data-product] context here. */}
+                      Originals" uses the brand colour explicitly, same as
+                      everywhere else now (no per-arena tint to assume). */}
                   {game.kind === "onchain" && (
-                    <MicroLabel className="bg-[var(--casino-primary-soft)] text-[var(--casino-text-accent)]">Tribet Originals</MicroLabel>
+                    <MicroLabel className="bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]">Tribet Originals</MicroLabel>
                   )}
                   {statusLabel && <MicroLabel>{statusLabel}</MicroLabel>}
                 </div>

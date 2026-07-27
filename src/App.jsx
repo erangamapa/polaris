@@ -52,6 +52,7 @@ const SupportDialog = lazy(() => import("./components/trust/SupportDialog").then
 const GameInfoPanel = lazy(() => import("./components/casino/GameInfoPanel").then((m) => ({ default: m.GameInfoPanel })));
 import { useSportsDesktopBetslipUi, useIsDesktopBetslipLayout } from "./lib/sportsDesktopBetslipUi";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
+import { ArenaPageColumn } from "./components/shell/ArenaPageColumn";
 import { nowLabel } from "./lib/walletData";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { MVP_SPORTS } from "./lib/sportsModel";
@@ -62,6 +63,7 @@ import { PREDICTIONS_PROMOS } from "./lib/arenaPromos";
 import { NetworkBanner } from "./components/shell/NetworkBanner";
 import { GeoBlock } from "./components/shell/GeoBlock";
 import { ArenaErrorBoundary } from "./components/shell/ArenaErrorBoundary";
+import { ArenaContentStage } from "./components/shell/ArenaContentStage";
 import { useGeoCheck } from "./lib/geo";
 import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
 import { track } from "./lib/telemetry";
@@ -1117,16 +1119,14 @@ export default function App() {
   }
 
   return (
-    // THEME READINESS: `data-arena` is the one authoritative branch-context
-    // attribute this task asks for — aliased onto the SAME `product` value
-    // `data-product` already carries (see index.css's [data-product]
-    // blocks, which drive --product-primary/etc.), not a second state
-    // store. `data-product` stays too: existing CSS selectors and two
-    // component comments (ArenaPromoTile.jsx/PromoStrip.jsx) already
-    // reference it, and nothing is served by breaking that just to rename
-    // it. New token consumers should prefer reading via [data-arena] (or
-    // the --casino-accent/--predictions-accent/--sports-accent names
-    // directly, which don't care which attribute resolved them).
+    // `data-arena` is aliased onto the SAME `product` value `data-product`
+    // already carries, not a second state store. ONE-BRAND UNIFICATION:
+    // neither attribute drives colour anymore (index.css's old
+    // [data-product="..."] CTA-resolution blocks are gone — every consumer
+    // reads --global-cta directly) — both stay purely for non-visual
+    // purposes (analytics, tests, any future arena-scoped logic).
+    // `data-product` specifically stays because existing selectors and a
+    // couple of component comments already reference it.
     <div data-product={product} data-arena={product} className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <TopBar
         onBurger={toggleSidebar}
@@ -1143,7 +1143,7 @@ export default function App() {
       />
       <NetworkBanner show={wrongNetwork} switching={wallet.isSwitching} onSwitch={() => wallet.switchTo(arenaChainId)} />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1" data-test-id="shell-row">
         <Sidebar
           railMode={railMode}
           product={product}
@@ -1153,9 +1153,21 @@ export default function App() {
           onSelect={handleSelect}
         />
 
-        <main ref={mainRef} tabIndex={-1} className="tribet-scrollbar min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable] focus:outline-none">
-          <ArenaErrorBoundary key={product}>
-            <div className="animate-fade-in-up">
+        <main ref={mainRef} tabIndex={-1} data-test-id="main-content" className="tribet-scrollbar min-w-0 flex-1 overflow-y-auto px-4 pb-nav pt-4 [scrollbar-gutter:stable] focus:outline-none">
+          {/* STABLE ARENA CONTENT STAGE — see ArenaContentStage.jsx for the
+              full crossfade architecture. `arenaKey={product}` is the ONLY
+              thing that tells the stage a transition should happen; the
+              stage itself never remounts (no key here), so it — and
+              everything outside it (TopBar/Sidebar/<main>) — stays a
+              single, continuously-mounted DOM subtree across every arena
+              switch. `key={product}` on ArenaErrorBoundary below is
+              intentionally still route-specific (permitted on the INNER
+              content layer only): each arena's page has always remounted
+              on switch (state that must survive lives lifted in App.jsx —
+              see sportsBetslip/favorites/etc. above), and that contract is
+              unchanged here. */}
+          <ArenaContentStage arenaKey={product} minHeight={480}>
+            <ArenaErrorBoundary key={product}>
               {product === "casino" && (
                 <CasinoLobby
                   category={casinoCategory}
@@ -1198,8 +1210,8 @@ export default function App() {
                   />
                 </Suspense>
               )}
-            </div>
-          </ArenaErrorBoundary>
+            </ArenaErrorBoundary>
+          </ArenaContentStage>
           <Footer
             onResponsibleGambling={openRg}
             onSupport={openSupport}
@@ -1207,13 +1219,25 @@ export default function App() {
         </main>
 
         {/* Desktop Sports betslip panel — a real flex sibling of Sidebar/
-            main (not an overlay), so it resizes Sports content instead of
-            covering it. Only mounted for Sports at >=1024px: below that,
-            SportsArena's own Dialog-based modal handles the betslip, and
-            outside Sports this never renders at all (state stays alive in
-            memory via sportsBetslip/sportsDesktopUi above, ready to restore
-            when the user returns to Sports). */}
-        {product === "sports" && isDesktopBetslipLayout && (
+            main (not an overlay), so it resizes content instead of covering
+            it. Only mounted at >=1024px: below that, SportsArena's own
+            Dialog-based modal handles the betslip instead.
+            LAYOUT STABILITY: deliberately NOT gated on `product === "sports"`
+            — this used to unmount entirely the moment you left Sports,
+            which snapped <main>'s available width back up and reflowed
+            everything sharing that width (Footer's grid, in particular,
+            visibly jumped by 300px+ once a betslip selection had been made,
+            since Footer's own box is capped by max-w-6xl but still shrinks
+            to whatever's actually available when that's narrower). The
+            panel's own width already collapses to 0px whenever
+            `uiState.isOpen` is false (see DesktopBetslipPanel), so on a
+            fresh session with no selections this renders exactly as before
+            — width 0 on every arena. Once a selection exists, the panel
+            (and the space it reserves) now stays put across arena switches
+            instead of vanishing and reappearing, which is also the more
+            useful product behavior: an in-progress bet slip shouldn't
+            disappear just because you glanced at Casino. */}
+        {isDesktopBetslipLayout && (
           // Its own error boundary + Suspense: unlike SportsArena above, this
           // panel is a sibling of <main>, not a descendant of
           // ArenaErrorBoundary, so a chunk-load failure here would otherwise
@@ -1430,7 +1454,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <ArenaPageColumn>
       {/* The default Lobby view has no visible title (the promo area already
           sets the context) but every page needs exactly one <h1> — Favorites
           and each category page render their own visible one; this covers
@@ -1451,7 +1475,7 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         onBrowseGames={browseAll}
         onSelectCategory={selectCategory}
       />
-    </div>
+    </ArenaPageColumn>
   );
 }
 
@@ -1461,9 +1485,9 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
 function PredictionsSection({ predSection, balance, setBalance, onBet, ensureAuth }) {
   const [query, setQuery] = useState("");
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <ArenaPageColumn>
       <ArenaTileRow arena="predictions" promos={PREDICTIONS_PROMOS} query={query} onQuery={setQuery} />
       <PredictionsApp section={predSection} balance={balance} setBalance={setBalance} onBet={onBet} ensureAuth={ensureAuth} query={query} />
-    </div>
+    </ArenaPageColumn>
   );
 }

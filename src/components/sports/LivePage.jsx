@@ -10,8 +10,10 @@ export function LivePage({ events, loading, onOpen, onPick, isSelected }) {
 
   const live = events.filter((e) => e.status === "live");
 
+  // LAYOUT STABILITY: no longer its own mx-auto max-w-6xl wrapper here —
+  // SportsArena.jsx now wraps every view in the one shared ArenaPageColumn.
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <>
       <h1 className="text-lg font-bold">Live</h1>
 
       {loading && live.length === 0 ? (
@@ -40,6 +42,6 @@ export function LivePage({ events, loading, onOpen, onPick, isSelected }) {
           );
         })
       )}
-    </div>
+    </>
   );
 }

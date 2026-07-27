@@ -57,8 +57,10 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
     .map((c) => ({ ...c, count: events.filter((e) => e.sport.id === c.sport && e.country.slug === c.country && e.league.slug === c.league).length }))
     .filter((c) => demoMode || c.count > 0);
 
+  // LAYOUT STABILITY: no longer its own mx-auto max-w-6xl wrapper here —
+  // SportsArena.jsx now wraps every view in the one shared ArenaPageColumn.
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <>
       <ArenaTileRow arena="sports" promos={SPORTS_PROMOS} query={query} onQuery={setQuery} />
 
       {q ? (
@@ -77,7 +79,7 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
                   <button
                     key={`${c.sport}-${c.league}`}
                     onClick={() => onOpenLeague({ sport: { id: c.sport }, country: { slug: c.country }, league: { slug: c.league } })}
-                    className="shrink-0 rounded-lg border bg-card px-4 py-3 text-left transition hover:border-[var(--sports-primary)]"
+                    className="shrink-0 rounded-lg border bg-card px-4 py-3 text-left transition hover:border-[var(--global-cta)]"
                   >
                     <div className="text-sm font-semibold">{c.label}</div>
                     <div className="text-[11px] text-muted-foreground">{c.count > 0 ? `${c.count} event${c.count === 1 ? "" : "s"}` : "Explore"}</div>
@@ -96,7 +98,7 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
                   <button
                     key={s.id}
                     onClick={() => onOpenSport(s.id)}
-                    className="flex flex-col items-center gap-1.5 rounded-lg border bg-card py-3 transition-colors hover:border-[var(--sports-primary)]"
+                    className="flex flex-col items-center gap-1.5 rounded-lg border bg-card py-3 transition-colors hover:border-[var(--global-cta)]"
                   >
                     <Icon className="size-5 text-[var(--ink-dim)]" aria-hidden="true" />
                     <span className="text-xs font-medium">{s.name}</span>
@@ -114,7 +116,7 @@ export function SportsHome({ events, loading, demoMode, onOpen, onOpenSport, onO
           )}
         </>
       )}
-    </div>
+    </>
   );
 }
 

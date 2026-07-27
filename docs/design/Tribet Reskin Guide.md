@@ -939,3 +939,52 @@ The 18-row type scale (`--text-display-xl` through `--text-mono-xs`) was impleme
 **Not touched this pass (flagged, not silently skipped):** a full app-wide sweep of every hand-rolled `<button>` onto the shared `ui/button.jsx` component (only the ones causing the reported CTA-color inconsistency were migrated); Casino's `CategoryNav` vs. Sports' in-page pill-tab styling divergence (cosmetically different recipes, not restyled — no Predictions equivalent exists at all); BetSwirlGame's face/number-picker selection-state fills and the native `<input type="range">` accent color (left as legitimate restrained interactive-state signals, same category as Sports' odds-button selected state).
 
 *End of Appendix C.*
+
+---
+
+## Appendix D — ONE-BRAND UNIFICATION (supersedes §1.4–1.6, §8.1, §8.6 of this document)
+
+**Status of this appendix: authoritative, overrides §1.4 ("Primary — Tribet Halo"), §1.5 ("Vertical identifiers" — Casino Ultraviolet / Predictions Racing green / Sports Cobalt), the arena rows of §1.6, and every "arena color" reference in §8.1 (Buttons) and §8.6 (Rails).**
+
+Tribet made a strategic product decision: Casino, Sports, and Predictions are no longer three visually distinct brands sharing a shell — they are three content categories inside one premium platform. This directly reverses §1.5's whole premise ("each arena has a deep and a light variant... total arena-color pixel budget ≤3% per screen per arena") and the CTA Ownership System that a later pass (post-dating this doc's original v1) layered on top of it (arena-owned "Action" colors distinct from arena "Brand" colors, e.g. Casino Action Purple, Sports Action Blue, Predictions Action Green).
+
+**New canonical brand color:** `#10C7B2` (hover `#23D7C2`, pressed `#0DA794`) — replaces Tribet Halo/Mint/Cyan as `--global-cta`/`--brand-logo` (names unchanged; this is a value-only swap, the same discipline every prior recolor in this file used). Used for every primary action app-wide: Wallet, Deposit, Withdraw, Connect Wallet, Continue, Claim, Play, Bet, Trade, View Market — no arena-specific CTA color, no separate "action" tier.
+
+**Removed entirely** (not recolored, not aliased — deleted, since Casino/Sports/Predictions no longer own a brand identity to name):
+- `--casino-primary`/`-hover`/`-active`/`-soft`/`-subtle`/`-border`/`-text-accent`/`-cta-text`, `--casino-action`/`-hover`/`-active`/`-text`, `--casino-accent`/`-hover`/`-active`/`-muted`/`-subtle`/`-foreground`, and the Appendix A short aliases `--casino`/`-light`/`-deep`/`-alpha-12`.
+- `--sports-action`/`-hover`/`-active`/`-text`, `--sports-primary-hover`/`-active`/`-soft`/`-subtle`/`-border`/`-cta-text`, `--sports-accent`/`-hover`/`-active`/`-muted`/`-subtle`/`-foreground`, and `--sports`/`-light`/`-deep`/`-alpha-12`.
+- `--predictions-action`/`-hover`/`-active`/`-text`, `--predictions-primary-active`/`-soft`/`-subtle`/`-border`/`-cta-text`, `--predictions-accent`/`-hover`/`-active`/`-muted`/`-subtle`/`-foreground`, and `--pred`/`-light`/`-deep`/`-alpha-12`/`-alpha-24`.
+- The entire `--product-*` indirection (`--product-primary`/`-hover`/`-active`/`-soft`/`-subtle`/`-border`/`-accent-text`/`-cta-text`/`-ambient`/`-action`/`-action-hover`/`-action-active`/`-action-text`) and its three `[data-product="casino|predictions|sports"]` resolution blocks.
+- `button.jsx`'s `action` variant (the arena-owned CTA tier) — every call site now uses `default` (the one brand button) or, for the one semantic exception below, `success`/`destructive`.
+- The `--ok`/`--ok-fg`/`--warn`/`--warn-fg`/`--err`/`--err-fg` Appendix-A doc-literal aliases — grep-confirmed zero consumers, unrelated dead code found and removed during this pass.
+- ActivityDialog.jsx's per-arena chip palette (`--activity-chip-casino`/`-predictions`/`-sports`) — this was the exact "KNOWN INCONSISTENCY, NOT SILENTLY RESOLVED" this file flagged in an earlier pass (a second, independently-drifted arena-color implementation disagreeing with Sidebar's). Resolved now: arena chips are neutral, matching the new Chips rule below.
+
+**Kept, values unchanged, illustration-only:** `--predictions-primary`/`-primary-hover`/`-text-accent` and `--sports-primary`/`-text-accent` remain defined in index.css purely because `src/components/shell/artwork/*.jsx` (decorative, `aria-hidden`, hero-card illustration SVGs — team/league graphics, a rising-probability chart, a YES/NO split) still reference them. This matches §1.5's own spirit read literally against the NEW rule below ("purple/blue/green may appear only in promotional artwork, thumbnails, illustrations, decorative hero graphics — never in buttons, navigation, cards, search, inputs, tabs, CTAs, overlays, borders"). No interactive chrome reads these tokens anymore (grep-confirmed) — Casino has no equivalent artwork file, so `--casino-*` needed no illustration remnant at all.
+
+**Prediction Markets exception (the one place color still carries meaning):** Buy Yes/Buy No buttons, and the Yes/No side-selector, use `variant="success"` (green, `#46C98C`) / `variant="destructive"` (red, `#F26472`) — interaction design, not branding, because YES/NO color-coding improves immediate comprehension. This REVERSES the CTA Ownership System's own explicit rule that both buttons shared one "Predictions Action Green" regardless of side (see Appendix C's CTA-color-bugs note) — the newer instruction is more specific and wins. Everything else on Predictions pages (page chrome, cards, tabs, non-Yes/No buttons) uses the standard Tribet brand color.
+
+**Navigation:** Sidebar.jsx's/MobileBottomNav.jsx's per-arena active-tab accent (`ACCENTS`/`ARENA_COLORS`, keyed by casino/predictions/sports) is replaced by one `ACTIVE_ACCENT` object reading `--global-cta`. The active nav item always uses the brand color; arena differentiation comes from icon and label only.
+
+**Chips:** neutral by default (`--badge-neutral-bg`/`-text`). Only semantic chips get color (Live → danger, Warning → warning, Success → success, New → brand). Arena-identity chips (ActivityDialog) are not semantic and are therefore neutral, per above.
+
+**New Core Brand / neutral scale** (also revalues §1.1–1.3's surface/ink/rule progression):
+
+| Role | Hex |
+| --- | --- |
+| Primary | `#10C7B2` |
+| Hover | `#23D7C2` |
+| Pressed | `#0DA794` |
+| Soft | `#163936` |
+| Background | `#080A0E` |
+| Surface 1 | `#10141C` |
+| Surface 2 | `#151A24` |
+| Surface 3 | `#1B2230` |
+| Border | `#252C3A` |
+| Border Strong | `#353F4F` |
+| Primary Text | `#F5F7FA` |
+| Secondary Text | `#A2AABD` |
+| Muted | `#6F788C` |
+
+**Semantic (independent of branding, unchanged in kind, revalued):** YES/Success `#46C98C`, NO/Danger `#F26472`, Warning `#F3BA4C`, Info `#3EB9FF`, Disabled `#596174`.
+
+*End of Appendix D.*

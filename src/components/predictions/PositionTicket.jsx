@@ -3,6 +3,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { OutcomeButton } from "./OutcomeButton";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { fmt, fmtCents } from "@/lib/format";
@@ -24,21 +25,16 @@ export function PositionTicket({ market, side, setSide, open, onOpenChange, bala
           <DialogTitle className="text-base leading-snug">{market.question}</DialogTitle>
         </DialogHeader>
 
+        {/* The one place this file has a real "selected" state: exactly one
+            side is ever visually selected (solid fill), the other stays in
+            the resting soft treatment — never both. */}
         <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant={side === "Yes" ? "default" : "outline"}
-            className={side === "Yes" ? "bg-[var(--predictions-primary)] text-[var(--predictions-cta-text)] hover:bg-[var(--predictions-primary-hover)]" : ""}
-            onClick={() => setSide("Yes")}
-          >
+          <OutcomeButton side="Yes" selected={side === "Yes"} onClick={() => setSide("Yes")}>
             Yes {fmtCents(market.yes)}
-          </Button>
-          <Button
-            variant={side === "No" ? "default" : "outline"}
-            className={side === "No" ? "bg-[var(--danger)] text-[var(--danger-foreground)] hover:brightness-110" : ""}
-            onClick={() => setSide("No")}
-          >
+          </OutcomeButton>
+          <OutcomeButton side="No" selected={side === "No"} onClick={() => setSide("No")}>
             No {fmtCents(market.no)}
-          </Button>
+          </OutcomeButton>
         </div>
 
         <div className="space-y-1.5">
@@ -70,18 +66,20 @@ export function PositionTicket({ market, side, setSide, open, onOpenChange, bala
         </div>
 
         <DialogFooter>
-          {/* CTA OWNERSHIP SYSTEM: this is the actual "Buy Yes/Buy No"
-              action (the toggle above just picks which side you're
-              viewing) — Predictions Action Green regardless of side, same
-              as MarketDetail/MarketCard's buy buttons. */}
-          <Button
-            variant="action"
-            className="w-full"
+          {/* This is the actual "commit" action (the toggle above just
+              picks which side you're viewing) — rendered `selected` always,
+              matching whichever side is currently chosen, since committing
+              to buy is exactly the "solid fill" moment the design calls
+              for. */}
+          <OutcomeButton
+            side={side}
+            selected
+            className="h-10 w-full text-base font-semibold"
             disabled={insufficient || amount <= 0}
             onClick={() => onConfirm({ market, side, amount, shares, price })}
           >
             {insufficient ? "Insufficient balance" : `Buy ${side} · $${fmt(amount)}`}
-          </Button>
+          </OutcomeButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -246,7 +246,7 @@ function MenuRow({ item, active, onClick }) {
           <span
             aria-hidden="true"
             className="absolute inset-y-2.5 start-0 w-[2px] rounded-full"
-            style={{ background: "var(--product-primary)" }}
+            style={{ background: "var(--global-cta)" }}
           />
         )}
         <ItemIcon icon={item.icon} />

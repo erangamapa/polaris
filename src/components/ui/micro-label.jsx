@@ -9,16 +9,16 @@ import { cn } from "@/lib/utils";
 // string (different radius, different background, different case,
 // different font) — see the CTA/label-consistency pass.
 //
-// Neutral by default (--surface-2/--ink-high) — never arena-tinted unless
-// the label's actual job is identifying an arena (pass `tone="accent"` for
-// that rare case, e.g. a game's own accent-colored badge).
+// Neutral by default (--surface-2/--ink-high). `tone="accent"` highlights
+// with the one Tribet brand colour for the rare label that should stand
+// out (e.g. "Tribet Originals") — never a per-arena tint.
 export function MicroLabel({ children, tone = "neutral", className }) {
   return (
     <span
       className={cn(
         "inline-block px-[9px] py-1 font-mono text-[10px] font-medium uppercase tracking-[.14em] whitespace-nowrap",
         tone === "neutral" && "bg-[var(--surface-2)] text-[var(--ink-high)]",
-        tone === "accent" && "bg-[var(--product-soft)] text-[var(--product-accent-text)]",
+        tone === "accent" && "bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]",
         className
       )}
       style={{ borderRadius: "var(--radius-xs)", borderTop: "1px solid rgba(255,255,255,.03)", borderBottom: "1px solid rgba(0,0,0,.5)" }}

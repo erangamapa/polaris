@@ -81,7 +81,7 @@ export function GameLauncher({ game, balance, setBalance, onRound, ensureAuth, o
           <button
             onClick={play}
             disabled={insufficient || rolling}
-            className="h-[44px] rounded-lg bg-[var(--casino-action)] px-8 font-bold text-[var(--casino-action-text)] transition-colors hover:bg-[var(--casino-action-hover)] active:bg-[var(--casino-action-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
+            className="h-[44px] rounded-lg bg-[var(--global-cta)] px-8 font-bold text-[var(--global-cta-text)] transition-colors hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
           >
             {rolling ? "…" : insufficient ? "Low balance" : "Bet"}
           </button>

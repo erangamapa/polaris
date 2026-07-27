@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { OutcomeButton } from "./OutcomeButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -37,12 +38,11 @@ export function MarketDetail({ market, onBack, onBuy }) {
           </div>
         </div>
         <div className="ml-auto text-right">
-          {/* RESKIN v2 CALIBRATION: was font-black (weight 900, unaffected
-              by the app-wide font-weight-bold override) and a hardcoded
-              #92D4DF — the OLD predictions steel-cyan text-accent, never
-              updated to the token when the arena colors were recolored to
-              racing green. A percentage is DATA (font-mono), not display. */}
-          <div className="font-mono text-2xl font-semibold tabular-nums text-[var(--predictions-text-accent)]">{fmtPct(market.yes)}</div>
+          {/* A "Yes chance" percentage reads as the same affirmative signal
+              as the Yes button — uses the dedicated --yes-base token
+              (index.css), not the generic --success token, so it recolors
+              alongside the buttons if this palette is ever retuned again. */}
+          <div className="font-mono text-2xl font-semibold tabular-nums text-[var(--yes-base)]">{fmtPct(market.yes)}</div>
           <div className="text-[11px] text-muted-foreground">Yes chance</div>
         </div>
       </div>
@@ -53,27 +53,26 @@ export function MarketDetail({ market, onBack, onBuy }) {
         </CardContent>
       </Card>
 
-      {/* CTA OWNERSHIP SYSTEM: "Buy YES / Buy NO" are both Predictions
-          arena actions — the ownership rule cares who owns the action
-          (Predictions), not which side of the trade it is, so both use
-          the same Predictions Action Green rather than a semantic
-          yes=green/no=red pair. The button label ("Buy Yes"/"Buy No")
-          is what disambiguates the two, by design. */}
+      {/* Buy Yes/Buy No are the Prediction Markets semantic exception —
+          dedicated YES/NO tokens (index.css), not the generic success/
+          destructive tokens, not a brand colour. Same equal-weight resting
+          treatment as MarketCard's quick-buy pair — neither side is
+          "selected" here (clicking opens the ticket, see PositionTicket). */}
       <div className="grid grid-cols-2 gap-3">
-        <Button
-          size="lg"
-          className="h-12 bg-[var(--predictions-action)] text-base font-bold text-[var(--predictions-action-text)] hover:bg-[var(--predictions-action-hover)] active:bg-[var(--predictions-action-active)]"
+        <OutcomeButton
+          side="Yes"
+          className="h-12 text-base font-bold"
           onClick={() => onBuy(market, "Yes")}
         >
           Buy Yes · {fmtCents(market.yes)}
-        </Button>
-        <Button
-          size="lg"
-          className="h-12 bg-[var(--predictions-action)] text-base font-bold text-[var(--predictions-action-text)] hover:bg-[var(--predictions-action-hover)] active:bg-[var(--predictions-action-active)]"
+        </OutcomeButton>
+        <OutcomeButton
+          side="No"
+          className="h-12 text-base font-bold"
           onClick={() => onBuy(market, "No")}
         >
           Buy No · {fmtCents(market.no)}
-        </Button>
+        </OutcomeButton>
       </div>
 
       {/* Basic mode shows rules + resolution; the order book is advanced-only. */}

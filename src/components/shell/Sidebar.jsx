@@ -14,37 +14,21 @@ import { SIDEBAR_SETTLE_MS, railVisuals } from "@/lib/sidebarTransition";
 const ARENA_ICONS = { casino: Dices, predictions: TrendingUp, sports: SoccerBall };
 const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id] }));
 
-// Subtle per-product accents (no left bar) — tint + tinted text only.
-// THEME READINESS: color-mix() against --casino-accent/etc. (index.css)
-// rather than hardcoded hex — see that pass's own notes.
-const ACCENTS = {
-  casino: {
-    tab: {
-      background: "color-mix(in srgb, var(--casino-accent) 12%, transparent)",
-      color: "var(--casino-text-accent)",
-      border: "1px solid color-mix(in srgb, var(--casino-accent) 42%, transparent)",
-    },
-    item: { background: "color-mix(in srgb, var(--casino-accent) 16%, transparent)", color: "var(--casino-text-accent)" },
-    bar: "var(--casino-text-accent)",
+// ONE-BRAND UNIFICATION: navigation no longer changes colour by arena — the
+// active item (arena tab or in-arena nav item alike) always uses the single
+// Tribet brand colour. Arena differentiation now comes from icon/label/
+// content only, never a separate per-arena accent (previously a
+// casino/predictions/sports-keyed ACCENTS map, each pointing at that arena's
+// own --*-accent/--*-text-accent tokens — removed as the arena-specific
+// navigation colouring this pass explicitly retires).
+const ACTIVE_ACCENT = {
+  tab: {
+    background: "color-mix(in srgb, var(--global-cta) 12%, transparent)",
+    color: "var(--global-cta)",
+    border: "1px solid color-mix(in srgb, var(--global-cta) 42%, transparent)",
   },
-  predictions: {
-    tab: {
-      background: "color-mix(in srgb, var(--predictions-accent) 12%, transparent)",
-      color: "var(--predictions-text-accent)",
-      border: "1px solid color-mix(in srgb, var(--predictions-accent) 42%, transparent)",
-    },
-    item: { background: "color-mix(in srgb, var(--predictions-accent) 16%, transparent)", color: "var(--predictions-text-accent)" },
-    bar: "var(--predictions-text-accent)",
-  },
-  sports: {
-    tab: {
-      background: "color-mix(in srgb, var(--sports-accent) 12%, transparent)",
-      color: "var(--sports-text-accent)",
-      border: "1px solid color-mix(in srgb, var(--sports-accent) 42%, transparent)",
-    },
-    item: { background: "color-mix(in srgb, var(--sports-accent) 16%, transparent)", color: "var(--sports-text-accent)" },
-    bar: "var(--sports-text-accent)",
-  },
+  item: { background: "color-mix(in srgb, var(--global-cta) 16%, transparent)", color: "var(--global-cta)" },
+  bar: "var(--global-cta)",
 };
 
 // SIDEBAR SEQUENTIAL HANDOFF — one source of truth for both the shell's
@@ -121,7 +105,7 @@ const tooltipSide = () => (typeof document !== "undefined" && document.dir === "
 // icons within this layer's own constant 60px box, never within a
 // growing container (the bug the previous version had — see the report).
 // ════════════════════════════════════════════════════════════════════════
-function CompactButton({ id, icon, label, active, accentColor, onClick, disabled, disabledLabel, badge, ariaCurrent, testId, tooltipsEnabled }) {
+function CompactButton({ id, icon, label, active, onClick, disabled, disabledLabel, badge, ariaCurrent, testId, tooltipsEnabled }) {
   const [tipOpen, setTipOpen] = useState(false);
   useEffect(() => { if (!tooltipsEnabled) setTipOpen(false); }, [tooltipsEnabled]);
 
@@ -139,9 +123,9 @@ function CompactButton({ id, icon, label, active, accentColor, onClick, disabled
             "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             disabled ? "cursor-not-allowed" : active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
           )}
-          style={!disabled && active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
+          style={!disabled && active ? { background: ACTIVE_ACCENT.item.background, color: ACTIVE_ACCENT.item.color } : undefined}
         >
-          {!disabled && active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
+          {!disabled && active && <SideIndicator color={ACTIVE_ACCENT.bar} />}
           <ItemIcon icon={icon} className={cn("size-4", disabled && "opacity-50")} />
           {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
         </button>
@@ -169,7 +153,6 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
             icon={p.icon}
             label={p.label}
             active={product === p.id}
-            accentColor={p.id}
             ariaCurrent={product === p.id ? "page" : undefined}
             onClick={() => setProduct(p.id)}
             disabled={disabled}
@@ -191,7 +174,6 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
             icon={it.icon}
             label={it.label}
             active={selected === it.id}
-            accentColor={product}
             ariaCurrent={selected === it.id ? "page" : undefined}
             onClick={() => (it.action ? it.action() : onSelect(it.id))}
             testId={it.id === "Favorites" ? "sidebar-favorites-collapsed" : undefined}
@@ -221,7 +203,7 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
 // widening (OPENING always completes before EXPANDED_REVEALING begins —
 // see lib/sidebarTransition.js), so its width never has to "catch up".
 // ════════════════════════════════════════════════════════════════════════
-function ExpandedItemRow({ id, icon, label, active, accentColor, onClick, badge, ariaCurrent, testId }) {
+function ExpandedItemRow({ id, icon, label, active, onClick, badge, ariaCurrent, testId }) {
   return (
     <button
       id={id}
@@ -232,9 +214,9 @@ function ExpandedItemRow({ id, icon, label, active, accentColor, onClick, badge,
         "relative flex h-11 w-full shrink-0 items-center gap-2.5 overflow-hidden rounded-lg px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "font-medium" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
       )}
-      style={active ? { background: ACCENTS[accentColor]?.item.background ?? "rgba(255,255,255,0.08)", color: ACCENTS[accentColor]?.item.color } : undefined}
+      style={active ? { background: ACTIVE_ACCENT.item.background, color: ACTIVE_ACCENT.item.color } : undefined}
     >
-      {active && <SideIndicator color={ACCENTS[accentColor]?.bar ?? "currentColor"} />}
+      {active && <SideIndicator color={ACTIVE_ACCENT.bar} />}
       <span className="grid size-6 shrink-0 place-items-center">
         <ItemIcon icon={icon} className="size-4" />
       </span>
@@ -261,7 +243,7 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
                 aria-current={active ? "page" : undefined}
                 aria-disabled={disabled || undefined}
                 aria-label={DEV_PANEL_ENABLED && disabled ? `${p.label}, coming soon` : undefined}
-                style={!disabled && active ? ACCENTS[p.id].tab : undefined}
+                style={!disabled && active ? ACTIVE_ACCENT.tab : undefined}
                 className={cn(
                   "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   disabled ? "cursor-not-allowed" : active ? "font-medium" : "bg-secondary/40 text-muted-foreground hover:text-foreground"
@@ -301,7 +283,6 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
               icon={it.icon}
               label={it.label}
               active={selected === it.id}
-              accentColor={product}
               ariaCurrent={selected === it.id ? "page" : undefined}
               onClick={() => (it.action ? it.action() : onSelect(it.id))}
               testId={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}

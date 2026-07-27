@@ -9,7 +9,14 @@ const COLUMNS = [
 export function Footer({ onResponsibleGambling, onSupport }) {
   return (
     <footer className="mt-12 border-t">
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      {/* LAYOUT STABILITY: was mx-auto max-w-6xl — the Footer is the same
+          component on every arena, but centering via mx-auto still reacts
+          to <main>'s CURRENT width, which genuinely differs on Sports (the
+          desktop betslip panel shrinks it) — same root cause as the arena
+          content column above it (see ArenaPageColumn.jsx). Left-anchored
+          instead, so its position never depends on which arena/betslip
+          state is active. */}
+      <div className="w-full max-w-6xl px-4 py-8">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {COLUMNS.map((c) => (
             <div key={c.title}>

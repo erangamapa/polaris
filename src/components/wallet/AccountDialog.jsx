@@ -172,7 +172,7 @@ function SessionExpiredBody({ onSignIn, onSupport, onResponsibleGambling }) {
       <ShieldAlert className="size-8 text-[var(--warning)]" aria-hidden="true" />
       <h2 className="text-base font-semibold">Session expired</h2>
       <p className="text-sm text-muted-foreground">Sign in again to continue using your account.</p>
-      <button type="button" onClick={onSignIn} data-test-id="account-signin-again" className="mt-1 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--casino-primary-hover)]">
+      <button type="button" onClick={onSignIn} data-test-id="account-signin-again" className="mt-1 rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--global-cta-hover)]">
         Sign in again
       </button>
       <div className="mt-2 flex gap-4 text-sm">
@@ -188,7 +188,7 @@ function LoggedOutBody({ onSignIn, onSupport, onResponsibleGambling }) {
     <div className="flex flex-col items-center gap-3 py-6 text-center" data-test-id="account-logged-out">
       <User className="size-8 text-muted-foreground" aria-hidden="true" />
       <h2 className="text-base font-semibold">Sign in to access your account</h2>
-      <button type="button" onClick={onSignIn} data-test-id="account-signin" className="mt-1 flex items-center gap-1.5 rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--casino-primary-hover)]">
+      <button type="button" onClick={onSignIn} data-test-id="account-signin" className="mt-1 flex items-center gap-1.5 rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--global-cta-hover)]">
         <LogIn className="size-4" aria-hidden="true" /> Sign in
       </button>
       <div className="mt-2 flex gap-4 text-sm">
@@ -226,7 +226,7 @@ export function AccountErrorBody({ onRetry, onSupport }) {
       <h2 className="text-base font-semibold">Unable to load account</h2>
       <p className="text-sm text-muted-foreground">Try again in a moment.</p>
       <div className="mt-1 flex gap-2">
-        <button type="button" onClick={onRetry} className="rounded-lg bg-[var(--casino-primary)] px-3 py-1.5 text-sm font-bold text-white">Try again</button>
+        <button type="button" onClick={onRetry} className="rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-sm font-bold text-white">Try again</button>
         <button type="button" onClick={onSupport} className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
           <ExternalLink className="size-3.5" aria-hidden="true" /> Contact support
         </button>

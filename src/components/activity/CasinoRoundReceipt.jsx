@@ -174,7 +174,7 @@ export function CasinoRoundReceipt({ round, open, notFound, onClose, onPlayAgain
               {/* 13. Actions */}
               <div className="flex flex-wrap gap-2 pt-2">
                 {onPlayAgain && (
-                  <button type="button" onClick={onPlayAgain} data-test-id="round-receipt-play-again" className="rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button type="button" onClick={onPlayAgain} data-test-id="round-receipt-play-again" className="rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     Play again
                   </button>
                 )}

@@ -43,7 +43,19 @@ export function PositionsTable({ positions }) {
               <TableRow key={p.id}>
                 <TableCell className="max-w-[220px] truncate text-sm">{p.question}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={p.side === "Yes" ? "text-[var(--outcome-affirmative)]" : "text-[var(--outcome-negative)]"}>
+                  {/* Same dedicated YES/NO tokens as OutcomeButton.jsx's
+                      resting treatment (index.css) — an open position's
+                      side is a passive label here, not an interactive
+                      control, so it only ever needs the soft/unselected
+                      look, never hover/selected states. */}
+                  <Badge
+                    variant="outline"
+                    className={
+                      p.side === "Yes"
+                        ? "border-[var(--yes-border)] bg-[var(--yes-soft)] text-[var(--yes-base)]"
+                        : "border-[var(--no-border)] bg-[var(--no-soft)] text-[var(--no-base)]"
+                    }
+                  >
                     {p.side}
                   </Badge>
                 </TableCell>

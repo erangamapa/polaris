@@ -1,5 +1,5 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { OutcomeButton } from "./OutcomeButton";
 import { TrendingUp } from "lucide-react";
 import { fmtCompact, fmtPct, fmtCents } from "@/lib/format";
 
@@ -30,26 +30,25 @@ export function MarketCard({ market, onOpen, onQuickBuy }) {
           </div>
         </div>
       </CardContent>
-      {/* CTA OWNERSHIP SYSTEM: quick-buy Yes/No is the same arena action as
+      {/* Quick-buy Yes/No, same Prediction Markets semantic exception as
           MarketDetail's "Buy Yes/Buy No" (just condensed for a list card)
-          — both use Predictions Action Green via the shared "action"
-          variant, not a semantic yes/no color pair, for the same reason
-          MarketDetail's buttons do (see that file). Previously these also
-          carried a stale hardcoded steel-cyan/rose color-mix as a
-          left-over from before this system existed. */}
+          — dedicated YES/NO tokens (index.css), not the generic success/
+          destructive tokens, not a brand colour. Neither side is
+          "selected" here (clicking either just opens the ticket), so both
+          render in the resting soft treatment with equal visual weight. */}
       <CardFooter className="grid grid-cols-2 gap-2 border-t bg-muted/30 p-3">
-        <Button
-          variant="action"
+        <OutcomeButton
+          side="Yes"
           onClick={(e) => { e.stopPropagation(); onQuickBuy(market, "Yes"); }}
         >
           Yes {fmtCents(market.yes)}
-        </Button>
-        <Button
-          variant="action"
+        </OutcomeButton>
+        <OutcomeButton
+          side="No"
           onClick={(e) => { e.stopPropagation(); onQuickBuy(market, "No"); }}
         >
           No {fmtCents(market.no)}
-        </Button>
+        </OutcomeButton>
       </CardFooter>
     </Card>
   );

@@ -4,23 +4,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
 
-// THEME READINESS: these colors are a KNOWN, pre-existing inconsistency
-// with Sidebar.jsx/MobileBottomNav.jsx's arena accent (--casino-text-accent
-// & co in index.css) — deliberately not merged onto those here, since
-// picking a winner between two already-shipped color choices is a design
-// decision, not this pass's to make silently. See index.css's own
-// "KNOWN INCONSISTENCY" comment and docs/design/theme-readiness.md.
-const PRODUCT = {
-  casino: { label: "Casino", color: "var(--activity-chip-casino)" },
-  predictions: { label: "Predictions", color: "var(--activity-chip-predictions)" },
-  sports: { label: "Sports", color: "var(--activity-chip-sports)" },
-};
+// ONE-BRAND UNIFICATION: this resolves the "KNOWN INCONSISTENCY" the
+// codebase previously flagged (a second, separate arena-color palette that
+// disagreed with Sidebar.jsx's own arena accents) — per the new Chips rule
+// ("neutral by default; only semantic chips get colour"), an arena-identity
+// chip isn't a semantic signal (unlike Live/Warning/Success), so it's
+// neutral now, with the arena distinguished by its label alone.
+const PRODUCT_LABEL = { casino: "Casino", predictions: "Predictions", sports: "Sports" };
 
 function Chip({ product }) {
-  const p = PRODUCT[product] ?? { label: product, color: "var(--activity-chip-neutral)" };
+  const label = PRODUCT_LABEL[product] ?? product;
   return (
-    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ color: p.color, background: `color-mix(in srgb, ${p.color} 12%, transparent)` }}>
-      {p.label}
+    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ color: "var(--badge-neutral-text)", background: "var(--badge-neutral-bg)" }}>
+      {label}
     </span>
   );
 }

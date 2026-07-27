@@ -22,8 +22,10 @@ export function LeaguePage({ sportId, countrySlug, leagueSlug, events, onOpen, o
 
   const groups = groupByDate(leagueEvents);
 
+  // LAYOUT STABILITY: no longer its own mx-auto max-w-6xl wrapper here —
+  // SportsArena.jsx now wraps every view in the one shared ArenaPageColumn.
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <>
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <button onClick={onOpenSport} className="hover:text-foreground hover:underline">{sport?.name}</button>
         <ChevronRight className="size-3" aria-hidden="true" />
@@ -50,7 +52,7 @@ export function LeaguePage({ sportId, countrySlug, leagueSlug, events, onOpen, o
           </section>
         ))
       )}
-    </div>
+    </>
   );
 }
 

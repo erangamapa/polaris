@@ -133,7 +133,7 @@ export function DemoBetSlip({ selections, stake, setStake, removeSelection, comb
             disabled={!validation.canSubmit}
             aria-describedby={!validation.canSubmit ? "demo-betslip-validation" : undefined}
             // CTA OWNERSHIP SYSTEM: a Sports arena action, not platform.
-            className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--sports-action)] text-base font-semibold text-[var(--sports-action-text)] hover:bg-[var(--sports-action-hover)] active:bg-[var(--sports-action-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
+            className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
           >
             Place demo bet
           </button>

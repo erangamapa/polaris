@@ -4,6 +4,7 @@ import { WalletButton } from "@/components/wallet/WalletButton";
 import { BalanceControl } from "@/components/wallet/BalanceControl";
 import { ProfileMenu } from "@/components/wallet/ProfileMenu";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { LogoMark } from "@/components/shell/LogoMark";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
@@ -106,8 +107,12 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
 
   return (
     <header className="relative z-40 flex min-h-14 shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:grid md:grid-cols-[1fr_auto_1fr] md:gap-3">
-      {/* LEFT ZONE: menu toggle + logo. Never redesigned here (see DO NOT
-          CHANGE: "logo"/"mobile triple-tap dev-panel trigger"). */}
+      {/* LEFT ZONE: menu toggle + logo. LOGO TILE REFINEMENT: the tile's
+          own visual treatment (dark tile + bottom accent stripe -> one
+          solid brand-colour tile, see LogoMark.jsx) was explicitly
+          revised by that pass — the mobile triple-tap dev-panel trigger
+          (`onLogoTap` below) is unrelated interaction logic and is still
+          untouched. */}
       <div className="flex min-w-0 shrink-0 items-center gap-2 md:justify-self-start">
         <button
           onClick={onBurger}
@@ -118,15 +123,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
         </button>
 
         <div className="flex shrink-0 select-none items-center gap-2" onClick={onLogoTap}>
-          {/* LOGO IMPROVEMENT: a solid bright-Mint tile read as too loud/
-              neon for a small brand mark — kept understated per this
-              pass's own instruction ("premium, not playful, not neon"):
-              a dark tile, white glyph, and a thin Mint accent bar along
-              the bottom edge (one of the suggested subtle treatments). */}
-          <div className="relative grid size-8 place-items-center overflow-hidden rounded-lg bg-[var(--secondary)] font-black text-[var(--foreground)]" aria-hidden="true">
-            {BRAND_NAME[0]}
-            <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[var(--brand-logo)]" />
-          </div>
+          <LogoMark />
           <span className="text-sm font-bold tracking-tight">
             <span className="sr-only">{BRAND_NAME} — </span>
             {BRAND_NAME}

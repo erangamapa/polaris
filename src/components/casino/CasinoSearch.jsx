@@ -519,7 +519,7 @@ function CasinoMobileSearchDialog({ open, onClose, query, onQuery, onOpen, child
                   aria-label="Search Casino"
                   data-test-id="casino-mobile-search-input"
                   autoComplete="off"
-                  className="h-11 w-full min-w-0 rounded-lg border border-white/10 bg-zinc-900 pl-9 pr-9 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-primary)]"
+                  className="h-11 w-full min-w-0 rounded-lg border border-white/10 bg-zinc-900 pl-9 pr-9 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--global-cta)]"
                 />
                 {query && (
                   <button

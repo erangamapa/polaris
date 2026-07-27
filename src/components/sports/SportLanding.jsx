@@ -26,8 +26,10 @@ export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpe
   const belowList = shownTab.filter((e) => !topMatches.some((t) => t.id === e.id));
   const groups = groupByCountryLeague(belowList);
 
+  // LAYOUT STABILITY: no longer its own mx-auto max-w-6xl wrapper here —
+  // SportsArena.jsx now wraps every view in the one shared ArenaPageColumn.
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <>
       <div className="flex items-center gap-2">
         {sport?.icon && <sport.icon className="size-5 text-[var(--ink-dim)]" aria-hidden="true" />}
         <h1 className="text-lg font-bold">{sport?.name}</h1>
@@ -80,7 +82,7 @@ export function SportLanding({ sportId, events, loading, demoMode, onOpen, onOpe
           </section>
         ))
       )}
-    </div>
+    </>
   );
 }
 

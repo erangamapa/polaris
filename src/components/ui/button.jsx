@@ -21,22 +21,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary — the platform's Mint action color. CTA OWNERSHIP
-        // SYSTEM: use this ONLY for actions that belong to Tribet itself,
-        // not the current arena — Wallet, Deposit, Withdraw, Connect
-        // Wallet, Continue, Confirm, Profile, Settings, KYC, Support,
-        // Transaction History, Copy Address, Network Selection. These
-        // stay Mint on every arena page, never the local arena color.
+        // ONE-BRAND UNIFICATION: the single Tribet brand colour, used for
+        // every primary action app-wide — Wallet, Deposit, Withdraw,
+        // Connect Wallet, Continue, Claim, Play, Bet, Trade, View Market,
+        // everything. There is no separate "arena action" tone anymore:
+        // Casino/Sports/Predictions no longer own a distinct CTA colour
+        // (see index.css's Core Brand block) — the one Prediction Markets
+        // exception (Buy Yes/Buy No) uses the `success`/`destructive`
+        // variants below directly at the call site instead.
         default: "bg-[var(--global-cta)] text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)]",
-        // Arena action — CTA OWNERSHIP SYSTEM: use this for actions that
-        // belong to the CURRENT arena experience (Claim Bonus, Play Now,
-        // Spin, Bet Now, Cash Out, Buy YES/NO, Trade, View Market, etc.).
-        // Reads --product-action-*, which [data-product="casino|sports|
-        // predictions"] on the page root resolves automatically — no
-        // per-arena variant needed, no special-casing at the call site.
-        action: "bg-[var(--product-action)] text-[var(--product-action-text)] hover:bg-[var(--product-action-hover)] active:bg-[var(--product-action-active)]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        // Prediction Markets semantic exception (YES) — see index.css.
         success:
           "bg-[var(--success)] text-[var(--global-cta-text)] hover:bg-[var(--success)]/90",
         outline:

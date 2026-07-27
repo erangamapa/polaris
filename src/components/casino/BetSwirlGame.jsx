@@ -274,7 +274,7 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
                 so this is Casino Action Purple, not Mint — reverses an
                 earlier pass's call before this system existed. */}
             <button onClick={play_} disabled={insufficient || busy || !ready || balanceUnknown || phase === "uncertain"} data-test-id="betswirl-play"
-              className="h-[44px] rounded-lg bg-[var(--casino-action)] px-8 font-bold text-[var(--casino-action-text)] transition-colors hover:bg-[var(--casino-action-hover)] active:bg-[var(--casino-action-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">
+              className="h-[44px] rounded-lg bg-[var(--global-cta)] px-8 font-bold text-[var(--global-cta-text)] transition-colors hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">
               {busy ? "…" : insufficient ? "Low balance" : "Bet"}
             </button>
           </div>
@@ -296,7 +296,7 @@ function GameControls({ game, busy, cap, setCap, face, setFace, rouletteNums, se
     return (
       <label className="block">
         <span className="mb-1 flex justify-between text-[11px] uppercase tracking-wide text-zinc-500"><span>Win chance</span><span className="text-zinc-300">{cap}%</span></span>
-        <input type="range" min={2} max={95} value={cap} onChange={(e) => setCap(+e.target.value)} disabled={busy} className="w-full accent-[var(--casino-primary)]" />
+        <input type="range" min={2} max={95} value={cap} onChange={(e) => setCap(+e.target.value)} disabled={busy} className="w-full accent-[var(--global-cta)]" />
       </label>
     );
   }
@@ -305,7 +305,7 @@ function GameControls({ game, busy, cap, setCap, face, setFace, rouletteNums, se
       <div className="flex gap-2">
         {["HEADS", "TAILS"].map((f) => (
           <button key={f} onClick={() => setFace(f)} disabled={busy}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${face === f ? "bg-[var(--casino-primary)] text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{f}</button>
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${face === f ? "bg-[var(--global-cta)] text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{f}</button>
         ))}
       </div>
     );
@@ -318,7 +318,7 @@ function GameControls({ game, busy, cap, setCap, face, setFace, rouletteNums, se
         <div className="grid max-h-28 grid-cols-10 gap-1 overflow-y-auto">
           {ROULETTE_NUMBERS.map((n) => (
             <button key={n} onClick={() => toggle(n)} disabled={busy}
-              className={`rounded py-1 text-xs font-medium ${rouletteNums.includes(n) ? "bg-[var(--casino-primary)] text-white" : "bg-zinc-800 text-zinc-300"}`}>{n}</button>
+              className={`rounded py-1 text-xs font-medium ${rouletteNums.includes(n) ? "bg-[var(--global-cta)] text-white" : "bg-zinc-800 text-zinc-300"}`}>{n}</button>
           ))}
         </div>
       </div>
@@ -332,7 +332,7 @@ function GameControls({ game, busy, cap, setCap, face, setFace, rouletteNums, se
         <div className="grid grid-cols-10 gap-1">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
             <button key={n} onClick={() => toggle(n)} disabled={busy}
-              className={`rounded py-1 text-xs font-medium ${balls.includes(n) ? "bg-[var(--casino-primary)] text-white" : "bg-zinc-800 text-zinc-300"}`}>{n}</button>
+              className={`rounded py-1 text-xs font-medium ${balls.includes(n) ? "bg-[var(--global-cta)] text-white" : "bg-zinc-800 text-zinc-300"}`}>{n}</button>
           ))}
         </div>
       </div>

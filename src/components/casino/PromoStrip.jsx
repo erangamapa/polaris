@@ -222,8 +222,8 @@ const SEARCH_SCOPES = ARENAS.map((a) => ({ ...a, ...SEARCH_COPY[a.id] }));
 // content, and `defaultScope` just seeds which one this instance opens on
 // (Sports opens on "sports", Predictions on "predictions", etc). Exported:
 // this is the one search implementation shared by all three arenas — the
-// arena-tinted focus ring comes from --product-primary, which the page root's
-// [data-product] attribute already resolves per arena.
+// focus ring uses the one Tribet brand colour (--global-cta), same on
+// every arena — no per-arena tint anymore.
 //
 // `panel` is optional — Casino passes a grouped results/empty/no-results
 // ReactNode (see CasinoSearch.jsx) to get real combobox behaviour: this
@@ -320,7 +320,7 @@ export function ScopedSearch({
         Search
       </label>
       <div ref={rootRef} onBlur={onBlur} className="relative">
-        <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--product-primary)]">
+        <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--global-cta)]">
           <div className="relative flex h-full shrink-0 items-center">
             {/* A real <select> can't carry a Radix Tooltip or custom opacity
                 per <option> — the browser renders that native popup itself,

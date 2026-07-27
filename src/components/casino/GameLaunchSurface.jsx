@@ -178,7 +178,7 @@ export function GameLaunchSurface({ launch, game, onClose, onRetry, onBrowseGame
                     // platform-wide action — Casino Action Purple.
                     className={
                       action === "retry"
-                        ? "rounded-lg bg-[var(--casino-action)] px-4 py-2 text-sm font-bold text-[var(--casino-action-text)] hover:bg-[var(--casino-action-hover)] active:bg-[var(--casino-action-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        ? "rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         : "rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     }
                   >

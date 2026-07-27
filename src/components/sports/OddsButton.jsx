@@ -7,18 +7,16 @@ export function OddsButton({ label, odds, selected, onClick, dir, disabled }) {
     <button
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      // RESKIN: was rgba(175,195,74,*) — stale chartreuse from before Sports
-      // was recolored to cobalt (--sports-primary is #5A87D4 now) — and a
-      // hardcoded #1A1C20/#20241C background with a leftover greenish
-      // hover tint. Fixed to the current sports token + the app's actual
-      // neutral surface-elevation pattern (bg-card -> hover:bg-secondary,
-      // same as every other interactive card in the app).
+      // ONE-BRAND UNIFICATION: a selected odd now highlights with the one
+      // Tribet brand colour (--global-cta), not a Sports-owned accent —
+      // same neutral surface-elevation pattern as every other interactive
+      // card in the app otherwise (bg-card -> hover:bg-secondary).
       className={cn(
         "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         disabled
           ? "cursor-not-allowed border-border bg-muted/20 opacity-50"
           : selected
-            ? "border-[var(--sports-primary)]/50 bg-[var(--sports-primary-soft)] text-[var(--sports-text-accent)]"
+            ? "border-[var(--global-cta)]/50 bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]"
             : "border-border bg-[var(--card)] hover:bg-[var(--secondary)]"
       )}
     >

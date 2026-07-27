@@ -12,8 +12,14 @@ export function ProviderDiagnostics() {
   const { events, loading, bettableCount } = useNormalizedAzuroEvents();
   const totalMarkets = events.reduce((s, e) => s + e.markets.length, 0);
 
+  // LAYOUT STABILITY: was its own mx-auto max-w-3xl wrapper — narrower than
+  // every other Sports page and genuinely inconsistent. Width now comes
+  // from the one shared ArenaPageColumn (SportsArena.jsx); this page's own
+  // denser space-y-4 rhythm (vs. the app-wide space-y-6) is preserved via
+  // a plain inner wrapper, since that's a legitimate density choice for an
+  // internal-only diagnostics page, not a geometry bug.
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="space-y-4">
       <div>
         <h1 className="text-lg font-bold">Sports provider diagnostics</h1>
         <p className="text-xs text-muted-foreground">Internal only — not linked from primary navigation.</p>

@@ -55,7 +55,7 @@ export function ComplianceBlock({ status, title, message, primaryAction, seconda
               type="button"
               onClick={() => runAction(primaryAction)}
               data-test-id="compliance-block-primary"
-              className="rounded-lg bg-[var(--casino-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--casino-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {primaryAction.label}
             </button>
