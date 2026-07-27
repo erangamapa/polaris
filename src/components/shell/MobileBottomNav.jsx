@@ -15,7 +15,11 @@ const ARENA_ICONS = { casino: Dices, predictions: TrendingUp, sports: Trophy };
 // ONE-BRAND UNIFICATION: the active arena's tint is the single Tribet brand
 // colour, not a per-arena hue — see Sidebar.jsx's ACTIVE_ACCENT for the same
 // change on desktop. Arena differentiation is icon/label only now.
-const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id], color: "var(--global-cta)" }));
+// `color` (icon/label text on the dark nav bar) uses the lighter
+// --global-cta-hover tone — the base brand blue only computes to ~4.4:1
+// as small text/icon on this background, below AA; `barColor` (the solid
+// 3px indicator bar, not text) keeps the base brand tone.
+const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id], color: "var(--global-cta-hover)", barColor: "var(--global-cta)" }));
 
 // Shared indicator geometry — every item (Menu or arena) uses the exact
 // same width/height/radius/position/transition; only colour and opacity
@@ -108,7 +112,7 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
               <span
                 aria-hidden="true"
                 className={cn(INDICATOR, !disabled && active && !menuOpen ? "opacity-100" : "opacity-0")}
-                style={{ background: p.color }}
+                style={{ background: p.barColor }}
               />
               <Icon className={cn("size-5", disabled && "opacity-50")} aria-hidden="true" />
               <span className={cn("max-w-full truncate px-0.5", disabled && "opacity-60")}>{p.label}</span>

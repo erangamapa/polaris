@@ -10,8 +10,7 @@ const STATUS_LABEL = { available: null, "coming-soon": "Coming soon", unavailabl
 // component and section order (see INFORMATION ARCHITECTURE), not two
 // separate content definitions. Desktop renders it as a right-side drawer;
 // mobile as a full-height sheet — both via the same responsive classes on
-// the same markup, matching this app's established pattern (see
-// CasinoGameplayFrame.jsx) rather than branching into two components.
+// the same markup, rather than branching into two components.
 //
 // This is a plain sibling overlay, not part of the launch state machine —
 // it never dispatches a launch action, so opening/closing it can't remount
@@ -26,16 +25,19 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
     if (open) panelRef.current?.focus();
   }, [open]);
 
-  // FINAL QA fix: CasinoGameplayFrame.jsx has its own global Escape-closes-
-  // the-game listener (also on `window`). Game Info can open ON TOP of a
-  // live game (the gameplay-frame entry point), so without
-  // stopImmediatePropagation() a single Escape press fired BOTH listeners
-  // at once — closing Game Info AND the whole game underneath it — instead
-  // of Escape closing only the topmost surface, as every other stacked
-  // overlay in this app already does. Regular stopPropagation() would not
-  // have helped here: both listeners are bound to the exact same target
-  // (`window`), so only stopImmediatePropagation() prevents a sibling
-  // listener at that same target from also firing.
+  // FINAL QA fix: kept even though the CASINO GAME EXPERIENCE pass removed
+  // the game surface's own global Escape-closes-the-game listener (the
+  // game page is no longer a modal — see CasinoGamePage.jsx/GameStage.jsx
+  // — so Escape no longer competes with it specifically). Other `window`-
+  // level Escape listeners can still exist above this panel (e.g. the
+  // Developer Panel's own), and Game Info can still open while a game is
+  // playing underneath it, so stopImmediatePropagation() stays: it's what
+  // guarantees Escape closes only the topmost surface, the same guarantee
+  // every other stacked overlay in this app already gets. Regular
+  // stopPropagation() would not help here — every such listener is bound
+  // to the exact same target (`window`), so only
+  // stopImmediatePropagation() stops a sibling listener at that same
+  // target from also firing.
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === "Escape") { e.stopImmediatePropagation(); onClose(); } };
@@ -75,7 +77,7 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
           right edge (this is a right-side drawer, matching its actual
           panel direction). Exit stays an instant unmount, deliberately not
           animated: this component's focus-restore/Escape-suppression logic
-          (see App.jsx/GameLaunchSurface.jsx) is keyed directly to its mount
+          (see App.jsx) is keyed directly to its mount
           state, and delaying that for a close animation risks reopening
           the exact class of focus race this app already had to fix once. */}
       <div
@@ -126,7 +128,7 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
                       Originals" uses the brand colour explicitly, same as
                       everywhere else now (no per-arena tint to assume). */}
                   {game.kind === "onchain" && (
-                    <MicroLabel className="bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]">Tribet Originals</MicroLabel>
+                    <MicroLabel className="bg-[var(--global-cta-soft-bg)] text-[var(--global-cta-hover)]">Tribet Originals</MicroLabel>
                   )}
                   {statusLabel && <MicroLabel>{statusLabel}</MicroLabel>}
                 </div>

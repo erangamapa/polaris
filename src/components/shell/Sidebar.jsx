@@ -24,10 +24,14 @@ const PRODUCTS = ARENAS.map((a) => ({ ...a, icon: ARENA_ICONS[a.id] }));
 const ACTIVE_ACCENT = {
   tab: {
     background: "color-mix(in srgb, var(--global-cta) 12%, transparent)",
-    color: "var(--global-cta)",
+    // Text on a subtle brand-tinted background (not a solid brand fill) —
+    // the base brand blue only computes to ~3.8:1 here, below AA; the
+    // lighter --global-cta-hover tone (per Meridian Blue's own "use the
+    // hover tone for brand-colored text on dark panels" rule) passes.
+    color: "var(--global-cta-hover)",
     border: "1px solid color-mix(in srgb, var(--global-cta) 42%, transparent)",
   },
-  item: { background: "color-mix(in srgb, var(--global-cta) 16%, transparent)", color: "var(--global-cta)" },
+  item: { background: "color-mix(in srgb, var(--global-cta) 16%, transparent)", color: "var(--global-cta-hover)" },
   bar: "var(--global-cta)",
 };
 

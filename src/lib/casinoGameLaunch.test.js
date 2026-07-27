@@ -3,7 +3,8 @@ import {
   gameLaunchReducer, INITIAL_GAME_LAUNCH_STATE, GAME_LAUNCH_STATUS, FAILED_ERROR_CODE,
   isLaunchActive, isLoadingStatus,
 } from "./casinoGameLaunch";
-import { resolveLaunchOutcome } from "../components/casino/GameLaunchSurface";
+import { resolveGameOutcome } from "../components/casino/GameError";
+import { resolveUnavailableOutcome } from "../components/casino/GameUnavailable";
 
 // CASINO GAME LAUNCH STATE MACHINE — scenario coverage. This reducer is the
 // one thing in the whole launch feature that's pure and DOM-free, so it's
@@ -22,7 +23,7 @@ import { resolveLaunchOutcome } from "../components/casino/GameLaunchSurface";
 //  7.  Close always returns to a clean idle state regardless of where it fired -> below
 //  8.  Unavailable/not-found short-circuit straight to a terminal state -> below
 //  9.  isLoadingStatus/isLaunchActive classify every status correctly    -> below
-//  10. GameLaunchSurface's copy/action lookup covers every non-loading status -> below (verified against the task's own literal copy strings)
+//  10. GameError's/GameUnavailable's copy/action lookups cover every non-loading status -> below (verified against the task's own literal copy strings)
 
 describe("gameLaunchReducer", () => {
   it("opens a fresh loading launch from idle", () => {
@@ -158,26 +159,53 @@ describe("isLoadingStatus / isLaunchActive", () => {
   });
 });
 
-describe("resolveLaunchOutcome", () => {
-  it("matches the task's exact customer-safe copy for every terminal status", () => {
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.UNAVAILABLE })).toEqual({
-      heading: "Game unavailable", message: "This game is not available right now.", actions: ["browse", "close"],
+describe("resolveGameOutcome (GameError.jsx — FAILED + session-expired)", () => {
+  it("matches the task's exact customer-safe copy for every FAILED variant", () => {
+    expect(resolveGameOutcome({ status: GAME_LAUNCH_STATUS.FAILED, errorCode: FAILED_ERROR_CODE.TIMEOUT })).toEqual({
+      kind: "connection-lost",
+      heading: "Connection lost", message: "Check your connection and try again.", actions: ["retry", "browse", "report"],
     });
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.NOT_FOUND })).toEqual({
-      heading: "Game not found", message: "The game link may be invalid or no longer available.", actions: ["browse", "back"],
-    });
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.FAILED, errorCode: FAILED_ERROR_CODE.TIMEOUT })).toEqual({
-      heading: "Game took too long to load", message: "Check your connection and try again.", actions: ["retry", "close"],
-    });
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.FAILED, errorCode: FAILED_ERROR_CODE.INIT_FAILED })).toEqual({
-      heading: "Unable to launch game", message: "We couldn't start this game. Try again or choose another game.", actions: ["retry", "browse", "close"],
+    expect(resolveGameOutcome({ status: GAME_LAUNCH_STATUS.FAILED, errorCode: FAILED_ERROR_CODE.INIT_FAILED })).toEqual({
+      kind: "provider-error",
+      heading: "Unable to launch game", message: "We couldn't start this game. Try again or choose another game.", actions: ["retry", "browse", "report"],
     });
   });
 
-  it("returns null for loading/ready/idle — those render their own branch, not a copy lookup", () => {
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.REQUESTED })).toBeNull();
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.LOADING })).toBeNull();
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.READY })).toBeNull();
-    expect(resolveLaunchOutcome({ status: GAME_LAUNCH_STATUS.IDLE })).toBeNull();
+  it("supports a session-expired variant (no current trigger — see GameError.jsx's own note)", () => {
+    expect(resolveGameOutcome({ errorCode: "session-expired" })).toEqual({
+      kind: "session-expired",
+      heading: "Your session expired",
+      message: "Reconnect to keep playing — your progress up to this point is safe.",
+      actions: ["restart-session", "browse"],
+    });
+  });
+
+  it("returns null for anything that isn't a real failure — UNAVAILABLE/NOT_FOUND have their own resolver (see below), loading/ready/idle render their own branch", () => {
+    for (const status of [
+      GAME_LAUNCH_STATUS.UNAVAILABLE, GAME_LAUNCH_STATUS.NOT_FOUND,
+      GAME_LAUNCH_STATUS.REQUESTED, GAME_LAUNCH_STATUS.LOADING, GAME_LAUNCH_STATUS.READY, GAME_LAUNCH_STATUS.IDLE,
+    ]) {
+      expect(resolveGameOutcome({ status })).toBeNull();
+    }
+  });
+});
+
+describe("resolveUnavailableOutcome (GameUnavailable.jsx — UNAVAILABLE/NOT_FOUND)", () => {
+  it("matches the task's exact customer-safe copy, distinct from a FAILED launch", () => {
+    expect(resolveUnavailableOutcome(GAME_LAUNCH_STATUS.NOT_FOUND)).toMatchObject({
+      heading: "Game not found", message: "The game link may be invalid or no longer available.",
+    });
+    expect(resolveUnavailableOutcome(GAME_LAUNCH_STATUS.UNAVAILABLE)).toMatchObject({
+      heading: "Game unavailable", message: "This game is not available right now — check back soon or explore something else.",
+    });
+  });
+
+  it("returns null for a FAILED/loading/ready/idle status — nothing here is actually unavailable", () => {
+    for (const status of [
+      GAME_LAUNCH_STATUS.FAILED, GAME_LAUNCH_STATUS.REQUESTED, GAME_LAUNCH_STATUS.LOADING,
+      GAME_LAUNCH_STATUS.READY, GAME_LAUNCH_STATUS.IDLE,
+    ]) {
+      expect(resolveUnavailableOutcome(status)).toBeNull();
+    }
   });
 });

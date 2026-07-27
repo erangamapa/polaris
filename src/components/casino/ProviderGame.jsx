@@ -26,14 +26,14 @@ export const PROVIDER_GAMES = [
 // that speak the TriBet Game Bridge (src/lib/gameBridge) get a MOCK balance host
 // wired here automatically. To settle on-chain instead, pass a `settle` handler
 // to attachMockHost (see skills/build-casino-game/reference/on-chain-extension.md).
-// Renders only its own inner content now — the outer fixed frame, header,
-// title, and the one close button all live in CasinoGameplayFrame.jsx (see
-// GAME CONTAINER task: "outer frame ownership should be shared" / "do not
-// show multiple competing close buttons"). Its own "Loading {title}…" text
-// is gone too — GameLaunchSurface's shared status overlay already covers
-// this exact element the whole time `loaded` is false (see that file), so
-// showing a second loading label here was dead weight, never actually
-// visible to a player.
+// Renders only its own inner content — the outer page chrome (header,
+// title, back control) lives in GameHeader.jsx, and the box/sizing/status
+// overlay live in GameStage.jsx (see GAME CONTAINER task: "outer frame
+// ownership should be shared" / "do not show multiple competing close
+// buttons"). Its own "Loading {title}…" text is gone too — GameStage's
+// shared GameLoading overlay already covers this exact element the whole
+// time `loaded` is false (see that file), so showing a second loading
+// label here was dead weight, never actually visible to a player.
 export function ProviderGame({ game, onReady, onFailed }) {
   const iframeRef = useRef(null);
   const [loaded, setLoaded] = useState(false);

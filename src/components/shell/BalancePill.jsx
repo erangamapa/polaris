@@ -58,7 +58,7 @@ export function BalancePill({ balance, onDeposit }) {
                     </span>
                     <span>{c.id}</span>
                     <span className="truncate text-xs text-muted-foreground">{c.name}</span>
-                    {currency === c.id && <Check className="ml-auto size-3.5 text-[var(--global-cta)]" />}
+                    {currency === c.id && <Check className="ml-auto size-3.5 text-[var(--global-cta-hover)]" />}
                   </button>
                 ))}
               </div>

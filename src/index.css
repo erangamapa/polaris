@@ -31,17 +31,21 @@
      bg-zinc-900 (the app's most common dark surface utility) lands on
      the guide's --surface-1, text-zinc-400/500 (the app's most common
      secondary-text utilities) land near the guide's --ink-dim, etc. */
-  --color-zinc-950: #080A0E; /* one-brand unification --background */
-  --color-zinc-900: #10141C; /* --surface-1 (default card/panel) */
-  --color-zinc-800: #151A24; /* --surface-2 (raised/active) */
-  --color-zinc-700: #1B2230; /* --surface-3 */
-  --color-zinc-600: #353F4F; /* --border-strong */
-  --color-zinc-500: #A2AABD; /* --secondary-text */
-  --color-zinc-400: #6F788C; /* --muted */
-  --color-zinc-300: #C3C8D2;
-  --color-zinc-200: #D7DAE2;
-  --color-zinc-100: #F5F7FA; /* --primary-text */
-  --color-zinc-50: #F5F6F8;
+  /* MERIDIAN BLUE RECOLOR: neutrals tinted toward blue per the task's
+     SURFACES table (bg/panel/panel-raised/border/text-primary/text-muted),
+     keeping the same relative lightness step-for-step as the previous
+     teal-era ramp — value-only swap, same five named roles. */
+  --color-zinc-950: #05070F; /* one-brand unification --background */
+  --color-zinc-900: #0B0F1D; /* --surface-1 (default card/panel) */
+  --color-zinc-800: #141A2E; /* --surface-2 (raised/active) */
+  --color-zinc-700: #1B2342; /* --surface-3 / border-divider */
+  --color-zinc-600: #2B3660; /* --border-strong */
+  --color-zinc-500: #7280A0; /* --secondary-text / text-muted */
+  --color-zinc-400: #7280A0; /* --muted */
+  --color-zinc-300: #A6B0CB;
+  --color-zinc-200: #C4CBE0;
+  --color-zinc-100: #DEE4F2; /* --primary-text */
+  --color-zinc-50: #EEF1FA;
 
   /* RESKIN (product-language unification, final pass) — ONE typography
      system: Onest for everything except data (headings, promo titles,
@@ -161,11 +165,13 @@ html {
        30  --z-local-dropdown    PromoStrip's own local expanding list
        40  --z-header            TopBar itself; BalancePill's own backdrop
        50  --z-dialog            Shared ui/dialog.jsx, Tooltip, BalancePill's
-                                  popover content — ALSO the gameplay frame's
-                                  own layer (CasinoGameplayFrame/GameLauncher):
-                                  they're mutually exclusive in practice, so
-                                  sharing a tier is intentional, not a
-                                  collision
+                                  popover content. CASINO GAME EXPERIENCE:
+                                  the Casino game surface no longer has its
+                                  own stacking layer at all — it's real
+                                  inline page content now (replacing
+                                  CasinoLobby in normal document flow, see
+                                  CasinoGamePage.jsx), not a fixed-position
+                                  overlay that needed a z-index
        70  --z-game-info         GameInfoPanel / CasinoRoundReceipt — a info
                                   drawer that must sit above gameplay (z-50)
                                   — coincidentally the same numeric value as
@@ -353,6 +359,24 @@ html {
   animation: panel-backdrop-fade-in var(--motion-standard) var(--ease-out) both;
 }
 
+/* CASINO GAME EXPERIENCE — opening/closing a game (CasinoGamePage
+   replacing/being replaced by CasinoLobby, both under `product==="casino"`
+   — see App.jsx) is a restrained opacity-only fade, never a slide/zoom/
+   bounce, per that task's own ANIMATION section. Deliberately entrance-
+   only (`both` fill mode so it starts pre-faded, no flash of the final
+   state) at 130ms — inside the spec's given 120-150ms band — applied to
+   whichever of the two (lobby or game page) is mounting fresh. The global
+   `prefers-reduced-motion` rule elsewhere in this file already forces
+   this to ~0ms for reduced-motion users; no separate override needed
+   here. */
+@keyframes game-page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-game-page-fade-in {
+  animation: game-page-fade-in 130ms var(--ease-out) both;
+}
+
 /* MOTION QUALITY PASS — toast removal used to be an instant list-splice:
    the dismissed card vanished and every toast below it snapped up into the
    gap in the same frame. `.toast-leaving` gives Toaster.jsx a brief,
@@ -394,34 +418,48 @@ html {
      established names (dozens of existing call sites: logo tile, wallet/
      deposit/confirm buttons, focus rings, sidebar active state) so this
      is a value-only swap, same discipline as every prior recolor in this
-     file — never rename a token, only change what it points to. */
-  --brand-logo: #10C7B2;
-  /* LOGO TILE REFINEMENT: a full solid brand-colour tile (was a dark tile
-     with a thin bottom accent stripe — see LogoMark.jsx) needs a genuinely
+     file — never rename a token, only change what it points to.
+
+     MERIDIAN BLUE RECOLOR: brand moved from teal/cyan (#10C7B2, before
+     that Mint, before that ivory Halo) to Meridian Blue (#3D6DFF). Exact
+     hex values below are the task's own literal spec, not derived. */
+  --brand-logo: #3D6DFF;
+  /* LOGO TILE REFINEMENT: a full solid brand-colour tile needs a genuinely
      subtle hover (spec: "slightly brighten the fill, 2-4%"), not the
      bigger jump --global-cta-hover uses for buttons. Derived live via
      color-mix (3% white mixed in) rather than a hand-picked hex, so it
      can never drift out of sync with --brand-logo if the brand colour is
-     ever revalued again. --brand-logo-dark is unused (kept, harmless).
-     --brand-logo-text was #06131A (dark-on-bright, tuned for the old
-     tile treatment) — now white, since the new solid tile's glyph is
-     white per spec. */
+     ever revalued again. --brand-logo-dark is unused (kept, harmless;
+     revalued to the Meridian Blue --brand-pressed literal for parity).
+     --brand-logo-text stays white — the tile's glyph is white on brand
+     fill per both the logo-tile spec and Meridian Blue's on-brand token. */
   --brand-logo-hover: color-mix(in srgb, var(--brand-logo) 97%, white 3%);
-  --brand-logo-dark: #0DA794;
+  --brand-logo-dark: #2E56D8;
   --brand-logo-text: #FFFFFF;
 
-  --global-cta: #10C7B2;
-  --global-cta-hover: #23D7C2;
-  --global-cta-active: #0DA794;
-  --global-cta-text: #06131A;
-  /* Soft tint uses the spec's own literal --brand-soft value rather than
-     a computed alpha — matches the design doc exactly. Border tint has no
-     spec literal, so it's derived live from the brand colour via
-     color-mix (not a hardcoded rgba() snapshot) specifically so a future
-     brand recolor can't leave this one stale the way --halo-quiet/
-     --halo-alpha-24 did across two earlier passes. */
-  --global-cta-soft-bg: #163936;
-  --global-cta-soft-border: color-mix(in srgb, var(--global-cta) 28%, transparent);
+  --global-cta: #3D6DFF;
+  --global-cta-hover: #6E93FF;
+  --global-cta-active: #2E56D8;
+  /* on-brand text/icons on a solid brand fill is white per Meridian Blue
+     spec (was dark-on-bright for the old teal). NOTE: this token is only
+     safe to pair with a --global-cta fill — button.jsx's `success`
+     variant used to reuse it against the (untouched) semantic --success
+     green fill, which computed to ~2.1:1 white-on-green (fails AA); that
+     variant now uses its own literal dark text instead so the semantic
+     success button's contrast isn't collateral damage of this brand
+     recolor — see button.jsx. */
+  --global-cta-text: #FFFFFF;
+  /* Soft tint / border tint use the Meridian Blue spec's own literal
+     brand-subtle-bg/-brdr rgba values (0.14 / 0.42 alpha over brand)
+     rather than a computed color-mix snapshot, matching the design doc
+     exactly the same way the previous teal pass did. */
+  --global-cta-soft-bg: rgba(61, 109, 255, 0.14);
+  --global-cta-soft-border: rgba(61, 109, 255, 0.42);
+  /* Meridian Blue spec's dedicated focus-ring/glow tones — distinct alpha
+     values from soft-bg/-border above, so focus rings and live-dot/meter
+     glows can each use their own intended opacity. */
+  --global-cta-focus-ring: rgba(61, 109, 255, 0.22);
+  --global-cta-glow: rgba(61, 109, 255, 0.55);
 
   --success: #46C98C;
   --success-bg: color-mix(in srgb, var(--success) 14%, transparent);
@@ -527,13 +565,13 @@ html {
   /* ONE-BRAND UNIFICATION: Background/Surface-1/2/3 per the new spec
      (see the --color-zinc-* override above for the same values applied
      to Tailwind's own utilities). */
-  --neutral-950: #080A0E; /* --background */
-  --neutral-900: #10141C; /* --surface-1 */
-  --neutral-800: #151A24; /* --surface-2 */
-  --neutral-700: #1B2230; /* --surface-3 */
-  --neutral-500: #A2AABD; /* --secondary-text */
-  --neutral-400: #6F788C; /* --muted */
-  --neutral-300: #C3C8D2;
+  --neutral-950: #05070F; /* --background */
+  --neutral-900: #0B0F1D; /* --surface-1 */
+  --neutral-800: #141A2E; /* --surface-2 */
+  --neutral-700: #1B2342; /* --surface-3 */
+  --neutral-500: #7280A0; /* --secondary-text */
+  --neutral-400: #7280A0; /* --muted */
+  --neutral-300: #A6B0CB;
 
   /* ── FOUNDATION: elevation / shadow scale ───────────────────────────────
      RESKIN BUG FOUND: --elevation-high (Toaster's shadow) was set to the
@@ -636,15 +674,21 @@ html {
      most of these roles and are left untouched. The additions here are
      the roles that had no existing home and were being reinvented ad hoc
      per component (Dev Panel's own #1a1b1f/#24252b/#3a3b42, Tooltip's
-     bg-zinc-900, CasinoGameplayFrame's bg-zinc-950). Values chosen to match
-     what's already on screen, not a new palette. */
+     bg-zinc-900). Values chosen to match what's already on screen, not a
+     new palette. CASINO GAME EXPERIENCE: --surface-gameplay (the old
+     full-viewport CasinoGameplayFrame's own outer background) is removed
+     — grep-confirmed zero consumers once that component was retired; the
+     Casino game surface has no separate full-viewport background to name
+     anymore, it's normal inline page content over the app's own
+     --background like everything else (see GameStage.jsx, which uses
+     --neutral-900 directly — the previous content-box's own shade, one
+     step lighter than the retired outer frame's). */
   --surface-base: var(--background);
   --surface-raised: var(--card);
   --surface-overlay-panel: #1A1F2A; /* Dev Panel / other edge-anchored panels — guide --surface-2 */
   --surface-interactive: #242A37; /* Dev Panel controls, hover-able compact surfaces — guide --surface-3 */
   --surface-interactive-hover: #2E3543;
   --surface-tooltip: var(--neutral-900);
-  --surface-gameplay: var(--neutral-950); /* CasinoGameplayFrame's outer frame + content box */
   --surface-inset: rgba(255, 255, 255, 0.04); /* faint recessed fill, e.g. empty-state wells */
 
   /* ── COMPONENT: game card ────────────────────────────────────────────────
@@ -752,7 +796,6 @@ html {
   --color-surface-interactive: var(--surface-interactive);
   --color-surface-interactive-hover: var(--surface-interactive-hover);
   --color-surface-tooltip: var(--surface-tooltip);
-  --color-surface-gameplay: var(--surface-gameplay);
   --color-surface-inset: var(--surface-inset);
   --color-surface-game-card: var(--surface-game-card);
   --color-surface-game-card-fallback: var(--surface-game-card-fallback);
@@ -824,34 +867,37 @@ html {
      Primary-Text/Secondary-Text/Muted per the new spec, mapped onto the
      existing shadcn-style role names — names unchanged, values only, same
      discipline as every prior recolor in this file. */
-  --background: #080A0E;
-  --foreground: #F5F7FA; /* Primary Text */
-  --card: #10141C; /* Surface 1 */
-  --card-foreground: #F5F7FA;
-  --popover: #151A24; /* Surface 2 (floating-ish role) */
-  --popover-foreground: #F5F7FA;
-  /* primary = the one Tribet brand colour (was Cyan, before that Mint,
-     before that ivory Halo — see --global-cta above for the full history) */
-  --primary: #10C7B2;
-  --primary-foreground: #06131A;
-  --secondary: #151A24; /* Surface 2 */
-  --secondary-foreground: #F5F7FA;
-  --muted: #151A24;
-  --muted-foreground: #A2AABD; /* Secondary Text */
-  --accent: #1B2230; /* Surface 3 */
-  --accent-foreground: #F5F7FA;
+  /* MERIDIAN BLUE RECOLOR: value-only swap, same role names, tinted per
+     the task's SURFACES table. */
+  --background: #05070F;
+  --foreground: #DEE4F2; /* Primary Text */
+  --card: #0B0F1D; /* Surface 1 */
+  --card-foreground: #DEE4F2;
+  --popover: #141A2E; /* Surface 2 (floating-ish role) */
+  --popover-foreground: #DEE4F2;
+  /* primary = the one Tribet brand colour (was teal/Cyan, before that
+     Mint, before that ivory Halo, now Meridian Blue — see --global-cta
+     above for the full history) */
+  --primary: #3D6DFF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #141A2E; /* Surface 2 */
+  --secondary-foreground: #DEE4F2;
+  --muted: #141A2E;
+  --muted-foreground: #7280A0; /* Secondary Text */
+  --accent: #1B2342; /* Surface 3 */
+  --accent-foreground: #DEE4F2;
   --destructive: #F26472; /* Danger */
-  --border: #252C3A; /* Border */
+  --border: #1B2342; /* Border */
   --input: rgba(255, 255, 255, 0.14);
-  --ring: rgba(16, 199, 178, 0.5); /* brand-tinted keyboard focus ring only */
-  --sidebar: #0C0F15; /* Surface 0 — between Background and Surface 1 */
-  --sidebar-foreground: #F5F7FA;
-  --sidebar-primary: #10C7B2;
-  --sidebar-primary-foreground: #06131A;
-  --sidebar-accent: #151A24;
-  --sidebar-accent-foreground: #F5F7FA;
-  --sidebar-border: #252C3A;
-  --sidebar-ring: rgba(16, 199, 178, 0.5);
+  --ring: rgba(61, 109, 255, 0.5); /* brand-tinted keyboard focus ring only */
+  --sidebar: #080B16; /* Surface 0 — between Background and Surface 1 */
+  --sidebar-foreground: #DEE4F2;
+  --sidebar-primary: #3D6DFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #141A2E;
+  --sidebar-accent-foreground: #DEE4F2;
+  --sidebar-border: #1B2342;
+  --sidebar-ring: rgba(61, 109, 255, 0.5);
 }
 
 @theme inline {

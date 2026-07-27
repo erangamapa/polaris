@@ -306,7 +306,7 @@ function Segmented({ value, onChange, options, groupLabel }) {
             className={cn(
               "rounded-md border px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
-                ? "border-[var(--global-cta)] bg-[var(--global-cta)]/15 text-[var(--global-cta)]"
+                ? "border-[var(--global-cta)] bg-[var(--global-cta)]/15 text-[var(--global-cta-hover)]"
                 : "border-[var(--border-interactive)] bg-[var(--surface-interactive)] text-muted-foreground hover:bg-[var(--surface-interactive-hover)] hover:text-foreground"
             )}
           >

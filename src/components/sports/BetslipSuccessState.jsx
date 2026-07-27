@@ -24,7 +24,7 @@ export function BetslipSuccessState({ subtitle, eventLabel, marketLabel, outcome
           <p className="line-clamp-1 break-words text-xs text-muted-foreground/75">{marketLabel}</p>
           <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <span className="line-clamp-1 min-w-0 break-words text-sm font-semibold">{outcomeLabel}</span>
-            <span className="min-w-[52px] shrink-0 whitespace-nowrap text-right font-mono text-sm font-bold tabular-nums text-[var(--global-cta)]">{odds.toFixed(2)}</span>
+            <span className="min-w-[52px] shrink-0 whitespace-nowrap text-right font-mono text-sm font-bold tabular-nums text-[var(--global-cta-hover)]">{odds.toFixed(2)}</span>
           </div>
         </div>
 

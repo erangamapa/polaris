@@ -18,7 +18,7 @@ export function MicroLabel({ children, tone = "neutral", className }) {
       className={cn(
         "inline-block px-[9px] py-1 font-mono text-[10px] font-medium uppercase tracking-[.14em] whitespace-nowrap",
         tone === "neutral" && "bg-[var(--surface-2)] text-[var(--ink-high)]",
-        tone === "accent" && "bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]",
+        tone === "accent" && "bg-[var(--global-cta-soft-bg)] text-[var(--global-cta-hover)]",
         className
       )}
       style={{ borderRadius: "var(--radius-xs)", borderTop: "1px solid rgba(255,255,255,.03)", borderBottom: "1px solid rgba(0,0,0,.5)" }}

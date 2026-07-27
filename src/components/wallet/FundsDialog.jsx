@@ -56,7 +56,7 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
         <div className="rounded-lg border border-dashed p-3 text-sm">
           <div className="mb-2 flex items-center gap-2 font-medium">
-            <Droplets className="size-4 text-[var(--global-cta)]" /> Get testnet funds
+            <Droplets className="size-4 text-[var(--global-cta-hover)]" /> Get testnet funds
           </div>
           <div className="flex flex-col gap-1.5">
             <FaucetLink href="https://portal.cdp.coinbase.com/products/faucet" label="Casino: Base Sepolia ETH faucet (Coinbase)" />
@@ -95,7 +95,7 @@ function BalanceRow({ label, symbol, amount, note, decimals = 5 }) {
 
 function FaucetLink({ href, label }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[var(--global-cta)] hover:underline">
+    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[var(--global-cta-hover)] hover:underline">
       <ExternalLink className="size-3.5" /> {label}
     </a>
   );

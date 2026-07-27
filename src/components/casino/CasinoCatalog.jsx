@@ -108,7 +108,7 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
             this app's existing "Halo" token (see index.css). */}
         <Star
           key={`${faved}-${burst}`}
-          className={`size-4 transition-transform group-hover/fav:scale-125 ${faved ? "fav-pop fill-[var(--global-cta)] text-[var(--global-cta)]" : "text-[var(--muted-foreground)]"}`}
+          className={`size-4 transition-transform group-hover/fav:scale-125 ${faved ? "fav-pop fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" : "text-[var(--muted-foreground)]"}`}
         />
       </span>
     </span>
@@ -754,7 +754,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   return (
     <section>
       <div className="mb-4 flex items-center gap-2">
-        <Star className="size-5 fill-[var(--global-cta)] text-[var(--global-cta)]" />
+        <Star className="size-5 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" />
         <h1 className="text-lg font-bold">Favorites</h1>
         {favorites.length > 0 && (
           <MicroLabel>
@@ -774,7 +774,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
         />
       ) : (
         <EmptyState
-          icon={<Star className="size-5 fill-[var(--global-cta)] text-[var(--global-cta)]" aria-hidden="true" />}
+          icon={<Star className="size-5 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
           title="No favorite games yet"
           description="Tap the star on any game to save it here."
           cta={<BrowseGamesButton onClick={onBrowseGames} testId="favorites-browse-games" />}

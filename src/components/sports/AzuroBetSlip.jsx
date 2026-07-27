@@ -170,7 +170,7 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
           )}
 
           {busy ? (
-            <div role="status" aria-live="polite" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg border text-sm text-[var(--global-cta)]" data-test-id="betslip-loader">
+            <div role="status" aria-live="polite" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg border text-sm text-[var(--global-cta-hover)]" data-test-id="betslip-loader">
               <Loader2 className="size-4 shrink-0 animate-spin" /> <span className="truncate">{STEP_LABEL[step] ?? "Placing bet…"}</span>
             </div>
           ) : (

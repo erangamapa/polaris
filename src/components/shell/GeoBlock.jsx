@@ -29,7 +29,7 @@ export function GeoBlock({ reason, onContactSupport }) {
       <button
         type="button"
         onClick={onContactSupport}
-        className="text-sm font-semibold text-[var(--global-cta)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="text-sm font-semibold text-[var(--global-cta-hover)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         Contact support
       </button>

@@ -1,6 +1,6 @@
 // TRIBET GAME DISPLAY SYSTEM — one authoritative metadata contract for how
 // every game (Tribet Originals + provider/vendored) is framed, sized, and
-// controlled by the shared CasinoGameplayFrame/GameLaunchSurface shell.
+// controlled by the shared GameStage.jsx shell.
 // See docs/casino/game-display-inventory.md for the evidence this is
 // based on — profile assignments and provider-control declarations below
 // are traceable to specific CSS/HTML evidence found there, not invented;
@@ -13,7 +13,7 @@
 
 // FOUNDATION: three viewport profiles cover every game in the catalog
 // today. A game that needs a different shape in the future adds a fourth
-// profile here, not a one-off exception inside CasinoGameplayFrame.
+// profile here, not a one-off exception inside GameStage.jsx.
 export const DISPLAY_PROFILE = {
   // Centered, form-like UI (bet amount, action button, simple selectors).
   // Evidence: BetSwirlGame.jsx's own root already self-constrains to
@@ -32,7 +32,7 @@ export const DISPLAY_PROFILE = {
   FLEXIBLE: "flexible",
 };
 
-// Each profile's own box — consumed by CasinoGameplayFrame's content-box
+// Each profile's own box — consumed by GameStage.jsx's content-box
 // sizing. `sizingMode` describes how the CONTENT within the box should
 // behave:
 //   "intrinsic" — content is naturally narrower than the box; center it,
@@ -53,7 +53,7 @@ export const VIEWPORT_PROFILES = {
       desktop: { width: 420, height: 520 },
       mobile: { width: 320, height: 480 },
     },
-    // CSS-consumable box (see CasinoGameplayFrame.jsx) — a real MAXIMUM,
+    // CSS-consumable box (see GameStage.jsx) — a real MAXIMUM,
     // not a forced size: shorter content still shrinks the box via
     // min()/percent, the same technique the existing box already used.
     contentBoxMaxWidthPx: 560,

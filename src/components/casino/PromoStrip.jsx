@@ -171,7 +171,7 @@ export function PlayerTile() {
           ) : casinoBalanceError ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-500">Balance unavailable</span>
-              <button type="button" onClick={() => refetchCasinoBalance?.()} className="text-xs font-semibold text-[var(--global-cta)] hover:underline">
+              <button type="button" onClick={() => refetchCasinoBalance?.()} className="text-xs font-semibold text-[var(--global-cta-hover)] hover:underline">
                 Retry
               </button>
             </div>

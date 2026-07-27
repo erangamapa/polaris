@@ -20,7 +20,7 @@ export function SupportDialog({ open, onClose, onCloseAutoFocus }) {
     <Dialog open={open} onOpenChange={(o) => !o && (onClose(), setCaseId(null))}>
       <DialogContent className="max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><LifeBuoy className="size-4 text-[var(--global-cta)]" /> Help &amp; support</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><LifeBuoy className="size-4 text-[var(--global-cta-hover)]" /> Help &amp; support</DialogTitle>
           <DialogDescription>Find an answer or contact our team. Demo — no live agents.</DialogDescription>
         </DialogHeader>
 

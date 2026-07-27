@@ -222,7 +222,7 @@ function EmptyEventFallback({ sportId, onOpenSport }) {
   return (
     <div className="space-y-3 rounded-lg border border-dashed py-10 text-center">
       <p className="text-sm text-muted-foreground">This event isn't available right now — it may have finished or been removed.</p>
-      <button onClick={onOpenSport} className="text-sm font-semibold text-[var(--global-cta)] hover:underline">
+      <button onClick={onOpenSport} className="text-sm font-semibold text-[var(--global-cta-hover)] hover:underline">
         Back to {sportId ?? "Sports"}
       </button>
     </div>

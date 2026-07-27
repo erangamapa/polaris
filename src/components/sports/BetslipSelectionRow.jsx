@@ -37,11 +37,11 @@ export function BetslipSelectionRow({ selection, onRemove, disabled }) {
           <span className="flex min-w-[52px] shrink-0 items-baseline justify-end gap-1 whitespace-nowrap">
             <span className="font-mono text-xs text-muted-foreground line-through tabular-nums">{selection.previousOdds.toFixed(2)}</span>
             <span aria-hidden="true" className="text-xs text-muted-foreground">→</span>
-            <span className="font-mono text-sm font-bold tabular-nums text-[var(--global-cta)]">{selection.odds.toFixed(2)}</span>
+            <span className="font-mono text-sm font-bold tabular-nums text-[var(--global-cta-hover)]">{selection.odds.toFixed(2)}</span>
             <span className="sr-only">, odds changed from {selection.previousOdds.toFixed(2)} to {selection.odds.toFixed(2)}</span>
           </span>
         ) : (
-          <span className="min-w-[52px] shrink-0 whitespace-nowrap text-right font-mono text-sm font-bold tabular-nums text-[var(--global-cta)]">
+          <span className="min-w-[52px] shrink-0 whitespace-nowrap text-right font-mono text-sm font-bold tabular-nums text-[var(--global-cta-hover)]">
             {selection.odds.toFixed(2)}
           </span>
         )}

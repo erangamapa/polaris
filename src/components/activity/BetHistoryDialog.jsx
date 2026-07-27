@@ -294,7 +294,7 @@ function BetChain({ loading, bets, chain, render, empty }) {
                 {b.block ? <span className="font-mono">block #{b.block}</span> : null}
                 {b.at ? <span>{fmtTime(b.at)}</span> : null}
                 {b.tx && (
-                  <a href={`${chain.explorer}/tx/${b.tx}`} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[var(--global-cta)] hover:underline">
+                  <a href={`${chain.explorer}/tx/${b.tx}`} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[var(--global-cta-hover)] hover:underline">
                     <ExternalLink className="size-3" /> {b.tx.slice(0, 8)}…{b.tx.slice(-4)}
                   </a>
                 )}

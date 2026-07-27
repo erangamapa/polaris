@@ -16,7 +16,7 @@ export function OddsButton({ label, odds, selected, onClick, dir, disabled }) {
         disabled
           ? "cursor-not-allowed border-border bg-muted/20 opacity-50"
           : selected
-            ? "border-[var(--global-cta)]/50 bg-[var(--global-cta-soft-bg)] text-[var(--global-cta)]"
+            ? "border-[var(--global-cta)]/50 bg-[var(--global-cta-soft-bg)] text-[var(--global-cta-hover)]"
             : "border-border bg-[var(--card)] hover:bg-[var(--secondary)]"
       )}
     >

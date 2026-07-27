@@ -33,8 +33,13 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         // Prediction Markets semantic exception (YES) — see index.css.
+        // Deliberately its OWN literal text color, not --global-cta-text:
+        // that token is on-brand white (correct against the blue brand
+        // fill) but white-on-#46C98C only computes to ~2.1:1 (fails AA) —
+        // this semantic success green is untouched by any brand recolor,
+        // so its button text must stay decoupled from the brand token.
         success:
-          "bg-[var(--success)] text-[var(--global-cta-text)] hover:bg-[var(--success)]/90",
+          "bg-[var(--success)] text-[#06131A] hover:bg-[var(--success)]/90",
         outline:
           "border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

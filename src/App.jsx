@@ -75,7 +75,7 @@ import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
 import { GAME_LAUNCH_STATUS, isLaunchActive } from "./lib/casinoGameLaunch";
-import { GameLaunchSurface } from "./components/casino/GameLaunchSurface";
+import { CasinoGamePage } from "./components/casino/CasinoGamePage";
 import { normalizePendingRound, normalizeLiveResultRound } from "./lib/casinoRounds";
 
 // Module-load-time, not inside the component — idempotent (see its own
@@ -88,9 +88,9 @@ installDevFetchInterceptor();
 // launch attempt (provider error, maintenance, region block, insufficient
 // balance) by routing it through the real launch state machine as a genuine
 // UNAVAILABLE result (see useCasinoGameLaunch's checkAvailability) instead of
-// a one-off toast — the game-launch surface now owns every one of these copy
-// paths (see GameLaunchSurface.jsx), so there is nothing left for a separate
-// dev-only copy table to do. The specific reason below is never shown to the
+// a one-off toast — GameUnavailable.jsx now owns every one of these copy
+// paths, so there is nothing left for a separate dev-only copy table to do.
+// The specific reason below is never shown to the
 // player (see UNAVAILABLE GAME STATE: "do not fake a maintenance reason") —
 // it only decides *whether* checkGameAvailability blocks the launch.
 // "loading" is deliberately excluded: it isn't an unavailable reason, it's a
@@ -128,7 +128,7 @@ function useLazyMount(isOpen) {
 // a small dialog — an sr-only-only fallback would leave <main> visibly
 // blank for a moment (see LOADING FALLBACKS: "no full-page blank flash"),
 // so this one is visibly present with real text, matching the same
-// spinner+text pattern GameLaunchSurface's own loading state already uses.
+// spinner+text pattern GameLoading.jsx's own loading state already uses.
 function ArenaLoadingFallback({ label }) {
   return (
     <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3 py-24 text-center text-muted-foreground">
@@ -144,8 +144,8 @@ function ArenaLoadingFallback({ label }) {
 // onError already produces (see CHUNK LOAD ERRORS: "map to existing Unable
 // to launch game state... allow retry... no Recently Played update" — all
 // of that already falls out of the existing launch state machine once this
-// dispatches the same action). Renders nothing itself: GameLaunchSurface's
-// own status overlay takes over the instant `launch.state.status` becomes
+// dispatches the same action). Renders nothing itself: GameStage's own
+// status overlay takes over the instant `launch.state.status` becomes
 // FAILED, which un-mounts this boundary's subtree (showChildren becomes
 // false), so there's no stale error UI to reset on retry — the next
 // attempt remounts a fresh instance (keyed by `${favId}:${attempt}`).
@@ -534,15 +534,16 @@ export default function App() {
   // Its own dedicated trigger ref, NOT the shared `lastFocusedRef` above —
   // that tracker freezes capture as soon as ANY `[role="dialog"]` is
   // present, which is correct for the 7 Radix dialogs (each opened from a
-  // trigger with no other dialog yet open) but wrong here: Game Info's own
-  // gameplay-frame trigger button lives INSIDE CasinoGameplayFrame, which
-  // is itself `role="dialog"` and already mounted by the time that button
-  // is clicked — so the shared tracker had already frozen and never saw
-  // that click (confirmed empirically: focus restored to whatever was
-  // focused before gameplay opened, not the Game Info trigger). Capturing
+  // trigger with no other dialog yet open). CASINO GAME EXPERIENCE: the
+  // game surface itself (CasinoGamePage/GameStage) is no longer a
+  // `role="dialog"` — it's a real inline page now, not a modal overlay —
+  // so this is arguably no longer strictly required for that original
+  // reason. Left in place anyway as a robust, redundant capture: capturing
   // `document.activeElement` synchronously inside openGameInfo's own click
-  // handler sidesteps the freeze entirely and is exact regardless of
-  // nesting depth.
+  // handler is exact regardless of what else is mounted at that moment
+  // (Game Info itself is still `role="dialog"`, and can still open while a
+  // game is playing), and changing a working focus-restoration path
+  // without new evidence it's actually broken wasn't worth the risk here.
   const gameInfoTriggerRef = useRef(null);
 
   const [fundsOpen, setFundsOpen] = useState(false);
@@ -727,10 +728,11 @@ export default function App() {
     launch.launchCasinoGame({ gameId: game ? game.favId : null, source, categoryId });
   };
   const launchGame = (game, context) => {
-    // Full-screen games cover the whole viewport (z-50, fixed inset-0), but
-    // the mobile menu (z-70) would still sit on top of and stay interactive
-    // over a game otherwise — close it explicitly rather than rely on
-    // stacking order alone.
+    // CASINO GAME EXPERIENCE: the game page now renders inline in place of
+    // CasinoLobby (see the `product === "casino"` branch below), not a
+    // full-viewport overlay — but the mobile menu is still a real modal
+    // surface of its own, so it's still closed explicitly rather than
+    // relying on paint order.
     setMobileMenuOpen(false);
     window.history.pushState({}, "", gameHref(game));
     attemptLaunch(game, context, casinoCategory);
@@ -739,6 +741,20 @@ export default function App() {
     launch.closeLaunch();
     const bare = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
+  };
+  // CASINO GAME EXPERIENCE — "Retry" during the Slow Loading sub-state
+  // (see GameLoading.jsx): the reducer's own RETRY action only accepts a
+  // genuinely FAILED launch (see lib/casinoGameLaunch.js's guard), and at
+  // this point nothing has actually failed yet — it's still REQUESTED/
+  // LOADING, just taking a while. Restarting means closing the in-flight
+  // attempt and requesting the exact same game fresh, using the two
+  // existing actions rather than weakening that guard.
+  const restartLoadingGame = () => {
+    const game = launchedGame;
+    if (!game) { closeGame(); return; }
+    const { source, categoryId } = launch.state;
+    closeGame();
+    attemptLaunch(game, source, categoryId);
   };
   // A `?play=<favId>` on load or browser Back/forward drives the SAME shared
   // launch action every other entry point uses — an unknown/malformed favId
@@ -1169,16 +1185,53 @@ export default function App() {
           <ArenaContentStage arenaKey={product} minHeight={480}>
             <ArenaErrorBoundary key={product}>
               {product === "casino" && (
-                <CasinoLobby
-                  category={casinoCategory}
-                  onLaunchOnchain={launchGame}
-                  onLaunchProvider={launchGame}
-                  isFav={effectiveIsFav}
-                  onFav={toggleFav}
-                  recentIds={effectiveRecentIds}
-                  onBrowseGames={() => setCasinoCategory("Lobby")}
-                  onSelectCategory={setCasinoCategory}
-                />
+                isLaunchActive(launch.state.status) ? (
+                  <CasinoGamePage
+                    game={launchedGame}
+                    launch={launch.state}
+                    isFav={effectiveIsFav}
+                    onFav={toggleFav}
+                    recentIds={effectiveRecentIds}
+                    onLaunchOnchain={launchGame}
+                    onLaunchProvider={launchGame}
+                    onRestartFromLoading={restartLoadingGame}
+                    onRetryFailed={launch.retryLaunch}
+                    onBack={closeGame}
+                    onBrowseGames={() => { closeGame(); setCasinoCategory("Lobby"); }}
+                    onOpenGameInfo={launchedGame ? () => openGameInfo(launchedGame.favId, "gameplay-frame") : undefined}
+                    onReportIssue={openSupport}
+                  >
+                    {launchedGame?.kind === "onchain" ? (
+                      <GameChunkErrorBoundary key={`${launchedGame.favId}:${launch.state.attempt}`} onChunkError={() => launch.markFailed(launchedGame.favId)}>
+                        <Suspense fallback={null}>
+                          <BetSwirlGame
+                            game={launchedGame}
+                            onRound={(r) => { logRound(r); recordCasinoRoundResolved(r); }}
+                            onRoundPending={recordCasinoRoundPending}
+                          />
+                        </Suspense>
+                      </GameChunkErrorBoundary>
+                    ) : launchedGame ? (
+                      <ProviderGame
+                        key={`${launchedGame.favId}:${launch.state.attempt}`}
+                        game={launchedGame}
+                        onReady={DEV_PANEL_ENABLED && devMock.gameStatus === "loading" ? undefined : () => launch.markReady(launchedGame.favId)}
+                        onFailed={() => launch.markFailed(launchedGame.favId)}
+                      />
+                    ) : null}
+                  </CasinoGamePage>
+                ) : (
+                  <CasinoLobby
+                    category={casinoCategory}
+                    onLaunchOnchain={launchGame}
+                    onLaunchProvider={launchGame}
+                    isFav={effectiveIsFav}
+                    onFav={toggleFav}
+                    recentIds={effectiveRecentIds}
+                    onBrowseGames={() => setCasinoCategory("Lobby")}
+                    onSelectCategory={setCasinoCategory}
+                  />
+                )
               )}
               {product === "predictions" && (
                 <Suspense fallback={<ArenaLoadingFallback label="Predictions" />}>
@@ -1264,18 +1317,19 @@ export default function App() {
           pointer-events trick makes two DOM copies act like one — there is
           only ever one.
           RESPONSIVE AUDIT fix: also unmounted (not just visually covered)
-          during an active game launch. GameLaunchSurface covers the full
-          viewport visually (fixed inset-0), but with no z-index/opacity
-          trick actually removing the nav from the DOM, its buttons stayed
-          in the tab order and accessibility tree underneath a supposedly
-          full-screen game — a real focus/a11y gap, not merely cosmetic
-          (see GAMEPLAY: "bottom nav hidden... restored after gameplay").
-          Reuses the exact same status check GameLaunchSurface's own
-          render guard below already uses, so "restored after gameplay"
+          during an active game launch — CasinoGamePage wants nearly the
+          full viewport height below the persistent header (see
+          CasinoGamePage.jsx's own useAvailableHeight, which measures down
+          to the bottom of the viewport and assumes nothing else is
+          contesting that space); a mobile nav bar left visible underneath
+          would both shrink the real available room and leave its buttons
+          reachable in the tab order behind a page that reads as
+          full-height (see GAMEPLAY: "bottom nav hidden... restored after
+          gameplay"). Reuses the already-tested `isLaunchActive` predicate
+          (see lib/casinoGameLaunch.test.js) so "restored after gameplay"
           falls out for free the moment `launch.state.status` returns to
-          IDLE — reuses the already-tested `isLaunchActive` predicate (see
-          lib/casinoGameLaunch.test.js) rather than re-deriving the same
-          IDLE comparison a second, untested way. */}
+          IDLE, rather than re-deriving the same IDLE comparison a second,
+          untested way. */}
       {!mobileMenuOpen && !isLaunchActive(launch.state.status) && (
         <MobileBottomNav
           product={product}
@@ -1301,46 +1355,6 @@ export default function App() {
       <Toaster />
       <DevPanel />
 
-      {launch.state.status !== GAME_LAUNCH_STATUS.IDLE && (
-        <GameLaunchSurface
-          launch={launch.state}
-          game={launchedGame}
-          onClose={closeGame}
-          onRetry={launch.retryLaunch}
-          onBrowseGames={() => { closeGame(); setCasinoCategory("Lobby"); }}
-          onOpenInfo={launchedGame ? () => openGameInfo(launchedGame.favId, "gameplay-frame") : undefined}
-          gameInfoOpen={!!infoFavId}
-          devPanelOpen={DEV_PANEL_ENABLED && devMock.panelOpen}
-        >
-          {launchedGame?.kind === "onchain" ? (
-            <GameChunkErrorBoundary
-              key={`${launchedGame.favId}:${launch.state.attempt}`}
-              onChunkError={() => launch.markFailed(launchedGame.favId)}
-            >
-              <Suspense fallback={null}>
-                <BetSwirlGame
-                  game={launchedGame}
-                  onRound={(e) => { logRound(e); recordCasinoRoundResolved(e); }}
-                  onRoundPending={recordCasinoRoundPending}
-                />
-              </Suspense>
-            </GameChunkErrorBoundary>
-          ) : launchedGame ? (
-            // Not lazy — see the eager import above for why (no heavy deps,
-            // metadata entanglement makes splitting it ineffective anyway).
-            <ProviderGame
-              key={`${launchedGame.favId}:${launch.state.attempt}`}
-              game={launchedGame}
-              onReady={
-                DEV_PANEL_ENABLED && devMock.gameStatus === "loading"
-                  ? undefined
-                  : () => launch.markReady(launchedGame.favId)
-              }
-              onFailed={() => launch.markFailed(launchedGame.favId)}
-            />
-          ) : null}
-        </GameLaunchSurface>
-      )}
       {/* PERFORMANCE task: each dialog below is only mounted (and its chunk
           only fetched) once its own `open` condition is actually true —
           previously all were unconditionally mounted with `open={false}`,

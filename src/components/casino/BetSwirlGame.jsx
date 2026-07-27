@@ -13,10 +13,10 @@ const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
 
 // A real, on-chain BetSwirl game. Every play is a wallet transaction settled by
 // Chainlink VRF; winnings pay straight to the player. Renders only its own
-// inner content now (visual + controls) — the outer fixed frame, header,
-// title and the one close button all live in CasinoGameplayFrame.jsx (see
-// GAME CONTAINER task: "outer frame ownership should be shared" /
-// "do not show multiple competing close buttons").
+// inner content (visual + controls) — the outer page chrome (header, title,
+// back control) lives in GameHeader.jsx, and the box/sizing/status overlay
+// live in GameStage.jsx (see GAME CONTAINER task: "outer frame ownership
+// should be shared" / "do not show multiple competing close buttons").
 export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
   // One shared balance source (see lib/casinoBalance.js) — replaces the
   // previous direct useWallet() read, which bypassed useDevAwareWallet()
@@ -47,10 +47,11 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
   const balanceUnknown = balanceStatus === BALANCE_STATUS.LOADING || balanceStatus === BALANCE_STATUS.ERROR || balanceStatus === BALANCE_STATUS.IDLE;
   const insufficient = !balanceUnknown && betEth > casinoBalance;
 
-  // Reports busy state up to GameLaunchSurface (see that file), which
-  // disables the shared frame's one close control while a bet is
-  // mid-confirmation — abandoning that has a real consequence (a pending
-  // wallet tx / VRF roll), unlike the previous phases.
+  // Reports busy state up to GameStage.jsx, which forwards it to
+  // CasinoGamePage — that disables the header's "Back to Casino" control
+  // while a bet is mid-confirmation — abandoning that has a real
+  // consequence (a pending wallet tx / VRF roll), unlike the previous
+  // phases.
   useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
 
   // Block-disabled (not eslint-disable-next-line) — oxlint anchors this
@@ -194,8 +195,8 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
       )}
 
       <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-        {/* Fills whatever the shared CasinoGameplayFrame content-box already
-            allotted (viewport-aware, see that file) rather than a second,
+        {/* Fills whatever the shared GameStage content-box already allotted
+            (viewport-aware, see that file) rather than a second,
             independent fixed cap on top of it — see DESKTOP SIZING RULES:
             "do not hardcode one fixed width and height for all displays." */}
         <div
@@ -242,10 +243,11 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
         </div>
       </div>
 
-      {/* No extra safe-area padding here — CasinoGameplayFrame's content-box
-          already reserves env(safe-area-inset-bottom) once, at the outer
-          level (see that file), so this footer isn't crowded by a home
-          indicator without double-padding the bottom. */}
+      {/* No extra safe-area padding here — GameStage.jsx already reserves
+          every env(safe-area-inset-*) once, at the outer level, but only
+          while actually fullscreen (the one time this box is genuinely
+          edge-to-edge — see that file), so this footer isn't crowded by a
+          home indicator without double-padding the bottom. */}
       <div className="shrink-0 border-t border-white/5 bg-zinc-900 p-4">
         <div className="mx-auto flex max-w-md flex-col gap-3">
           <GameControls game={game} busy={busy}
