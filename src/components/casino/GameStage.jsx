@@ -74,40 +74,47 @@ export function GameStage({
       data-viewport-class={viewportClass}
       data-orientation={orientation}
       // 8px radius, 1px subtle border, dark graphite — no glow, no heavy
-      // border, no shadow (see VISUAL DESIGN). Fullscreen removes the max-
-      // width/height caps and radius: native fullscreen already IS the
-      // whole screen, so the box shouldn't visually stay "boxed" inside it.
+      // border, no shadow (see VISUAL DESIGN). Fullscreen removes the
+      // height cap and radius: native fullscreen already IS the whole
+      // screen, so the box shouldn't visually stay "boxed" inside it.
       //
-      // ROOT CAUSE FIX (game stage cropping): height behavior now branches
-      // on `sizingMode` explicitly, one real case per mode, instead of
-      // inferring from `preferredAspectRatio`'s truthiness:
+      // TOOLBAR REDESIGN: only the TOP corners round (`rounded-t-lg`, not
+      // `rounded-lg`) and there's no bottom border — GameUtilityBar docks
+      // flush against this box's bottom edge with zero gap, rounds only
+      // its OWN bottom corners, and shares this exact border color/
+      // background, so the two read as one continuous card rather than a
+      // stage floating above a separate toolbar pill.
+      //
+      // GAME PAGE POLISH: width is no longer computed here at all — GAME
+      // PLAYER FRAME (CasinoGamePage's shared wrapper) now owns the outer
+      // width for GameHeader/GameStage/GameUtilityBar alike, so all three
+      // always share exactly the same left/right edges. GameStage is
+      // always `w-full` of that frame; a COMPACT game's smallness comes
+      // entirely from GamePlayerFrame using a narrower max-width for that
+      // profile, not from GameStage shrinking independently within a
+      // wider frame.
+      //
+      // ROOT CAUSE FIX (game stage cropping — still applies): height
+      // behavior branches on `sizingMode`, one real case per mode:
       //   "fill"      (FLEXIBLE — most provider games, e.g. Tumble): NO
       //               height class at all. `flex-1` alone fills exactly
       //               100% of the hero wrapper's real height (see
-      //               CasinoGamePage's useAvailableHeight) — this used to
-      //               also carry `md:h-[min(100%,var(--gs-max-h))]`, an
-      //               explicit height capped at a flat 720px left over
-      //               from the old full-viewport-modal design, which is
-      //               almost always shorter than the real available space
-      //               on a normal desktop screen (the actual "shallow
-      //               strip" bug — the box never got a chance to dominate
-      //               the page because it was never asked to).
+      //               CasinoGamePage's useAvailableHeight).
       //   "contain"   (LANDSCAPE_WIDE — aspect-ratio games, e.g. Crash):
-      //               unchanged — letterbox from the declared aspect
-      //               ratio, clamped so it can't exceed the (now genuinely
-      //               resolvable) available height.
+      //               letterbox from the declared aspect ratio, clamped so
+      //               it can't exceed the available height.
       //   "intrinsic" (COMPACT — Tribet Originals' small centered forms):
-      //               unchanged — a real, deliberate max-size cap; these
-      //               are simple bet forms that should stay small and
-      //               centered (see readyWrapperClassName below), never
-      //               "dominate" the page the way an iframe game should.
+      //               a real, deliberate max-height cap; these are simple
+      //               bet forms that should stay small and centered (see
+      //               readyWrapperClassName below), never "dominate" the
+      //               page the way an iframe game should.
       className={
         "relative flex min-h-0 w-full flex-1 flex-col overflow-hidden border border-white/10 bg-[var(--neutral-900)] " +
-        (isFullscreen ? "" : "mx-auto rounded-lg md:w-[min(100%,var(--gs-max-w))] " +
+        (isFullscreen ? "" : "rounded-t-lg border-b-0 " +
           (displayMeta.sizingMode === "contain"
-            ? "md:h-auto md:max-h-[min(100%,var(--gs-max-h))]"
+            ? "md:h-auto md:max-h-[var(--gs-max-h)]"
             : displayMeta.sizingMode === "intrinsic"
-              ? "md:h-[min(100%,var(--gs-max-h))]"
+              ? "md:h-[var(--gs-max-h)]"
               : ""))
       }
       style={
@@ -124,8 +131,7 @@ export function GameStage({
               paddingRight: "env(safe-area-inset-right, 0px)",
             }
           : {
-              "--gs-max-w": `${displayMeta.contentBoxMaxWidthPx}px`,
-              "--gs-max-h": `${displayMeta.contentBoxMaxHeightPx}px`,
+              "--gs-max-h": `min(100%, ${displayMeta.contentBoxMaxHeightPx}px)`,
               ...(displayMeta.sizingMode === "contain" ? { aspectRatio: displayMeta.preferredAspectRatio } : {}),
             }
       }

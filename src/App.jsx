@@ -756,9 +756,23 @@ export default function App() {
     const savedScrollTop = lobbyScrollTopRef.current;
     lobbyScrollTopRef.current = null;
     if (savedScrollTop != null) {
-      requestAnimationFrame(() => {
+      // A single rAF isn't reliably enough: CasinoLobby's game-tile images
+      // are still loading/decoding at that point, so <main>'s scrollHeight
+      // hasn't reached its final size yet — the browser clamps the
+      // assignment to whatever's scrollable *right then* (found via direct
+      // measurement: assigning 900 landed at 517, the lobby's momentary
+      // scrollable max one frame in), and a clamped scrollTop does not
+      // self-correct later as the page keeps growing. Re-asserting the
+      // target across ~20 frames (~300ms) is cheap and self-terminating —
+      // once real content has grown enough to accept it, later assignments
+      // are harmless no-ops.
+      let framesLeft = 20;
+      const reassert = () => {
         if (mainRef.current) mainRef.current.scrollTop = savedScrollTop;
-      });
+        framesLeft -= 1;
+        if (framesLeft > 0) requestAnimationFrame(reassert);
+      };
+      requestAnimationFrame(reassert);
     }
   };
   // CASINO GAME EXPERIENCE — "Retry" during the Slow Loading sub-state
@@ -1210,9 +1224,6 @@ export default function App() {
                     launch={launch.state}
                     isFav={effectiveIsFav}
                     onFav={toggleFav}
-                    recentIds={effectiveRecentIds}
-                    onLaunchOnchain={launchGame}
-                    onLaunchProvider={launchGame}
                     onRestartFromLoading={restartLoadingGame}
                     onRetryFailed={launch.retryLaunch}
                     onBack={closeGame}

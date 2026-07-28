@@ -1,9 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { GAME_LAUNCH_STATUS } from "@/lib/casinoGameLaunch";
 import { GameHeader } from "./GameHeader";
 import { GameStage } from "./GameStage";
-import { GameToolbar } from "./GameToolbar";
-import { GameRecommendations } from "./GameRecommendations";
+import { GameUtilityBar } from "./GameUtilityBar";
+import { GamePlayerFrame } from "./GamePlayerFrame";
 import { getGameDisplayMetadata } from "@/lib/gameDisplay";
 
 // Measures how much vertical space is available below this page's own top
@@ -64,9 +63,6 @@ export function CasinoGamePage({
   launch,
   isFav,
   onFav,
-  recentIds,
-  onLaunchOnchain,
-  onLaunchProvider,
   onRestartFromLoading,
   onRetryFailed,
   onBack,
@@ -75,12 +71,10 @@ export function CasinoGamePage({
   onReportIssue,
   children,
 }) {
-  const { status } = launch;
   const wrapperRef = useRef(null);
   const stageRef = useRef(null);
   const availableHeight = useAvailableHeight(wrapperRef);
 
-  const [theatreMode, setTheatreMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -90,11 +84,10 @@ export function CasinoGamePage({
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  // Theatre/fullscreen reset whenever the actual game changes (a fresh
-  // launch from Recommendations while already playing something else) —
-  // neither preference should silently carry over to a different game.
+  // Fullscreen resets whenever the actual game changes (a fresh launch
+  // while already playing something else) — the preference shouldn't
+  // silently carry over to a different game.
   useEffect(() => {
-    setTheatreMode(false);
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   }, [game?.favId]);
 
@@ -103,43 +96,50 @@ export function CasinoGamePage({
     else stageRef.current?.requestFullscreen?.().catch(() => {});
   };
 
-  const supportsFullscreen = Boolean(game) && getGameDisplayMetadata(game).supportsFullscreen;
-  const tileProps = { onLaunchOnchain, onLaunchProvider, isFav, onFav };
+  const displayMeta = getGameDisplayMetadata(game);
+  const supportsFullscreen = Boolean(game) && displayMeta.supportsFullscreen;
 
   return (
-    <div data-test-id="casino-game-page" className="animate-game-page-fade-in flex w-full flex-col">
-      {/* HERO — Header + Stage + Toolbar get a real, definite `height`
-          (not `minHeight`) computed from the actual remaining viewport, so
-          the game dominates the first screen regardless of its own
-          loading/ready/error status — status changes inside GameStage
-          never resize this box. Recommendations render as a plain sibling
-          BELOW this block (not nested inside it), in normal flow, so they
-          extend <main>'s scrollable length rather than being squeezed
-          into — or clipped by — a fixed-height box. */}
-      <div
-        ref={wrapperRef}
-        data-test-id="casino-game-hero"
-        data-theatre-mode={theatreMode || undefined}
-        className="flex min-h-0 w-full flex-col"
-        style={{ height: availableHeight != null ? `${availableHeight}px` : undefined }}
+    // GAME PAGE POLISH — the active game page now ends after
+    // GameUtilityBar: no recommendation rows, carousels, or any other
+    // content below it (see the removed GameRecommendations/GameToolbar).
+    // Bottom padding here is just enough to keep the utility bar off the
+    // viewport edge — not a reserved section for anything else. Mobile
+    // adds the safe-area inset on top of the base amount (home-indicator/
+    // gesture-bar clearance); desktop has no such concern, so it's a flat
+    // value there.
+    <div
+      data-test-id="casino-game-page"
+      className="animate-game-page-fade-in flex w-full flex-col pb-[calc(20px+env(safe-area-inset-bottom,0px))] sm:pb-8"
+    >
+      {/* `onBack` (header) vs `onBrowseGames` (stage's error/unavailable
+          actions) are deliberately different callbacks, matching the
+          previous CasinoGameplayFrame/GameLaunchSurface split: leaving a
+          READY game via the header keeps whatever Casino category you
+          launched from; recovering from an error/unavailable game
+          explicitly returns to the Lobby (see App.jsx's closeGame vs
+          `() => { closeGame(); setCasinoCategory("Lobby"); }`). */}
+      <GamePlayerFrame
+        frameRef={wrapperRef}
+        height={availableHeight}
+        maxWidthPx={displayMeta.contentBoxMaxWidthPx}
       >
-        {/* `onBack` (header) vs `onBrowseGames` (stage's error/unavailable
-            actions) are deliberately different callbacks, matching the
-            previous CasinoGameplayFrame/GameLaunchSurface split: leaving a
-            READY game via the header keeps whatever Casino category you
-            launched from; recovering from an error/unavailable game
-            explicitly returns to the Lobby (see App.jsx's closeGame vs
-            `() => { closeGame(); setCasinoCategory("Lobby"); }`). */}
-        <GameHeader
-          game={game}
-          onBack={onBack}
-          backDisabled={busy}
-          isFav={isFav}
-          onFav={onFav}
-          onOpenMenu={onOpenGameInfo}
-        />
+        <div className="mb-2.5 shrink-0">
+          <GameHeader
+            game={game}
+            onBack={onBack}
+            backDisabled={busy}
+            isFav={isFav}
+            onFav={onFav}
+            onOpenMenu={onOpenGameInfo}
+          />
+        </div>
 
-        <div className={"flex min-h-0 flex-1 flex-col " + (theatreMode ? "py-1" : "py-3")}>
+        {/* TOOLBAR REDESIGN: no gap between the stage wrapper and
+            GameUtilityBar — they dock flush, sharing one border silhouette
+            (see GameStage's rounded-t-lg/border-b-0 and GameUtilityBar's
+            rounded-b-lg/border-t-0), reading as one continuous card. */}
+        <div className="flex min-h-0 flex-1 flex-col">
           <GameStage
             stageRef={stageRef}
             game={game}
@@ -156,20 +156,14 @@ export function CasinoGamePage({
           </GameStage>
         </div>
 
-        <GameToolbar
+        <GameUtilityBar
           onOpenInfo={onOpenGameInfo}
           onReportIssue={onReportIssue}
-          theatreMode={theatreMode}
-          onToggleTheatre={() => setTheatreMode((v) => !v)}
           supportsFullscreen={supportsFullscreen}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
         />
-      </div>
-
-      {status === GAME_LAUNCH_STATUS.READY && !theatreMode && (
-        <GameRecommendations game={game} recentIds={recentIds} tileProps={tileProps} />
-      )}
+      </GamePlayerFrame>
     </div>
   );
 }
