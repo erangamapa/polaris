@@ -17,21 +17,8 @@ export class Renderer {
   }
 
   resize() {
-    const wrap = this.canvas.parentElement;
-    const cssW = wrap ? wrap.clientWidth : CANVAS.WIDTH;
-    const aspect = CANVAS.WIDTH / CANVAS.HEIGHT;
-    let w = cssW;
-    let h = cssW / aspect;
-    // Leave room for wallet / Heads-Paws controls on phones and short iframes
-    const maxFrac = window.innerWidth <= 560 || window.innerHeight < 640 ? 0.42 : 0.62;
-    const maxH = window.innerHeight * maxFrac;
-    if (h > maxH) {
-      h = maxH;
-      w = h * aspect;
-    }
-
-    this.canvas.style.width = `${w}px`;
-    this.canvas.style.height = `${h}px`;
+    // CSS owns the canvas box (absolute fill of .stage-wrap). Only sync the buffer.
+    this.dpr = window.devicePixelRatio || 1;
     this.canvas.width = Math.floor(CANVAS.WIDTH * this.dpr);
     this.canvas.height = Math.floor(CANVAS.HEIGHT * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -68,19 +55,18 @@ export class Renderer {
       return;
     }
 
-    const shake = state.effects.getShakeOffset();
-
-    ctx.save();
+    // No camera/world translate — shake used to shift the whole scene and
+    // expose the black .stage-wrap gutter on the right. Impact juice stays on
+    // fighters/sparks only.
     ctx.clearRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
-    ctx.translate(shake.x, shake.y);
+    ctx.fillStyle = '#120a18';
+    ctx.fillRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
+    this._drawStage(ctx, 8);
 
-    this._drawStage(ctx);
     this._drawFighter(ctx, state.opponent);
     this._drawFighter(ctx, state.player);
     this._drawProjectile(ctx, state.projectile);
     this._drawEffects(ctx, state.effects);
-
-    ctx.restore();
 
     this._drawHud(ctx, state);
     // After HUD so multipliers sit in the gap above the fighter head
@@ -89,8 +75,11 @@ export class Renderer {
     this._drawSpecialBanner(ctx, state.effects);
   }
 
-  /** @param {CanvasRenderingContext2D} ctx */
-  _drawStage(ctx) {
+  /**
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} [bleed=0] Extra cover-fit margin so screen shake never exposes gaps.
+   */
+  _drawStage(ctx, bleed = 0) {
     const bg = assets.stageBackground;
     if (bg) {
       const srcW =
@@ -102,8 +91,9 @@ export class Renderer {
 
       // Cover-fit so the loop fills the arena without letterboxing
       const scale = Math.max(CANVAS.WIDTH / srcW, CANVAS.HEIGHT / srcH);
-      const dw = srcW * scale;
-      const dh = srcH * scale;
+      const extra = bleed * 2;
+      const dw = srcW * scale + extra;
+      const dh = srcH * scale + extra;
       const dx = (CANVAS.WIDTH - dw) / 2;
       const dy = (CANVAS.HEIGHT - dh) / 2;
 

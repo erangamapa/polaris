@@ -4,7 +4,7 @@
 
 import { Game } from './game.js';
 import { startStageVideo } from './assets.js';
-import { startFightMusic, unlockAudio } from './audio.js';
+import { unlockAudio } from './audio.js';
 
 const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('gameCanvas'));
 const btnHi = /** @type {HTMLButtonElement} */ (document.getElementById('btnHi'));
@@ -115,13 +115,12 @@ game.init()
     overlay.hidden = true;
     btnRestart.hidden = false;
     startStageVideo();
-    startFightMusic();
     window.addEventListener(
       'pointerdown',
       () => {
+        // Silent unlock only — do not start BGM or combat SFX here
         unlockAudio();
         startStageVideo();
-        startFightMusic();
       },
       { once: true }
     );

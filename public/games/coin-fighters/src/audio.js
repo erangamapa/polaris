@@ -9,6 +9,9 @@ const RESULT_VOL = 0.9;
 const YOU_WIN_VOL = 1;
 const MUSIC_MUTE_KEY = 'coin-fighters-music-muted';
 const SFX_MUTE_KEY = 'coin-fighters-sfx-muted';
+/** Tiny silent WAV — unlock autoplay without playing combat SFX. */
+const SILENT_UNLOCK_WAV =
+  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
 
 /** @type {HTMLAudioElement | null} */
 let kickSound = null;
@@ -24,8 +27,12 @@ let coinsCollectSound = null;
 let coinSpinSound = null;
 /** @type {HTMLAudioElement | null} */
 let fightMusic = null;
+/** @type {HTMLAudioElement | null} */
+let unlockClip = null;
 let unlocked = false;
 let musicStarted = false;
+/** Bumped on mute so in-flight play() promises cannot restart BGM. */
+let musicPlayId = 0;
 let musicMuted = loadPref(MUSIC_MUTE_KEY);
 let sfxMuted = loadPref(SFX_MUTE_KEY);
 
@@ -38,6 +45,7 @@ export async function loadAudio() {
     new Promise((resolve, reject) => {
       const audio = new Audio(src);
       audio.preload = 'auto';
+      audio.loop = false;
       audio.volume = volume;
       audio.addEventListener('canplaythrough', () => resolve(audio), { once: true });
       audio.addEventListener('error', () => reject(new Error(`Failed to load: ${src}`)), {
@@ -57,6 +65,16 @@ export async function loadAudio() {
         loadOne('assets/coin-spin.mp3', SFX_VOL),
         loadOne('assets/retro-fight-music.mp3', MUSIC_VOL),
       ]);
+    for (const sfx of [
+      kickSound,
+      punchSound,
+      youWinSound,
+      youLoseSound,
+      coinsCollectSound,
+      coinSpinSound,
+    ]) {
+      if (sfx) sfx.loop = false;
+    }
     if (fightMusic) {
       fightMusic.loop = true;
       applyMusicMute();
@@ -75,53 +93,53 @@ export async function loadAudio() {
 
 /** Unlock audio after first user gesture (browser autoplay policy). */
 export function unlockAudio() {
-  if (unlocked) {
-    startFightMusic();
-    return;
-  }
-  const clip = kickSound || punchSound || fightMusic || youWinSound || youLoseSound;
-  if (!clip) return;
+  if (unlocked) return;
   unlocked = true;
-  clip
-    .play()
-    .then(() => {
-      if (clip !== fightMusic) {
-        clip.pause();
-        clip.currentTime = 0;
+
+  try {
+    if (!unlockClip) {
+      unlockClip = new Audio(SILENT_UNLOCK_WAV);
+      unlockClip.loop = false;
+      unlockClip.volume = 0.001;
+    }
+    const play = unlockClip.play();
+    const after = () => {
+      try {
+        unlockClip?.pause();
+        if (unlockClip) unlockClip.currentTime = 0;
+      } catch {
+        // no-op
       }
-      startFightMusic();
-    })
-    .catch(() => {
-      unlocked = false;
-    });
+      // Never leave combat one-shots running from an older unlock path
+      stopCombatSounds();
+    };
+    if (play && typeof play.then === 'function') {
+      play.then(after).catch(() => {
+        unlocked = false;
+      });
+    } else {
+      after();
+    }
+  } catch {
+    unlocked = false;
+  }
 }
 
-/** Start looping retro fight BGM (no-ops if already playing). */
+/** Start looping retro fight BGM (no-ops if already playing / muted). */
 export function startFightMusic() {
-  if (!fightMusic || musicStarted) {
-    if (fightMusic && musicStarted) applyMusicMute();
+  if (!fightMusic) return;
+  if (musicMuted) {
+    musicStarted = true;
+    applyMusicMute();
+    return;
+  }
+  if (musicStarted && !fightMusic.paused) {
+    applyMusicMute();
     return;
   }
   try {
     fightMusic.loop = true;
     applyMusicMute();
-    if (musicMuted) {
-      musicStarted = true;
-      return;
-    }
-    const play = fightMusic.play();
-    if (play && typeof play.then === 'function') {
-      play
-        .then(() => {
-          musicStarted = true;
-          unlocked = true;
-        })
-        .catch(() => {
-          // Blocked until a user gesture — retry via unlockAudio / pointerdown
-        });
-    } else {
-      musicStarted = true;
-    }
   } catch {
     // no-op
   }
@@ -129,14 +147,43 @@ export function startFightMusic() {
 
 function applyMusicMute() {
   if (!fightMusic) return;
-  fightMusic.volume = musicMuted ? 0 : MUSIC_VOL;
-  fightMusic.muted = musicMuted;
   if (musicMuted) {
-    fightMusic.pause();
-  } else if (musicStarted || unlocked) {
-    fightMusic.play().catch(() => {
-      /* blocked until gesture */
-    });
+    musicPlayId += 1;
+    fightMusic.volume = 0;
+    fightMusic.muted = true;
+    try {
+      fightMusic.pause();
+    } catch {
+      // no-op
+    }
+    return;
+  }
+
+  fightMusic.muted = false;
+  fightMusic.volume = MUSIC_VOL;
+  if (!(musicStarted || unlocked)) return;
+
+  const playId = musicPlayId;
+  const play = fightMusic.play();
+  if (play && typeof play.then === 'function') {
+    play
+      .then(() => {
+        if (playId !== musicPlayId || musicMuted) {
+          try {
+            fightMusic.pause();
+          } catch {
+            // no-op
+          }
+          return;
+        }
+        musicStarted = true;
+        unlocked = true;
+      })
+      .catch(() => {
+        // Blocked until a user gesture — retry via unlockAudio / pointerdown
+      });
+  } else {
+    musicStarted = true;
   }
 }
 
@@ -162,6 +209,7 @@ export function setMusicMuted(muted) {
 export function setSfxMuted(muted) {
   sfxMuted = !!muted;
   savePref(SFX_MUTE_KEY, sfxMuted);
+  if (sfxMuted) stopCombatSounds();
   return sfxMuted;
 }
 
@@ -175,12 +223,33 @@ export function toggleSfxMuted() {
   return setSfxMuted(!sfxMuted);
 }
 
-/** @param {HTMLAudioElement | null} sound */
+/** Hard-stop kick/punch one-shots (idle / unlock cleanup). */
+export function stopCombatSounds() {
+  for (const sound of [kickSound, punchSound]) {
+    if (!sound) continue;
+    try {
+      sound.loop = false;
+      sound.pause();
+      sound.currentTime = 0;
+    } catch {
+      // no-op
+    }
+  }
+}
+
+/**
+ * Play a one-shot from a clone so unlock/pause on the master clip cannot
+ * leave a shared element looping or stuck mid-buffer.
+ * @param {HTMLAudioElement | null} sound
+ */
 function playSound(sound) {
   if (!sound || sfxMuted) return;
   try {
-    sound.currentTime = 0;
-    sound.play().catch(() => {
+    sound.loop = false;
+    const node = /** @type {HTMLAudioElement} */ (sound.cloneNode(true));
+    node.loop = false;
+    node.volume = sound.volume;
+    node.play().catch(() => {
       // Ignore if browser blocks until next gesture
     });
   } catch {
@@ -215,13 +284,25 @@ export function playCoinsCollectSound() {
 
 /** Play when the coin flip spin starts. */
 export function playCoinSpinSound() {
-  playSound(coinSpinSound);
+  if (!coinSpinSound || sfxMuted) return;
+  try {
+    // Play on the master element (not a clone) so skip/land can stop it.
+    coinSpinSound.loop = false;
+    coinSpinSound.pause();
+    coinSpinSound.currentTime = 0;
+    coinSpinSound.play().catch(() => {
+      // Ignore if browser blocks until next gesture
+    });
+  } catch {
+    // no-op
+  }
 }
 
 /** Stop the coin spin SFX (skip / land). */
 export function stopCoinSpinSound() {
   if (!coinSpinSound) return;
   try {
+    coinSpinSound.loop = false;
     coinSpinSound.pause();
     coinSpinSound.currentTime = 0;
   } catch {

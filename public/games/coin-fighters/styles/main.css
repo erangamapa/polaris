@@ -76,9 +76,10 @@ body {
 
 .stage-wrap {
   position: relative;
-  display: flex;
-  justify-content: center;
-  background: #000;
+  display: block;
+  width: 100%;
+  aspect-ratio: 960 / 540;
+  background: #120a18;
   border: 3px solid var(--gold);
   border-radius: 6px;
   box-shadow:
@@ -89,9 +90,14 @@ body {
 }
 
 #gameCanvas {
+  position: absolute;
+  inset: 0;
   display: block;
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: fill;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
@@ -962,13 +968,18 @@ body {
     flex: 1 1 auto;
     min-height: 0;
     max-height: min(40dvh, 260px);
-    align-items: center;
+    /* Keep width full; height cap may crop top/bottom via overflow, never side gutters */
+    aspect-ratio: auto;
+    height: min(40dvh, 260px);
   }
 
   #gameCanvas {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    height: 100%;
+    max-height: none;
+    object-fit: fill;
   }
 
   .char-select {
@@ -1215,6 +1226,8 @@ body {
 @media (max-height: 520px) {
   .stage-wrap {
     max-height: min(34dvh, 200px);
+    height: min(34dvh, 200px);
+    aspect-ratio: auto;
   }
 
   .hud-cell {

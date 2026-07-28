@@ -27,11 +27,13 @@ import {
   playCoinsCollectSound,
   playCoinSpinSound,
   stopCoinSpinSound,
+  stopCombatSounds,
   unlockAudio,
   isMusicMuted,
   isSfxMuted,
   toggleMusicMuted,
   toggleSfxMuted,
+  startFightMusic,
 } from './audio.js';
 import { Fairness } from './fairness.js';
 
@@ -163,6 +165,10 @@ export class Game {
     this._bindCharSelectUi();
 
     window.addEventListener('resize', () => this.renderer.resize());
+    if (typeof ResizeObserver !== 'undefined' && this.canvas.parentElement) {
+      this._stageResizeObserver = new ResizeObserver(() => this.renderer.resize());
+      this._stageResizeObserver.observe(this.canvas.parentElement);
+    }
   }
 
   async init() {
@@ -320,6 +326,7 @@ export class Game {
       };
 
       const cleanup = () => {
+        stopCoinSpinSound();
         if (this._coinFlipRaf != null) {
           cancelAnimationFrame(this._coinFlipRaf);
           this._coinFlipRaf = null;
@@ -868,6 +875,7 @@ export class Game {
     // Ensure fighters aren't stuck busy if an anim edged a race
     if (this.player.state !== 'IDLE' && !this.player.motion) this.player.setIdle();
     if (this.opponent.state !== 'IDLE' && !this.opponent.motion) this.opponent.setIdle();
+    stopCombatSounds();
 
     this.phase = GAME_PHASE.BETTING;
     this.input.setEnabled(true);
@@ -1005,6 +1013,9 @@ export class Game {
       this.ui.charSelect.hidden = true;
       this.ui.charSelect.setAttribute('aria-hidden', 'true');
     }
+    unlockAudio();
+    startFightMusic();
+    stopCombatSounds();
     this._returnToBetting();
   }
 
@@ -1186,13 +1197,18 @@ export class Game {
     this._syncAudioToggleButtons();
 
     musicBtn?.addEventListener('click', () => {
-      unlockAudio();
-      toggleMusicMuted();
+      const muted = toggleMusicMuted();
+      // Only unlock/start BGM when turning music back on — unlock-before-mute
+      // was restarting playback and racing the mute pause.
+      if (!muted) {
+        unlockAudio();
+        startFightMusic();
+      }
       this._syncAudioToggleButtons();
     });
     sfxBtn?.addEventListener('click', () => {
-      unlockAudio();
       toggleSfxMuted();
+      unlockAudio();
       this._syncAudioToggleButtons();
     });
   }

@@ -138,9 +138,9 @@ export async function loadAssets() {
   const player = cropToOpaque(keyOutGreen(raw));
   // Kick plate already has alpha; soft-punch leftover pure black fringe, then crop
   const kick = cropToOpaque(keyOutBlack(kickRaw, 10));
-  // 2P plates → key green, crop empty padding (feet on FLOOR_Y), flip to face 1P
-  const opponent = flipHorizontal(cropToOpaque(keyOutGreen(opponentRaw)));
-  const punch = flipHorizontal(cropToOpaque(keyOutGreen(punchRaw)));
+  // 2P plates → strip black right-edge fringe, key green, crop, flip to face 1P
+  const opponent = flipHorizontal(cropToOpaque(keyOutGreen(stripBlackEdgeFringe(opponentRaw))));
+  const punch = flipHorizontal(cropToOpaque(keyOutGreen(stripBlackEdgeFringe(punchRaw))));
   // Trump plates face right already (1P side) — key green + crop feet
   const trumpIdle = cropToOpaque(keyOutGreen(trumpIdleRaw));
   const trumpGrab = cropToOpaque(keyOutGreen(trumpGrabRaw));
@@ -258,15 +258,17 @@ export function startStageVideo() {
 
 /**
  * Chroma-key green screen (#00FF00 and nearby greens) to transparent.
- * @param {HTMLImageElement} img
+ * @param {HTMLImageElement | HTMLCanvasElement} img
  * @returns {HTMLCanvasElement}
  */
 function keyOutGreen(img) {
   const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
+  const nw = /** @type {HTMLImageElement} */ (img).naturalWidth;
+  const nh = /** @type {HTMLImageElement} */ (img).naturalHeight;
+  c.width = nw || img.width;
+  c.height = nh || img.height;
   const ctx = c.getContext('2d');
-  if (!ctx) return /** @type {any} */ (img);
+  if (!ctx || !c.width || !c.height) return /** @type {any} */ (img);
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, c.width, c.height);
   const px = data.data;
@@ -430,16 +432,18 @@ function flipHorizontal(img) {
 
 /**
  * Convert near-white studio backdrop to transparent.
- * @param {HTMLImageElement} img
+ * @param {HTMLImageElement | HTMLCanvasElement} img
  * @param {number} threshold
  * @returns {HTMLCanvasElement}
  */
 function keyOutWhite(img, threshold = 245) {
   const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
+  const nw = /** @type {HTMLImageElement} */ (img).naturalWidth;
+  const nh = /** @type {HTMLImageElement} */ (img).naturalHeight;
+  c.width = nw || img.width;
+  c.height = nh || img.height;
   const ctx = c.getContext('2d');
-  if (!ctx) return /** @type {any} */ (img);
+  if (!ctx || !c.width || !c.height) return /** @type {any} */ (img);
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, c.width, c.height);
   const px = data.data;
@@ -454,16 +458,18 @@ function keyOutWhite(img, threshold = 245) {
 
 /**
  * Convert near-black pixels to transparent (for studio-black sprite plates).
- * @param {HTMLImageElement} img
+ * @param {HTMLImageElement | HTMLCanvasElement} img
  * @param {number} threshold
  * @returns {HTMLCanvasElement}
  */
 function keyOutBlack(img, threshold = 24) {
   const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
+  const nw = /** @type {HTMLImageElement} */ (img).naturalWidth;
+  const nh = /** @type {HTMLImageElement} */ (img).naturalHeight;
+  c.width = nw || img.width;
+  c.height = nh || img.height;
   const ctx = c.getContext('2d');
-  if (!ctx) return /** @type {any} */ (img);
+  if (!ctx || !c.width || !c.height) return /** @type {any} */ (img);
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, c.width, c.height);
   const px = data.data;
@@ -477,6 +483,58 @@ function keyOutBlack(img, threshold = 24) {
       px[i + 3] = 0;
     }
   }
+  ctx.putImageData(data, 0, 0);
+  return c;
+}
+
+/**
+ * Clear solid black columns on the left/right edges (sprite-sheet fringe).
+ * Does not touch black outline pixels inside the character.
+ * @param {HTMLImageElement | HTMLCanvasElement} img
+ * @param {number} [threshold=10]
+ * @returns {HTMLCanvasElement}
+ */
+function stripBlackEdgeFringe(img, threshold = 10) {
+  const c = document.createElement('canvas');
+  const nw = /** @type {HTMLImageElement} */ (img).naturalWidth;
+  const nh = /** @type {HTMLImageElement} */ (img).naturalHeight;
+  c.width = nw || img.width;
+  c.height = nh || img.height;
+  const ctx = c.getContext('2d');
+  if (!ctx || !c.width || !c.height) return /** @type {any} */ (img);
+  ctx.drawImage(img, 0, 0);
+  const { width: w, height: h } = c;
+  const data = ctx.getImageData(0, 0, w, h);
+  const px = data.data;
+
+  /** @param {number} x */
+  const colIsBlackFringe = (x) => {
+    let sawBlack = false;
+    for (let y = 0; y < h; y++) {
+      const i = (y * w + x) * 4;
+      const a = px[i + 3];
+      if (a <= 16) continue;
+      if (px[i] <= threshold && px[i + 1] <= threshold && px[i + 2] <= threshold) {
+        sawBlack = true;
+        continue;
+      }
+      return false;
+    }
+    return sawBlack;
+  };
+
+  let left = 0;
+  while (left < w && colIsBlackFringe(left)) left += 1;
+  let right = w - 1;
+  while (right > left && colIsBlackFringe(right)) right -= 1;
+
+  for (let x = 0; x < left; x++) {
+    for (let y = 0; y < h; y++) px[(y * w + x) * 4 + 3] = 0;
+  }
+  for (let x = right + 1; x < w; x++) {
+    for (let y = 0; y < h; y++) px[(y * w + x) * 4 + 3] = 0;
+  }
+
   ctx.putImageData(data, 0, 0);
   return c;
 }

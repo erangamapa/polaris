@@ -179,4 +179,9 @@ export class EffectsSystem {
       y: (Math.random() - 0.5) * 2 * i,
     };
   }
+
+  /** Padding for stage backdrop so shake translation never reveals empty pixels. */
+  getShakeBleed() {
+    return this.shake.intensity > 0 ? Math.ceil(this.shake.intensity + 4) : 0;
+  }
 }
