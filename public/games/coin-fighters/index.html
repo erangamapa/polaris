@@ -21,6 +21,16 @@
         <button type="button" class="btn-cheat" id="btnCheat2pDamage" title="Dev: 2P loses 4 health boxes">−4 2P</button>
         <button type="button" class="btn-cheat" id="btnCheat1pDamage" title="Dev: 1P loses 4 health boxes">−4 1P</button>
       </div>
+      <button
+        type="button"
+        class="btn-char-select"
+        id="btnCharSelect"
+        title="Restart and change fighter"
+        aria-label="Restart and change fighter"
+        hidden
+      >
+        CHANGE
+      </button>
       <canvas id="gameCanvas" width="960" height="540" aria-label="Coin Fighters arena"></canvas>
 
       <div id="victoryOverlay" class="victory-overlay" hidden aria-hidden="true">
@@ -172,19 +182,7 @@
 
     <footer class="rtp-footer" aria-label="RTP and fairness">
       <span>RTP <strong id="rtpPercent">97%</strong></span>
-      <span>Edge <strong id="rtpEdge">3%</strong></span>
-      <span class="rtp-copy-row">
-        Hash
-        <strong id="rtpHash" class="rtp-mono">—</strong>
-        <button type="button" class="btn-copy" id="btnCopyHash" title="Copy server seed hash">Copy</button>
-      </span>
-      <span class="rtp-copy-row">
-        Client
-        <strong id="rtpClient" class="rtp-mono">—</strong>
-        <button type="button" class="btn-copy" id="btnCopyClient" title="Copy client seed">Copy</button>
-      </span>
-      <span>Nonce <strong id="rtpNonce">0</strong></span>
-      <span>Last <strong id="rtpLast">—</strong></span>
+      <button type="button" class="btn-link rtp-fairness-btn" id="btnFairness">Fairness</button>
     </footer>
   </div>
 
@@ -198,9 +196,43 @@
         <li>Wrong → you <strong>lose the bet</strong> and one of <strong>your</strong> life boxes; multiplier resets to 1x.</li>
         <li>Empty their boxes → <strong>round clear</strong>. Your streak / climb stays in play — hit <strong>Keep fighting</strong> to refill life boxes and continue (or cash out).</li>
         <li>Empty yours → you lose the fight.</li>
-        <li><strong>Provably fair:</strong> each flip is SHA-256(server seed : client seed : nonce). A <strong>3% house edge</strong> sets win chance to 48.5% (not a raw 50/50). First-cashout RTP ≈ 97%. Verify with the hash / client / nonce below.</li>
+        <li><strong>Provably fair:</strong> each flip is SHA-256(server seed : client seed : nonce). First-cashout RTP ≈ 97%. Open <strong>Fairness</strong> to view the hash, client seed, and nonce.</li>
       </ol>
       <button type="button" class="btn btn-restart" id="btnCloseHowToPlay">Got it</button>
+    </div>
+  </div>
+
+  <div id="fairnessModal" class="modal" hidden>
+    <div class="modal-card fairness-card" role="dialog" aria-labelledby="fairnessTitle" aria-modal="true">
+      <h2 id="fairnessTitle">Fairness</h2>
+      <p class="fairness-lead">
+        Each flip is SHA-256(server seed : client seed : nonce). Copy values below to verify.
+      </p>
+      <dl class="fairness-list">
+        <div class="fairness-row">
+          <dt>Server hash</dt>
+          <dd>
+            <strong id="rtpHash" class="rtp-mono">—</strong>
+            <button type="button" class="btn-copy" id="btnCopyHash" title="Copy server seed hash">Copy</button>
+          </dd>
+        </div>
+        <div class="fairness-row">
+          <dt>Client seed</dt>
+          <dd>
+            <strong id="rtpClient" class="rtp-mono">—</strong>
+            <button type="button" class="btn-copy" id="btnCopyClient" title="Copy client seed">Copy</button>
+          </dd>
+        </div>
+        <div class="fairness-row">
+          <dt>Nonce</dt>
+          <dd><strong id="rtpNonce">0</strong></dd>
+        </div>
+        <div class="fairness-row">
+          <dt>Last roll</dt>
+          <dd><strong id="rtpLast">—</strong></dd>
+        </div>
+      </dl>
+      <button type="button" class="btn btn-restart" id="btnCloseFairness">Close</button>
     </div>
   </div>
 

@@ -31,8 +31,10 @@ const btnHowToPlay = /** @type {HTMLButtonElement} */ (document.getElementById('
 const btnHowToPlayHelp = /** @type {HTMLButtonElement} */ (document.getElementById('btnHowToPlayHelp'));
 const howToPlayModal = /** @type {HTMLElement} */ (document.getElementById('howToPlayModal'));
 const btnCloseHowToPlay = /** @type {HTMLButtonElement} */ (document.getElementById('btnCloseHowToPlay'));
+const btnFairness = /** @type {HTMLButtonElement} */ (document.getElementById('btnFairness'));
+const fairnessModal = /** @type {HTMLElement} */ (document.getElementById('fairnessModal'));
+const btnCloseFairness = /** @type {HTMLButtonElement} */ (document.getElementById('btnCloseFairness'));
 const rtpPercentEl = /** @type {HTMLElement} */ (document.getElementById('rtpPercent'));
-const rtpEdgeEl = /** @type {HTMLElement} */ (document.getElementById('rtpEdge'));
 const rtpHashEl = /** @type {HTMLElement} */ (document.getElementById('rtpHash'));
 const rtpClientEl = /** @type {HTMLElement} */ (document.getElementById('rtpClient'));
 const rtpNonceEl = /** @type {HTMLElement} */ (document.getElementById('rtpNonce'));
@@ -44,6 +46,7 @@ const btnCheat2pDamage = /** @type {HTMLButtonElement} */ (document.getElementBy
 const btnCheat1pDamage = /** @type {HTMLButtonElement} */ (document.getElementById('btnCheat1pDamage'));
 const btnToggleMusic = /** @type {HTMLButtonElement} */ (document.getElementById('btnToggleMusic'));
 const btnToggleSfx = /** @type {HTMLButtonElement} */ (document.getElementById('btnToggleSfx'));
+const btnCharSelect = /** @type {HTMLButtonElement} */ (document.getElementById('btnCharSelect'));
 const charSelect = /** @type {HTMLElement} */ (document.getElementById('charSelect'));
 const portraitRookie = /** @type {HTMLImageElement} */ (document.getElementById('portraitRookie'));
 const portraitTrump = /** @type {HTMLImageElement} */ (document.getElementById('portraitTrump'));
@@ -81,8 +84,10 @@ const game = new Game(canvas, {
   btnHowToPlayHelp,
   howToPlayModal,
   btnCloseHowToPlay,
+  btnFairness,
+  fairnessModal,
+  btnCloseFairness,
   rtpPercentEl,
-  rtpEdgeEl,
   rtpHashEl,
   rtpClientEl,
   rtpNonceEl,
@@ -94,6 +99,7 @@ const game = new Game(canvas, {
   btnCheat1pDamage,
   btnToggleMusic,
   btnToggleSfx,
+  btnCharSelect,
   charSelect,
   charCards,
   portraitRookie,

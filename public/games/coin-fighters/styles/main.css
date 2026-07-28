@@ -677,6 +677,55 @@ body {
   word-break: break-all;
 }
 
+.rtp-fairness-btn {
+  margin: 0;
+  font-size: 7px;
+}
+
+.fairness-lead {
+  margin: 0 0 14px;
+  font-size: 8px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.fairness-list {
+  margin: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fairness-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fairness-row dt {
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fairness-row dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 8px;
+  color: var(--text);
+}
+
+.fairness-card .rtp-mono {
+  font-size: 7px;
+  line-height: 1.5;
+  color: #b8a888;
+}
+
 .btn-copy {
   appearance: none;
   font-family: inherit;
@@ -702,6 +751,39 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.btn-char-select {
+  appearance: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  padding: 8px 10px;
+  border: 2px solid #3a3048;
+  border-radius: 6px;
+  background: rgba(16, 10, 24, 0.88);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-char-select:hover {
+  color: var(--text);
+  border-color: var(--gold);
+}
+
+.btn-char-select:active {
+  transform: translateY(1px);
+}
+
+.btn-char-select[hidden] {
+  display: none !important;
 }
 
 .btn-cheat {
@@ -902,6 +984,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
   gap: 10px 14px;
   padding: 2px 4px 0;
   font-size: 7px;
@@ -1180,7 +1263,7 @@ body {
     bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
 
-  /* Only show RTP + Edge on mobile — hide long hash rows */
+  /* Compact RTP row on mobile */
   .rtp-footer {
     justify-content: center;
     text-align: center;
@@ -1189,10 +1272,8 @@ body {
     flex-shrink: 0;
   }
 
-  .rtp-footer .rtp-copy-row,
-  .rtp-footer span:nth-child(5),
-  .rtp-footer span:nth-child(6) {
-    display: none;
+  .rtp-fairness-btn {
+    font-size: 8px;
   }
 
   .cheat-buttons {
@@ -1200,6 +1281,14 @@ body {
     left: 6px;
     transform: scale(0.45);
     transform-origin: top left;
+  }
+
+  .btn-char-select {
+    top: 6px;
+    right: 6px;
+    font-size: 8px;
+    padding: 10px 12px;
+    min-height: 36px;
   }
 
   .audio-toggles {

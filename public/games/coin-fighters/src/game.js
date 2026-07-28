@@ -53,7 +53,6 @@ export class Game {
    *   streakEl: HTMLElement,
    *   roundHistoryEl?: HTMLElement,
    *   rtpPercentEl?: HTMLElement,
-   *   rtpEdgeEl?: HTMLElement,
    *   rtpHashEl?: HTMLElement,
    *   rtpClientEl?: HTMLElement,
    *   rtpNonceEl?: HTMLElement,
@@ -74,6 +73,9 @@ export class Game {
    *   btnHowToPlayHelp?: HTMLButtonElement,
    *   howToPlayModal?: HTMLElement,
    *   btnCloseHowToPlay?: HTMLButtonElement,
+   *   btnFairness?: HTMLButtonElement,
+   *   fairnessModal?: HTMLElement,
+   *   btnCloseFairness?: HTMLButtonElement,
    *   btnCopyHash?: HTMLButtonElement,
    *   btnCopyClient?: HTMLButtonElement,
    *   skipVideosToggle?: HTMLInputElement,
@@ -85,6 +87,7 @@ export class Game {
    *   btnSkipFight?: HTMLButtonElement,
    *   btnToggleMusic?: HTMLButtonElement,
    *   btnToggleSfx?: HTMLButtonElement,
+   *   btnCharSelect?: HTMLButtonElement,
    *   charSelect?: HTMLElement,
    *   charCards?: HTMLElement[],
    *   portraitRookie?: HTMLImageElement,
@@ -163,6 +166,7 @@ export class Game {
     this._bindCheatUi();
     this._bindAudioTogglesUi();
     this._bindCharSelectUi();
+    this._bindChangeFighterUi();
 
     window.addEventListener('resize', () => this.renderer.resize());
     if (typeof ResizeObserver !== 'undefined' && this.canvas.parentElement) {
@@ -881,9 +885,14 @@ export class Game {
     this.input.setEnabled(true);
     this._setButtonsDisabled(false);
     this._syncWalletUi();
+    this._syncCharSelectButton();
   }
 
   restart() {
+    this._disarmFightSkip();
+    this._fightResolveFinished = true;
+    this.player.motion = null;
+    this.opponent.motion = null;
     this.player.reset();
     this.opponent.reset();
     this.streak = 0;
@@ -907,6 +916,7 @@ export class Game {
       this._coinFlipLandTimer = null;
     }
     stopCoinSpinSound();
+    stopCombatSounds();
     if (this.ui.coinFlipOverlay) {
       this.ui.coinFlipOverlay.hidden = true;
       this.ui.coinFlipOverlay.setAttribute('aria-hidden', 'true');
@@ -948,6 +958,22 @@ export class Game {
     this._syncHud();
   }
 
+  _bindChangeFighterUi() {
+    this.ui.btnCharSelect?.addEventListener('click', () => {
+      if (this.phase === GAME_PHASE.SELECT) return;
+      unlockAudio();
+      this.restart();
+    });
+  }
+
+  /** Show CHANGE button only while a match is in progress (not on select). */
+  _syncCharSelectButton() {
+    const btn = this.ui.btnCharSelect;
+    if (!btn) return;
+    const onSelect = this.phase === GAME_PHASE.SELECT;
+    btn.hidden = onSelect;
+  }
+
   _bindCharSelectUi() {
     const cards = this.ui.charCards ?? [];
     for (const card of cards) {
@@ -978,6 +1004,7 @@ export class Game {
     }
     this._highlightCharacter(this.characterId);
     this._syncWalletUi();
+    this._syncCharSelectButton();
   }
 
   /** @param {'rookie' | 'trump'} id */
@@ -1073,7 +1100,6 @@ export class Game {
   _syncRtpUi() {
     const f = this.fairness;
     if (this.ui.rtpPercentEl) this.ui.rtpPercentEl.textContent = `${f.rtpPercent}%`;
-    if (this.ui.rtpEdgeEl) this.ui.rtpEdgeEl.textContent = `${f.houseEdgePercent}%`;
     if (this.ui.rtpHashEl) this.ui.rtpHashEl.textContent = f.shortHash();
     if (this.ui.rtpClientEl) this.ui.rtpClientEl.textContent = f.shortClient();
     if (this.ui.rtpNonceEl) this.ui.rtpNonceEl.textContent = String(f.nonce);
@@ -1151,17 +1177,30 @@ export class Game {
   }
 
   _bindRulesAndFairnessUi() {
-    const open = () => {
+    const openHowTo = () => {
       if (this.ui.howToPlayModal) this.ui.howToPlayModal.hidden = false;
     };
-    const close = () => {
+    const closeHowTo = () => {
       if (this.ui.howToPlayModal) this.ui.howToPlayModal.hidden = true;
     };
-    this.ui.btnHowToPlay?.addEventListener('click', open);
-    this.ui.btnHowToPlayHelp?.addEventListener('click', open);
-    this.ui.btnCloseHowToPlay?.addEventListener('click', close);
+    this.ui.btnHowToPlay?.addEventListener('click', openHowTo);
+    this.ui.btnHowToPlayHelp?.addEventListener('click', openHowTo);
+    this.ui.btnCloseHowToPlay?.addEventListener('click', closeHowTo);
     this.ui.howToPlayModal?.addEventListener('click', (e) => {
-      if (e.target === this.ui.howToPlayModal) close();
+      if (e.target === this.ui.howToPlayModal) closeHowTo();
+    });
+
+    const openFairness = () => {
+      this._syncRtpUi();
+      if (this.ui.fairnessModal) this.ui.fairnessModal.hidden = false;
+    };
+    const closeFairness = () => {
+      if (this.ui.fairnessModal) this.ui.fairnessModal.hidden = true;
+    };
+    this.ui.btnFairness?.addEventListener('click', openFairness);
+    this.ui.btnCloseFairness?.addEventListener('click', closeFairness);
+    this.ui.fairnessModal?.addEventListener('click', (e) => {
+      if (e.target === this.ui.fairnessModal) closeFairness();
     });
 
     this.ui.btnCopyHash?.addEventListener('click', () =>
