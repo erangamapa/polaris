@@ -20,6 +20,7 @@ export const PROVIDER_GAMES = [
   { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "Tribet Studio", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
   // Self-contained crash-style bubble inflate (own mock economy).
   { key: "bubble-girl", title: "Bubble Girl", src: "/games/bubble-girl/index.html", badge: "Tribet Studio", image: "/img/games/bubble-girl.svg", tags: ["new"] },
+  { key: "mage-keno", title: "Mage Keno", src: "/games/mage-keno/dist/index.html", badge: "Tribet Studio", image: "/img/games/mage-keno.svg", tags: ["new"] },
 ];
 
 // Provider games run inside a sandboxed iframe (loaded only when opened). Games
