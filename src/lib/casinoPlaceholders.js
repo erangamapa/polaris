@@ -1,3 +1,5 @@
+import { toast } from "@/lib/toast";
+
 // CASINO PLACEHOLDER FIXTURES — a dev-only UI-testing layer for exercising
 // rail overflow, scroll controls, card spacing, and grid density at real
 // desktop widths. Deliberately decoupled from ALL_GAMES/casinoFavorites/
@@ -14,6 +16,8 @@
 
 export const PLACEHOLDER_TITLE = "PLACEHOLDER GAME";
 export const PLACEHOLDER_BADGE = "UI Test Fixture";
+export const PLACEHOLDER_CLICK_MESSAGE = "It's not a real game, you fool!";
+export const PLACEHOLDER_ARIA_LABEL = "Placeholder game. UI testing only.";
 
 // One centralised target rather than per-category magic numbers scattered
 // across components. Verified against RAIL_TILE (136px) + the rail's own
@@ -63,4 +67,17 @@ export function createPlaceholderGames({ category, surface = "rail", existingCou
       gradientVar: GRADIENT_VARS[i % GRADIENT_VARS.length],
     };
   });
+}
+
+// Shared across every placeholder tile on the page (not per-card state) so
+// rapid clicks — even across different cards — never stack more than one
+// of this exact message at once: dismissing whichever instance is still
+// showing before adding the next one, rather than relying on the toast
+// store's own MAX cap to silently absorb duplicates. Never calls track() —
+// placeholder interactions are intentionally excluded from production
+// analytics, not reported as a real game launch under a dev-only label.
+let activeToastId = null;
+export function notifyPlaceholderClicked() {
+  if (activeToastId != null) toast.dismiss(activeToastId);
+  activeToastId = toast.info(PLACEHOLDER_CLICK_MESSAGE);
 }

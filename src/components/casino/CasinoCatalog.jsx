@@ -14,7 +14,7 @@ import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { useDevMockState } from "@/lib/devMock";
-import { createPlaceholderGames, PLACEHOLDER_TITLE } from "@/lib/casinoPlaceholders";
+import { createPlaceholderGames, notifyPlaceholderClicked, PLACEHOLDER_TITLE, PLACEHOLDER_ARIA_LABEL } from "@/lib/casinoPlaceholders";
 import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS, scrollToRail } from "@/lib/casinoCategories";
 import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from "@/lib/casinoLobbyScroll";
 
@@ -257,15 +257,23 @@ export function CasinoGameCardSkeleton() {
 // (aspect-[3/4], radius, border, rail/grid sizing — copied verbatim below
 // from CasinoGameCard's own wrapper classes so both stay pixel-identical),
 // everything else genuinely differs (gradient instead of artwork, no
-// favorite control, no gameHref/onLaunch/context wiring at all). See
-// lib/casinoPlaceholders.js for the data model. Non-interactive for now —
-// click/keyboard-activation feedback lands in a follow-up pass.
+// favorite control, a real <button> instead of an <a href> so there is no
+// href to middle-click/open-in-new-tab around the click handler, no
+// gameHref/onLaunch/context wiring at all). See lib/casinoPlaceholders.js
+// for the data model and the shared click-feedback helper.
+//
+// A native <button> gets Enter/Space activation and focus styling for
+// free — no custom keydown handling needed to satisfy the keyboard-
+// activation requirement.
 function PlaceholderGameCard({ game }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={notifyPlaceholderClicked}
       data-test-id={`game-card-${game.favId.replace(/:/g, "-")}`}
       data-placeholder="true"
-      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-xl border border-[var(--border)] shadow-[var(--elevation-low)] transition duration-150"
+      aria-label={PLACEHOLDER_ARIA_LABEL}
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-xl border border-[var(--border)] text-left shadow-[var(--elevation-low)] transition duration-150 hover:border-white/20 hover:shadow-[0_2px_8px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       style={{ background: `var(${game.gradientVar})` }}
     >
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-2">
@@ -281,7 +289,7 @@ function PlaceholderGameCard({ game }) {
             BetSwirl) — see lib/casinoPlaceholders.js's PLACEHOLDER_BADGE. */}
         <div className="truncate text-[10px] leading-snug text-zinc-400">{game.badge}</div>
       </div>
-    </div>
+    </button>
   );
 }
 
