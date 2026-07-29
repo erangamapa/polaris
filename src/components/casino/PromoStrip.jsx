@@ -486,31 +486,27 @@ export function ScopedSearch({
   );
 }
 
-// Top-of-lobby strip: one dominant wallet hero + two supporting promo
-// tiles. Mobile (base): unchanged real horizontal snap-scroll carousel —
-// three equal columns at a 320-430px viewport left each card ~100-140px
-// wide, which is what produced the accidental "200% u…" / "$50,00…"
-// clipping; each card gets real width here instead, with an intentional
-// peek of the next card as the swipe affordance (see VISUAL REFRESH note
-// below on why this stays a carousel rather than a vertical stack).
-// Tablet (sm+): hero spans the full row, the two secondary cards share a
-// 2-column row beneath it. Desktop (lg+): all three share one row again,
-// but no longer equal-width — the hero (~48%) visibly dominates the two
-// secondary cards (~26% each), matching the approved mockup's hierarchy
-// instead of reading as three equal dashboard widgets. Search sits
-// directly beneath, sharing the same wrapper/width so both edges align.
-//
-// VISUAL REFRESH: mobile deliberately keeps the existing snap-scroll
-// carousel rather than switching to a full vertical stack — it already
-// presents the cards in hero-first order with full readable width per
-// card (the actual problem a vertical stack would solve), and replacing
-// a working, previously-tuned mobile interaction wasn't necessary to
-// match the desktop-focused approved mockup.
+// MOCKUP CORRECTION (equal-width promo cards): the previous pass gave the
+// wallet card a dominant ~48% column against two ~26% secondary cards —
+// reads as one hero widget plus two afterthoughts, not "one coherent
+// system" of three equal promotional cards. Corrected to a strict
+// equal-thirds system: mobile (base) keeps the existing real horizontal
+// snap-scroll carousel (three equal 82%-viewport-width columns —
+// unrelated to this fix, and already what produced the accidental
+// "200% u…" / "$50,00…" clipping this file's history refers to); tablet
+// (sm+) keeps the wallet card spanning a full-width row above the two
+// secondary cards sharing a row beneath it (one of the task's two
+// explicitly pre-approved tablet patterns — three columns are too narrow
+// to stay readable at sm:/md: widths); desktop (lg+) is now three
+// GENUINELY equal columns (grid-cols-3, i.e. repeat(3, minmax(0,1fr))) —
+// no card gets a wider grid track than another. Any visual "importance"
+// a card carries now comes only from its own copy/artwork, never from a
+// larger column span.
 export function PromoStrip({ query, onQuery, searchPanelProps }) {
   const [p1, p2] = PROMOS;
   return (
     <div className="casino-content-column w-full space-y-3">
-      <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-[48fr_26fr_26fr] [&::-webkit-scrollbar]:hidden">
+      <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
         <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
           <PromoCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} artwork={WelcomeArtwork} />

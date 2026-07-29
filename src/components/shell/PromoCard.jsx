@@ -20,7 +20,12 @@ import { MicroLabel } from "@/components/ui/micro-label";
 // bet, View market, Explore markets — never a platform action like
 // Deposit/Wallet), so its button uses the "action" variant, which
 // resolves to the current page's arena color automatically.
-export const CARD_H = "h-40"; // 160px — inside the 150-170px desktop target
+// MOCKUP CORRECTION (equal-width promo cards): 160px flat read as too
+// short once all three cards became equal width — artwork in particular
+// had no real room. Mobile/tablet (below lg:) keep the original,
+// already-tuned 160px; only the desktop tier (where all three cards now
+// share one equal-width grid row) grows to 208px.
+export const CARD_H = "h-40 lg:h-52"; // 160px mobile/tablet, 208px desktop
 
 export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCtaClick, artwork: Artwork }) {
   const Wrapper = href ? "a" : "div";
