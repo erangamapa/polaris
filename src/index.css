@@ -518,6 +518,31 @@ html {
   }
 }
 
+/* LOBBY HIERARCHY PASS — game card hover lift. Same split as .promo-card
+   above: border-color/box-shadow stay as Tailwind utilities on the card
+   itself (CasinoCatalog.jsx), only the transform lives here, so reduced
+   motion can cancel just the movement without touching color/shadow
+   feedback. Restrained per the pass's own brief (-2px / ~1.5% scale, no
+   large jump) — this is deliberately smaller than .promo-card's own lift,
+   since a whole grid of these moving at once must never feel busy. */
+/* `--playable` modifier: a Coming Soon card must not get the same hover
+   elevation as an active one (it isn't interactive), so only playable
+   cards carry this second class. */
+.casino-game-card.casino-game-card--playable {
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.casino-game-card.casino-game-card--playable:hover {
+  transform: translateY(-2px) scale(1.015);
+}
+@media (prefers-reduced-motion: reduce) {
+  .casino-game-card.casino-game-card--playable {
+    transition: none;
+  }
+  .casino-game-card.casino-game-card--playable:hover {
+    transform: none;
+  }
+}
+
 /* CASINO GAME EXPERIENCE — opening/closing a game (CasinoGamePage
    replacing/being replaced by CasinoLobby, both under `product==="casino"`
    — see App.jsx) is a restrained opacity-only fade, never a slide/zoom/
@@ -891,6 +916,14 @@ html {
      ought to share one tone). */
   --surface-game-card: var(--neutral-900);
   --surface-game-card-fallback: var(--neutral-800);
+  /* LOBBY HIERARCHY PASS: game cards get their own border/highlight pair
+     rather than reusing the app-wide --border (color-mix'd from #1B2342,
+     tuned for opaque surfaces like the search field/footer/promo cards) —
+     that token reads too heavy sitting directly on top of arbitrary
+     colorful artwork. Values match the pass's own suggested ranges
+     (border 0.05-0.08, top highlight 0.03-0.05). */
+  --card-border: rgba(255, 255, 255, 0.07);
+  --card-top-highlight: rgba(255, 255, 255, 0.05);
 
   /* ── COMPONENT: placeholder game card (dev-only UI-testing fixture) ──────
      CASINO PLACEHOLDER FIXTURES — six restrained, dark, desaturated

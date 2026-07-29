@@ -171,7 +171,10 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
           />
         );
       })}
-      <div aria-hidden="true" className="my-1 h-px w-8 bg-white/25" />
+      {/* LOBBY HIERARCHY PASS: 25% -> 15% — the sidebar should read quieter
+          than the arena content next to it; this divider is purely
+          decorative separation, not a signal that needs to stay bold. */}
+      <div aria-hidden="true" className="my-1 h-px w-8 bg-white/15" />
       {items.map((it) => {
         // Section labels have no compact equivalent (nowhere to put text,
         // not focusable) — simply omitted.
@@ -281,9 +284,11 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
             return tile;
           })}
         </div>
-        {/* SURFACE HIERARCHY POLISH: /15 -> /12, ~20% reduction, matching
-            every other "non-essential divider" touched in this pass. */}
-        <div className="my-2 w-full border-t-2 border-white/12" aria-hidden="true" />
+        {/* LOBBY HIERARCHY PASS: /12 -> /8, and 2px -> 1px — the sidebar
+            should read quieter than the arena content next to it; this
+            divider is purely decorative separation, not a signal that
+            needs to stay bold. */}
+        <div className="my-2 w-full border-t border-white/8" aria-hidden="true" />
       </div>
       <div className="flex flex-col gap-1 px-2">
         {items.map((it) => {
@@ -403,7 +408,12 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
         aria-label="Casino sidebar"
         onFocusCapture={onFocusCapture}
         className={cn(
-          "hidden shrink-0 overflow-hidden border-e bg-sidebar transition-[width] motion-reduce:transition-none md:block",
+          // LOBBY HIERARCHY PASS: the default `border-e` inherits the
+          // app-wide --border token (used everywhere from cards to the
+          // footer) — a dedicated, softer edge here instead, so the
+          // sidebar reads quieter than the arena content beside it without
+          // touching that shared token.
+          "hidden shrink-0 overflow-hidden border-e border-white/[0.06] bg-sidebar transition-[width] motion-reduce:transition-none md:block",
           widthExpanded ? "md:w-[220px]" : "md:w-[60px]"
         )}
         style={{ transitionDuration: `${SIDEBAR_SHELL_DURATION_MS}ms`, transitionDelay: `${SIDEBAR_SHELL_START_DELAY_MS}ms`, transitionTimingFunction: "var(--ease-emphasized)" }}

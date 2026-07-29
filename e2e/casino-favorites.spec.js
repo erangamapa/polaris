@@ -142,12 +142,28 @@ test.describe("Favorites toggle — click isolation", () => {
 });
 
 test.describe("Favorites toggle — robustness", () => {
-  test("rapid double-click nets out to the original state, no corruption", async ({ page }) => {
+  // LOBBY HIERARCHY PASS: switched from two racing `star.click()` calls to
+  // two rapid keyboard activations. This test exists to verify App.jsx's
+  // functional setState guard against a stale-closure race in the toggle
+  // handler itself — it was never about whether two physical mouse clicks
+  // can land on a moving target. Favoriting Dice inserts the whole
+  // Favorites rail above Tribet Originals (pre-existing behavior, not new
+  // this pass), shifting Originals — and this star — further down the
+  // page; the hierarchy pass's own larger inter-section gap before
+  // Originals amplified that shift enough to occasionally beat Playwright's
+  // per-click actionability re-check, making the SECOND mouse click land at
+  // a stale pre-reflow coordinate and silently miss the (moved) star. Two
+  // `keyboard.press("Enter")` calls on the already-focused star don't
+  // depend on screen position at all, so they exercise the exact same
+  // rapid-toggle race in App.jsx without being coupled to how far the page
+  // happens to reflow in between.
+  test("rapid double-activation nets out to the original state, no corruption", async ({ page }) => {
     await gotoLobby(page);
     const star = starIn(page, "originals-rail", "game-card-casino-dice");
     await expect(star).toHaveAttribute("aria-pressed", "false");
+    await star.focus();
 
-    await Promise.all([star.click(), star.click()]);
+    await Promise.all([page.keyboard.press("Enter"), page.keyboard.press("Enter")]);
     await page.waitForTimeout(300);
 
     expect(await star.getAttribute("aria-pressed")).toBe("false");

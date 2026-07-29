@@ -18,6 +18,17 @@ import { ARENAS } from "@/lib/arenas";
 
 export { CARD_H };
 
+// LOBBY HIERARCHY PASS — Casino's top-of-page area was pushed for a more
+// compact top area so the first game rail sits higher in the viewport.
+// Deliberately a LOCAL constant, not a change to the shared `CARD_H` this
+// file re-exports from PromoCard.jsx: that constant also sizes Sports' and
+// Predictions' promo cards (via PromoCard.jsx directly), and this task is
+// Casino-lobby-only — shrinking it there would be an unrelated-page
+// regression. ~10% mobile/tablet, ~15% desktop reduction (160->144px,
+// 208->176px), used only by Casino's three bespoke cards below
+// (WalletCard/WelcomeOfferCard/WeeklyRaceCard).
+const CASINO_CARD_H = "h-36 lg:h-44"; // 144px mobile/tablet, 176px desktop
+
 // CLICKABLE CARD PASS: every promo card's own nested "real" control (CTA,
 // the wallet copy button) sits inside the card's own onClick region — a
 // plain click on any of them bubbles up to the card's onClick too unless
@@ -205,7 +216,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       // element removes that ceiling entirely instead of fighting it with
       // a compensating negative offset.
       className={cn(
-        CARD_H,
+        CASINO_CARD_H,
         "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border text-left shadow-[var(--elevation-low)]",
         tone === "warning" ? "border-[var(--warning)]/30 bg-[var(--card)]" : "border-[var(--border)]",
         onActivate && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -410,7 +421,7 @@ function WelcomeOfferCard({ eyebrow, title, metadata, cta, onCtaClick }) {
           : undefined
       }
       className={cn(
-        CARD_H,
+        CASINO_CARD_H,
         "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]",
         onCtaClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}
@@ -536,7 +547,7 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
           : undefined
       }
       className={cn(
-        CARD_H,
+        CASINO_CARD_H,
         "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]",
         onCtaClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}

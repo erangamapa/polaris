@@ -1650,9 +1650,18 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
           the one remaining case without adding visual chrome the design
           doesn't call for. */}
       {category === "Lobby" && <h1 className="sr-only">Casino Lobby</h1>}
-      <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
-      {mobileOverlay}
-      <CategoryNav selected={category} onNavigateToLobby={navigateToLobby} onPillActivated={onPillActivated} />
+      {/* LOBBY HIERARCHY PASS: search + category pills read as one
+          navigation layer, not two independently-spaced blocks — grouped
+          into their own `space-y-4` (matching PromoStrip's own internal
+          promo-row/search rhythm) so this boundary is visibly tighter than
+          the nav-layer -> game-rails gap below, which still gets
+          ArenaPageColumn's full `space-y-8` since this whole group is now
+          ONE of its two children instead of two of its three. */}
+      <div className="space-y-4">
+        <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
+        {mobileOverlay}
+        <CategoryNav selected={category} onNavigateToLobby={navigateToLobby} onPillActivated={onPillActivated} />
+      </div>
       <CasinoCatalog
         category={category}
         query={query}

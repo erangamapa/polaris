@@ -66,13 +66,36 @@ test.describe("Casino placeholder fixtures — ordering and overflow", () => {
     expect(isPlaceholderFlags.slice(firstPlaceholderIndex).every(Boolean)).toBe(true);
   });
 
-  test("each eligible rail overflows at 1920px (next-page control is enabled)", async ({ page }) => {
+  // LOBBY HIERARCHY PASS: this used to assert every eligible rail overflows
+  // at 1920px, back when placeholders always topped every rail up to a flat
+  // 14 tiles regardless of real content — a section with 1 real game got 13
+  // fake ones just to guarantee overflow for this test. That's exactly the
+  // "wall of fake cards" the hierarchy pass rules out (see
+  // lib/casinoPlaceholders.js and LobbyDashboard's `withPlaceholders`:
+  // placeholders are now capped at the real game count, so a sparse
+  // section — Popular has 4 real games, Live Casino/Game Shows have 1 each
+  // — stays sparse and honest instead of padded to force a scrollbar).
+  // Rails with enough real content (Originals/New Releases/Tribet Studio)
+  // still overflow and still exercise the carousel; the sparse ones now
+  // correctly show a disabled "next" control instead, which is the other
+  // half of this same regression check — not a separate, unrelated
+  // assertion, but the direct consequence of "never more placeholders than
+  // real games" being true.
+  test("rails with enough content overflow at 1920px; sparse rails correctly do not", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await gotoLobby(page);
     await enablePlaceholders(page);
-    for (const testId of ELIGIBLE_RAILS) {
+
+    const OVERFLOWING = ["originals-rail", "new-releases-rail", "tribet-studio-rail"];
+    const SPARSE = ["popular-rail", "live-casino-rail", "game-shows-rail"];
+
+    for (const testId of OVERFLOWING) {
       const nextBtn = page.locator(`[data-test-id="${testId}"] [aria-label^="Next "]`);
       await expect(nextBtn, `${testId} should have an enabled "next" control (overflow exists)`).toBeEnabled();
+    }
+    for (const testId of SPARSE) {
+      const nextBtn = page.locator(`[data-test-id="${testId}"] [aria-label^="Next "]`);
+      await expect(nextBtn, `${testId} should have a disabled "next" control (real content is sparse, not padded to force overflow)`).toBeDisabled();
     }
   });
 });
