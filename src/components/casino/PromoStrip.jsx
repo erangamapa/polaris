@@ -10,6 +10,7 @@ import { CASINO_CHAIN_ID } from "@shared/chains";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { PromoCard, CARD_H } from "@/components/shell/PromoCard";
+import { GlowBackdrop } from "@/components/shell/artwork/GlowBackdrop";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { useDevMockState } from "@/lib/devMock";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
@@ -108,16 +109,8 @@ function WalletCard({ children, tone = "neutral" }) {
 // of "one icon + two unrelated photos". Real campaign artwork can replace
 // either of these later by swapping just the component passed as
 // `artwork` — PromoCard's contract (a zero-prop component reference) is
-// unchanged.
-function GlowBackdrop() {
-  return (
-    <div
-      className="absolute inset-0"
-      style={{ background: "radial-gradient(65% 65% at 50% 45%, color-mix(in srgb, var(--global-cta) 14%, transparent), transparent 72%)" }}
-      aria-hidden="true"
-    />
-  );
-}
+// unchanged. GlowBackdrop itself now lives in shell/artwork/ (shared with
+// Sports/Predictions' own artwork, which reuses this exact recipe).
 
 // Gift-box motif for the welcome/deposit-bonus offer.
 function WelcomeArtwork() {

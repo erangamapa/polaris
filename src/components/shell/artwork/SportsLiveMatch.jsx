@@ -1,29 +1,34 @@
+import { GlowBackdrop } from "./GlowBackdrop";
+
 // Focal object: a match ball, mid-motion, lit by stadium floodlights.
 // Distinct from SportsBetBuilder: round silhouette, motion streaks, light
 // cones — no cards, no grid, no straight/tactical lines.
+//
+// CONSISTENT ARTWORK PASS: recoloured from the old per-arena --sports-*
+// tokens (an olive/lime green left over from before the One-Brand
+// Unification) to the shared var(--global-cta)/--global-cta-hover +
+// GlowBackdrop recipe every other promo card now uses. Size cap raised
+// (max-h/w-28 -> -44) to match CARD_H's taller desktop height.
 export function SportsLiveMatch() {
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
-      <div
-        className="absolute inset-0"
-        style={{ background: "radial-gradient(60% 60% at 60% 30%, rgba(175,195,74,0.24), transparent 70%)" }}
-      />
-      <svg viewBox="0 0 100 100" className="relative h-[84%] w-[84%] max-h-28 max-w-28">
+      <GlowBackdrop />
+      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
         {/* floodlight cones from top corners */}
-        <path d="M6 4 L46 40 L2 46 Z" fill="var(--sports-primary)" opacity="0.10" />
-        <path d="M94 2 L58 38 L96 44 Z" fill="var(--sports-primary)" opacity="0.14" />
+        <path d="M6 4 L46 40 L2 46 Z" fill="var(--global-cta)" opacity="0.10" />
+        <path d="M94 2 L58 38 L96 44 Z" fill="var(--global-cta)" opacity="0.14" />
         {/* motion streaks trailing the ball */}
-        <g stroke="var(--sports-primary)" strokeLinecap="round" opacity="0.5">
+        <g stroke="var(--global-cta)" strokeLinecap="round" opacity="0.5">
           <path d="M4 66 L34 60" strokeWidth="2" />
           <path d="M0 76 L28 71" strokeWidth="2" opacity="0.7" />
           <path d="M8 86 L32 82" strokeWidth="1.6" opacity="0.5" />
         </g>
         {/* ball */}
         <g transform="translate(62,58)">
-          <circle r="26" fill="#0E1408" stroke="var(--sports-text-accent)" strokeWidth="1.4" />
-          <circle r="26" fill="none" stroke="var(--sports-primary)" strokeWidth="1" opacity="0.35" />
+          <circle r="26" fill="#101418" stroke="var(--global-cta-hover)" strokeWidth="1.4" />
+          <circle r="26" fill="none" stroke="var(--global-cta)" strokeWidth="1" opacity="0.35" />
           {/* pentagon seam pattern (simplified) */}
-          <g stroke="var(--sports-text-accent)" strokeWidth="1.1" fill="#1B2410" opacity="0.9">
+          <g stroke="var(--global-cta-hover)" strokeWidth="1.1" fill="#181C22" opacity="0.9">
             <polygon points="0,-11 10,-4 6,8 -6,8 -10,-4" />
             <path d="M0,-11 L0,-26" />
             <path d="M10,-4 L23,-9" />
@@ -39,11 +44,11 @@ export function SportsLiveMatch() {
             </radialGradient>
           </defs>
         </g>
-        {/* subtle scoreboard corner, bottom-left */}
-        <g transform="translate(4,80)" opacity="0.55">
-          <rect width="20" height="12" rx="1.5" fill="#0E1408" stroke="var(--sports-primary)" strokeWidth="1" />
-          <rect x="2.5" y="3" width="6" height="6" fill="var(--sports-primary)" opacity="0.7" />
-          <rect x="11.5" y="3" width="6" height="6" fill="var(--sports-text-accent)" opacity="0.5" />
+        {/* subtle scoreboard corner, bottom-left — gold accent, matching WalletMark's coin */}
+        <g transform="translate(4,80)" opacity="0.6">
+          <rect width="20" height="12" rx="1.5" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="1" />
+          <rect x="2.5" y="3" width="6" height="6" fill="var(--global-cta)" opacity="0.75" />
+          <rect x="11.5" y="3" width="6" height="6" fill="#FFD36B" opacity="0.6" />
         </g>
       </svg>
     </div>
