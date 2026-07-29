@@ -35,7 +35,8 @@ export function GameUtilityBar({ onOpenInfo, onReportIssue, supportsFullscreen, 
     <div
       data-test-id="game-utility-bar"
       className={cn(
-        "grid w-full shrink-0 overflow-hidden border border-t-0 border-white/10 bg-[var(--neutral-900)]",
+        // SURFACE HIERARCHY POLISH: border-white/10 -> /8.
+        "grid w-full shrink-0 overflow-hidden border border-t-0 border-white/8 bg-[var(--neutral-900)]",
         isFullscreen ? "" : "rounded-b-lg",
         supportsFullscreen ? "grid-cols-3" : "grid-cols-2"
       )}

@@ -130,7 +130,13 @@ function CompactButton({ id, icon, label, active, onClick, disabled, disabledLab
           style={!disabled && active ? { background: ACTIVE_ACCENT.item.background, color: ACTIVE_ACCENT.item.color } : undefined}
         >
           {!disabled && active && <SideIndicator color={ACTIVE_ACCENT.bar} />}
-          <ItemIcon icon={icon} className={cn("size-4", disabled && "opacity-50")} />
+          {/* SURFACE HIERARCHY POLISH: inactive icons get their own
+              slightly-brighter tone (--icon-secondary) instead of
+              inheriting the same --muted-foreground the label next to
+              them (in the expanded layer) also uses — active/disabled
+              icons are untouched, keeping ACTIVE_ACCENT's inherited color
+              and the existing disabled treatment exactly as before. */}
+          <ItemIcon icon={icon} className={cn("size-4", !disabled && !active && "text-[var(--icon-secondary)]", disabled && "opacity-50")} />
           {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
         </button>
       </TooltipTrigger>
@@ -222,7 +228,14 @@ function ExpandedItemRow({ id, icon, label, active, onClick, badge, ariaCurrent,
     >
       {active && <SideIndicator color={ACTIVE_ACCENT.bar} />}
       <span className="grid size-6 shrink-0 place-items-center">
-        <ItemIcon icon={icon} className="size-4" />
+        {/* SURFACE HIERARCHY POLISH: icon and label are separate elements
+            but previously inherited the identical --muted-foreground tone
+            from this button when inactive — --icon-secondary gives the
+            icon its own slightly brighter value without touching the
+            label span below, which stays on --muted-foreground exactly as
+            before. Active rows are untouched (still inherit
+            ACTIVE_ACCENT's colour via the button's inline style). */}
+        <ItemIcon icon={icon} className={cn("size-4", !active && "text-[var(--icon-secondary)]")} />
       </span>
       <span className="min-w-0 flex-1 truncate whitespace-nowrap text-start text-sm">{label}</span>
       {badge && <span className="ms-auto shrink-0">{badge}</span>}
@@ -268,7 +281,9 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
             return tile;
           })}
         </div>
-        <div className="my-2 w-full border-t-2 border-white/15" aria-hidden="true" />
+        {/* SURFACE HIERARCHY POLISH: /15 -> /12, ~20% reduction, matching
+            every other "non-essential divider" touched in this pass. */}
+        <div className="my-2 w-full border-t-2 border-white/12" aria-hidden="true" />
       </div>
       <div className="flex flex-col gap-1 px-2">
         {items.map((it) => {

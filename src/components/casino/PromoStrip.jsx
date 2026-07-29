@@ -33,11 +33,18 @@ export { CARD_H };
 // this mark stayed pinned at ~112px inside a much bigger artwork zone,
 // reading as a small disconnected icon adrift in empty space rather than
 // artwork with real presence.
+// SURFACE HIERARCHY POLISH: 82%/44 -> 90%/48 (176px -> 192px, ~9% larger)
+// on all three promo illustrations (this one, WelcomeArtwork, RaceArtwork
+// below) — still expressed as a percentage of the artwork zone (itself
+// unchanged: card width/height, CTA placement and the zone's own 38%/42%
+// split are all untouched), so this scales down safely at narrower
+// desktop widths exactly as before; only the upper-bound cap and relative
+// fill percentage grew.
 function WalletMark() {
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
       <GlowBackdrop />
-      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
+      <svg viewBox="0 0 100 100" className="relative h-[90%] w-[90%] max-h-48 max-w-48">
         <rect x="12" y="32" width="76" height="52" rx="10" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
         <path d="M12 47 h76" stroke="color-mix(in srgb, var(--global-cta) 24%, transparent)" strokeWidth="1.2" />
         <circle cx="76" cy="60" r="6" fill="var(--global-cta)" />
@@ -117,7 +124,7 @@ function WelcomeArtwork() {
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
       <GlowBackdrop />
-      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
+      <svg viewBox="0 0 100 100" className="relative h-[90%] w-[90%] max-h-48 max-w-48">
         <rect x="18" y="42" width="64" height="42" rx="6" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
         <rect x="14" y="30" width="72" height="16" rx="5" fill="#181C22" stroke="color-mix(in srgb, var(--global-cta) 40%, transparent)" strokeWidth="2" />
         <rect x="45" y="30" width="10" height="54" fill="color-mix(in srgb, var(--global-cta) 55%, transparent)" />
@@ -138,7 +145,7 @@ function RaceArtwork() {
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
       <GlowBackdrop />
-      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
+      <svg viewBox="0 0 100 100" className="relative h-[90%] w-[90%] max-h-48 max-w-48">
         <path
           d="M38 20 h24 v20 c0 10 -5.4 16 -12 16 s-12 -6 -12 -16 Z"
           fill="#181C22"
@@ -423,7 +430,12 @@ export function ScopedSearch({
         Search
       </label>
       <div ref={rootRef} onBlur={onBlur} className="relative">
-        <div className="flex h-11 items-center rounded-lg border border-white/10 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--global-cta)]">
+        {/* SURFACE HIERARCHY POLISH: border-white/10 -> /8. Dimensions,
+            radius, category selector, icon, placeholder and interaction
+            are all untouched — bg-zinc-900 already reads as distinguishable
+            from the lifted --background (see index.css), verified after
+            the background change; this only softens the border itself. */}
+        <div className="flex h-11 items-center rounded-lg border border-white/8 bg-zinc-900 focus-within:ring-2 focus-within:ring-[var(--global-cta)]">
           <div className="relative flex h-full shrink-0 items-center">
             {/* A real <select> can't carry a Radix Tooltip or custom opacity
                 per <option> — the browser renders that native popup itself,

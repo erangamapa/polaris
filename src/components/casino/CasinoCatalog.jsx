@@ -207,7 +207,14 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
             )}
           />
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-2 pt-6">
+        {/* SURFACE HIERARCHY POLISH: /85 -> /92, /40 -> /43 (~8% increase on
+            each stop) — title/provider legibility across bright, pale,
+            busy or dark artwork, fixed once here since every card in the
+            app (rails, grids, category pages) shares this one component.
+            Shape/reach of the gradient (p-2 pt-6, to-transparent higher
+            up) is unchanged, so this stays a soft fade, never a hard
+            edge, and never covers materially more artwork than before. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/43 to-transparent p-2 pt-6">
           <div className="line-clamp-2 text-xs font-bold leading-snug text-white">{game.title}</div>
           {showProvider && <div className="truncate text-[10px] leading-snug text-zinc-400">{gameProviderName(game)}</div>}
         </div>
@@ -464,7 +471,14 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
             aria-label={`Previous ${title}`}
             disabled={!canScrollLeft}
             onClick={() => scroll(-1)}
-            className="hidden size-8 place-items-center rounded-md border border-white/15 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
+            // SURFACE HIERARCHY POLISH: /15 -> /12 — a modest reduction,
+            // not a reversion to the old /10 that read as "nearly
+            // invisible" (see the still-fresh comment above). The resting
+            // fill (bg-white/[0.03]) is untouched, so discoverability at
+            // rest is unaffected; only the border's own contribution is
+            // toned down slightly, matching the "surfaces do more of the
+            // separation work, borders do less" brief.
+            className="hidden size-8 place-items-center rounded-md border border-white/12 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
           </button>
@@ -473,7 +487,14 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
             aria-label={`Next ${title}`}
             disabled={!canScrollRight}
             onClick={() => scroll(1)}
-            className="hidden size-8 place-items-center rounded-md border border-white/15 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
+            // SURFACE HIERARCHY POLISH: /15 -> /12 — a modest reduction,
+            // not a reversion to the old /10 that read as "nearly
+            // invisible" (see the still-fresh comment above). The resting
+            // fill (bg-white/[0.03]) is untouched, so discoverability at
+            // rest is unaffected; only the border's own contribution is
+            // toned down slightly, matching the "surfaces do more of the
+            // separation work, borders do less" brief.
+            className="hidden size-8 place-items-center rounded-md border border-white/12 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
           >
             <ChevronRight className="size-4" aria-hidden="true" />
           </button>
@@ -736,7 +757,17 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
               "flex min-h-10 shrink-0 items-center rounded-full border px-3.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isSelected
                 ? "border-[color-mix(in_srgb,var(--global-cta)_42%,transparent)] bg-[color-mix(in_srgb,var(--global-cta)_12%,transparent)] text-[var(--global-cta-hover)]"
-                : "border-white/10 text-zinc-400 hover:text-white"
+                // SURFACE HIERARCHY POLISH: inactive pills previously had
+                // no fill at all — an outline floating on the page
+                // background, doing all its own separation via the
+                // border. Adds the same bg-white/[0.03] resting fill
+                // already established for rail controls, and reduces the
+                // border itself from /10 -> /8 to match ("subtle dark
+                // surface + restrained border + readable muted text" per
+                // spec) — surfaces now carry more of the separation,
+                // borders less. Geometry/padding/text colour unchanged;
+                // the active pill (above) is untouched.
+                : "border-white/8 bg-white/[0.03] text-zinc-400 hover:text-white"
             )}
           >
             {category.label}
@@ -800,7 +831,10 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
               "rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               chip === c.id
                 ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
-                : "border-white/10 text-zinc-400 hover:text-white"
+                // SURFACE HIERARCHY POLISH: same treatment as CategoryNav's
+                // inactive pills above — subtle resting fill + a slightly
+                // quieter border.
+                : "border-white/8 bg-white/[0.03] text-zinc-400 hover:text-white"
             )}
           >
             {c.label}
