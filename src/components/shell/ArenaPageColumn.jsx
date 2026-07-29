@@ -20,12 +20,17 @@ import { cn } from "@/lib/utils";
 // content's left edge is always `sidebar width + <main>'s own (constant,
 // arena-independent) padding` — it never depends on how much space a
 // right-side module is currently using. Any leftover width beyond
-// max-w-6xl simply sits unused on the right, which is exactly what "do
-// not centre each arena independently based on its own content width"
+// --content-max-w simply sits unused on the right, which is exactly what
+// "do not centre each arena independently based on its own content width"
 // calls for.
+//
+// MAIN CONTENT WIDTH FIX: cap raised from max-w-6xl (1152px) to
+// var(--content-max-w) (see index.css — shared with Footer.jsx so the two
+// can never drift apart) specifically so normal desktop/laptop widths no
+// longer read as artificially cropped when no right panel is mounted.
 export function ArenaPageColumn({ children, className }) {
   return (
-    <div data-test-id="arena-page-column" className={cn("w-full max-w-6xl space-y-6", className)}>
+    <div data-test-id="arena-page-column" className={cn("w-full max-w-[var(--content-max-w)] space-y-6", className)}>
       {children}
     </div>
   );

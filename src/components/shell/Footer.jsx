@@ -15,8 +15,12 @@ export function Footer({ onResponsibleGambling, onSupport }) {
           desktop betslip panel shrinks it) — same root cause as the arena
           content column above it (see ArenaPageColumn.jsx). Left-anchored
           instead, so its position never depends on which arena/betslip
-          state is active. */}
-      <div className="w-full max-w-6xl px-4 py-8">
+          state is active.
+          MAIN CONTENT WIDTH FIX: max-w-6xl (1152px) replaced with the same
+          var(--content-max-w) ArenaPageColumn uses (see index.css), so the
+          footer can never end up narrower or wider than the page content
+          sitting above it. */}
+      <div className="w-full max-w-[var(--content-max-w)] px-4 py-8">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {COLUMNS.map((c) => (
             <div key={c.title}>

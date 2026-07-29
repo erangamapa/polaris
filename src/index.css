@@ -136,6 +136,24 @@ html {
      of truth for its expanded width, kept within the 320-380px range. */
   --sports-betslip-width: 340px;
   --sports-betslip-collapsed-width: 60px;
+  /* MAIN CONTENT WIDTH FIX: one shared cap for every arena's page content
+     (ArenaPageColumn.jsx) AND Footer.jsx, so the two can never drift apart
+     the way "max-w-6xl copy-pasted in both files" used to invite. Replaces
+     the old max-w-6xl (1152px), which left a large unused right-hand rail
+     on any normal desktop/laptop above ~1440px wide even with no right
+     panel mounted — the actual root cause of the "cropped Casino page"
+     report, not the shell's flex structure (Sidebar/<main>/betslip-panel
+     were already a correct "real sibling, zero width when absent" layout).
+     1920px comfortably clears every standard desktop/laptop width this app
+     targets (1280 through 1920, collapsed or expanded sidebar) with zero
+     clamping, and only engages as a real cap on genuinely ultra-wide
+     monitors. Deliberately left-anchored, not centered (ArenaPageColumn
+     stays non-`mx-auto` — see its own LEG-SWITCHING JUMP comment): centering
+     would re-open that exact previously-fixed bug on any ultra-wide screen
+     wide enough to exceed this cap while the Sports betslip panel is also
+     open, since the panel's width change would then visibly shift the
+     content's left edge again. */
+  --content-max-w: 1920px;
 
   /* Semantic mobile layer contract — the layers this task's full-screen
      surfaces actually stack against, named by what they ARE rather than an

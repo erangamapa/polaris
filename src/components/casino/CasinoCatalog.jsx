@@ -250,7 +250,17 @@ export function CasinoGameCardSkeleton() {
   );
 }
 
-const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6";
+// MAIN CONTENT WIDTH FIX: mobile/tablet tiers (base/sm/md) are untouched —
+// only the desktop tier changes, from a fixed lg:grid-cols-6 (which, once
+// ArenaPageColumn could actually grow past its old max-w-6xl cap, would
+// have stretched every CasinoGameCard wider instead of showing more of
+// them — CasinoGameCard has no width/max-width of its own, only
+// aspect-[3/4], so its rendered size is entirely a function of its grid
+// cell) to an auto-fill track with a floor close to the card's existing
+// ~6-per-row size at a max-w-6xl-capped viewport (~180px). Wider viewports
+// now add columns instead of enlarging cards; card size stays effectively
+// unchanged at today's common desktop widths.
+const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]";
 // Fixed-width tile used by every horizontal Rail — same card size everywhere
 // a rail appears, so scanning across sections never looks inconsistent.
 const RAIL_TILE = "w-[136px] shrink-0";
