@@ -348,7 +348,7 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
   if (isLoading) {
     return (
       <section id={sectionId} data-test-id={testId} aria-label={title}>
-        <div className="mb-3 flex min-w-0 items-center gap-2">
+        <div className="mb-4 flex min-w-0 items-center gap-2">
           {icon}
           <h2 className="text-sm font-bold">{title}</h2>
         </div>
@@ -367,7 +367,7 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
     if (!emptyState) return null;
     return (
       <section id={sectionId} data-test-id={testId}>
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-4 flex items-center gap-2">
           {icon}
           <h2 className="text-sm font-bold">{title}</h2>
         </div>
@@ -383,7 +383,7 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
 
   return (
     <section id={sectionId} data-test-id={testId} aria-label={title}>
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {icon}
           <h2 className="shrink-0 text-sm font-bold">{title}</h2>
@@ -392,7 +392,7 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
               small top badge in the app). */}
           {badge && <MicroLabel className="min-w-0 truncate">{badge}</MicroLabel>}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1.5">
           {onSeeAll && (
             <button
               type="button"
@@ -407,12 +407,21 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
               See all
             </button>
           )}
+          {/* MOCKUP ALIGNMENT CORRECTION: base border-white/10 with no fill
+              read as "nearly invisible" — bumped to a real (if still
+              subtle) fill + border so the control reads as a discrete,
+              discoverable button at rest, not just a faint icon; hover
+              deepens both. size-7 -> size-8 for a slightly larger hit
+              area. Disabled state (no overflow to scroll) is unchanged:
+              still present but faded via disabled:opacity-30, matching
+              the existing "hide the affordance, don't remove it" rule for
+              rails that don't currently overflow. */}
           <button
             type="button"
             aria-label={`Previous ${title}`}
             disabled={!canScrollLeft}
             onClick={() => scroll(-1)}
-            className="hidden size-7 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
+            className="hidden size-8 place-items-center rounded-md border border-white/15 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
           </button>
@@ -421,7 +430,7 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
             aria-label={`Next ${title}`}
             disabled={!canScrollRight}
             onClick={() => scroll(1)}
-            className="hidden size-7 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
+            className="hidden size-8 place-items-center rounded-md border border-white/15 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
           >
             <ChevronRight className="size-4" aria-hidden="true" />
           </button>
@@ -916,7 +925,7 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
 function ProviderTiles() {
   return (
     <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-4 flex items-center gap-2">
         <h2 className="text-sm font-bold">Providers</h2>
       </div>
       <div className="flex gap-3 overflow-x-auto p-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

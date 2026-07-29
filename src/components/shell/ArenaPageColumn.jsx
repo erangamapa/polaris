@@ -28,9 +28,14 @@ import { cn } from "@/lib/utils";
 // var(--content-max-w) (see index.css — shared with Footer.jsx so the two
 // can never drift apart) specifically so normal desktop/laptop widths no
 // longer read as artificially cropped when no right panel is mounted.
+// MOCKUP ALIGNMENT CORRECTION: space-y-6 -> space-y-8 — a uniform, slightly
+// more generous rhythm between each arena's major blocks (promo+search,
+// category nav, game catalog), matching the same space-y-8 CasinoCatalog.jsx
+// already uses between its own rail sections — one consistent scale rather
+// than two different gap sizes stacked on top of each other.
 export function ArenaPageColumn({ children, className }) {
   return (
-    <div data-test-id="arena-page-column" className={cn("w-full max-w-[var(--content-max-w)] space-y-6", className)}>
+    <div data-test-id="arena-page-column" className={cn("w-full max-w-[var(--content-max-w)] space-y-8", className)}>
       {children}
     </div>
   );

@@ -20,11 +20,12 @@ import { MicroLabel } from "@/components/ui/micro-label";
 // bet, View market, Explore markets — never a platform action like
 // Deposit/Wallet), so its button uses the "action" variant, which
 // resolves to the current page's arena color automatically.
-// MOCKUP CORRECTION (equal-width promo cards): 160px flat read as too
-// short once all three cards became equal width — artwork in particular
-// had no real room. Mobile/tablet (below lg:) keep the original,
-// already-tuned 160px; only the desktop tier (where all three cards now
-// share one equal-width grid row) grows to 208px.
+// MOCKUP ALIGNMENT CORRECTION: 160px flat read as too short for the
+// approved mockup's richer, more premium card — artwork in particular had
+// no real room to create emotional impact. Mobile/tablet (below lg:) keep
+// the original, already-tuned 160px; only the desktop tier (where the
+// approved mockup applies and all three cards now share one grid row)
+// grows to 208px.
 export const CARD_H = "h-40 lg:h-52"; // 160px mobile/tablet, 208px desktop
 
 export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCtaClick, artwork: Artwork }) {
@@ -53,7 +54,24 @@ export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCt
           >
             {title}
           </h3>
-          {metadata && <p className="mt-1 hidden truncate text-xs text-[var(--ink-dim)] sm:block">{metadata}</p>}
+          {/* MOCKUP ALIGNMENT CORRECTION: `truncate` produced visible
+              mid-sentence ellipsis clipping ("Match on your first
+              deposit. Ins…") — unacceptable per the approved direction.
+              line-clamp-2 lets the actual configured copy (short enough
+              to fit two lines at this card's text-column width) wrap
+              naturally instead; it only silently clips if a future copy
+              string is much longer than today's, and never mid-word with
+              a visible ellipsis in the normal case. Shown at every
+              breakpoint now (was hidden below sm:) — the mobile carousel
+              card is already ~82% of the viewport, plenty of room. */}
+          {metadata && (
+            <p
+              className="mt-1 text-xs leading-snug text-[var(--ink-dim)]"
+              style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            >
+              {metadata}
+            </p>
+          )}
         </div>
         {/* ONE-BRAND UNIFICATION: every primary action uses the single
             Tribet brand colour now — no arena-owned "action" tone. */}
@@ -62,7 +80,20 @@ export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCt
         </Button>
       </div>
       {Artwork && (
-        <div className="hidden w-[38%] shrink-0 sm:block lg:w-[42%]">
+        // MOCKUP ALIGNMENT CORRECTION: a soft left-edge mask so artwork
+        // fades into the card's dark surface instead of showing a hard
+        // rectangular seam where it meets the text column — "no visible
+        // rectangular image boundary, no thumbnail-card-inside-card
+        // effect". Applied once here so every current/future artwork
+        // (SVG or raster) gets the same treatment automatically, rather
+        // than each artwork component re-implementing its own fade.
+        <div
+          className="hidden w-[38%] shrink-0 sm:block lg:w-[42%]"
+          style={{
+            maskImage: "linear-gradient(to right, transparent, black 30%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 30%)",
+          }}
+        >
           <Artwork />
         </div>
       )}

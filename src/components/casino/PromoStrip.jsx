@@ -27,14 +27,16 @@ export { CARD_H };
 // prior color migrations unnoticed. Now reads var(--global-cta) directly
 // (color-mix() for the partial-opacity strokes/glow) so a future Platform
 // Action color change reaches this automatically — no more stale copies.
+// MOCKUP ALIGNMENT CORRECTION: size caps raised (max-h/w-28 -> -44) now
+// that CARD_H is taller on desktop (see PromoCard.jsx) — at the old cap
+// this mark stayed pinned at ~112px inside a much bigger artwork zone,
+// reading as a small disconnected icon adrift in empty space rather than
+// artwork with real presence.
 function WalletMark() {
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
-      <div
-        className="absolute inset-0"
-        style={{ background: "radial-gradient(65% 65% at 50% 45%, color-mix(in srgb, var(--global-cta) 14%, transparent), transparent 72%)" }}
-      />
-      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-28 max-w-28">
+      <GlowBackdrop />
+      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
         <rect x="12" y="32" width="76" height="52" rx="10" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
         <path d="M12 47 h76" stroke="color-mix(in srgb, var(--global-cta) 24%, transparent)" strokeWidth="1.2" />
         <circle cx="76" cy="60" r="6" fill="var(--global-cta)" />
@@ -68,45 +70,97 @@ function WalletCard({ children, tone = "neutral" }) {
       )}
     >
       <div className="flex h-full min-w-0 flex-1 flex-col justify-between">{children}</div>
-      <div className="hidden w-[36%] shrink-0 sm:block lg:w-[40%]">
+      {/* MOCKUP ALIGNMENT CORRECTION: ratio unified with PromoCard's own
+          artwork zone (was 36%/40%, PromoCard uses 38%/42% — "consistent
+          artwork zone" across all three cards), and the same soft left-
+          edge fade applied so the wallet mark blends into the card the
+          same way the other two cards' artwork now does. */}
+      <div
+        className="hidden w-[38%] shrink-0 sm:block lg:w-[42%]"
+        style={{
+          maskImage: "linear-gradient(to right, transparent, black 30%)",
+          WebkitMaskImage: "linear-gradient(to right, transparent, black 30%)",
+        }}
+      >
         <WalletMark />
       </div>
     </div>
   );
 }
 
-const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-dim)]";
-
-// VISUAL REFRESH — real repository assets (public/heroes/*.png, already
-// imported as PROMOS[n].image but never actually rendered anywhere) fill
-// PromoCard's existing `artwork` slot instead of leaving it empty. Both
-// images are decorative atmosphere only (no baked-in text, confirmed by
-// inspection) — `alt=""` marks them as such; the offer copy itself is
-// real text elsewhere in the card, never conveyed only through the image.
-// Defined once at module scope (not inline closures passed as `artwork`)
-// so PromoCard always receives the SAME component reference across
-// re-renders — PromoStrip re-renders on every search keystroke, and an
-// inline `() => <img .../>` would give React a new component identity
-// each time, forcing the <img> to unmount/remount and re-fetch on every
-// keystroke instead of loading once.
-//
-// PERFORMANCE: these two source PNGs are ~2MB each (no image-optimization
-// tooling available in this pass to generate a properly downsized/
-// compressed variant for the small rendered box — flagged in the task
-// report as a follow-up). `loading="lazy"` alone doesn't defer them since
-// both cards sit in the initial viewport; `fetchPriority="low"` at least
-// tells the browser these are non-critical relative to everything else
-// competing for bandwidth/decode time on first paint. This measurably
-// mattered in practice: without it, decoding ~4MB of new images on Lobby
-// mount was slow enough to push App.jsx's launchGame/closeGame scroll-
-// restoration re-assert loop (a previously-tuned, self-terminating ~300ms
-// window) past its deadline, landing a few px short after Back — see that
-// file's own comment on why the loop can't simply run longer.
-function WelcomeArtwork() {
-  return <img src={PROMOS[0].image} alt="" loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover" />;
+// MOCKUP ALIGNMENT CORRECTION: the previous pass filled these slots with
+// the repository's raster hero photos (public/heroes/casino-welcome.png,
+// casino-race.png). Reviewed against the approved direction and found
+// wrong on two counts: (1) at this card's actual rendered box they read
+// as small disconnected photo thumbnails, not integrated artwork — a hard
+// object-cover rectangle sitting inside an otherwise plain card, exactly
+// the "thumbnail-card-inside-card" effect the correction calls out; (2)
+// both photos are warm pink/magenta/gold, contradicting the approved
+// blue/violet atmosphere ("avoid red or magenta-dominant cards"). No
+// transparent PNG/WebP asset in the correct palette exists in the repo,
+// so per the task's own fallback guidance ("if proper standalone artwork
+// is not available, use tasteful abstract CSS-backed art zones rather
+// than low-quality thumbnail images") these are restrained SVG motifs —
+// same construction technique as WalletMark (a handful of shapes, one
+// brand-tinted radial glow, color-mix() strokes/fills reading var(
+// --global-cta) directly so a future brand recolor reaches these too),
+// so all three cards' artwork now visibly belong to one system instead
+// of "one icon + two unrelated photos". Real campaign artwork can replace
+// either of these later by swapping just the component passed as
+// `artwork` — PromoCard's contract (a zero-prop component reference) is
+// unchanged.
+function GlowBackdrop() {
+  return (
+    <div
+      className="absolute inset-0"
+      style={{ background: "radial-gradient(65% 65% at 50% 45%, color-mix(in srgb, var(--global-cta) 14%, transparent), transparent 72%)" }}
+      aria-hidden="true"
+    />
+  );
 }
+
+// Gift-box motif for the welcome/deposit-bonus offer.
+function WelcomeArtwork() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
+      <GlowBackdrop />
+      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
+        <rect x="18" y="42" width="64" height="42" rx="6" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
+        <rect x="14" y="30" width="72" height="16" rx="5" fill="#181C22" stroke="color-mix(in srgb, var(--global-cta) 40%, transparent)" strokeWidth="2" />
+        <rect x="45" y="30" width="10" height="54" fill="color-mix(in srgb, var(--global-cta) 55%, transparent)" />
+        <path
+          d="M50 30 C40 30 34 20 42 14 C48 10 50 22 50 30 Z M50 30 C60 30 66 20 58 14 C52 10 50 22 50 30 Z"
+          fill="var(--global-cta)"
+        />
+        <circle cx="26" cy="70" r="2.5" fill="color-mix(in srgb, var(--global-cta) 45%, transparent)" />
+        <circle cx="76" cy="58" r="2" fill="color-mix(in srgb, var(--global-cta) 35%, transparent)" />
+        <circle cx="72" cy="76" r="1.6" fill="#FFD36B" />
+      </svg>
+    </div>
+  );
+}
+
+// Trophy motif for the weekly race/leaderboard promo.
 function RaceArtwork() {
-  return <img src={PROMOS[1].image} alt="" loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover" />;
+  return (
+    <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
+      <GlowBackdrop />
+      <svg viewBox="0 0 100 100" className="relative h-[82%] w-[82%] max-h-44 max-w-44">
+        <path
+          d="M38 20 h24 v20 c0 10 -5.4 16 -12 16 s-12 -6 -12 -16 Z"
+          fill="#181C22"
+          stroke="color-mix(in srgb, var(--global-cta) 40%, transparent)"
+          strokeWidth="2"
+        />
+        <path d="M38 24 c-9 0 -13 5 -13 12 s5 12 11 12" fill="none" stroke="color-mix(in srgb, var(--global-cta) 45%, transparent)" strokeWidth="3" />
+        <path d="M62 24 c9 0 13 5 13 12 s-5 12 -11 12" fill="none" stroke="color-mix(in srgb, var(--global-cta) 45%, transparent)" strokeWidth="3" />
+        <circle cx="50" cy="32" r="6" fill="#FFD36B" />
+        <rect x="46" y="55" width="8" height="12" fill="color-mix(in srgb, var(--global-cta) 55%, transparent)" />
+        <rect x="34" y="67" width="32" height="8" rx="2" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
+        <rect x="28" y="75" width="44" height="9" rx="2.5" fill="var(--global-cta)" />
+      </svg>
+    </div>
+  );
 }
 
 // Exported: this is the one shared "Tribet infrastructure" tile reused as the
@@ -127,9 +181,9 @@ export function PlayerTile() {
     return (
       <WalletCard>
         <div className="min-w-0" role="status" aria-live="polite">
-          <div className={LABEL}>Wallet</div>
-          <h3 className="mt-1 text-base font-bold leading-snug text-[#F2F3F5]">Connecting…</h3>
-          <p className="mt-1 text-xs leading-snug text-zinc-400">Approve the request in your wallet.</p>
+          <MicroLabel>Wallet</MicroLabel>
+          <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">Connecting…</h3>
+          <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Approve the request in your wallet.</p>
         </div>
         <Button size="sm" disabled className="w-fit" aria-label="Connecting to wallet">
           <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -145,21 +199,23 @@ export function PlayerTile() {
     return (
       <WalletCard>
         <div className="min-w-0">
-          <div className={LABEL}>Wallet</div>
-          {/* VISUAL REFRESH: two-line hierarchy, second line in the Casino/
-              system accent (--global-cta-hover, not raw --global-cta — same
-              AA-on-dark-surface reasoning as Sidebar.jsx's ACTIVE_ACCENT) —
-              matches the approved mockup. Still just two words of accent
-              colour, not body copy. */}
-          <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1.5 sm:leading-snug">
+          <MicroLabel>Wallet</MicroLabel>
+          {/* MOCKUP ALIGNMENT CORRECTION: text-base -> text-lg, matching
+              PromoCard's title scale exactly ("consistent title scale
+              across all three cards, no card title significantly smaller
+              than another") — was visibly smaller than the other two
+              cards' titles. Second line keeps the Casino/system accent
+              (--global-cta-hover, not raw --global-cta — same AA-on-dark-
+              surface reasoning as Sidebar.jsx's ACTIVE_ACCENT), still just
+              two words of accent colour, not body copy. Supporting copy
+              is no longer breakpoint-gated — shown at every size now,
+              same as the other two cards' metadata. */}
+          <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">
             One wallet.
             <br />
             <span className="text-[var(--global-cta-hover)]">Every game.</span>
           </h3>
-          {/* VISUAL REFRESH: xl:block -> lg:block — the hero column is now
-              ~48% of the row at lg: (was an equal 33% third), so there's
-              room for this line a breakpoint earlier than before. */}
-          <p className="mt-1.5 hidden text-xs leading-snug text-zinc-400 lg:block">Play, earn and withdraw with one connection.</p>
+          <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Play, earn and withdraw with one connection.</p>
         </div>
         <Button size="sm" onClick={connect} data-test-id="wallet-tile-connect" className="w-fit">
           Connect wallet
@@ -173,9 +229,9 @@ export function PlayerTile() {
     return (
       <WalletCard tone="warning">
         <div className="min-w-0" role="status" aria-live="polite">
-          <div className={cn(LABEL, "text-amber-400/80")}>Wallet</div>
-          <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1 sm:leading-snug">Wrong network</h3>
-          <p className="mt-1 hidden text-xs leading-snug text-zinc-400 sm:block">Switch to Base Sepolia to continue.</p>
+          <MicroLabel className="text-amber-400/80">Wallet</MicroLabel>
+          <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">Wrong network</h3>
+          <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Switch to Base Sepolia to continue.</p>
         </div>
         <Button
           size="sm"
@@ -208,10 +264,15 @@ export function PlayerTile() {
           <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" />
           Wallet connected
         </MicroLabel>
-        <div className="mt-1 truncate font-mono text-xs text-zinc-400">{shortAddress(address)}</div>
-        <div className="mt-1.5">
+        <div className="mt-1.5 truncate font-mono text-xs text-[var(--ink-dim)]">{shortAddress(address)}</div>
+        {/* MOCKUP ALIGNMENT CORRECTION: text-lg -> text-2xl — the balance
+            IS this card's "title" moment (there's no separate headline
+            here the way the other two states have "One wallet./Every
+            game."), so it needs the same visual weight, not a small
+            operational-widget number squeezed into the top-left. */}
+        <div className="mt-2">
           {casinoBalanceLoading ? (
-            <div className="h-6 w-24 animate-pulse rounded bg-white/10" role="status" aria-live="polite" aria-label="Loading balance" />
+            <div className="h-8 w-28 animate-pulse rounded bg-white/10" role="status" aria-live="polite" aria-label="Loading balance" />
           ) : casinoBalanceError ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-500">Balance unavailable</span>
@@ -223,8 +284,8 @@ export function PlayerTile() {
             // RESKIN v2 CALIBRATION: was font-black (weight 900, unaffected
             // by the app-wide font-weight-bold override) — a balance is
             // DATA (JetBrains Mono, tabular numerics), not display text.
-            <div className="truncate font-mono text-lg font-semibold tabular-nums text-white">
-              {casinoBalance.toFixed(5)} <span className="text-xs font-semibold text-zinc-400">{casinoSymbol}</span>
+            <div className="truncate font-mono text-2xl font-semibold tabular-nums text-white">
+              {casinoBalance.toFixed(5)} <span className="text-xs font-semibold text-[var(--ink-dim)]">{casinoSymbol}</span>
             </div>
           )}
         </div>
@@ -486,26 +547,25 @@ export function ScopedSearch({
   );
 }
 
-// MOCKUP CORRECTION (equal-width promo cards): the previous pass gave the
-// wallet card a dominant ~48% column against two ~26% secondary cards —
-// reads as one hero widget plus two afterthoughts, not "one coherent
-// system" of three equal promotional cards. Corrected to a strict
-// equal-thirds system: mobile (base) keeps the existing real horizontal
-// snap-scroll carousel (three equal 82%-viewport-width columns —
-// unrelated to this fix, and already what produced the accidental
-// "200% u…" / "$50,00…" clipping this file's history refers to); tablet
-// (sm+) keeps the wallet card spanning a full-width row above the two
-// secondary cards sharing a row beneath it (one of the task's two
-// explicitly pre-approved tablet patterns — three columns are too narrow
-// to stay readable at sm:/md: widths); desktop (lg+) is now three
-// GENUINELY equal columns (grid-cols-3, i.e. repeat(3, minmax(0,1fr))) —
-// no card gets a wider grid track than another. Any visual "importance"
-// a card carries now comes only from its own copy/artwork, never from a
-// larger column span.
+// MOCKUP ALIGNMENT CORRECTION: the previous pass gave the wallet card a
+// dominant ~48% column against two ~26% secondary cards — reads as one
+// hero widget plus two afterthoughts, not "one coherent system" of three
+// equal promotional cards. Corrected to a strict equal-thirds system:
+// mobile (base) keeps the existing real horizontal snap-scroll carousel
+// (three equal 82%-viewport-width columns — unrelated to this fix, and
+// already what produced the accidental "200% u…" / "$50,00…" clipping
+// this file's history refers to); tablet (sm+) keeps the wallet card
+// spanning a full-width row above the two secondary cards sharing a row
+// beneath it (one of the task's two explicitly pre-approved tablet
+// patterns — three columns are too narrow to stay readable at sm:/md:
+// widths); desktop (lg+) is now three GENUINELY equal columns
+// (grid-cols-3, i.e. repeat(3, minmax(0,1fr))) — no card gets a wider
+// grid track than another. Any visual "importance" a card carries now
+// comes only from its own copy/artwork, never from a larger column span.
 export function PromoStrip({ query, onQuery, searchPanelProps }) {
   const [p1, p2] = PROMOS;
   return (
-    <div className="casino-content-column w-full space-y-3">
+    <div className="casino-content-column w-full space-y-4">
       <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
         <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
