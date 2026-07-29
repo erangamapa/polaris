@@ -44,9 +44,6 @@ export function useBrokenImage() {
   return { broken, onError: () => setBroken(true) };
 }
 
-// Sparkle burst angles (degrees) fired once when a game is favorited.
-const SPARKS = [0, 60, 120, 180, 240, 300];
-
 // Games carry a namespaced favId so the on-chain "dice" and the provider "dice"
 // never collide in the favorites set.
 const ONCHAIN = BETSWIRL_GAMES.map((g) => ({ ...g, favId: `casino:${g.key}`, kind: "onchain" }));
@@ -60,23 +57,34 @@ export const gameHref = (game) => `/casino/lobby?play=${encodeURIComponent(game.
 export const findGameByFavId = (favId) => ALL_GAMES.find((g) => g.favId === favId) ?? null;
 
 // Favorite control — one shared icon/behavior for every surface it appears
-// on (cards here, the compact search result row in CasinoSearch.jsx): pop
-// animation on toggle + a one-shot sparkle burst on add, stops propagation
-// so favoriting never launches the game, aria-pressed + a game-name label.
-// `className` is the only visual thing that varies by context — this
-// component owns the icon/interaction, callers own their own chrome (an
-// absolute overlay pinned to artwork here, a plain flex sibling in a search
-// row). `tabIndex` defaults to a real, independent tab stop (correct for a
-// card sitting in a grid/rail); search overrides it to -1, since search
-// results are navigated by ArrowUp/Down within one combobox listbox, and a
-// second real tab stop per row would break that linear keyboard model.
-export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, ...rest }) {
-  const [burst, setBurst] = useState(0);
+// on (cards here, the compact search result row in CasinoSearch.jsx): press
+// feedback on toggle, stops propagation so favoriting never launches the
+// game, aria-pressed + a game-name label, keyboard Enter/Space. `tabIndex`
+// defaults to a real, independent tab stop (correct for a card sitting in a
+// grid/rail); search overrides it to -1, since search results are navigated
+// by ArrowUp/Down within one combobox listbox, and a second real tab stop
+// per row would break that linear keyboard model.
+//
+// `variant` picks the chrome, since the two surfaces need genuinely
+// different treatments rather than one style forced onto both:
+// - "chip" (default): the Favorites redesign's glass chip — 36px visual
+//   chip inside a 40px touch target, gold-filled star when active, meant to
+//   sit on top of arbitrary game artwork. Used by CasinoGameCard below.
+// - "plain": the older flat icon-only treatment (no background box), for
+//   CasinoSearch's dense list row where a 40px glass chip would be far too
+//   heavy — that surface supplies its own hover/color chrome via
+//   `className` exactly as before.
+// Active-state gold (`--favorite-gold`) is shared by both variants so
+// "favorited" reads identically everywhere; only the surrounding chrome
+// differs.
+export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, variant = "chip", ...rest }) {
+  const [pulse, setPulse] = useState(0);
+  const isChip = variant === "chip";
 
   const handle = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!faved) setBurst((b) => b + 1); // burst only when adding
+    setPulse((p) => p + 1);
     onToggle();
   };
 
@@ -91,34 +99,52 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handle(e); }}
       onMouseDown={onMouseDown}
       {...rest}
-      className={cn("group/fav z-20 grid size-11 cursor-pointer place-items-center rounded-md text-white/90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50", className)}
+      className={cn(
+        "group/fav grid cursor-pointer place-items-center outline-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--global-cta)]",
+        isChip ? "size-10 rounded-lg" : "size-11 rounded-md",
+        className
+      )}
     >
-      <span className="relative grid place-items-center">
-        {burst > 0 && (
-          <span key={burst} className="pointer-events-none absolute inset-0" aria-hidden>
-            {SPARKS.map((a, i) => (
-              <span
-                key={i}
-                className="fav-spark absolute size-1 rounded-full bg-[var(--global-cta)]"
-                style={{ left: "50%", top: "50%", marginLeft: -2, marginTop: -2, "--ang": `${a}deg` }}
-              />
-            ))}
-          </span>
+      <span
+        key={pulse}
+        className={cn(
+          "grid place-items-center transition-[transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+          pulse > 0 && "fav-chip-pop",
+          isChip
+            ? cn(
+                "size-9 rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
+                faved
+                  ? "border-[var(--global-cta)] bg-[rgba(15,20,38,0.44)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_9px_-2px_var(--favorite-gold-glow)]"
+                  : "border-white/[0.12] bg-[rgba(12,16,30,0.42)] group-hover/fav:border-white/20 group-hover/fav:bg-[rgba(15,20,38,0.5)]"
+              )
+            : "size-full rounded-md transition-colors duration-200 group-hover/fav:bg-white/10"
         )}
-        {/* RESKIN (guide §1.5/§7): the star is Halo when filled, --ink-dim
-            (--muted-foreground) when empty — never yellow. --global-cta is
-            this app's existing "Halo" token (see index.css). */}
+      >
         <Star
-          key={`${faved}-${burst}`}
-          className={`size-4 transition-transform group-hover/fav:scale-125 ${faved ? "fav-pop fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" : "text-[var(--muted-foreground)]"}`}
+          className={cn(
+            "size-4 transition-transform duration-200 group-hover/fav:scale-[1.08]",
+            faved ? "fill-[var(--favorite-gold)] text-[var(--favorite-gold)]" : isChip ? "text-white/75" : "text-[var(--muted-foreground)]"
+          )}
         />
       </span>
     </span>
   );
 }
-// Chrome for FavStar when it overlays game artwork (every card below) —
-// search's compact row supplies its own (see CasinoSearch.jsx's GameRow).
-const FAV_STAR_OVERLAY = "absolute right-1 top-1 bg-black/40 hover:bg-black/70";
+// Chrome for FavStar's chip variant when it overlays game artwork (every
+// card below) — search's compact row uses variant="plain" and supplies its
+// own (see CasinoSearch.jsx's GameRow). Positions the 40px touch target in
+// the existing top-right safe area; sizing/rounding/background/border now
+// live inside FavStar itself (chip variant), not here.
+const FAV_STAR_OVERLAY = "absolute right-1 top-1 z-20";
+// Local-contrast vignette behind the chip only — a soft dark pool between
+// the artwork and the chip so the chip reads reliably on white/yellow/cyan/
+// purple/photo thumbnails without the chip itself needing heavier chrome.
+// Centered on the same point as the chip via `inset-0 m-auto` (works
+// regardless of the vignette being larger than its positioned parent).
+// Sits beneath the chip purely by DOM order (rendered first, no z-index of
+// its own needed) and above the artwork by being inside the same
+// `FAV_STAR_OVERLAY`-positioned corner, which stacks over the card image.
+const FAV_VIGNETTE = "pointer-events-none absolute inset-0 m-auto size-16 rounded-full bg-[radial-gradient(circle,rgba(0,0,0,0.20)_0%,rgba(0,0,0,0.08)_45%,rgba(0,0,0,0)_75%)]";
 
 // A card is a real <a href> so the browser's native middle-click / cmd-click
 // / ctrl-click "open in new tab" behaviour works, like on most sites. A
@@ -232,7 +258,10 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
           consistent single rule rather than the previous unconditional
           render, which let you favorite a game you can't play yet. */}
       {showFavorite && onFav && playable && (
-        <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} className={FAV_STAR_OVERLAY} />
+        <div className={FAV_STAR_OVERLAY}>
+          <span aria-hidden="true" className={FAV_VIGNETTE} />
+          <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} />
+        </div>
       )}
     </div>
   );

@@ -331,19 +331,18 @@ html {
    photography/gradient washes per the guide's §5.2/§7 "plain surface,
    no maroon wash" instruction. See PromoStrip.jsx for the replacement. */
 
-/* Favourite star: pop on toggle + a small sparkle burst on add. */
-@keyframes fav-pop {
+/* Favourite chip: toggle press feedback only. Favorites chip redesign
+   explicitly rules out sparkle/particle bursts as "gaming UI" — this
+   replaces the old fav-pop overshoot + fav-spark burst pair with a single
+   compress-then-settle motion (0.94 -> 1.12 -> 1.00), matching the spec's
+   "no bounce, no exaggerated spring" instruction. */
+@keyframes fav-chip-pop {
   0% { transform: scale(1); }
-  35% { transform: scale(1.35); }
+  20% { transform: scale(0.94); }
+  60% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
-.fav-pop { animation: fav-pop 320ms var(--ease-out); }
-
-@keyframes fav-spark {
-  0% { transform: rotate(var(--ang)) translateY(0) scale(0.4); opacity: 0.9; }
-  100% { transform: rotate(var(--ang)) translateY(-15px) scale(1); opacity: 0; }
-}
-.fav-spark { animation: fav-spark 480ms var(--ease-out) forwards; }
+.fav-chip-pop { animation: fav-chip-pop 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
 /* StatusBadge's own count-change pulse — subtle, single-shot, no bounce. */
 @keyframes status-badge-pulse {
@@ -397,6 +396,126 @@ html {
 }
 .panel-backdrop-fade-in {
   animation: panel-backdrop-fade-in var(--motion-standard) var(--ease-out) both;
+}
+
+/* CASINO PROMO CARD VISUAL ZOOM — shared hover/press treatment for all
+   three Casino promo cards (Wallet/Welcome Offer/Weekly Race — see
+   PromoStrip.jsx's WalletCard/WelcomeOfferCard/WeeklyRaceCard, each
+   carrying `promo-card`). Deliberately real CSS gated on actual input
+   capability, not Tailwind's plain `hover:` utility (a bare :hover
+   selector) — on touch devices a bare :hover either never fires or, on
+   some browsers, only fires after a first "sacrificial" tap, meaning a
+   second tap is needed to actually activate whatever's under it. Gating
+   on (hover:hover)+(pointer:fine) vs (hover:none)+(pointer:coarse) instead
+   gives each device exactly one interaction model, so a mobile tap always
+   activates its target on the first try, never a fake-hover reveal first.
+
+   ONE-LAYER PASS: the zoom target is `.promo-card__visual` — a wrapper
+   around BOTH the <img> illustration AND its LOCALIZED glow
+   (`.promo-card__ambient`, which holds only --wallet-card-glow, the
+   radial bloom immediately around the asset) — not the <img> alone. The
+   broad --wallet-card-bg diagonal wash stays on the card's own static
+   background (see WalletCard/WelcomeOfferCard/WeeklyRaceCard's own style
+   prop) and is NOT part of this scaling wrapper — only the small,
+   asset-local radial highlight travels with the illustration; the card's
+   actual surface treatment stays put. See --wallet-card-glow/--wallet-
+   card-bg's own comment for the full reasoning (an earlier attempt moved
+   the whole wash here and visibly stripped the card's intended surface).
+
+   --illustration-base-scale composes this zoom with whatever static scale
+   a card's own artwork already applies at rest (WalletCard sets it inline
+   on `.promo-card__visual` to its own current baseline; Welcome Offer/
+   Weekly Race don't set it, so the `1` fallback applies) — the zoom is
+   always relative to each card's own current size, never a flat reset to
+   1.05 that would undo Wallet's own already-enlarged baseline.
+   transform-origin stays right-center (the same point every one of these
+   visual wrappers is already anchored/flush from), so growth only ever
+   extends left and vertically-symmetric — the right edge never moves. */
+.promo-card__visual {
+  transform-origin: right center;
+  scale: var(--illustration-base-scale, 1);
+  transition: scale 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .promo-card:hover .promo-card__visual {
+    scale: calc(var(--illustration-base-scale, 1) * 1.05);
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .promo-card:active .promo-card__visual {
+    scale: calc(var(--illustration-base-scale, 1) * 1.03);
+  }
+}
+/* Placed after both capability blocks above so it wins the cascade
+   (equal selector specificity, later source order) whenever a user's
+   device matches both a hover/press media query AND this one — disables
+   the zoom itself, not just its transition speed, since even an instant
+   size change reads as motion to someone who's asked to avoid it. The
+   app-wide `transition-duration` reset elsewhere in this file already
+   speeds up unrelated transitions; this specifically stops the scale
+   change from happening at all. */
+@media (prefers-reduced-motion: reduce) {
+  .promo-card__visual {
+    transition: none;
+  }
+  .promo-card:hover .promo-card__visual,
+  .promo-card:active .promo-card__visual {
+    scale: var(--illustration-base-scale, 1);
+  }
+}
+
+/* CLICKABLE CARD PASS — whole-card hover/press treatment. Separate from
+   the illustration zoom above: this is the CARD's own border/surface/
+   position feedback (border brighten, a soft indigo lift shadow, a 1-2px
+   upward shift), while `.promo-card__visual` above still owns the
+   illustration+glow scale — two independent effects triggered by the same
+   :hover/:active, per this task's own split ("do not apply a large card
+   scale, the card should feel elevated, not inflated"). Kept out of the
+   card's own Tailwind `transition`/`duration-150` utility class (removed
+   from PromoStrip.jsx's card className) specifically so this exact
+   property list and timing apply, not a competing utility-class default. */
+.promo-card {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .promo-card:hover {
+    border-color: rgba(94, 130, 255, 0.45);
+    box-shadow: var(--elevation-low), 0 12px 24px -14px rgba(59, 89, 255, 0.4), inset 0 0 0 1px rgba(94, 130, 255, 0.06);
+    transform: translateY(-2px);
+  }
+  /* The secondary CTA (View wallet/Claim bonus/View race) visually enters
+     its own :hover appearance too when the CARD is hovered, even if the
+     pointer is elsewhere on the card — matches button.jsx's promo-outline
+     variant's own :hover recipe exactly (kept as literal duplicate values,
+     not a shared token, since one is a real :hover pseudo-class on the
+     button itself and this is a descendant-selector rule keyed off the
+     card instead; button.jsx doesn't import this file's tokens). */
+  .promo-card:hover [data-variant="promo-outline"] {
+    border-color: #5e82ff;
+    background-color: rgba(79, 115, 255, 0.08);
+    color: #ffffff;
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .promo-card:active {
+    border-color: rgba(94, 130, 255, 0.45);
+    box-shadow: var(--elevation-low), 0 8px 16px -10px rgba(59, 89, 255, 0.35), inset 0 0 0 1px rgba(94, 130, 255, 0.06);
+  }
+}
+/* Reduced motion disables the LIFT (transform) specifically, per this
+   task's own "preserve colour and focus feedback" — border/shadow still
+   change on hover/press, only the translateY movement is removed. */
+@media (prefers-reduced-motion: reduce) {
+  .promo-card {
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .promo-card:hover,
+  .promo-card:active {
+    transform: none;
+  }
 }
 
 /* CASINO GAME EXPERIENCE — opening/closing a game (CasinoGamePage
@@ -500,6 +619,16 @@ html {
      glows can each use their own intended opacity. */
   --global-cta-focus-ring: rgba(61, 109, 255, 0.22);
   --global-cta-glow: rgba(61, 109, 255, 0.55);
+
+  /* Favorites chip redesign: the one control in the app where "active"
+     reads as gold rather than the brand blue (blue is reused instead for
+     the chip's active border, so the two accents divide the state clearly:
+     gold = favorited, blue = focus/selection everywhere else). Matches the
+     #FFD36B gold already used as a decorative accent in shell artwork (see
+     SportsLiveMatch.jsx etc.) — not previously promoted to a shared token
+     since no other control needed it before this one. */
+  --favorite-gold: #FFD36B;
+  --favorite-gold-glow: rgba(255, 211, 107, 0.4);
 
   --success: #46C98C;
   --success-bg: color-mix(in srgb, var(--success) 14%, transparent);
@@ -777,6 +906,43 @@ html {
   --placeholder-gradient-4: linear-gradient(135deg, #0d1a12 0%, #1c3b24 100%); /* dark green -> forest */
   --placeholder-gradient-5: linear-gradient(135deg, #200d14 0%, #4a1f35 100%); /* burgundy -> muted magenta */
   --placeholder-gradient-6: linear-gradient(135deg, #241505 0%, #4a2a0e 100%); /* dark amber -> burnt orange */
+
+  /* ── COMPONENT: casino promo cards (Wallet/Welcome Offer/Weekly Race) ────
+     WALLET PROMO ARTWORK — dedicated background originally built for the
+     Wallet card only (PromoStrip.jsx's WalletCard), replacing its previous
+     flat --card fill. Values are the approved direction's own literal
+     recipe, kept close to as-given rather than derived from --global-cta:
+     the glow is tuned to the specific violet-blue palette of the supplied
+     wallet illustration (public/heroes/wallet-promo.webp), not the app's
+     general brand blue — a color-mix off --global-cta lands measurably
+     less violet. Split into two named layers (glow + base) so both can be
+     referenced independently, and so no component hardcodes the raw
+     gradient inline. SHARED GRADIENT PASS: now also applied byte-for-byte
+     to WelcomeOfferCard and WeeklyRaceCard (all three cards' supplied
+     illustrations are the same violet-blue family, so the identical
+     tokens read as intentional, not mismatched, and the three read as one
+     unified set) — the two names still say "wallet" for continuity with
+     the original call site, not because it's wallet-exclusive anymore.
+     All three Casino promo cards have now diverged into their own bespoke
+     card components; Sports/Predictions' own promo tiles still use the
+     shared PromoCard + plain --card fill, untouched by any of this.
+
+     ONE-LAYER HOVER PASS — REVERTED: an intermediate attempt moved this
+     entire gradient off the card and into `.promo-card__ambient` (renamed
+     to --wallet-card-ambient-tint), leaving the static card a flat --card
+     fill, on the theory that the gradient's own rightward brightening read
+     as part of the illustration's atmosphere. That went too far — it
+     visibly stripped the approved card background (confirmed by direct
+     comparison against the last approved screenshots: Welcome Offer/
+     Weekly Race in particular read as flat/missing their intended
+     surface), and per this task's own explicit correction, only the
+     LOCALIZED radial bloom immediately around the asset (--wallet-card-
+     glow) is meant to travel with the illustration — the broad diagonal
+     wash below is the card's actual static surface treatment and stays
+     put, full stop. --wallet-card-glow lives ONLY in `.promo-card__ambient`
+     now (see that class) — never duplicated back onto the static card. */
+  --wallet-card-glow: radial-gradient(circle at 78% 48%, rgba(76, 89, 255, 0.18), transparent 42%);
+  --wallet-card-bg: linear-gradient(135deg, #0b1020 0%, #0d1326 52%, #11183a 100%);
 
   /* ── SEMANTIC: border roles ──────────────────────────────────────────────
      Maps the handful of border expressions actually in use

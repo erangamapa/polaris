@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, ChevronDown, Copy, Loader2, X } from "lucide-react";
+import { Search, ChevronDown, Copy, Loader2, X, ArrowRight } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/mockData";
@@ -9,8 +9,7 @@ import { track } from "@/lib/telemetry";
 import { CASINO_CHAIN_ID } from "@shared/chains";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { PromoCard, CARD_H } from "@/components/shell/PromoCard";
-import { GlowBackdrop } from "@/components/shell/artwork/GlowBackdrop";
+import { CARD_H } from "@/components/shell/PromoCard";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { useDevMockState } from "@/lib/devMock";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
@@ -19,40 +18,118 @@ import { ARENAS } from "@/lib/arenas";
 
 export { CARD_H };
 
-// A clearly legible wallet mark — inspired by the reference art (dark bifold +
-// a coin catching a glow tinted with the current Platform Action color),
-// built as an inline SVG (no generated text, no background, no branded
-// logos), sized to actually fill its column rather than fade away. RESKIN
-// BUG FOUND: this had been hardcoded to a literal hex (first ivory Halo,
-// then Mint) rather than a var() reference, so it silently survived two
-// prior color migrations unnoticed. Now reads var(--global-cta) directly
-// (color-mix() for the partial-opacity strokes/glow) so a future Platform
-// Action color change reaches this automatically — no more stale copies.
-// MOCKUP ALIGNMENT CORRECTION: size caps raised (max-h/w-28 -> -44) now
-// that CARD_H is taller on desktop (see PromoCard.jsx) — at the old cap
-// this mark stayed pinned at ~112px inside a much bigger artwork zone,
-// reading as a small disconnected icon adrift in empty space rather than
-// artwork with real presence.
-// SURFACE HIERARCHY POLISH: 82%/44 -> 90%/48 (176px -> 192px, ~9% larger)
-// on all three promo illustrations (this one, WelcomeArtwork, RaceArtwork
-// below) — still expressed as a percentage of the artwork zone (itself
-// unchanged: card width/height, CTA placement and the zone's own 38%/42%
-// split are all untouched), so this scales down safely at narrower
-// desktop widths exactly as before; only the upper-bound cap and relative
-// fill percentage grew.
-function WalletMark() {
+// CLICKABLE CARD PASS: every promo card's own nested "real" control (CTA,
+// the wallet copy button) sits inside the card's own onClick region — a
+// plain click on any of them bubbles up to the card's onClick too unless
+// stopped, which would either double-fire the same action (CTA) or fire
+// an action that specific control must never trigger (Copy must never
+// also open the wallet). One small helper rather than repeating the same
+// `(e) => { e.stopPropagation(); fn?.(e); }` six times across the file.
+const stopAnd = (fn) => (e) => {
+  e.stopPropagation();
+  fn?.(e);
+};
+
+// WALLET PROMO ARTWORK — replaces the previous inline SVG (WalletMark) with
+// the supplied wallet illustration (public/heroes/wallet-promo.webp).
+// SIZE-UP PASS: the first cut of this asset kept the source's original
+// framing (1536x1024, wallet occupying only the right ~52% of its own
+// canvas, the rest genuinely-transparent dead space to its left). Under
+// object-fit:contain, that dead space renders too — it doesn't disappear,
+// it just becomes part of the "fitted" box — so the wallet itself came out
+// reading like a small icon floating in a mostly-empty zone. Fixed at the
+// source: re-cropped tight around the actual opaque wallet+coin bounding
+// box (found by alpha-density sampling, not eyeballing) plus a deliberate
+// margin for the glow/light-trail bleed the direction calls for, then
+// re-exported at 900x935 WebP (alpha re-verified intact post-crop). Same
+// fix applies to every card that reuses this file — it's a property of
+// the asset, not the layout.
+//
+// object-contain + object-right: the crop's real content still touches
+// its own right edge with no dead margin, so anchoring right keeps the
+// wallet flush with the zone's right edge (matching the other two cards'
+// artwork). No CSS mask (unlike WelcomeArtwork/RaceArtwork's hand-drawn
+// SVGs below) — the asset's own alpha already handles the fade, a mask on
+// top would be a no-op.
+//
+// SLIGHT SIZE-UP PASS: scale-[1.265] origin-right is a deliberate, small
+// supplement on top of the zone's own (now-maximized) dimensions below —
+// not the primary sizing mechanism. Why it's needed: with CARD_H fixed
+// (untouchable) and this crop's aspect ratio narrower than the zone's,
+// object-contain is height-bound — the zone's own content-box height is a
+// hard ceiling that widening the zone further can't push past. Growing
+// the zone to its practical max only got partway to the requested size
+// increase; this closes the remaining gap. origin-right keeps the growth
+// pushing left/vertically-centered (into the zone's own unused slack),
+// never rightward past the already-correct right-edge inset — combined
+// with the zone's own overflow-hidden below, any excess clips at the
+// text/artwork boundary rather than ever touching the copy column.
+// +10% PASS: 1.265 = 1.15 * 1.10 — this task asked for "the current
+// illustration" (already at 1.15) enlarged by exactly 10% more, not for
+// the scale value itself to become 1.10 (that would be a decrease).
+// Zone dimensions, vertical centering and right-edge alignment below are
+// all untouched — only this multiplier changed.
+//
+// CLIP FIX (asset, not CSS): scale-[1.265] (at the time) with a
+// vertically-centered origin always magnifies the SAME proportional
+// fraction of the source image's own height off both its top and bottom
+// — (s-1)/(2s) — regardless of how big the zone/box is. Widening the
+// zone can't fix that (confirmed by measurement: doing so only grows the
+// absolute clip amount in lockstep, since the fraction is fixed by the
+// scale value alone). The +10% pass pushed that fraction past the coin's
+// real position in the previous crop. Re-cropped public/heroes/
+// wallet-promo.webp from the original source with the full available
+// natural top/bottom margin, plus a modest amount of added transparent
+// canvas (padding, not stretching — verified alpha=0 in the added rows)
+// to push both margins safely past the clip line.
+//
+// +15% PASS: 1.455 = 1.265 * 1.15 — same reading as the prior +10% pass:
+// "increase the [current, already-enlarged] illustration by 15%," not
+// "set the scale value to 1.15" (which would shrink it from 1.265). A
+// bigger scale means a bigger clip fraction too — (s-1)/(2s) grows from
+// ~10.5% at s=1.265 to ~15.6% at s=1.455 — which would have eaten back
+// into the coin again with the previous asset's margins (recomputed: top
+// margin was only ~4.6 rows short at this new fraction, i.e. right on the
+// edge). Added another 60px of transparent top padding to
+// wallet-promo.webp (same padding-not-stretching technique, alpha=0
+// verified in the added rows) to restore real buffer at the new scale —
+// this is the asset, not this component, growing again; the CSS below is
+// otherwise unchanged from the prior pass.
+//
+// +10% PASS (again): 1.6005 = 1.455 * 1.10, same "grow the current size"
+// reading as every prior +N% pass. This task's own preference — grow the
+// wrapper's dimensions instead of a transform, since a transform "may
+// cause blur or unexpected overflow" — was checked first: the wrapper
+// (WalletCard's zone below, top-4/bottom-4) is already sized to the
+// maximum available space under a fixed CARD_H and fixed card padding
+// (both explicitly off-limits this task, as every task before it) — there
+// is no more room to give it. transform:scale remains the only lever left
+// that doesn't touch either. It's a pure CSS matrix scale on a raster
+// image already exported at a resolution well above its rendered size, so
+// it doesn't blur in practice, and "unexpected overflow" is exactly what
+// the asset-margin work below (and every prior +N% pass) exists to
+// prevent by design, not leave to chance. Clip fraction at s=1.6005 is
+// (s-1)/(2s)≈18.76%; added another 60px of transparent padding to BOTH
+// top and bottom of wallet-promo.webp this time (previous margins were
+// only ~5-7px from the new clip line at this fraction — real risk, not
+// just "in principle") to restore ~42-44px of buffer on both sides.
+// HOVER/PRESS ZOOM PASS: origin-right + scale-[1.6005] (this card's own
+// baseline size, built up over several prior passes) live on the
+// `.promo-card__visual` wrapper in WalletCard below, not this <img>
+// directly — see ONE-LAYER PASS: the illustration and its glow now scale
+// together as a single visual unit, so the scale/origin machinery moved
+// up to whatever wraps both of them. object-contain/object-right (the
+// actual image-fit behavior) stay right here on the image itself.
+function WalletArtwork() {
   return (
-    <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
-      <GlowBackdrop />
-      <svg viewBox="0 0 100 100" className="relative h-[90%] w-[90%] max-h-48 max-w-48">
-        <rect x="12" y="32" width="76" height="52" rx="10" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
-        <path d="M12 47 h76" stroke="color-mix(in srgb, var(--global-cta) 24%, transparent)" strokeWidth="1.2" />
-        <circle cx="76" cy="60" r="6" fill="var(--global-cta)" />
-        <rect x="26" y="12" width="36" height="24" rx="5" fill="#181C22" stroke="color-mix(in srgb, var(--global-cta) 30%, transparent)" strokeWidth="1.5" transform="rotate(-8 44 24)" />
-        <circle cx="54" cy="20" r="13" fill="#FFD36B" />
-        <circle cx="54" cy="20" r="7.5" fill="none" stroke="#181C22" strokeOpacity="0.55" strokeWidth="1.2" />
-      </svg>
-    </div>
+    <img
+      src="/heroes/wallet-promo.webp"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      fetchPriority="low"
+      className="promo-card__illustration h-full w-full object-contain object-right"
+    />
   );
 }
 
@@ -60,37 +137,144 @@ function WalletMark() {
 // own justify-between so heading/body/CTA space out instead of clustering at
 // the top) + a fixed-width illustration column (~36-40%) that can never be
 // overlapped by text since they're separate flex children, not a text-over-
-// image overlay. Same CARD_H/radius/border/background tokens as PromoCard
-// (this tile sits in the exact same row) — a bare <button> is inline-block
+// image overlay. Same CARD_H/radius/border/padding as PromoCard (this tile
+// sits in the exact same row — WALLET PROMO ARTWORK: background is now its
+// own dedicated tokens, see below, everything else still matches) — a bare
+// <button> is inline-block
 // and won't stretch on its own, which is why the outer div (not the button)
 // owns `w-full`. Illustration hidden below `sm:`: at the ~110px mobile card
 // width fixed by the existing 3-col grid there isn't room for a legible
 // illustration alongside readable text and a tappable CTA.
-function WalletCard({ children, tone = "neutral" }) {
+function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
   return (
     <div
       // CARD POLISH: same subtle resting elevation as the promo cards
       // beside it in this row (--elevation-low).
+      // WALLET PROMO ARTWORK: default tone's flat --card fill replaced
+      // with --wallet-card-bg (the broad, static navy-to-indigo diagonal
+      // wash — see index.css) so the card blends with the illustration's
+      // own violet-blue palette — border, radius, padding and CTA sizing
+      // are all untouched, so it stays equal to Welcome Offer/Weekly Race
+      // in every dimension. The wrong-network warning tone keeps its
+      // existing flat --card fill and amber border exactly as before.
+      // RESTORE NOTE: an intermediate pass moved this whole wash off the
+      // card and into the hover-scaling wrapper, which visibly stripped
+      // the card's intended surface (confirmed against the last approved
+      // screenshots) — reverted. Only the small, localized radial glow
+      // (--wallet-card-glow, in `.promo-card__ambient` below) travels with
+      // the illustration; this broad wash stays right here, static.
+      //
+      // CLICKABLE CARD PASS: onActivate is the SAME handler the state's
+      // own visible CTA below already calls (connect/switchTo/openAccount
+      // — see PlayerTile) — never a separate/new action, so "the card and
+      // its CTA trigger the same action" holds by construction. Deliberately
+      // a plain <div> with role="button" (not a real <button> or <a>
+      // wrapping everything) — a real button/link element can't validly
+      // contain another nested interactive control (the CTA, and for the
+      // connected state the Copy button too), which is exactly the invalid-
+      // markup trap a stretched-link naively risks. role="button" +
+      // tabIndex + onKeyDown (Enter/Space) recreates the same semantics and
+      // keyboard behavior by hand instead. Omitted entirely (undefined)
+      // for the "connecting" state — nothing to activate yet, matches that
+      // state's own disabled button. The nested CTA/Copy buttons each wrap
+      // their own onClick in `stopAnd(...)` so a click on them never also
+      // bubbles up and re-fires (or wrongly fires) this handler — see
+      // PlayerTile.
+      role={onActivate ? "button" : undefined}
+      tabIndex={onActivate ? 0 : undefined}
+      aria-label={onActivate ? activateLabel : undefined}
+      onClick={onActivate}
+      onKeyDown={
+        onActivate
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onActivate(e);
+              }
+            }
+          : undefined
+      }
+      // FLUSH RIGHT-EDGE PASS: this outer element itself is now
+      // deliberately unpadded (p-4 moved to the text wrapper below).
+      // Absolutely positioned children (the artwork, below) are placed
+      // relative to their nearest positioned ancestor's PADDING box, not
+      // its border box — so as long as ANY ancestor in the chain up to
+      // here carries padding, `right: 0` on the artwork can only ever
+      // reach that padding edge, never the card's true outer edge, no
+      // matter how the artwork itself is styled. Moving p-4 off this
+      // element removes that ceiling entirely instead of fighting it with
+      // a compensating negative offset.
       className={cn(
         CARD_H,
-        "relative flex w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-lg border p-4 text-left shadow-[var(--elevation-low)] transition duration-150",
-        tone === "warning" ? "border-[var(--warning)]/30 bg-[var(--card)]" : "border-[var(--border)] bg-[var(--card)]"
+        "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border text-left shadow-[var(--elevation-low)]",
+        tone === "warning" ? "border-[var(--warning)]/30 bg-[var(--card)]" : "border-[var(--border)]",
+        onActivate && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}
+      style={tone === "warning" ? undefined : { background: "var(--wallet-card-bg)" }}
     >
-      <div className="flex h-full min-w-0 flex-1 flex-col justify-between">{children}</div>
-      {/* MOCKUP ALIGNMENT CORRECTION: ratio unified with PromoCard's own
-          artwork zone (was 36%/40%, PromoCard uses 38%/42% — "consistent
-          artwork zone" across all three cards), and the same soft left-
-          edge fade applied so the wallet mark blends into the card the
-          same way the other two cards' artwork now does. */}
+      {/* Carries the p-4 this element used to have, plus a max-width cap
+          (complementing the artwork's own width tiers below with a couple
+          points of buffer) — needed now because, with the artwork out of
+          flow, this column would otherwise stretch to the card's full
+          width. relative z-10 is what keeps it — and everything in it:
+          status, address, balance, Retry, CTA, copy button — painted
+          above the artwork: an absolutely positioned element with
+          z-index:auto (the artwork) paints above normal in-flow content
+          by default regardless of DOM order, so without an explicit
+          higher z-index here the artwork would sit on top, not behind. */}
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4 sm:max-w-[58%] lg:max-w-[54%] xl:max-w-[52%]">
+        {children}
+      </div>
+      {/* WALLET PROMO ARTWORK — FLUSH RIGHT-EDGE PASS: absolutely
+          positioned against this card's own (now unpadded) box instead of
+          being an in-flow flex sibling, specifically so `right-0` lands
+          on the card's true inner-right edge with zero gap, per the
+          asset itself having zero transparent margin on its own right
+          edge (verified by alpha-sampling the exported WebP's last
+          column — content is opaque there, nothing being hidden).
+          top-4/bottom-4 (not inset-y-0) is deliberate: it reproduces the
+          exact same box height as the old p-4-bounded flex zone
+          (CARD_H minus 32px), not the card's full height, so the
+          artwork's own height and vertical position are byte-for-byte
+          unchanged from the prior pass — only the positioning mechanism
+          and horizontal placement changed. Width tiers (40/44/46%) also
+          unchanged; the containing block is now the card's border box
+          rather than its old content-box, but the render stays
+          height-bound either way (confirmed empirically — the extra
+          width is unused slack, not extra rendered size). Same
+          overflow-hidden + scale-[1.15] safety pairing as before.
+          pointer-events-none so this decorative layer can never
+          intercept clicks. `promo-card` on the outer element above is
+          what the hover/press zoom (index.css's `.promo-card:hover` /
+          `:active`) actually keys off of — the whole card is the
+          interaction target, not just this zone.
+
+          ONE-LAYER PASS: this div is `promo-card__visual` — the scaling
+          wrapper itself (see index.css) — with the LOCALIZED glow
+          (`.promo-card__ambient`, --wallet-card-glow only — the small
+          radial bloom immediately around the asset, not the card's broad
+          background wash above) as its first child and the illustration
+          as its second, so the illustration and its immediate glow scale
+          together as one unit. --illustration-base-scale is set here (not
+          on WalletArtwork's own <img> anymore) since the WRAPPER is what
+          scales now. Ambient is only rendered for the non-warning tone,
+          matching the card's own background conditional above exactly
+          (the warning/wrong-network state never had a glow, only the flat
+          --card fill). The inner `relative z-10` div around WalletArtwork
+          keeps the illustration painting above the ambient glow (same
+          z-index:auto/positioned-sibling reasoning as promo-card__content
+          above, one level down). Still no mask — see WalletArtwork's own
+          comment. */}
       <div
-        className="hidden w-[38%] shrink-0 sm:block lg:w-[42%]"
-        style={{
-          maskImage: "linear-gradient(to right, transparent, black 30%)",
-          WebkitMaskImage: "linear-gradient(to right, transparent, black 30%)",
-        }}
+        className="promo-card__visual pointer-events-none absolute top-4 bottom-4 right-0 hidden w-[40%] overflow-hidden sm:block lg:w-[44%] xl:w-[46%]"
+        style={{ "--illustration-base-scale": 1.6005 }}
       >
-        <WalletMark />
+        {tone !== "warning" && (
+          <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
+        )}
+        <div className="relative z-10 h-full w-full">
+          <WalletArtwork />
+        </div>
       </div>
     </div>
   );
@@ -108,57 +292,292 @@ function WalletCard({ children, tone = "neutral" }) {
 // transparent PNG/WebP asset in the correct palette exists in the repo,
 // so per the task's own fallback guidance ("if proper standalone artwork
 // is not available, use tasteful abstract CSS-backed art zones rather
-// than low-quality thumbnail images") these are restrained SVG motifs —
-// same construction technique as WalletMark (a handful of shapes, one
-// brand-tinted radial glow, color-mix() strokes/fills reading var(
-// --global-cta) directly so a future brand recolor reaches these too),
-// so all three cards' artwork now visibly belong to one system instead
-// of "one icon + two unrelated photos". Real campaign artwork can replace
-// either of these later by swapping just the component passed as
-// `artwork` — PromoCard's contract (a zero-prop component reference) is
-// unchanged. GlowBackdrop itself now lives in shell/artwork/ (shared with
-// Sports/Predictions' own artwork, which reuses this exact recipe).
+// than low-quality thumbnail images") these were restrained SVG motifs — a
+// handful of shapes, one brand-tinted radial glow, color-mix() strokes/
+// fills reading var(--global-cta) directly so a future brand recolor
+// reaches these too. GlowBackdrop (shell/artwork/GlowBackdrop.jsx) is
+// still shared with Sports/Predictions' own artwork elsewhere in the app,
+// but is no longer imported here — WALLET PROMO ARTWORK: the Wallet
+// card's own artwork moved to a real supplied photo (WalletArtwork above)
+// rather than this SVG technique. WELCOME OFFER ARTWORK / WEEKLY RACE
+// ARTWORK: both cards' SVG motifs (gift box, trophy) have since also been
+// replaced by real supplied illustrations, for the same reason — real
+// campaign artwork existed for all three, so the SVG/GlowBackdrop
+// fallback isn't needed for any Casino promo card anymore. All three
+// (Wallet, Welcome Offer, Weekly Race) are now bespoke card components,
+// no longer routed through the shared PromoCard (still used by Sports/
+// Predictions' own promo tiles, imported separately there).
 
-// Gift-box motif for the welcome/deposit-bonus offer.
-function WelcomeArtwork() {
+// Gift-box illustration for the welcome/deposit-bonus offer
+// (public/heroes/welcome-offer-promo.webp). SOURCE ASSET NOTE: the file as
+// supplied was NOT a transparent PNG — sips/`file` both reported plain
+// 8-bit RGB, no alpha channel, and pixel-sampling the "empty" left region
+// found it was a literal checkerboard pattern (alternating ~(243,243,243)/
+// ~(253,253,253) pixels) baked in as real, opaque color — i.e. whatever
+// tool exported it had flattened its transparency indicator onto the
+// canvas instead of preserving real alpha. Reconstructed a genuine alpha
+// channel from this rather than using the file as-is (which would have
+// rendered a literal grey-and-white checker block on the card) or assuming
+// a flat white background (naive white-removal would have left checker
+// residue): computed per-pixel saturation (max−min of R/G/B) and mapped it
+// through a soft ramp (0 alpha at saturation ≤4, 255 at saturation ≥60,
+// linear between) — the checkerboard is essentially zero-saturation
+// gray/white, the real illustration is highly saturated blue/violet/gold,
+// so this cleanly separates the two without touching genuine bright
+// content (the gold coin and light ribbon highlights are desaturated-but-
+// bright, not desaturated-and-gray, so they survive intact). Verified no
+// white-matte fringing post-reconstruction (edge pixels trend violet/blue,
+// not white) and that the real content still touches the source's own
+// right edge with zero dead margin, matching WalletArtwork's asset.
+// Cropped away most of the dead checkerboard region, then exported at
+// 900x985 WebP (~245KB, alpha verified intact).
+//
+// FULL-BLEED PASS: no scale transform here (unlike WalletArtwork) — the
+// zone below is now inset-y-0 (full CARD_H, not top-4/bottom-4), and this
+// crop's aspect ratio keeps it height-bound under object-contain, so the
+// rendered image already fills that full height exactly with zero gap;
+// this asset's own alpha genuinely reaches non-zero right at its top and
+// bottom rows (verified — the artist's own soft fade, not dead margin),
+// so there's real visible content meeting the card's top/bottom edges
+// without needing a supplemental scale. Adding one here (as Wallet does)
+// would grow the image further from a vertically-centered origin and get
+// clipped by the zone's own overflow-hidden at the card's true top/bottom
+// edges — i.e. it would crop the gift box, which this task explicitly
+// forbids. The zone's own height increase is the entire size-up here.
+// ONE-LAYER PASS: the hover/press zoom (index.css's `.promo-card__visual`)
+// now lives on WelcomeOfferCard's wrapping div, not this <img> — see
+// WalletArtwork's own comment for why. No --illustration-base-scale
+// override needed on that wrapper (unlike Wallet's), the shared rule's
+// own `1` fallback is already correct since this artwork has no static
+// baseline scale of its own.
+function WelcomeOfferArtwork() {
   return (
-    <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
-      <GlowBackdrop />
-      <svg viewBox="0 0 100 100" className="relative h-[90%] w-[90%] max-h-48 max-w-48">
-        <rect x="18" y="42" width="64" height="42" rx="6" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
-        <rect x="14" y="30" width="72" height="16" rx="5" fill="#181C22" stroke="color-mix(in srgb, var(--global-cta) 40%, transparent)" strokeWidth="2" />
-        <rect x="45" y="30" width="10" height="54" fill="color-mix(in srgb, var(--global-cta) 55%, transparent)" />
-        <path
-          d="M50 30 C40 30 34 20 42 14 C48 10 50 22 50 30 Z M50 30 C60 30 66 20 58 14 C52 10 50 22 50 30 Z"
-          fill="var(--global-cta)"
-        />
-        <circle cx="26" cy="70" r="2.5" fill="color-mix(in srgb, var(--global-cta) 45%, transparent)" />
-        <circle cx="76" cy="58" r="2" fill="color-mix(in srgb, var(--global-cta) 35%, transparent)" />
-        <circle cx="72" cy="76" r="1.6" fill="#FFD36B" />
-      </svg>
+    <img
+      src="/heroes/welcome-offer-promo.webp"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      fetchPriority="low"
+      className="promo-card__illustration h-full w-full object-contain object-right"
+    />
+  );
+}
+
+// Card shell for the Welcome Offer promo — structurally identical to
+// WalletCard above (same CARD_H/radius/border/shadow, same "outer element
+// unpadded, p-4 moved to a z-10 text wrapper, artwork absolutely
+// positioned flush right" pattern, for the same reason: `right: 0` on an
+// absolutely positioned child can only ever reach its nearest positioned
+// ancestor's PADDING edge, never its border edge, so the only way to get
+// truly zero gap against the card's real right edge is to keep this outer
+// element itself unpadded). GRADIENT PASS: uses the exact same
+// --wallet-card-glow/--wallet-card-bg pair as WalletCard (see index.css)
+// instead of the flat --card fill — reusing the identical tokens rather
+// than a new pair guarantees the direction/colors/intensity match exactly.
+// --wallet-card-bg (the broad, static wash) stays on this card's own
+// background; --wallet-card-glow (the small, localized bloom) lives only
+// in `.promo-card__ambient` below, scaling with the illustration. Weekly
+// Race (WeeklyRaceCard, below) matches this exactly too, for the same
+// reason — all three promo cards share one static background and one
+// scaling localized-glow treatment.
+function WelcomeOfferCard({ eyebrow, title, metadata, cta, onCtaClick }) {
+  return (
+    <div
+      // CLICKABLE CARD PASS: same pattern as WalletCard — see that
+      // component's own comment for the full reasoning (plain div +
+      // role="button" rather than a real <button>/<a> wrapping the CTA,
+      // which would be invalid nested-interactive markup). onActivate
+      // here is just onCtaClick itself — this card only ever had the one
+      // action, so "the card and its CTA trigger the same action" is
+      // automatic, not a separate wire-up. Currently a no-op in practice
+      // (PromoStrip's own render call below doesn't pass onCtaClick a
+      // value yet — this is still mock/placeholder promo content with no
+      // real destination), which this task's "preserve routing
+      // destinations" leaves exactly as-is: nothing to route to yet, so
+      // nothing fires, on the card OR the button, same as before.
+      role={onCtaClick ? "button" : undefined}
+      tabIndex={onCtaClick ? 0 : undefined}
+      aria-label={onCtaClick ? cta : undefined}
+      onClick={onCtaClick}
+      onKeyDown={
+        onCtaClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onCtaClick(e);
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        CARD_H,
+        "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]",
+        onCtaClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      )}
+      style={{ background: "var(--wallet-card-bg)" }}
+    >
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4 sm:max-w-[58%] lg:max-w-[54%] xl:max-w-[52%]">
+        <div className="min-w-0">
+          <MicroLabel className="-ml-[9px]">{eyebrow}</MicroLabel>
+          <h3
+            className="mt-1.5 text-lg font-bold text-[var(--foreground)]"
+            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+          >
+            {title}
+          </h3>
+          {metadata && (
+            <p
+              className="mt-1 text-xs leading-snug text-[var(--ink-dim)]"
+              style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            >
+              {metadata}
+            </p>
+          )}
+        </div>
+        {/* SECONDARY CTA PASS: promo-outline (index.css/button.jsx) — the
+            header's own filled --global-cta button is now the app's one
+            true primary CTA; this and Weekly Race's "View race" are the
+            two the task names for the optional small trailing arrow. */}
+        <Button variant="promo-outline" size="sm" onClick={stopAnd(onCtaClick)} className="w-fit">
+          {cta}
+          <ArrowRight className="size-3.5" aria-hidden="true" />
+        </Button>
+      </div>
+      {/* FULL-BLEED PASS: inset-y-0 (was top-4/bottom-4) — spans the
+          card's full, true height so the illustration's top/bottom
+          touch the card's own inner border with zero gap, per this
+          task's explicit ask (distinct from Wallet, which keeps its
+          top-4/bottom-4 inset — "maintain vertical center" there, not
+          "touch the edges"). overflow-hidden here is still the safety
+          net; at every tested size the content-based render doesn't
+          exceed the box, so nothing actually clips.
+
+          ONE-LAYER PASS: `promo-card__visual` — the LOCALIZED glow
+          (`.promo-card__ambient`, --wallet-card-glow only, not the card's
+          broad background wash above) plus the illustration, scaling
+          together on hover/press as one unit (see index.css and
+          WalletCard's own comment for the full reasoning). No
+          --illustration-base-scale override needed — this card has no
+          static rest-state scale. */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[40%] overflow-hidden sm:block lg:w-[44%] xl:w-[46%]">
+        <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
+        <div className="relative z-10 h-full w-full">
+          <WelcomeOfferArtwork />
+        </div>
+      </div>
     </div>
   );
 }
 
-// Trophy motif for the weekly race/leaderboard promo.
-function RaceArtwork() {
+// Trophy illustration for the weekly race/leaderboard promo
+// (public/heroes/weekly-race-promo.webp), replacing the SVG trophy motif
+// for the same reason Welcome Offer's gift box was replaced: real supplied
+// campaign artwork now exists for this card too. SOURCE ASSET NOTE: unlike
+// Welcome Offer's asset, this one genuinely has a working alpha channel
+// (sips/`file` both confirm real RGBA, not a flattened checkerboard) — no
+// reconstruction needed, just the standard crop-for-margin treatment. One
+// difference from Wallet/Welcome Offer's assets: this trophy's own glow
+// doesn't touch its source canvas's right edge at full opacity — it fades
+// out gradually over roughly its last 30px (alpha ~25 at the very edge,
+// not 0) — cropped tightly to just past where that fade becomes
+// imperceptible rather than to a hard content edge, so object-position:
+// right still reads as flush with no dead gap, just a soft natural taper
+// (consistent with "let glow extend, fade before the text zone" elsewhere
+// on these cards). Cropped from the 1536x1024 source with generous margin
+// around the solid trophy/coins core, exported at 900x805 WebP (~298KB).
+// ONE-LAYER PASS: the hover/press zoom (index.css's `.promo-card__visual`)
+// now lives on WeeklyRaceCard's wrapping div, not this <img> — same
+// reasoning as WelcomeOfferArtwork above, no base-scale override needed
+// since this artwork has no static scale of its own either.
+function WeeklyRaceArtwork() {
   return (
-    <div className="relative flex h-full w-full items-center justify-center" aria-hidden="true">
-      <GlowBackdrop />
-      <svg viewBox="0 0 100 100" className="relative h-[90%] w-[90%] max-h-48 max-w-48">
-        <path
-          d="M38 20 h24 v20 c0 10 -5.4 16 -12 16 s-12 -6 -12 -16 Z"
-          fill="#181C22"
-          stroke="color-mix(in srgb, var(--global-cta) 40%, transparent)"
-          strokeWidth="2"
-        />
-        <path d="M38 24 c-9 0 -13 5 -13 12 s5 12 11 12" fill="none" stroke="color-mix(in srgb, var(--global-cta) 45%, transparent)" strokeWidth="3" />
-        <path d="M62 24 c9 0 13 5 13 12 s-5 12 -11 12" fill="none" stroke="color-mix(in srgb, var(--global-cta) 45%, transparent)" strokeWidth="3" />
-        <circle cx="50" cy="32" r="6" fill="#FFD36B" />
-        <rect x="46" y="55" width="8" height="12" fill="color-mix(in srgb, var(--global-cta) 55%, transparent)" />
-        <rect x="34" y="67" width="32" height="8" rx="2" fill="#101418" stroke="color-mix(in srgb, var(--global-cta) 35%, transparent)" strokeWidth="2" />
-        <rect x="28" y="75" width="44" height="9" rx="2.5" fill="var(--global-cta)" />
-      </svg>
+    <img
+      src="/heroes/weekly-race-promo.webp"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      fetchPriority="low"
+      className="promo-card__illustration h-full w-full object-contain object-right"
+    />
+  );
+}
+
+// Card shell for the Weekly Race promo — structurally identical to
+// WalletCard/WelcomeOfferCard above (unpadded outer element, p-4 moved to
+// a z-10 text wrapper, artwork absolutely positioned flush right — see
+// WalletCard's comment for why this is the only way to reach the card's
+// true right edge with zero gap). Static background is --wallet-card-bg
+// (the broad wash), same as the other two — --wallet-card-glow (the
+// small, localized bloom) lives only in `.promo-card__ambient` below,
+// scaling with the illustration. top-3/bottom-3 (12px each, not Welcome
+// Offer's inset-y-0 full-bleed) is deliberate — this task asked for
+// ~85-90% of card height with a small safe margin at top/bottom, not a
+// zero-gap touch: zone height = CARD_H-24, which is 85%/88.5% of the full
+// 160/208px CARD_H at the two breakpoints, landing inside the requested
+// range without needing the "touches the edge" treatment Welcome Offer
+// specifically asked for.
+function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
+  return (
+    <div
+      // CLICKABLE CARD PASS: same pattern as WalletCard/WelcomeOfferCard —
+      // see WalletCard's own comment for the full reasoning.
+      role={onCtaClick ? "button" : undefined}
+      tabIndex={onCtaClick ? 0 : undefined}
+      aria-label={onCtaClick ? cta : undefined}
+      onClick={onCtaClick}
+      onKeyDown={
+        onCtaClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onCtaClick(e);
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        CARD_H,
+        "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]",
+        onCtaClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      )}
+      style={{ background: "var(--wallet-card-bg)" }}
+    >
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4 sm:max-w-[58%] lg:max-w-[54%] xl:max-w-[52%]">
+        <div className="min-w-0">
+          <MicroLabel className="-ml-[9px]">{eyebrow}</MicroLabel>
+          <h3
+            className="mt-1.5 text-lg font-bold text-[var(--foreground)]"
+            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+          >
+            {title}
+          </h3>
+          {metadata && (
+            <p
+              className="mt-1 text-xs leading-snug text-[var(--ink-dim)]"
+              style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            >
+              {metadata}
+            </p>
+          )}
+        </div>
+        <Button variant="promo-outline" size="sm" onClick={stopAnd(onCtaClick)} className="w-fit">
+          {cta}
+          <ArrowRight className="size-3.5" aria-hidden="true" />
+        </Button>
+      </div>
+      {/* ONE-LAYER PASS: `promo-card__visual` — the LOCALIZED glow
+          (`.promo-card__ambient`, --wallet-card-glow only, not the card's
+          broad background wash above) plus the illustration, scaling
+          together on hover/press as one unit (see index.css and
+          WalletCard's own comment for the full reasoning). No
+          --illustration-base-scale override needed — this card has no
+          static rest-state scale. */}
+      <div className="promo-card__visual pointer-events-none absolute top-3 bottom-3 right-0 hidden w-[40%] overflow-hidden sm:block lg:w-[44%] xl:w-[46%]">
+        <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
+        <div className="relative z-10 h-full w-full">
+          <WeeklyRaceArtwork />
+        </div>
+      </div>
     </div>
   );
 }
@@ -197,7 +616,7 @@ export function PlayerTile() {
   // WalletButton uses; no second wallet-connect implementation.
   if (!isConnected) {
     return (
-      <WalletCard>
+      <WalletCard onActivate={connect} activateLabel="Connect wallet">
         <div className="min-w-0">
           <MicroLabel>Wallet</MicroLabel>
           {/* MOCKUP ALIGNMENT CORRECTION: text-base -> text-lg, matching
@@ -217,7 +636,12 @@ export function PlayerTile() {
           </h3>
           <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Play, earn and withdraw with one connection.</p>
         </div>
-        <Button size="sm" onClick={connect} data-test-id="wallet-tile-connect" className="w-fit">
+        {/* Not converted to the promo-outline secondary style — the task's
+            own list ("View wallet, Claim bonus, View race") doesn't
+            include this button, and it's this card's only action in this
+            state, closer to a primary "get started" prompt than a quiet
+            secondary one. */}
+        <Button size="sm" onClick={stopAnd(connect)} data-test-id="wallet-tile-connect" className="w-fit">
           Connect wallet
         </Button>
       </WalletCard>
@@ -227,7 +651,11 @@ export function PlayerTile() {
   // 3. Connected on the wrong chain — same switchTo() the auth gate uses.
   if (!onCasinoChain) {
     return (
-      <WalletCard tone="warning">
+      <WalletCard
+        tone="warning"
+        onActivate={isSwitching ? undefined : () => switchTo(CASINO_CHAIN_ID)}
+        activateLabel="Switch network"
+      >
         <div className="min-w-0" role="status" aria-live="polite">
           <MicroLabel className="text-amber-400/80">Wallet</MicroLabel>
           <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">Wrong network</h3>
@@ -235,7 +663,7 @@ export function PlayerTile() {
         </div>
         <Button
           size="sm"
-          onClick={() => switchTo(CASINO_CHAIN_ID)}
+          onClick={stopAnd(() => switchTo(CASINO_CHAIN_ID))}
           disabled={isSwitching}
           data-test-id="wallet-tile-switch-network"
           className="w-fit"
@@ -258,7 +686,7 @@ export function PlayerTile() {
   };
 
   return (
-    <WalletCard>
+    <WalletCard onActivate={openAccount} activateLabel="View wallet">
       <div className="min-w-0">
         <MicroLabel className="inline-flex items-center gap-1.5">
           <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" />
@@ -276,7 +704,11 @@ export function PlayerTile() {
           ) : casinoBalanceError ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-500">Balance unavailable</span>
-              <button type="button" onClick={() => refetchCasinoBalance?.()} className="text-xs font-semibold text-[var(--global-cta-hover)] hover:underline">
+              <button
+                type="button"
+                onClick={stopAnd(() => refetchCasinoBalance?.())}
+                className="text-xs font-semibold text-[var(--global-cta-hover)] hover:underline"
+              >
                 Retry
               </button>
             </div>
@@ -292,13 +724,20 @@ export function PlayerTile() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={openAccount} data-test-id="wallet-tile-view" className="w-fit">
+        {/* SECONDARY CTA PASS: promo-outline — this card's own explicit
+            "View wallet" entry in the approved list. */}
+        <Button size="sm" variant="promo-outline" onClick={stopAnd(openAccount)} data-test-id="wallet-tile-view" className="w-fit">
           View wallet
         </Button>
+        {/* CLICKABLE CARD PASS: this is the one control that must NEVER
+            trigger the card's own onActivate (openAccount) — copying the
+            address is a distinct, self-contained action, not "view
+            wallet". stopAnd still runs copyAddress itself; it only stops
+            the click from also bubbling up to the card. */}
         <Button
           variant="outline"
           size="icon-sm"
-          onClick={copyAddress}
+          onClick={stopAnd(copyAddress)}
           aria-label="Copy wallet address"
           data-test-id="wallet-tile-copy"
         >
@@ -574,10 +1013,10 @@ export function PromoStrip({ query, onQuery, searchPanelProps }) {
       <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
         <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
-          <PromoCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} artwork={WelcomeArtwork} />
+          <WelcomeOfferCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} />
         </div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
-          <PromoCard eyebrow={p2.eyebrow} title={p2.title} metadata={p2.body} cta={p2.cta} artwork={RaceArtwork} />
+          <WeeklyRaceCard eyebrow={p2.eyebrow} title={p2.title} metadata={p2.body} cta={p2.cta} />
         </div>
       </div>
       <ScopedSearch

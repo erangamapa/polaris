@@ -75,10 +75,11 @@ function GameRow({ id, game, active, onHover, onSelect, isFav, onFav }) {
             faved={faved}
             onToggle={() => onFav(game)}
             title={game.title}
+            variant="plain"
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             data-test-id={`casino-search-fav-${testKey}`}
-            className="shrink-0 text-zinc-500 hover:bg-white/10 hover:text-white"
+            className="shrink-0"
           />
         )}
       </a>

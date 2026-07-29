@@ -42,6 +42,23 @@ const buttonVariants = cva(
           "bg-[var(--success)] text-[#06131A] hover:bg-[var(--success)]/90",
         outline:
           "border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        // PROMO CARD SECONDARY CTA: a quieter, transparent-fill outline
+        // specifically for the three Casino promo cards' main actions
+        // (View wallet/Claim bonus/View race), now that the header's own
+        // filled brand button is the app's one true "primary" CTA — these
+        // needed to read as secondary without becoming the generic
+        // `outline` variant above (that one's bg-background/neutral tone
+        // doesn't carry the blue-tinted, illustration-matching feel these
+        // three specifically need). Literal recipe as given, not derived
+        // from --global-cta via color-mix — this blue is deliberately a
+        // bit lighter/more periwinkle than the brand token, tuned to read
+        // clearly against these cards' own dark navy/indigo backgrounds.
+        // disabled:cursor-not-allowed is scoped to only this variant since
+        // the shared base classlist doesn't set an explicit disabled
+        // cursor for any other variant and changing that shared behavior
+        // wasn't asked for.
+        "promo-outline":
+          "border border-[rgba(79,115,255,0.55)] bg-transparent text-[#7c98ff] hover:border-[#5e82ff] hover:bg-[rgba(79,115,255,0.08)] hover:text-white active:bg-[rgba(79,115,255,0.14)] disabled:cursor-not-allowed",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:

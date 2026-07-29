@@ -1007,8 +1007,41 @@ export default function App() {
       showFavoriteToast("warning", "Log in again to update Favorites", { action: { label: "Log in again", onClick: openFunds } });
       return;
     }
-    const { next, adding } = toggleFavorite(favs, game.favId);
-    setFavs(next);
+    // FAVORITES REGRESSION FIX: a leftover Dev Panel favoritesPreset
+    // ("populated"/"empty") makes `effectiveIsFav` above ignore the real
+    // `favs` Set entirely — every surface that reads favorite status
+    // through it (the star, the Favorites page/rail) stays frozen on the
+    // mock's fixed answer forever, while this function's own mutation
+    // below, the toast, and telemetry all still fire correctly. That
+    // produced exactly the reported bug: "toast is right, nothing visible
+    // ever changes," for every click, in both directions. A real,
+    // user-initiated star click is a genuine action — it should always
+    // supersede a stale preview, not be silently absorbed by it. This is
+    // the only thing that was actually broken; `favs`, `toggleFavorite`,
+    // and the star/count/page/persistence wiring downstream of the real
+    // `isFav` were already correct (verified directly against a clean,
+    // non-mocked session before writing this fix).
+    if (DEV_PANEL_ENABLED && getDevMockState().favoritesPreset !== "default") {
+      setDevMockState({ favoritesPreset: "default" });
+    }
+    // RAPID-CLICK FIX: functional setFavs (not a `toggleFavorite(favs, …)`
+    // read off the outer closure) so two clicks fired before React has
+    // re-rendered each still see the OTHER click's result as `prev`, not
+    // the same stale `favs` twice — otherwise a fast double-click could
+    // compute "adding" from the same stale snapshot twice instead of
+    // correctly alternating add/remove, and the toast/telemetry below
+    // would fire twice for what should net out to a single flip.
+    // `adding`/`next` are captured from inside the updater (which React
+    // runs synchronously on this dispatch) since the toast/persistence
+    // calls after this need to know which way the flip went and the
+    // resulting Set — not just schedule a render.
+    let adding, next;
+    setFavs((prev) => {
+      const result = toggleFavorite(prev, game.favId);
+      adding = result.adding;
+      next = result.next;
+      return next;
+    });
     // Once connected, favorites are account-scoped — persist to that
     // account's own bucket so a different account connecting later on this
     // device never inherits this one's picks (see the merge effect below).
@@ -1020,8 +1053,11 @@ export default function App() {
         } : undefined);
         track(adding ? "casino_favorite_added" : "casino_favorite_removed", { gameId: game.favId, category: casinoCategory });
       } else {
-        const { next: reverted } = toggleFavorite(next, game.favId);
-        setFavs(reverted);
+        let reverted;
+        setFavs((prev) => {
+          reverted = toggleFavorite(prev, game.favId).next;
+          return reverted;
+        });
         if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, reverted);
         showFavoriteToast("error", "Couldn't update Favorites. Try again.");
       }
@@ -1034,6 +1070,27 @@ export default function App() {
   // holds), so switching from account A to account B can never carry A's
   // picks into B: on disconnect it reverts to the baseline, and on connect
   // it's baseline ∪ that address's own bucket, always freshly computed.
+  //
+  // SILENT HYDRATION FIX: this effect is ROUTINE BACKGROUND SYNC, not a
+  // user-triggered action — it runs on every mount where a wallet happens
+  // to already be connected (a restored session on initial load, a plain
+  // refresh, a hard refresh, reconnecting the same wallet, or switching to
+  // a different one), because `mergedForAddress` is a plain ref: it always
+  // starts back at `null` on a fresh page load, so the `=== wallet.address`
+  // guard below never has anything to compare against yet and this always
+  // takes the "first time merging this address" branch again. It used to
+  // also fire `toast.success("Synced N favorites from your wallet")` on
+  // that branch — meaning ANY reload with an already-connected wallet showed
+  // that toast, every single time, not just on a genuine first-ever
+  // connect. There is currently no separate "manual sync" action anywhere
+  // in this app (Favorites sync only ever happens through this one
+  // hydration effect) — every call site is routine background sync, so the
+  // success toast is removed here at the source rather than gated behind a
+  // parameter with only one caller that would always pass the same value.
+  // If a real manual "sync now" control is ever added, THAT call site is
+  // the one that should surface a success toast — this hydration path
+  // should not. The merge/dedup logic, `setFavs`, persistence and telemetry
+  // below are all unchanged; only the success notification is gone.
   const mergedForAddress = useRef(null);
   useEffect(() => {
     if (!wallet.isConnected || !wallet.address) {
@@ -1045,9 +1102,8 @@ export default function App() {
     mergedForAddress.current = wallet.address;
     track("wallet_connected", { walletState: "connected" });
     const account = loadAccountFavs(wallet.address);
-    const { merged, added } = mergeAccountFavorites(deviceBaselineRef.current, account);
+    const { merged } = mergeAccountFavorites(deviceBaselineRef.current, account);
     setFavs(merged);
-    if (added > 0) toast.success(`Synced ${added} favorite${added === 1 ? "" : "s"} from your wallet`);
     saveAccountFavs(wallet.address, merged);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.isConnected, wallet.address]);
