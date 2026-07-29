@@ -89,11 +89,24 @@ const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-[var(--in
 // inline `() => <img .../>` would give React a new component identity
 // each time, forcing the <img> to unmount/remount and re-fetch on every
 // keystroke instead of loading once.
+//
+// PERFORMANCE: these two source PNGs are ~2MB each (no image-optimization
+// tooling available in this pass to generate a properly downsized/
+// compressed variant for the small rendered box — flagged in the task
+// report as a follow-up). `loading="lazy"` alone doesn't defer them since
+// both cards sit in the initial viewport; `fetchPriority="low"` at least
+// tells the browser these are non-critical relative to everything else
+// competing for bandwidth/decode time on first paint. This measurably
+// mattered in practice: without it, decoding ~4MB of new images on Lobby
+// mount was slow enough to push App.jsx's launchGame/closeGame scroll-
+// restoration re-assert loop (a previously-tuned, self-terminating ~300ms
+// window) past its deadline, landing a few px short after Back — see that
+// file's own comment on why the loop can't simply run longer.
 function WelcomeArtwork() {
-  return <img src={PROMOS[0].image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />;
+  return <img src={PROMOS[0].image} alt="" loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover" />;
 }
 function RaceArtwork() {
-  return <img src={PROMOS[1].image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />;
+  return <img src={PROMOS[1].image} alt="" loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover" />;
 }
 
 // Exported: this is the one shared "Tribet infrastructure" tile reused as the
