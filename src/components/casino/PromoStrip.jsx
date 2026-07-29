@@ -315,8 +315,13 @@ export function ScopedSearch({
   };
 
   return (
-    <div className="space-y-1.5">
-      <label htmlFor="arena-search-input" className="block px-0.5 text-xs font-medium text-zinc-400">
+    <div>
+      {/* VISUAL REFRESH: visible "Search" caption removed (redundant next
+          to the scope selector + search icon + placeholder) — sr-only
+          preserves the exact same programmatic accessible name via the
+          existing label/input association, nothing lost for screen
+          readers. */}
+      <label htmlFor="arena-search-input" className="sr-only">
         Search
       </label>
       <div ref={rootRef} onBlur={onBlur} className="relative">
@@ -437,20 +442,32 @@ export function ScopedSearch({
   );
 }
 
-// Top-of-lobby strip: two promo tiles + a player glimpse. Desktop/tablet
-// (sm+): three equal-width, equal-height cards in a grid (well under the
-// old ~300-340px hero). Mobile: a real horizontal snap-scroll carousel —
+// Top-of-lobby strip: one dominant wallet hero + two supporting promo
+// tiles. Mobile (base): unchanged real horizontal snap-scroll carousel —
 // three equal columns at a 320-430px viewport left each card ~100-140px
 // wide, which is what produced the accidental "200% u…" / "$50,00…"
 // clipping; each card gets real width here instead, with an intentional
-// peek of the next card as the swipe affordance. Search sits directly
-// beneath, sharing the same wrapper/width so both edges align.
+// peek of the next card as the swipe affordance (see VISUAL REFRESH note
+// below on why this stays a carousel rather than a vertical stack).
+// Tablet (sm+): hero spans the full row, the two secondary cards share a
+// 2-column row beneath it. Desktop (lg+): all three share one row again,
+// but no longer equal-width — the hero (~48%) visibly dominates the two
+// secondary cards (~26% each), matching the approved mockup's hierarchy
+// instead of reading as three equal dashboard widgets. Search sits
+// directly beneath, sharing the same wrapper/width so both edges align.
+//
+// VISUAL REFRESH: mobile deliberately keeps the existing snap-scroll
+// carousel rather than switching to a full vertical stack — it already
+// presents the cards in hero-first order with full readable width per
+// card (the actual problem a vertical stack would solve), and replacing
+// a working, previously-tuned mobile interaction wasn't necessary to
+// match the desktop-focused approved mockup.
 export function PromoStrip({ query, onQuery, searchPanelProps }) {
   const [p1, p2] = PROMOS;
   return (
     <div className="casino-content-column w-full space-y-3">
-      <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
-        <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink"><PlayerTile /></div>
+      <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-[48fr_26fr_26fr] [&::-webkit-scrollbar]:hidden">
+        <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
           <PromoCard eyebrow={p1.eyebrow} title={p1.title} cta={p1.cta} />
         </div>

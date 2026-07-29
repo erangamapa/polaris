@@ -8,7 +8,10 @@ const COLUMNS = [
 
 export function Footer({ onResponsibleGambling, onSupport }) {
   return (
-    <footer className="mt-12 border-t">
+    // VISUAL REFRESH: mt-12 -> mt-16 — a clearer, more deliberate break
+    // from the game section above so the footer reads as intentional
+    // rather than attached directly to the last row of cards.
+    <footer className="mt-16 border-t">
       {/* LAYOUT STABILITY: was mx-auto max-w-6xl — the Footer is the same
           component on every arena, but centering via mx-auto still reacts
           to <main>'s CURRENT width, which genuinely differs on Sports (the

@@ -342,13 +342,14 @@ function useRailScroll(itemCount) {
 // there's nothing that stays "loading" long enough to show it (same
 // reasoning as CasinoGameCardSkeleton's own doc comment). Kept ready rather
 // than left unbuilt for the day a real async source exists.
-export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testId, sectionId, emptyState, context, isLoading }) {
+export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll, testId, sectionId, emptyState, context, isLoading }) {
   const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
 
   if (isLoading) {
     return (
       <section id={sectionId} data-test-id={testId} aria-label={title}>
         <div className="mb-3 flex min-w-0 items-center gap-2">
+          {icon}
           <h2 className="text-sm font-bold">{title}</h2>
         </div>
         <div className="flex gap-3 overflow-hidden pb-1 pl-1 pt-1">
@@ -367,6 +368,7 @@ export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testI
     return (
       <section id={sectionId} data-test-id={testId}>
         <div className="mb-3 flex items-center gap-2">
+          {icon}
           <h2 className="text-sm font-bold">{title}</h2>
         </div>
         {emptyState}
@@ -383,6 +385,7 @@ export function CasinoGameRail({ title, badge, games, tileProps, onSeeAll, testI
     <section id={sectionId} data-test-id={testId} aria-label={title}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
+          {icon}
           <h2 className="shrink-0 text-sm font-bold">{title}</h2>
           {/* ONE micro-label component — was its own one-off pill (not
               uppercase, different radius/background than every other
@@ -644,7 +647,7 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
   };
 
   return (
-    <nav aria-label="Casino categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav aria-label="Casino categories" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {CASINO_CATEGORIES.map((category) => {
         // While on the Lobby, active state tracks the scroll-spy (which
         // section is actually in view) instead of the route — every pill
@@ -669,7 +672,10 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
             className={cn(
               // RESKIN (guide §5.3, verbatim call-out): "retire the maroon
               // 'Lobby' active state" — this is that exact row.
-              "flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              // VISUAL REFRESH: min-h-11/px-4 -> min-h-10/px-3.5 — slightly
+              // more compact per the approved mockup, still comfortably
+              // above the smallest acceptable touch-target size.
+              "flex min-h-10 shrink-0 items-center rounded-full border px-3.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isSelected
                 ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
                 : "border-white/10 text-zinc-400 hover:text-white"
@@ -1032,7 +1038,11 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   // inventory exists for either (see FINAL RESPONSE: Slots-inventory
   // findings).
   return (
-    <div className="space-y-6">
+    // VISUAL REFRESH: space-y-6 -> space-y-8 — slightly more deliberate
+    // rhythm between Lobby sections (part of "page no longer feels
+    // prematurely finished" when only a couple of rails have content),
+    // without inventing any filler content or forcing extra height.
+    <div className="space-y-8">
       <CasinoGameRail
         testId="recently-played-rail"
         title="Recently played"
@@ -1044,6 +1054,8 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
       <CasinoGameRail
         testId="favorites-rail"
         title="Favorites"
+        icon={<Star className="size-4 shrink-0 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
+        badge={favorites.length > 0 ? `${favorites.length} game${favorites.length === 1 ? "" : "s"}` : undefined}
         games={favorites}
         tileProps={tileProps}
         context="favorites"
