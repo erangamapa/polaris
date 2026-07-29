@@ -730,6 +730,29 @@ export default function App() {
     }
     launch.launchCasinoGame({ gameId: game ? game.favId : null, source, categoryId });
   };
+  // ARENA-SWITCH TEARDOWN — Game Info and Report Issue are global overlays
+  // (rendered as plain siblings of the arena content, not gated on
+  // `product === "casino"` — see App.jsx's own render tree), so leaving
+  // Casino for any reason (a new launch superseding them, the internal
+  // Back button, an arena switch, Casino-internal navigation while playing)
+  // must close them explicitly or they'd stay visible over whatever comes
+  // next. Nulling the focus-restore refs BEFORE closing (rather than
+  // calling closeGameInfo(), which also does its own history.back() — wrong
+  // here, since the caller is about to push/replace its own URL) means the
+  // existing "restore focus on close" effects see an already-null ref and
+  // safely no-op (see restoreFocusFrom's `if (el && document.contains(el))`
+  // guard) instead of trying to refocus a Casino element that's mid-unmount
+  // — "let the destination own focus," not the element that's disappearing.
+  const closeCasinoGameOverlays = () => {
+    if (infoFavId) {
+      gameInfoTriggerRef.current = null;
+      setInfoFavId(null);
+    }
+    if (supportOpen) {
+      lastFocusedRef.current = null;
+      setSupportOpen(false);
+    }
+  };
   const launchGame = (game, context) => {
     // CASINO GAME EXPERIENCE: the game page now renders inline in place of
     // CasinoLobby (see the `product === "casino"` branch below), not a
@@ -737,6 +760,9 @@ export default function App() {
     // surface of its own, so it's still closed explicitly rather than
     // relying on paint order.
     setMobileMenuOpen(false);
+    // A new launch (another game superseding one already active — see
+    // ANOTHER GAME LAUNCH) must not carry the old game's overlays forward.
+    closeCasinoGameOverlays();
     // ROUTING (game page repair): CasinoLobby now fully unmounts while a
     // game is open (it used to stay mounted underneath the old full-
     // viewport modal, so <main>'s scroll position was preserved for free).
@@ -746,7 +772,8 @@ export default function App() {
     attemptLaunch(game, context, casinoCategory);
   };
   const closeGame = () => {
-    launch.closeLaunch();
+    closeCasinoGameOverlays();
+    launch.closeLaunch("game-back");
     const bare = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
     // Restore the scroll position captured in `launchGame` — CasinoLobby is
@@ -775,6 +802,57 @@ export default function App() {
       requestAnimationFrame(reassert);
     }
   };
+
+  // ARENA-SWITCH TEARDOWN — the canonical path for leaving an active Casino
+  // game for ANY reason other than the internal Back button (which already
+  // has its own closeGame above, tuned to restore focus/scroll/category).
+  // Idempotent: closeCasinoGameOverlays and launch.closeLaunch are both
+  // no-ops when nothing is open/active, so calling this when there is no
+  // active game (the common case) costs nothing and is always safe to call
+  // unconditionally from every navigation entry point below, rather than
+  // scattering the same "is a game active?" check across each caller.
+  //
+  // Deliberately does NOT touch fullscreen/GameStage/provider-iframe
+  // cleanup directly — CasinoGamePage's own unmount effect (see that file)
+  // owns that, since this function runs in App.jsx a render *before* the
+  // component actually unmounts (React batches the state updates below into
+  // one commit, then unmounts the old <ArenaErrorBoundary key={product}>
+  // subtree) — trying to reach into a child's DOM/refs from here would be
+  // fighting React's own lifecycle instead of using it.
+  const teardownActiveCasinoGame = (reason) => {
+    if (!isLaunchActive(launch.state.status)) return;
+    closeCasinoGameOverlays();
+    launch.closeLaunch(reason);
+  };
+
+  // CASINO ARENA RETURN DESTINATION vs GAME LAUNCH ORIGIN — leaving Casino
+  // for Sports/Predictions while a game is active must land back on the
+  // canonical main Casino lobby next time, never the game that was just
+  // torn down (see ARENA SWITCHING task's "an active game route must never
+  // become the Casino arena return route"). `casinoCategory` IS that return
+  // destination (it's what `product === "casino"` renders once
+  // isLaunchActive is false again — see the render tree below), so resetting
+  // it to DEFAULT_NAV.casinoCategory ("Lobby") here is what makes returning
+  // to Casino open the main lobby instead of resuming wherever the game had
+  // been launched from. This is intentionally separate from Casino-internal
+  // navigation while playing (closeActiveGameForCasinoNav below), which
+  // must NOT reset the category — the user explicitly picked a destination
+  // there, e.g. Favorites, and should land on it, not on the Lobby.
+  const switchArena = (nextProduct) => {
+    if (isLaunchActive(launch.state.status)) {
+      teardownActiveCasinoGame("arena-switch");
+      setCasinoCategory(DEFAULT_NAV.casinoCategory);
+    }
+    setProduct(nextProduct);
+  };
+
+  // Casino-internal navigation (Sidebar category/Favorites/etc.) selected
+  // WHILE a game is active — the sidebar stays visible and interactive
+  // during gameplay (see TASK 1: "keep visible... Casino sidebar"), so this
+  // is reachable. Unlike switchArena, this does NOT reset casinoCategory —
+  // the caller (handleSelect below) is already setting it to whatever the
+  // user picked, and that destination is exactly where Casino should land.
+  const closeActiveGameForCasinoNav = () => teardownActiveCasinoGame("casino-navigation");
   // CASINO GAME EXPERIENCE — "Retry" during the Slow Loading sub-state
   // (see GameLoading.jsx): the reducer's own RETRY action only accepts a
   // genuinely FAILED launch (see lib/casinoGameLaunch.js's guard), and at
@@ -797,8 +875,17 @@ export default function App() {
   // UNAVAILABLE GAME STATE: "do not silently redirect without explanation")
   // — both were gaps in the previous silent syncGameFromUrl behavior.
   const resolveLaunchFromUrl = () => {
-    const favId = new URLSearchParams(window.location.search).get("play");
-    if (!favId) { if (launch.state.status !== GAME_LAUNCH_STATUS.IDLE) launch.closeLaunch(); return; }
+    // BROWSER NAVIGATION TEARDOWN — `?play=` only ever means anything on a
+    // `/casino/...` path (see lib/routing.js's pathFor, which never emits
+    // it for Sports/Predictions). Checking the pathname here, not just the
+    // query string, closes a real gap: a stale/hand-edited `?play=` co-
+    // existing with a non-Casino path could otherwise silently launch (and
+    // hold open) a Casino game while `product` shows Sports/Predictions —
+    // "the inactive Casino arena retaining a mounted game tree" the ARENA-
+    // SWITCH TEARDOWN task explicitly calls out to prevent.
+    const onCasinoPath = window.location.pathname.startsWith("/casino");
+    const favId = onCasinoPath ? new URLSearchParams(window.location.search).get("play") : null;
+    if (!favId) { if (launch.state.status !== GAME_LAUNCH_STATUS.IDLE) launch.closeLaunch("browser-navigation"); return; }
     if (launch.state.gameId === favId && launch.state.status !== GAME_LAUNCH_STATUS.IDLE) return;
     attemptLaunch(findGameByFavId(favId), "direct-link", casinoCategory);
   };
@@ -1066,6 +1153,12 @@ export default function App() {
 
   // Desktop-only selection path (Sidebar's rail).
   const handleSelect = (id) => {
+    // Sidebar stays visible/interactive during an active Casino game (see
+    // TASK 1) — selecting a Casino destination while playing must close
+    // that game rather than leaving it rendered underneath the ignored
+    // click (see CASINO NAVIGATION WHILE A GAME IS ACTIVE). A no-op when
+    // product isn't "casino" or no game is active.
+    if (product === "casino") closeActiveGameForCasinoNav();
     sidebar.onSelect(id);
     track("casino_nav_item_selected", { category: id, sidebarState: railMode });
   };
@@ -1135,7 +1228,7 @@ export default function App() {
   // mobile-only difference, not a desktop behavior change.
   const selectMobileArena = (id) => {
     closeMobileMenu();
-    setProduct(id);
+    switchArena(id);
     if (id === "casino") setCasinoCategory(DEFAULT_NAV.casinoCategory);
     else if (id === "predictions") setPredSection(DEFAULT_NAV.predSection);
     else if (id === "sports") navigateSports({ view: DEFAULT_NAV.sportsView, sport: DEFAULT_NAV.sportsSport, country: DEFAULT_NAV.sportsCountry, league: DEFAULT_NAV.sportsLeague, eventId: DEFAULT_NAV.sportsEventId });
@@ -1196,7 +1289,7 @@ export default function App() {
         <Sidebar
           railMode={railMode}
           product={product}
-          setProduct={setProduct}
+          setProduct={switchArena}
           items={sidebar.items}
           selected={sidebar.selected}
           onSelect={handleSelect}

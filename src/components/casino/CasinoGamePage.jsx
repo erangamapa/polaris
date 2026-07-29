@@ -72,14 +72,27 @@ export function CasinoGamePage({
   children,
 }) {
   const wrapperRef = useRef(null);
-  const stageRef = useRef(null);
+  // PRODUCTION HARDENING — fullscreen target. This used to be GameStage's
+  // own root element, but that made GameUtilityBar (a SIBLING of GameStage,
+  // not a descendant) entirely unreachable while genuinely fullscreen: the
+  // Fullscreen API makes everything outside the fullscreened element inert
+  // — confirmed empirically (a real click, a forced click, and a
+  // focus()+Enter keyboard activation on an element outside the
+  // fullscreened subtree all failed to register while active). That broke
+  // the task's own "exit through the Fullscreen control" requirement — the
+  // button that was supposed to exit fullscreen was unreachable the moment
+  // fullscreen began. Targeting this wrapper (Stage + UtilityBar together,
+  // NOT the Header — Back/Favorite/More staying outside fullscreen matches
+  // "fullscreen is about the game surface," not the whole contained page)
+  // keeps Game Info/Report Issue/Fullscreen itself reachable throughout.
+  const fullscreenTargetRef = useRef(null);
   const availableHeight = useAvailableHeight(wrapperRef);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const onFsChange = () => setIsFullscreen(document.fullscreenElement === stageRef.current);
+    const onFsChange = () => setIsFullscreen(document.fullscreenElement === fullscreenTargetRef.current);
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
@@ -91,9 +104,30 @@ export function CasinoGamePage({
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   }, [game?.favId]);
 
+  // COMPONENT UNMOUNT SAFETY (ARENA-SWITCH TEARDOWN) — this page can
+  // disappear for reasons that never touch `game?.favId` at all: an arena
+  // switch, Casino-internal navigation while playing, or any other route
+  // change that unmounts this component wholesale (see App.jsx's
+  // `<ArenaErrorBoundary key={product}>` — a different `product` remounts
+  // the whole subtree). Without this, real browser fullscreen would only
+  // ever get exited via the browser's OWN "element removed from DOM" fail-
+  // safe (which does fire, but as an uncontrolled side effect after the
+  // fact, not a deliberate part of teardown) rather than a proactive exit.
+  // Captures the fullscreen target at mount time (not re-read from the ref
+  // inside the cleanup — react-hooks/exhaustive-deps flags that pattern
+  // since a ref's `.current` isn't guaranteed stable by the time cleanup
+  // runs) so this never exits a fullscreen element that belongs to
+  // something else.
+  useEffect(() => {
+    const targetEl = fullscreenTargetRef.current;
+    return () => {
+      if (document.fullscreenElement === targetEl) document.exitFullscreen?.().catch(() => {});
+    };
+  }, []);
+
   const toggleFullscreen = () => {
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-    else stageRef.current?.requestFullscreen?.().catch(() => {});
+    else fullscreenTargetRef.current?.requestFullscreen?.().catch(() => {});
   };
 
   const displayMeta = getGameDisplayMetadata(game);
@@ -138,31 +172,34 @@ export function CasinoGamePage({
         {/* TOOLBAR REDESIGN: no gap between the stage wrapper and
             GameUtilityBar — they dock flush, sharing one border silhouette
             (see GameStage's rounded-t-lg/border-b-0 and GameUtilityBar's
-            rounded-b-lg/border-t-0), reading as one continuous card. */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <GameStage
-            stageRef={stageRef}
-            game={game}
-            launch={launch}
-            isFullscreen={isFullscreen}
-            onRestartFromLoading={onRestartFromLoading}
-            onRetryFailed={onRetryFailed}
-            onBack={onBack}
-            onBrowseGames={onBrowseGames}
-            onReportIssue={onReportIssue}
-            onBusyChange={setBusy}
-          >
-            {children}
-          </GameStage>
-        </div>
+            rounded-b-lg/border-t-0), reading as one continuous card.
+            PRODUCTION HARDENING: this wrapper (not GameStage alone) is the
+            actual fullscreen target — see fullscreenTargetRef above. */}
+        <div ref={fullscreenTargetRef} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <GameStage
+              game={game}
+              launch={launch}
+              isFullscreen={isFullscreen}
+              onRestartFromLoading={onRestartFromLoading}
+              onRetryFailed={onRetryFailed}
+              onBack={onBack}
+              onBrowseGames={onBrowseGames}
+              onReportIssue={onReportIssue}
+              onBusyChange={setBusy}
+            >
+              {children}
+            </GameStage>
+          </div>
 
-        <GameUtilityBar
-          onOpenInfo={onOpenGameInfo}
-          onReportIssue={onReportIssue}
-          supportsFullscreen={supportsFullscreen}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={toggleFullscreen}
-        />
+          <GameUtilityBar
+            onOpenInfo={onOpenGameInfo}
+            onReportIssue={onReportIssue}
+            supportsFullscreen={supportsFullscreen}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
+          />
+        </div>
       </GamePlayerFrame>
     </div>
   );

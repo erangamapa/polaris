@@ -147,16 +147,27 @@ export function useCasinoGameLaunch({ resolveGame, checkAvailability, onReady })
     dispatch({ type: "RETRY", gameId: state.gameId, now: Date.now() });
   }, [state.gameId, state.source, state.attempt]);
 
-  const closeLaunch = useCallback(() => {
+  // ARENA-SWITCH TEARDOWN — `reason` distinguishes "the player is leaving
+  // this Casino context back to wherever they launched from" (game-back:
+  // the only case that should restore focus to the launch trigger) from
+  // every other teardown path (arena-switch, casino-navigation, browser-
+  // navigation, new-game-launch, ...) where a DIFFERENT destination is
+  // about to own the page and focus, and restoring focus into a Casino
+  // element that's mid-unmount would fight it. Defaults to "game-back" so
+  // every pre-existing call site (just Back today) keeps its exact prior
+  // behavior with no call-site changes required.
+  const closeLaunch = useCallback((reason = "game-back") => {
     if (state.status === GAME_LAUNCH_STATUS.IDLE) return;
     if (isLoadingStatus(state.status)) {
-      track("casino_game_launch_cancelled", { gameId: state.gameId, source: state.source, attempt: state.attempt });
+      track("casino_game_launch_cancelled", { gameId: state.gameId, source: state.source, attempt: state.attempt, reason });
     }
-    track("casino_game_closed", { gameId: state.gameId, source: state.source, status: state.status });
+    track("casino_game_closed", { gameId: state.gameId, source: state.source, status: state.status, reason });
     clearTimers();
     dispatch({ type: "CLOSE" });
-    const el = returnFocusRef.current;
-    if (el && document.contains(el)) el.focus();
+    if (reason === "game-back") {
+      const el = returnFocusRef.current;
+      if (el && document.contains(el)) el.focus();
+    }
     returnFocusRef.current = null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status, state.gameId, state.source, state.attempt]);

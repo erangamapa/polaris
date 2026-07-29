@@ -355,4 +355,49 @@ test.describe("Casino game page — fullscreen", () => {
     expect(stageClass).not.toMatch(/md:h-|md:max-h/);
     await expect(fsBtn).toHaveAttribute("aria-pressed", "true");
   });
+
+  // PRODUCTION HARDENING — real regression: GameStage alone used to be the
+  // fullscreen target, which put GameUtilityBar (a sibling, not a
+  // descendant) outside the fullscreened subtree. Per the Fullscreen API,
+  // everything outside that subtree is inert — the bar's own Fullscreen
+  // button, meant to exit fullscreen, was unreachable the moment fullscreen
+  // began. Fixed by fullscreening a wrapper around GameStage + GameUtilityBar
+  // together (see CasinoGamePage.jsx's fullscreenTargetRef).
+  test("GameUtilityBar (including the Fullscreen button itself) stays reachable while fullscreen is active", async ({ page }) => {
+    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.waitForTimeout(600);
+    const fsBtn = page.locator('[data-test-id="game-utility-fullscreen"]');
+    await fsBtn.click();
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+
+    const barIsInsideFullscreenElement = await page.evaluate(() => {
+      const fs = document.fullscreenElement;
+      const bar = document.querySelector('[data-test-id="game-utility-bar"]');
+      return Boolean(fs && bar && fs.contains(bar));
+    });
+    expect(barIsInsideFullscreenElement).toBe(true);
+
+    // The real, load-bearing assertion: clicking the SAME button again
+    // (a genuine, non-forced click — reachability is the whole point)
+    // must actually exit fullscreen.
+    await fsBtn.click();
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+  });
+
+  test("Game Info and Report Issue remain reachable while fullscreen is active", async ({ page }) => {
+    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.waitForTimeout(600);
+    await page.locator('[data-test-id="game-utility-fullscreen"]').click();
+    await page.waitForTimeout(300);
+
+    await page.locator('[data-test-id="game-utility-info"]').click();
+    await expect(page.locator('[role="dialog"]')).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[role="dialog"]')).toHaveCount(0);
+
+    await page.locator('[data-test-id="game-utility-report"]').click();
+    await expect(page.locator('[role="dialog"]')).toBeVisible();
+  });
 });

@@ -40,8 +40,17 @@
   --color-zinc-800: #141A2E; /* --surface-2 (raised/active) */
   --color-zinc-700: #1B2342; /* --surface-3 / border-divider */
   --color-zinc-600: #2B3660; /* --border-strong */
-  --color-zinc-500: #7280A0; /* --secondary-text / text-muted */
-  --color-zinc-400: #7280A0; /* --muted */
+  /* READABILITY PASS: secondary gray brightened ~10% (was a single literal
+     #7280A0 duplicated in five places across this file — zinc-500,
+     zinc-400, --neutral-500, --neutral-400, --muted-foreground — all
+     serving the exact same "secondary text/icon" role). Consolidated onto
+     --neutral-500 (see the FOUNDATION neutral scale below) as the one
+     literal source; these two now reference it instead of repeating the
+     hex, so a future adjustment only needs to change one value. --ink-quiet
+     (the tier below this — muted helper text) is intentionally untouched,
+     preserving primary > secondary > muted-helper hierarchy. */
+  --color-zinc-500: var(--neutral-500); /* --secondary-text / text-muted */
+  --color-zinc-400: var(--neutral-500); /* --muted */
   --color-zinc-300: #A6B0CB;
   --color-zinc-200: #C4CBE0;
   --color-zinc-100: #DEE4F2; /* --primary-text */
@@ -569,8 +578,18 @@ html {
   --neutral-900: #0B0F1D; /* --surface-1 */
   --neutral-800: #141A2E; /* --surface-2 */
   --neutral-700: #1B2342; /* --surface-3 */
-  --neutral-500: #7280A0; /* --secondary-text */
-  --neutral-400: #7280A0; /* --muted */
+  /* READABILITY PASS: brightened from #7280A0 (~10% lighter — color-mix(in
+     srgb, #7280A0 88%, white 12%) — chosen over a bigger jump so the
+     interface reads as "cleaner," not "brighter"; --neutral-300 (the
+     hover/brighter-body tier below) and --ink-quiet (the muted-helper tier
+     below THIS token, see APPENDIX A) are both deliberately untouched so
+     the primary > secondary > muted-helper hierarchy and the existing
+     hover step are both preserved). This is now the one literal source for
+     every "secondary text/icon" token in the file — see --color-zinc-500/
+     -400 above and --muted-foreground below, which all point here instead
+     of repeating the hex. */
+  --neutral-500: #838FAB; /* --secondary-text */
+  --neutral-400: var(--neutral-500); /* --muted */
   --neutral-300: #A6B0CB;
 
   /* ── FOUNDATION: elevation / shadow scale ───────────────────────────────
@@ -883,7 +902,7 @@ html {
   --secondary: #141A2E; /* Surface 2 */
   --secondary-foreground: #DEE4F2;
   --muted: #141A2E;
-  --muted-foreground: #7280A0; /* Secondary Text */
+  --muted-foreground: var(--neutral-500); /* Secondary Text — see READABILITY PASS note on --neutral-500 above */
   --accent: #1B2342; /* Surface 3 */
   --accent-foreground: #DEE4F2;
   --destructive: #F26472; /* Danger */

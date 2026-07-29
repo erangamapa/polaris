@@ -11,10 +11,12 @@ import { GameUnavailable } from "./GameUnavailable";
 // error/unavailable overlay swap, per-game sizing (via lib/gameDisplay.js,
 // unchanged from the previous CasinoGameplayFrame/GameLaunchSurface split),
 // and its own visual adaptation while fullscreen. It does NOT own the
-// outer page chrome (back button, title, toolbar, recommendations) — those
-// are CasinoGamePage's siblings around this component, not wrapped inside
-// it, per the spec's "no card inside card" rule: this is the one bordered
-// box on the page.
+// outer page chrome (back button, title, utility bar) — those are
+// CasinoGamePage's siblings around this component, not wrapped inside it,
+// per the spec's "no card inside card" rule: this is the one bordered box
+// on the page. The active game page has no recommendation/discovery
+// content of any kind below it — removed entirely, not just kept outside
+// GameStage's own scope.
 //
 // `children` mounts the instant a launch is genuinely in flight (REQUESTED/
 // LOADING/READY), not only once ready — a provider game's own iframe
@@ -23,7 +25,6 @@ import { GameUnavailable } from "./GameUnavailable";
 // signal to ever arrive. UNAVAILABLE/NOT_FOUND never mount it at all —
 // there is no real game to initialize.
 export function GameStage({
-  stageRef,
   game,
   launch,
   isFullscreen,
@@ -68,15 +69,20 @@ export function GameStage({
 
   return (
     <div
-      ref={stageRef}
       data-test-id="game-stage"
       data-display-profile={displayMeta.displayProfile}
       data-viewport-class={viewportClass}
       data-orientation={orientation}
       // 8px radius, 1px subtle border, dark graphite — no glow, no heavy
       // border, no shadow (see VISUAL DESIGN). Fullscreen removes the
-      // height cap and radius: native fullscreen already IS the whole
-      // screen, so the box shouldn't visually stay "boxed" inside it.
+      // height cap and top radius: the fullscreen TARGET is now the
+      // Stage+UtilityBar wrapper in CasinoGamePage.jsx (see that file's
+      // fullscreenTargetRef note — GameStage itself is no longer the
+      // literal fullscreened element, so it doesn't own that ref
+      // directly), so this box no longer needs its own bottom safe-area
+      // padding — GameUtilityBar is what's flush against the physical
+      // bottom edge in fullscreen now; this box only touches the top/
+      // left/right edges.
       //
       // TOOLBAR REDESIGN: only the TOP corners round (`rounded-t-lg`, not
       // `rounded-lg`) and there's no bottom border — GameUtilityBar docks
@@ -119,14 +125,11 @@ export function GameStage({
       }
       style={
         isFullscreen
-          // Edge-to-edge in real browser fullscreen — reserve the safe-area
-          // insets here (the previous CasinoGameplayFrame did this at its
-          // own outer, always-edge-to-edge level; this is the one place in
-          // the new layout that's ever actually flush with the screen edge,
-          // so it's the one place that still needs to ask).
+          // Edge-to-edge in real browser fullscreen on three sides — top/
+          // left/right are this box's own physical screen edges now;
+          // bottom belongs to GameUtilityBar (see that component).
           ? {
               paddingTop: "env(safe-area-inset-top, 0px)",
-              paddingBottom: "env(safe-area-inset-bottom, 0px)",
               paddingLeft: "env(safe-area-inset-left, 0px)",
               paddingRight: "env(safe-area-inset-right, 0px)",
             }
