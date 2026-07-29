@@ -258,17 +258,22 @@ html {
 /* SURFACE HIERARCHY POLISH: color was --muted-foreground — the exact same
    tone as inactive nav-item labels, which is what let section labels
    ("PERSONAL"/"GAMES", Dev Panel section titles) compete with real
-   navigation instead of reading as clearly tertiary. --ink-quiet is the
-   pre-existing tier one step below --muted-foreground/--ink-dim (see the
-   READABILITY PASS note above), already used elsewhere for exactly this
-   "quieter than secondary" role — reused here rather than inventing a new
-   value. Weight/size/tracking/case unchanged. */
+   navigation instead of reading as clearly tertiary.
+   CONTRAST CORRECTION: raw --ink-quiet (this file's pre-existing tier one
+   step below --muted-foreground) measures ~4.43:1 against --sidebar
+   (#080B16, where these labels actually render) — just under WCAG AA's
+   4.5:1 for normal-size text (11px/600 weight is too small to qualify for
+   the 3:1 "large text" threshold). Blending 25% of --muted-foreground back
+   in lifts that to ~4.75:1 while staying visibly quieter than a full
+   --muted-foreground label (~6:1) — verified by hand, not assumed; see
+   the audit report for the calculation. Weight/size/tracking/case
+   unchanged. */
 .text-label {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  color: var(--ink-quiet);
+  color: color-mix(in srgb, var(--ink-quiet) 75%, var(--muted-foreground) 25%);
 }
 
 /* Shared bottom clearance for any mobile scroll container that sits above
