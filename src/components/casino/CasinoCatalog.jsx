@@ -179,26 +179,6 @@ const STATUS_LABEL = { "coming-soon": "Coming soon" };
 // launch's `source`, so casino_game_launch_requested/ready/failed can report
 // which section a launch came from (see useCasinoGameLaunch.js). Never
 // changes rendering.
-// LOBBY HIERARCHY PASS — derived, real-data-only card metadata: at most one
-// top-left badge, in this priority order, so a card is never asked to show
-// more than one status at once. "Coming soon" (an actual unavailable state)
-// always wins; otherwise a real `tags` entry (the same field the Lobby
-// dashboard's own Popular/New/Live/Game Shows rails are built from — see
-// LobbyDashboard's `byTag`) surfaces as "Live"/"New" wherever that card
-// happens to render, not only inside its origin rail — a favorited
-// New-tagged game still reads as "New" on the Favorites rail. Deliberately
-// does NOT add a "Tribet Original" badge on every onchain card — the
-// Originals rail's own header (title + "Provably fair" badge + subtitle)
-// already carries that signal, and this component has no reliable way to
-// tell "I'm rendering inside the Originals rail" apart from "I'm an onchain
-// game a user favorited" without adding a redundant, sometimes-wrong badge.
-function deriveCardBadge(game, statusLabel) {
-  if (statusLabel) return statusLabel;
-  if (game.tags?.includes("live-casino")) return "Live";
-  if (game.tags?.includes("new")) return "New";
-  return null;
-}
-
 export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context }) {
   const faved = isFav?.(game);
   const onLaunch = game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider;
@@ -207,7 +187,6 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
   const playable = game.kind === "onchain" ? game.playable : true;
   const status = playable ? null : (game.status ?? "coming-soon");
   const statusLabel = status ? STATUS_LABEL[status] ?? status : null;
-  const cardBadge = deriveCardBadge(game, statusLabel);
   const { broken, onError } = useBrokenImage();
   const testKey = game.favId.replace(":", "-");
 
@@ -273,13 +252,10 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
       {/* Semi-transparent black background is a deliberate exception (needs
           to stay legible over arbitrary colorful game artwork, not a
           neutral card surface) — font/weight/size/tracking/radius/case
-          still come from the one shared MicroLabel. Same treatment for
-          every badge this card can show (Coming soon/Live/New) — one
-          consistent look rather than a different accent color per badge
-          (see deriveCardBadge above for why only one ever renders). */}
-      {cardBadge && (
+          still come from the one shared MicroLabel. */}
+      {statusLabel && (
         <MicroLabel aria-hidden="true" className="pointer-events-none absolute left-1.5 top-1.5 bg-black/80 text-white">
-          {cardBadge}
+          {statusLabel}
         </MicroLabel>
       )}
       {/* Favorite is hidden (not just disabled) on an unavailable card — a
