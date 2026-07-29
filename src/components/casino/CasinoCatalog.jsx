@@ -112,10 +112,10 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
           pulse > 0 && "fav-chip-pop",
           isChip
             ? cn(
-                "size-9 rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
+                "size-9 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
                 faved
-                  ? "border-[var(--global-cta)] bg-[rgba(15,20,38,0.44)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_9px_-2px_var(--favorite-gold-glow)]"
-                  : "border-white/[0.12] bg-[rgba(12,16,30,0.42)] group-hover/fav:border-white/20 group-hover/fav:bg-[rgba(15,20,38,0.5)]"
+                  ? "bg-[rgba(15,20,38,0.44)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_9px_-2px_var(--favorite-gold-glow)]"
+                  : "bg-[rgba(12,16,30,0.42)] group-hover/fav:bg-[rgba(15,20,38,0.5)]"
               )
             : "size-full rounded-md transition-colors duration-200 group-hover/fav:bg-white/10"
         )}
