@@ -433,18 +433,21 @@ function useRailScroll(itemCount) {
   return { ref, canScrollLeft, canScrollRight, scrollByPage };
 }
 
-// LOBBY HIERARCHY PASS: three controlled header weights instead of one flat
-// treatment everywhere — "primary" for the sections the hierarchy pass
-// calls out as most important (Tribet Originals, Popular, Live Casino with
-// content), "tertiary" for the single lowest-priority discovery rail
-// (Tribet Studio), "secondary" (unchanged from before this pass) for
-// everything in between. Subtitle typography always tracks the same tier
-// so a quieter section's supporting copy doesn't outweigh its own title.
-const TIER_TITLE_CLASS = {
-  primary: "text-base font-bold lg:text-lg",
-  secondary: "text-sm font-bold",
-  tertiary: "text-xs font-semibold text-zinc-400",
-};
+// TITLE TYPOGRAPHY FIX: every Casino Lobby section title (Recently Played,
+// Favorites, Tribet Originals, Popular, New Releases, Live Casino, Game
+// Shows, Tribet Studio, Providers) now shares ONE size/weight — previously
+// each had its own tier-keyed size (see the removed TIER_TITLE_CLASS map),
+// which is exactly what produced "Popular" reading larger than "New
+// Releases". This constant is that one shared size, using Popular's former
+// "primary" tier value as the reference per the fix's own brief, applied
+// uniformly regardless of tier. `shrink-0` (still applied at the call site)
+// plus the title's own natural width keeps every title on one line — none
+// of these strings are long enough to need an explicit wrap rule.
+const SECTION_TITLE_CLASS = "text-base font-bold lg:text-lg";
+// Subtitles are explicitly out of scope for this fix (task: "do not
+// change section subtitles") — still tier-keyed exactly as before, so a
+// quieter section's supporting copy doesn't outweigh its own (now
+// standardized) title.
 const TIER_SUBTITLE_CLASS = {
   primary: "text-xs text-zinc-400",
   secondary: "text-[11px] text-zinc-500",
@@ -463,7 +466,7 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeA
         {icon}
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
-            <h2 className={cn("shrink-0", TIER_TITLE_CLASS[tier])}>{title}</h2>
+            <h2 className={cn("shrink-0", SECTION_TITLE_CLASS)}>{title}</h2>
             {/* ONE micro-label component — was its own one-off pill (not
                 uppercase, different radius/background than every other
                 small top badge in the app). */}
@@ -553,12 +556,13 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeA
 // reasoning as CasinoGameCardSkeleton's own doc comment). Kept ready rather
 // than left unbuilt for the day a real async source exists.
 //
-// `tier` controls header typography/weight only (see TIER_TITLE_CLASS
-// above); `tileScale` controls card size ("standard" default, "large" for
-// Recently Played/Originals) — these are deliberately independent axes, not
-// derived from each other, since the hierarchy pass calls out different
-// sections for each (e.g. Popular is tier="primary" but keeps standard-size
-// cards — a "dense standard carousel" per the brief).
+// `tier` now only controls subtitle typography (see TIER_SUBTITLE_CLASS
+// above) — title typography is the same `SECTION_TITLE_CLASS` for every
+// tier, per the title-typography-consistency fix. `tileScale` controls
+// card size ("standard" default, "large" for Recently Played/Originals),
+// independent of both — the hierarchy pass calls out different sections
+// for each (e.g. Popular keeps standard-size cards — a "dense standard
+// carousel" per the brief — despite having the same title size as Originals).
 export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, seeAllCount, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", className }) {
   const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
   const tileClass = TILE_SCALE_CLASS[tileScale] ?? TILE_SCALE_CLASS.standard;
@@ -1129,7 +1133,7 @@ function ProviderTiles() {
   return (
     <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
       <div className="mb-4 flex items-center gap-2">
-        <h2 className="text-sm font-bold">Providers</h2>
+        <h2 className={SECTION_TITLE_CLASS}>Providers</h2>
       </div>
       <div className="flex gap-3 overflow-x-auto p-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {CASINO_PROVIDERS.map((provider) => {
