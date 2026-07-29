@@ -1067,13 +1067,13 @@ export default function App() {
   const sidebar = (() => {
     if (product === "casino") {
       // The full Casino discovery/navigation map — Lobby, then Personal
-      // (Favorites/Recently Played/My Bets), then Games (the shared
-      // CASINO_CATEGORIES taxonomy, same array the in-page CategoryNav bar
-      // and Casino search already render from — see lib/casinoCategories.js
-      // — no second hand-rolled category list). Icons/labels/order all come
-      // from that shared config; this builder only attaches the things that
-      // must be App-level closures (Favorites' live count, My Bets' dialog
-      // handler, the active id derived from dialog-open state).
+      // (Favorites/Recently Played — My Bets removed, not relevant to
+      // Casino), then Games (the shared CASINO_CATEGORIES taxonomy, same
+      // array the in-page CategoryNav bar and Casino search already render
+      // from — see lib/casinoCategories.js — no second hand-rolled category
+      // list). Icons/labels/order all come from that shared config; this
+      // builder only attaches the things that must be App-level closures
+      // (Favorites' live count).
       const lobbyEntry = CASINO_CATEGORIES.find((c) => c.id === "Lobby");
       const gamesItems = CASINO_CATEGORIES.filter((c) => c.kind !== "lobby")
         .map((c) => ({ id: c.id, label: c.label, icon: c.icon }));
@@ -1084,11 +1084,7 @@ export default function App() {
       );
       return {
         title: "Casino",
-        // My Bets opens BetHistoryDialog rather than changing casinoCategory
-        // (see PERSONAL DESTINATIONS: "no second history store") — its
-        // active state is derived from whether that dialog is actually
-        // open, not a fake route, so it never disagrees with the real URL.
-        selected: historyOpen ? "My Bets" : casinoCategory,
+        selected: casinoCategory,
         onSelect: (id) => {
           // Games items keep opening a real destination (see PILL
           // NAVIGATION CONSISTENCY: "Sidebar items = open category

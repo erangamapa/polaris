@@ -1,4 +1,4 @@
-import { LayoutGrid, Sparkles, Flame, Rocket, Radio, Tv, Cherry, Spade, Building2, Star, History, ReceiptText } from "lucide-react";
+import { LayoutGrid, Sparkles, Flame, Rocket, Radio, Tv, Cherry, Spade, Building2, Star, History } from "lucide-react";
 
 // Casino taxonomy — the one shared source every Casino navigation surface
 // (in-page CategoryNav, Sidebar/mobile menu, Casino search's category and
@@ -137,7 +137,6 @@ export const CASINO_PROVIDERS = [
 export const CASINO_PERSONAL_DESTINATIONS = [
   { id: "Favorites", label: "Favorites", icon: Star, kind: "route" },
   { id: "Recently Played", label: "Recently Played", icon: History, kind: "route" },
-  { id: "My Bets", label: "My Bets", icon: ReceiptText, kind: "action" },
 ];
 
 // Not imported from lib/casinoLobbyScroll.js's identical check — that file

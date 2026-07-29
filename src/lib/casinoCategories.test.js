@@ -85,15 +85,14 @@ describe("CASINO_CATEGORIES", () => {
 });
 
 describe("CASINO_PERSONAL_DESTINATIONS", () => {
-  it("lists exactly Favorites, Recently Played, and My Bets — never a Casino content category", () => {
-    expect(CASINO_PERSONAL_DESTINATIONS.map((d) => d.id)).toEqual(["Favorites", "Recently Played", "My Bets"]);
+  it("lists exactly Favorites and Recently Played — never a Casino content category", () => {
+    expect(CASINO_PERSONAL_DESTINATIONS.map((d) => d.id)).toEqual(["Favorites", "Recently Played"]);
   });
 
-  it("marks My Bets as an action (opens a dialog) and the other two as routes", () => {
+  it("marks both entries as routes", () => {
     const byId = Object.fromEntries(CASINO_PERSONAL_DESTINATIONS.map((d) => [d.id, d.kind]));
     expect(byId.Favorites).toBe("route");
     expect(byId["Recently Played"]).toBe("route");
-    expect(byId["My Bets"]).toBe("action");
   });
 
   it("gives every entry a non-empty label and icon", () => {
