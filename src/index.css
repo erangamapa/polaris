@@ -739,6 +739,21 @@ html {
   --surface-game-card: var(--neutral-900);
   --surface-game-card-fallback: var(--neutral-800);
 
+  /* ── COMPONENT: placeholder game card (dev-only UI-testing fixture) ──────
+     CASINO PLACEHOLDER FIXTURES — six restrained, dark, desaturated
+     gradient pairs used only by CasinoCatalog.jsx's PlaceholderGameCard
+     (see lib/casinoPlaceholders.js), never by a real game card. Deliberately
+     NOT the app's semantic --success/--warning/--danger/--info tokens —
+     those carry real UI meaning elsewhere, and reusing them here would make
+     a placeholder tile look like a status indicator. Kept dark enough to
+     read as "part of the same dark Casino surface", not a bright accent. */
+  --placeholder-gradient-1: linear-gradient(135deg, #0b1220 0%, #1b2f5c 100%); /* navy -> cobalt */
+  --placeholder-gradient-2: linear-gradient(135deg, #150f28 0%, #2e2465 100%); /* deep violet -> indigo */
+  --placeholder-gradient-3: linear-gradient(135deg, #0a1f1e 0%, #123b3d 100%); /* muted teal -> dark cyan */
+  --placeholder-gradient-4: linear-gradient(135deg, #0d1a12 0%, #1c3b24 100%); /* dark green -> forest */
+  --placeholder-gradient-5: linear-gradient(135deg, #200d14 0%, #4a1f35 100%); /* burgundy -> muted magenta */
+  --placeholder-gradient-6: linear-gradient(135deg, #241505 0%, #4a2a0e 100%); /* dark amber -> burnt orange */
+
   /* ── SEMANTIC: border roles ──────────────────────────────────────────────
      Maps the handful of border expressions actually in use
      (border-white/5, border-white/10, plus Dev Panel's #3a3b42) onto named

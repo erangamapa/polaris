@@ -69,6 +69,16 @@ export const DEFAULT_DEV_MOCK_STATE = {
   // unconditionally. Defaults OFF, same as every other mock override here
   // — a developer must explicitly flip it on via the Dev Panel to see it.
   arenaDebug: false,
+  // CASINO PLACEHOLDER FIXTURES — populates non-contextual Casino category
+  // rails/grids (Tribet Originals, Popular, New Releases, Live Casino,
+  // Game Shows, Tribet Studio, and their "See all" pages) with enough
+  // dev-only placeholder tiles to test horizontal rail overflow, scroll
+  // controls, and grid density. Defaults OFF, same convention as
+  // `arenaDebug` — a developer must explicitly opt in via the Dev Panel;
+  // Recently Played and Favorites never read this flag at all (see
+  // lib/casinoPlaceholders.js), so there's nothing for it to affect there
+  // even if enabled.
+  casinoPlaceholderRails: false,
 };
 
 function safeLoad() {

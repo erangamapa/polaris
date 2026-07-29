@@ -13,6 +13,8 @@ import { MicroLabel } from "@/components/ui/micro-label";
 import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
+import { useDevMockState } from "@/lib/devMock";
+import { createPlaceholderGames, PLACEHOLDER_TITLE } from "@/lib/casinoPlaceholders";
 import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS, scrollToRail } from "@/lib/casinoCategories";
 import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from "@/lib/casinoLobbyScroll";
 
@@ -250,6 +252,39 @@ export function CasinoGameCardSkeleton() {
   );
 }
 
+// CASINO PLACEHOLDER FIXTURES — a clean, dedicated variant rather than
+// branching CasinoGameCard itself: the two share only their OUTER geometry
+// (aspect-[3/4], radius, border, rail/grid sizing — copied verbatim below
+// from CasinoGameCard's own wrapper classes so both stay pixel-identical),
+// everything else genuinely differs (gradient instead of artwork, no
+// favorite control, no gameHref/onLaunch/context wiring at all). See
+// lib/casinoPlaceholders.js for the data model. Non-interactive for now —
+// click/keyboard-activation feedback lands in a follow-up pass.
+function PlaceholderGameCard({ game }) {
+  return (
+    <div
+      data-test-id={`game-card-${game.favId.replace(/:/g, "-")}`}
+      data-placeholder="true"
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-xl border border-[var(--border)] shadow-[var(--elevation-low)] transition duration-150"
+      style={{ background: `var(${game.gradientVar})` }}
+    >
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-2">
+        <Gamepad2 className="size-6 text-white/35" aria-hidden="true" />
+        {/* Real HTML text, not baked into an image — "PLACEHOLDER" / "GAME"
+            two-line treatment per the task's exact requested copy. */}
+        <div className="text-center text-xs font-bold leading-snug tracking-wide text-white/85">
+          {PLACEHOLDER_TITLE.split(" ").map((word) => <div key={word}>{word}</div>)}
+        </div>
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent p-2 pt-6">
+        {/* Never a real provider name (Tribet Studio/Tribet Originals/
+            BetSwirl) — see lib/casinoPlaceholders.js's PLACEHOLDER_BADGE. */}
+        <div className="truncate text-[10px] leading-snug text-zinc-400">{game.badge}</div>
+      </div>
+    </div>
+  );
+}
+
 // MAIN CONTENT WIDTH FIX: mobile/tablet tiers (base/sm/md) are untouched —
 // only the desktop tier changes, from a fixed lg:grid-cols-6 (which, once
 // ArenaPageColumn could actually grow past its old max-w-6xl cap, would
@@ -443,7 +478,7 @@ export function CasinoGameRail({ title, icon, badge, games, tileProps, onSeeAll,
       >
         {games.map((game) => (
           <div key={game.favId} className={cn(RAIL_TILE, "snap-start")}>
-            <CasinoGameCard game={game} {...tileProps} context={context} />
+            {game.isPlaceholder ? <PlaceholderGameCard game={game} /> : <CasinoGameCard game={game} {...tileProps} context={context} />}
           </div>
         ))}
       </div>
@@ -724,6 +759,20 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
   const meta = CATEGORY_META[category];
   const games = ALL_GAMES.filter((g) => g.tags?.includes(meta.tag)).filter((g) => chip === "all" || g.kind === chip);
 
+  // CASINO PLACEHOLDER FIXTURES — the "See all" destination for a Lobby
+  // rail (Popular/New/Live Casino/Game Shows) gets the same fixture logic,
+  // real games first, per the task's "See All pages" requirement. Only at
+  // `chip === "all"` — a placeholder has no real on-chain/provider kind of
+  // its own, so narrowing to one specific kind reasonably shows only real
+  // games of that kind. Gated on the SAME Dev Panel flag as the Lobby
+  // rails (see LobbyDashboard below); Favorites/Recently Played have no
+  // CATEGORY_META entry at all, so they can never reach this function.
+  const mock = useDevMockState();
+  const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails;
+  const displayGames = placeholdersEnabled && chip === "all"
+    ? [...games, ...createPlaceholderGames({ category: meta.tag, surface: "page", existingCount: games.length })]
+    : games;
+
   return (
     <section>
       <h1 className="text-lg font-bold">{displayLabel(category)}</h1>
@@ -751,9 +800,13 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
         ))}
       </div>
 
-      {games.length ? (
+      {displayGames.length ? (
         <div className={GRID}>
-          {games.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="category" />)}
+          {displayGames.map((game) => (
+            game.isPlaceholder
+              ? <PlaceholderGameCard key={game.favId} game={game} />
+              : <CasinoGameCard key={game.favId} game={game} {...tileProps} context="category" />
+          ))}
         </div>
       ) : (
         <EmptyState
@@ -959,6 +1012,14 @@ function ProviderTiles() {
 // itself returns early for Favorites/CategoryPage before this would ever be
 // reached, and hooks can't live after an early return in the same component.
 function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory }) {
+  // CASINO PLACEHOLDER FIXTURES — read unconditionally, before any early
+  // return below (this hook must run every render, in the same order,
+  // regardless of `isEmpty`). Only actually used further down, past the
+  // early-return, to build the `games=` arrays passed to non-contextual
+  // rails — see the `withPlaceholders` helper near `seeAll` below.
+  const mock = useDevMockState();
+  const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails && !q;
+
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
   // The full TriBet Studio catalog — the "Providers" nav category no longer
   // points at this rail directly (see ProviderTiles above); it's now this
@@ -1044,6 +1105,22 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
     track("casino_view_all_selected", { sourceSection: target.toLowerCase().replace(/\s+/g, "-") });
   };
 
+  // CASINO PLACEHOLDER FIXTURES — appended only at the JSX `games=` prop
+  // below, never mixed into onchain/popularRow/etc. themselves, so every
+  // calculation above (hasMore, isEmpty, visibleSections, analytics) keeps
+  // reasoning about the real catalog only. `placeholdersEnabled` (computed
+  // at the top of this component, before the early return above) already
+  // accounts for `!q` — this Lobby view re-filters its own rails by the
+  // same search query the top search box drives (see `byTag`/
+  // `matchesQuery` above), so an active search must never grow
+  // placeholders back in; "Search: placeholders excluded" applies here
+  // too, not just to the separate search dropdown. Recently Played and
+  // Favorites are simply never passed through this helper at all.
+  const withPlaceholders = (realGames, placeholderCategory) =>
+    placeholdersEnabled
+      ? [...realGames, ...createPlaceholderGames({ category: placeholderCategory, surface: "rail", existingCount: realGames.length })]
+      : realGames;
+
   // Player-first hierarchy (see LOBBY HIERARCHY): Recently Played, then
   // Favorites — each conditional, hidden entirely (not a placeholder) when
   // empty, via CasinoGameRail's own self-hide (no emptyState passed) — then
@@ -1082,20 +1159,20 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         testId="originals-rail"
         title={CATEGORY_LABEL.Originals}
         badge="Provably fair"
-        games={onchain}
+        games={withPlaceholders(onchain, "originals")}
         tileProps={tileProps}
         context="home"
       />
 
-      <CasinoGameRail sectionId="casino-section-popular" testId="popular-rail" title="Popular" games={popularRow} tileProps={tileProps} context="home" onSeeAll={popularHasMore ? seeAll("Popular") : undefined} />
-      <CasinoGameRail sectionId="casino-section-new-releases" testId="new-releases-rail" title="New Releases" games={newReleasesRow} tileProps={tileProps} context="home" onSeeAll={newReleasesHasMore ? seeAll("New") : undefined} />
-      <CasinoGameRail sectionId="casino-section-live-casino" testId="live-casino-rail" title="Live Casino" games={liveCasinoRow} tileProps={tileProps} context="home" onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined} />
-      <CasinoGameRail sectionId="casino-section-game-shows" testId="game-shows-rail" title="Game Shows" games={gameShowsRow} tileProps={tileProps} context="home" onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined} />
+      <CasinoGameRail sectionId="casino-section-popular" testId="popular-rail" title="Popular" games={withPlaceholders(popularRow, "popular")} tileProps={tileProps} context="home" onSeeAll={popularHasMore ? seeAll("Popular") : undefined} />
+      <CasinoGameRail sectionId="casino-section-new-releases" testId="new-releases-rail" title="New Releases" games={withPlaceholders(newReleasesRow, "new")} tileProps={tileProps} context="home" onSeeAll={newReleasesHasMore ? seeAll("New") : undefined} />
+      <CasinoGameRail sectionId="casino-section-live-casino" testId="live-casino-rail" title="Live Casino" games={withPlaceholders(liveCasinoRow, "live-casino")} tileProps={tileProps} context="home" onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined} />
+      <CasinoGameRail sectionId="casino-section-game-shows" testId="game-shows-rail" title="Game Shows" games={withPlaceholders(gameShowsRow, "game-shows")} tileProps={tileProps} context="home" onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined} />
       {/* ProviderTiles is intentionally not rendered — see the "Providers"
           category's own disabled entry in lib/casinoCategories.js for why
           (no real, multi-provider inventory yet). Kept defined below, not
           deleted, for when real provider inventory exists. */}
-      <CasinoGameRail testId="tribet-studio-rail" title="Tribet Studio" games={tribetStudio} tileProps={tileProps} context="home" />
+      <CasinoGameRail testId="tribet-studio-rail" title="Tribet Studio" games={withPlaceholders(tribetStudio, "tribet-studio")} tileProps={tileProps} context="home" />
     </div>
   );
 }

@@ -184,6 +184,11 @@ export function DevPanel() {
               <option value="insufficient-balance">Insufficient balance</option>
             </select>
           </Field>
+          <Checkbox
+            label="Populate rails with placeholder tiles (UI testing)"
+            checked={mock.casinoPlaceholderRails}
+            onChange={(v) => set({ casinoPlaceholderRails: v })}
+          />
         </Section>
 
         <Section title="Compliance">
