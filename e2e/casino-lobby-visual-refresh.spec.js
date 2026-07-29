@@ -13,20 +13,24 @@ async function gotoLobby(page) {
 }
 
 test.describe("Casino lobby promo hierarchy", () => {
-  test("wallet hero is visibly wider than each secondary promo card on desktop", async ({ page }) => {
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await gotoLobby(page);
-    const cards = page.locator(".top-card-grid > div");
-    const heroBox = await cards.nth(0).boundingBox();
-    const promo1Box = await cards.nth(1).boundingBox();
-    const promo2Box = await cards.nth(2).boundingBox();
-    expect(heroBox.width).toBeGreaterThan(promo1Box.width * 1.4);
-    expect(heroBox.width).toBeGreaterThan(promo2Box.width * 1.4);
-    // All three still share one outer height (CARD_H), per the mockup's
-    // "all cards share the same outer height" requirement.
-    expect(Math.abs(heroBox.height - promo1Box.height)).toBeLessThanOrEqual(1);
-    expect(Math.abs(promo1Box.height - promo2Box.height)).toBeLessThanOrEqual(1);
-  });
+  // MOCKUP ALIGNMENT CORRECTION: replaces the old "wallet hero is visibly
+  // wider" test — the approved direction requires strictly equal widths,
+  // not a dominant hero card. Checks all three standard desktop widths
+  // named in the task's QA list, not just one.
+  for (const width of [1920, 1728, 1440, 1366, 1280]) {
+    test(`all three promo cards are equal width and height at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await gotoLobby(page);
+      const cards = page.locator(".top-card-grid > div");
+      const heroBox = await cards.nth(0).boundingBox();
+      const promo1Box = await cards.nth(1).boundingBox();
+      const promo2Box = await cards.nth(2).boundingBox();
+      expect(Math.abs(heroBox.width - promo1Box.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(promo1Box.width - promo2Box.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(heroBox.height - promo1Box.height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(promo1Box.height - promo2Box.height)).toBeLessThanOrEqual(1);
+    });
+  }
 
   test("tablet: hero spans full width, two secondary cards share a row beneath it", async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 1024 });
@@ -59,6 +63,19 @@ test.describe("Casino lobby promo hierarchy", () => {
     // (it owns the scrollbar gutter) — regression guard for the shell
     // reserving a stale right-panel column with nothing mounted in it.
     expect(1920 - (main.x + main.width)).toBeLessThan(24);
+  });
+
+  // MOCKUP ALIGNMENT CORRECTION: guards against the specific bug the task
+  // called "unacceptable" — CSS truncate() rendering a visible mid-sentence
+  // ellipsis on the promo cards' supporting copy.
+  test("promo card supporting copy never renders a visible ellipsis", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoLobby(page);
+    const copyTexts = await page.locator(".top-card-grid p").allTextContents();
+    expect(copyTexts.length).toBeGreaterThan(0);
+    for (const text of copyTexts) {
+      expect(text).not.toMatch(/…|\.\.\.$/);
+    }
   });
 });
 
@@ -97,6 +114,26 @@ test.describe("Casino lobby category navigation", () => {
     await expect(popular).toHaveAttribute("aria-current", "page");
     const lobby = page.locator('[data-test-id="category-nav-lobby"]');
     await expect(lobby).not.toHaveAttribute("aria-current", "page");
+  });
+});
+
+test.describe("Casino lobby rail controls", () => {
+  // MOCKUP ALIGNMENT CORRECTION: the task explicitly reported these as
+  // "nearly invisible" — guards a minimum real hit area and a visible
+  // border/background at rest (not just on hover), rather than asserting
+  // exact colour values (brittle).
+  test("rail prev/next controls have a real hit area and a visible border at rest", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await gotoLobby(page);
+    const nextBtn = page.locator('[aria-label^="Next "]').first();
+    await expect(nextBtn).toBeVisible();
+    const box = await nextBtn.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(28);
+    expect(box.height).toBeGreaterThanOrEqual(28);
+    const border = await nextBtn.evaluate((el) => getComputedStyle(el).borderColor);
+    // Fully transparent would mean "no visible border at rest" — the exact
+    // regression this test guards against.
+    expect(border).not.toBe("rgba(0, 0, 0, 0)");
   });
 });
 
