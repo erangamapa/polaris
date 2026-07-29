@@ -255,12 +255,20 @@ html {
    ~44 call sites before this pass — already correct, documented rather
    than re-abstracted into a single rigid class (context legitimately
    needs different sizes/weights). */
+/* SURFACE HIERARCHY POLISH: color was --muted-foreground — the exact same
+   tone as inactive nav-item labels, which is what let section labels
+   ("PERSONAL"/"GAMES", Dev Panel section titles) compete with real
+   navigation instead of reading as clearly tertiary. --ink-quiet is the
+   pre-existing tier one step below --muted-foreground/--ink-dim (see the
+   READABILITY PASS note above), already used elsewhere for exactly this
+   "quieter than secondary" role — reused here rather than inventing a new
+   value. Weight/size/tracking/case unchanged. */
 .text-label {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  color: var(--muted-foreground);
+  color: var(--ink-quiet);
 }
 
 /* Shared bottom clearance for any mobile scroll container that sits above
@@ -647,6 +655,17 @@ html {
   --ink-dim: var(--muted-foreground);
   --ink-quiet: #6F788C; /* --muted */
   --ink-inverse: var(--global-cta-text);
+  /* SURFACE HIERARCHY POLISH: new — inactive sidebar icons previously
+     shared the exact same --muted-foreground value as inactive sidebar
+     LABELS (icon and label are separate DOM elements, but both inherited
+     the same parent text color), which is what let icons "disappear on
+     weaker displays" — there was no icon-specific tone to nudge
+     independently. Derived live from --muted-foreground (~4% relative
+     lightness increase via color-mix toward white, same idiom as the
+     READABILITY PASS above) rather than a second hardcoded hex, so it
+     can never drift out of sync if --muted-foreground changes again.
+     Labels are intentionally NOT touched here — see Sidebar.jsx. */
+  --icon-secondary: color-mix(in srgb, var(--muted-foreground) 94%, white 6%);
 
   --rule: var(--border);
   --rule-quiet: #1B2029;
@@ -921,7 +940,22 @@ html {
      discipline as every prior recolor in this file. */
   /* MERIDIAN BLUE RECOLOR: value-only swap, same role names, tinted per
      the task's SURFACES table. */
-  --background: #05070F;
+  /* SURFACE HIERARCHY POLISH: was #05070F — measurably DARKER than
+     --sidebar (#080B16, "Surface 0"/shell chrome), which inverted the
+     intended Level 0 (shell) < Level 1 (page) < Level 2 (card) ordering:
+     the main canvas sat below the header/sidebar it's supposed to read as
+     "lifted above". New value derived the same way this file's other
+     "brighten by N%" passes have (color-mix toward white — see the
+     READABILITY PASS note above this block): color-mix(in srgb, #05070F
+     97%, white 3%) -> #0D0E16. That lands cleanly between --sidebar
+     (L~5.9%) and --card (L~7.8%), restoring the correct order without
+     touching either of those two tokens, and stays a near-black navy (no
+     saturation added, no grey). --color-zinc-950 (Tailwind's own zinc-950
+     override, used by a handful of dialogs/overlays for their own
+     "deepest" surface) is deliberately left at the old value — those
+     surfaces are a different, still genuinely-deepest role, not "the main
+     page", so they should NOT track this lift. */
+  --background: #0D0E16;
   --foreground: #DEE4F2; /* Primary Text */
   --card: #0B0F1D; /* Surface 1 */
   --card-foreground: #DEE4F2;
@@ -939,7 +973,20 @@ html {
   --accent: #1B2342; /* Surface 3 */
   --accent-foreground: #DEE4F2;
   --destructive: #F26472; /* Danger */
-  --border: #1B2342; /* Border */
+  /* SURFACE HIERARCHY POLISH: was a flat #1B2342 — borders were doing too
+     much of the visual separation work app-wide (promo cards, game cards,
+     search field, header/footer dividers, rail controls all read this
+     token, directly or via Tailwind's bare `border`/`border-t`/`border-b`
+     default-color fallback — confirmed by computed-style inspection, not
+     assumption). Expressed as a live color-mix toward transparent (~18%
+     reduction) rather than a flattened hex specifically because this one
+     token sits over several different surface tones (page, card, popover)
+     — blending toward transparent softens it proportionally against
+     ANY backdrop, where blending toward one specific surface color would
+     only have been correct for that one surface. Selected-state, focus,
+     validation and danger borders all use their own separate tokens
+     (--border-selected/--ring/--destructive) and are untouched. */
+  --border: color-mix(in srgb, #1B2342 82%, transparent);
   --input: rgba(255, 255, 255, 0.14);
   --ring: rgba(61, 109, 255, 0.5); /* brand-tinted keyboard focus ring only */
   --sidebar: #080B16; /* Surface 0 — between Background and Surface 1 */

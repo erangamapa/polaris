@@ -106,7 +106,15 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
   };
 
   return (
-    <header className="relative z-40 flex min-h-14 shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:grid md:grid-cols-[1fr_auto_1fr] md:gap-3">
+    // SURFACE HIERARCHY POLISH: was bg-background — the header shared the
+    // exact same token as the main page canvas, so lifting --background
+    // (see index.css) would have moved both together and left zero
+    // separation between them. bg-sidebar matches Sidebar.jsx's own root
+    // surface (both are "shell chrome", the deepest level in the
+    // hierarchy) — header and sidebar now visibly read as one continuous
+    // shell surrounding a slightly-lighter page, instead of the header
+    // silently tracking whatever the page background happens to be.
+    <header className="relative z-40 flex min-h-14 shrink-0 items-center gap-3 border-b bg-sidebar px-3 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:grid md:grid-cols-[1fr_auto_1fr] md:gap-3">
       {/* LEFT ZONE: menu toggle + logo. LOGO TILE REFINEMENT: the tile's
           own visual treatment (dark tile + bottom accent stripe -> one
           solid brand-colour tile, see LogoMark.jsx) was explicitly
