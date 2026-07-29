@@ -77,6 +77,25 @@ function WalletCard({ children, tone = "neutral" }) {
 
 const LABEL = "text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-dim)]";
 
+// VISUAL REFRESH — real repository assets (public/heroes/*.png, already
+// imported as PROMOS[n].image but never actually rendered anywhere) fill
+// PromoCard's existing `artwork` slot instead of leaving it empty. Both
+// images are decorative atmosphere only (no baked-in text, confirmed by
+// inspection) — `alt=""` marks them as such; the offer copy itself is
+// real text elsewhere in the card, never conveyed only through the image.
+// Defined once at module scope (not inline closures passed as `artwork`)
+// so PromoCard always receives the SAME component reference across
+// re-renders — PromoStrip re-renders on every search keystroke, and an
+// inline `() => <img .../>` would give React a new component identity
+// each time, forcing the <img> to unmount/remount and re-fetch on every
+// keystroke instead of loading once.
+function WelcomeArtwork() {
+  return <img src={PROMOS[0].image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />;
+}
+function RaceArtwork() {
+  return <img src={PROMOS[1].image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />;
+}
+
 // Exported: this is the one shared "Tribet infrastructure" tile reused as the
 // first card on Casino, Sports and Predictions (see ArenaTileRow). It has no
 // arena-specific content by design — same wallet, same CTA, everywhere.
@@ -481,10 +500,10 @@ export function PromoStrip({ query, onQuery, searchPanelProps }) {
       <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-[48fr_26fr_26fr] [&::-webkit-scrollbar]:hidden">
         <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
-          <PromoCard eyebrow={p1.eyebrow} title={p1.title} cta={p1.cta} />
+          <PromoCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} artwork={WelcomeArtwork} />
         </div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
-          <PromoCard eyebrow={p2.eyebrow} title={p2.title} cta={p2.cta} />
+          <PromoCard eyebrow={p2.eyebrow} title={p2.title} metadata={p2.body} cta={p2.cta} artwork={RaceArtwork} />
         </div>
       </div>
       <ScopedSearch
