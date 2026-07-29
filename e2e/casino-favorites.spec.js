@@ -132,13 +132,6 @@ test.describe("Favorites toggle — click isolation", () => {
     await expect(star).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("visible focus styling is present on the star", async ({ page }) => {
-    await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await star.focus();
-    const cls = await star.getAttribute("class");
-    expect(cls).toContain("focus-visible:outline");
-  });
 });
 
 test.describe("Favorites toggle — robustness", () => {

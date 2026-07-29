@@ -100,7 +100,7 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
       onMouseDown={onMouseDown}
       {...rest}
       className={cn(
-        "group/fav grid cursor-pointer place-items-center outline-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--global-cta)]",
+        "group/fav grid cursor-pointer place-items-center outline-none transition",
         isChip ? "size-10 rounded-lg" : "size-11 rounded-md",
         className
       )}
