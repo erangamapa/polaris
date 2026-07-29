@@ -5,6 +5,13 @@ import { test, expect } from "@playwright/test";
 // PlaceholderGameCard). Matches this project's established convention: pure
 // logic gets vitest unit tests (see lib/casinoPlaceholders.test.js), DOM/
 // interaction behavior gets verified here via Playwright.
+//
+// DEFAULT FLIPPED TO ON (explicit request, 2026): `casinoPlaceholderRails`
+// in lib/devMock.js now defaults to `true`, so every visitor sees populated
+// rails without touching the Dev Panel — this used to be opt-in only. Every
+// test below no longer needs to explicitly enable the flag; the "gating"
+// describe block instead verifies the new default directly and that a
+// developer can still turn it off via the panel.
 
 const ELIGIBLE_RAILS = [
   "originals-rail",
@@ -22,42 +29,42 @@ async function gotoLobby(page) {
 
 // The checkbox is a real <input type="checkbox"> wrapped in its own
 // <label> (see DevPanel.jsx's Checkbox component) — clicking the label
-// toggles it natively, so the same helper both enables and disables
-// depending on the flag's current state.
+// toggles it natively, so this same helper both enables and disables
+// depending on the flag's current state (now defaults checked).
 async function togglePlaceholders(page) {
   await page.keyboard.press("Shift+D");
   await page.waitForSelector("text=Developer Panel");
   await page.locator('label:has-text("Populate rails with placeholder tiles")').click();
   await page.locator('button[aria-label="Close Developer Panel"]').click();
 }
-const enablePlaceholders = togglePlaceholders;
-const disablePlaceholders = togglePlaceholders;
 
 test.describe("Casino placeholder fixtures — Dev Panel gating", () => {
-  test("disabled by default: no placeholders anywhere in a fresh session", async ({ page }) => {
+  test("enabled by default: placeholders present in a fresh session", async ({ page }) => {
     await gotoLobby(page);
-    await expect(page.locator('[data-placeholder="true"]')).toHaveCount(0);
+    for (const testId of ELIGIBLE_RAILS) {
+      const count = await page.locator(`[data-test-id="${testId}"] [data-placeholder="true"]`).count();
+      expect(count, `${testId} should contain at least one placeholder by default`).toBeGreaterThan(0);
+    }
   });
 
-  test("enabling the flag populates every eligible rail; disabling restores the real catalog only", async ({ page }) => {
+  test("a developer can still disable the flag via the Dev Panel, and re-enable it", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
+    await togglePlaceholders(page); // default is on -> this disables it
+    await page.reload();
+    await page.waitForSelector('[data-test-id="main-content"]');
+    await expect(page.locator('[data-placeholder="true"]')).toHaveCount(0);
+
+    await togglePlaceholders(page); // re-enable
     for (const testId of ELIGIBLE_RAILS) {
       const count = await page.locator(`[data-test-id="${testId}"] [data-placeholder="true"]`).count();
       expect(count, `${testId} should contain at least one placeholder`).toBeGreaterThan(0);
     }
-
-    await disablePlaceholders(page);
-    await page.reload();
-    await page.waitForSelector('[data-test-id="main-content"]');
-    await expect(page.locator('[data-placeholder="true"]')).toHaveCount(0);
   });
 });
 
 test.describe("Casino placeholder fixtures — ordering and overflow", () => {
   test("real games render before placeholders in the Popular rail", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const cards = page.locator('[data-test-id="popular-rail"] [data-test-id^="game-card-"]');
     const isPlaceholderFlags = await cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-placeholder") === "true"));
     const firstPlaceholderIndex = isPlaceholderFlags.indexOf(true);
@@ -84,7 +91,6 @@ test.describe("Casino placeholder fixtures — ordering and overflow", () => {
   test("rails with enough content overflow at 1920px; sparse rails correctly do not", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await gotoLobby(page);
-    await enablePlaceholders(page);
 
     const OVERFLOWING = ["originals-rail", "new-releases-rail", "tribet-studio-rail"];
     const SPARSE = ["popular-rail", "live-casino-rail", "game-shows-rail"];
@@ -103,7 +109,6 @@ test.describe("Casino placeholder fixtures — ordering and overflow", () => {
 test.describe("Casino placeholder fixtures — contextual sections stay genuine", () => {
   test("Favorites rail/page receive no placeholders even with the flag on", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     await expect(page.locator('[data-test-id="favorites-rail"] [data-placeholder="true"]')).toHaveCount(0);
 
     await page.goto("/casino/favorites");
@@ -114,7 +119,6 @@ test.describe("Casino placeholder fixtures — contextual sections stay genuine"
 
   test("Recently Played rail/page receive no placeholders even with the flag on", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     await expect(page.locator('[data-test-id="recently-played-rail"]')).toHaveCount(0); // self-hides when genuinely empty
 
     await page.goto("/casino/recently-played");
@@ -127,7 +131,6 @@ test.describe("Casino placeholder fixtures — contextual sections stay genuine"
 test.describe("Casino placeholder fixtures — See all pages", () => {
   test("Popular's See all page receives real games first, then placeholders", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     await page.goto("/casino/popular");
     await page.waitForTimeout(200);
     const cards = page.locator('[data-test-id^="game-card-"]');
@@ -141,7 +144,6 @@ test.describe("Casino placeholder fixtures — See all pages", () => {
 test.describe("Casino placeholder fixtures — search exclusion", () => {
   test("placeholders never appear in search results", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const input = page.locator('[data-test-id="arena-search"]');
     await input.fill("placeholder");
     await page.waitForTimeout(200);
@@ -150,7 +152,6 @@ test.describe("Casino placeholder fixtures — search exclusion", () => {
 
   test("an active search query does not re-introduce placeholders into the Lobby rails", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const input = page.locator('[data-test-id="arena-search"]');
     await input.fill("dice");
     await page.waitForTimeout(200);
@@ -161,7 +162,6 @@ test.describe("Casino placeholder fixtures — search exclusion", () => {
 test.describe("Casino placeholder fixtures — interaction", () => {
   test("clicking a placeholder shows the exact message and never navigates", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const before = page.url();
     const placeholder = page.locator('[data-placeholder="true"]').first();
     await placeholder.click();
@@ -173,7 +173,6 @@ test.describe("Casino placeholder fixtures — interaction", () => {
 
   test("keyboard activation (Enter and Space) shows the same message", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const placeholder = page.locator('[data-placeholder="true"]').first();
     await placeholder.focus();
     await page.keyboard.press("Enter");
@@ -184,7 +183,6 @@ test.describe("Casino placeholder fixtures — interaction", () => {
 
   test("rapid repeated clicks never stack more than one instance of the message", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const placeholder = page.locator('[data-placeholder="true"]').first();
     await placeholder.click();
     await placeholder.click();
@@ -194,14 +192,12 @@ test.describe("Casino placeholder fixtures — interaction", () => {
 
   test("a placeholder card has no favorite control", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const placeholder = page.locator('[data-placeholder="true"]').first();
     await expect(placeholder.locator('[data-fav]')).toHaveCount(0);
   });
 
   test("the accessible name states testing status, not the click message", async ({ page }) => {
     await gotoLobby(page);
-    await enablePlaceholders(page);
     const placeholder = page.locator('[data-placeholder="true"]').first();
     await expect(placeholder).toHaveAttribute("aria-label", "Placeholder game. UI testing only.");
   });

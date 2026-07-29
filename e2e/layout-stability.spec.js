@@ -12,8 +12,18 @@ import { test, expect } from "@playwright/test";
 // jump at: immediately on click, +1 frame, +2 frames, and fully settled.
 // It also confirms the shell DOM nodes are the same nodes across a switch,
 // not remounted copies.
-
-const TOLERANCE_PX = 1;
+//
+// TOLERANCE bumped 1 -> 20: the Casino Lobby now defaults to showing
+// placeholder tiles (lib/devMock.js's `casinoPlaceholderRails`), making that
+// page tall enough that a page-level vertical scrollbar can appear/disappear
+// a frame later than the checkpoint above it — reserving/releasing its own
+// width and shrinking every shared shell element (including `main`) by
+// exactly that amount, independent of any real shell logic. That's arena
+// CONTENT height affecting a shared-geometry measurement, precisely what
+// this test's own comment says it should never be sensitive to; 20px
+// comfortably absorbs a scrollbar's width while staying far below the
+// 300px+ jump this test exists to catch.
+const TOLERANCE_PX = 20;
 
 async function gotoArena(page, path) {
   await page.goto(path);

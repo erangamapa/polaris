@@ -73,12 +73,12 @@ export const DEFAULT_DEV_MOCK_STATE = {
   // rails/grids (Tribet Originals, Popular, New Releases, Live Casino,
   // Game Shows, Tribet Studio, and their "See all" pages) with enough
   // dev-only placeholder tiles to test horizontal rail overflow, scroll
-  // controls, and grid density. Defaults OFF, same convention as
-  // `arenaDebug` — a developer must explicitly opt in via the Dev Panel;
-  // Recently Played and Favorites never read this flag at all (see
-  // lib/casinoPlaceholders.js), so there's nothing for it to affect there
-  // even if enabled.
-  casinoPlaceholderRails: false,
+  // controls, and grid density. Defaults ON (explicit request, 2026) so
+  // every visitor sees populated rails by default, not just when a
+  // developer opts in via the Dev Panel; Recently Played and Favorites
+  // never read this flag at all (see lib/casinoPlaceholders.js), so
+  // there's nothing for it to affect there.
+  casinoPlaceholderRails: true,
 };
 
 function safeLoad() {
