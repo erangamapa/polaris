@@ -114,8 +114,20 @@ export function PlayerTile() {
       <WalletCard>
         <div className="min-w-0">
           <div className={LABEL}>Wallet</div>
-          <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1.5 sm:leading-snug">One wallet. Every game.</h3>
-          <p className="mt-1.5 hidden text-xs leading-snug text-zinc-400 xl:block">Play, earn and withdraw with one connection.</p>
+          {/* VISUAL REFRESH: two-line hierarchy, second line in the Casino/
+              system accent (--global-cta-hover, not raw --global-cta — same
+              AA-on-dark-surface reasoning as Sidebar.jsx's ACTIVE_ACCENT) —
+              matches the approved mockup. Still just two words of accent
+              colour, not body copy. */}
+          <h3 className="mt-0.5 text-base font-bold leading-tight text-[#F2F3F5] sm:mt-1.5 sm:leading-snug">
+            One wallet.
+            <br />
+            <span className="text-[var(--global-cta-hover)]">Every game.</span>
+          </h3>
+          {/* VISUAL REFRESH: xl:block -> lg:block — the hero column is now
+              ~48% of the row at lg: (was an equal 33% third), so there's
+              room for this line a breakpoint earlier than before. */}
+          <p className="mt-1.5 hidden text-xs leading-snug text-zinc-400 lg:block">Play, earn and withdraw with one connection.</p>
         </div>
         <Button size="sm" onClick={connect} data-test-id="wallet-tile-connect" className="w-fit">
           Connect wallet

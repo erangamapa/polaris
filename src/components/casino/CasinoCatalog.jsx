@@ -674,10 +674,16 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
               // 'Lobby' active state" — this is that exact row.
               // VISUAL REFRESH: min-h-11/px-4 -> min-h-10/px-3.5 — slightly
               // more compact per the approved mockup, still comfortably
-              // above the smallest acceptable touch-target size.
+              // above the smallest acceptable touch-target size. Selected
+              // state now reuses Sidebar.jsx's own ACTIVE_ACCENT.tab recipe
+              // (subtle 12%-tinted brand background + 42%-tinted brand
+              // border + --global-cta-hover text) instead of a flat
+              // --secondary fill — a real but restrained blue tint, not a
+              // bright CTA-style pill, and the same token expression
+              // already vetted there for AA contrast on a dark surface.
               "flex min-h-10 shrink-0 items-center rounded-full border px-3.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isSelected
-                ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
+                ? "border-[color-mix(in_srgb,var(--global-cta)_42%,transparent)] bg-[color-mix(in_srgb,var(--global-cta)_12%,transparent)] text-[var(--global-cta-hover)]"
                 : "border-white/10 text-zinc-400 hover:text-white"
             )}
           >
