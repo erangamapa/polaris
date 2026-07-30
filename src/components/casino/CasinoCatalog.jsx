@@ -14,7 +14,7 @@ import { takeUnclaimed } from "@/lib/casinoDedup";
 import { PROFILE_VARIANT } from "@/lib/profileState";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { useDevMockState } from "@/lib/devMock";
-import { createPlaceholderGames, notifyPlaceholderClicked, PLACEHOLDER_TITLE, PLACEHOLDER_ARIA_LABEL, PLACEHOLDER_TARGET_TOTAL } from "@/lib/casinoPlaceholders";
+import { createPlaceholderGames, notifyPlaceholderClicked, PLACEHOLDER_TITLE, PLACEHOLDER_ARIA_LABEL, PLACEHOLDER_TARGET_TOTAL, createPlaceholderProviders, notifyPlaceholderProviderClicked } from "@/lib/casinoPlaceholders";
 import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
 // Onchain games carry no provider field of their own (BETSWIRL_GAMES has
@@ -454,7 +454,7 @@ const TIER_SUBTITLE_CLASS = {
 // (replaced by Load More below the rail — see CasinoGameRail); the header
 // now only ever shows title/badge/subtitle on the left and View All
 // ("See all") on the right, "level with the title, plain weight."
-function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeAllCount }) {
+function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-2 sm:mb-5 lg:mb-6">
       <div className="flex min-w-0 items-center gap-2">
@@ -483,7 +483,7 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeA
           // instance of this violation in the app.
           className="shrink-0 text-xs font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {seeAllCount ? `See all (${seeAllCount})` : "See all"}
+          See all
         </button>
       )}
     </div>
@@ -513,7 +513,7 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeA
 // independent of both — the hierarchy pass calls out different sections
 // for each (e.g. Popular keeps standard-size cards — a "dense standard
 // carousel" per the brief — despite having the same title size as Originals).
-export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, seeAllCount, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", className, visibleCount, onExpand }) {
+export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", className, visibleCount, onExpand }) {
   // HOTFIX (page size) — every rail shows at most RAIL_PAGE_SIZE items to
   // start; Load More reveals the next RAIL_PAGE_SIZE, capped at the real
   // total. `visibleCount` is lifted to App.jsx's `expandedRails` (same
@@ -565,7 +565,6 @@ export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps,
         tier={tier}
         testId={testId}
         onSeeAll={onSeeAll}
-        seeAllCount={seeAllCount}
       />
       <div aria-label={`${title} carousel`} className={RAIL_TRACK}>
         {shown.map((game) => (
@@ -926,18 +925,17 @@ function CategoryDestinationPage({ category, tileProps, onBrowseGames }) {
   // function.
   const mock = useDevMockState();
   const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails;
-  // Same "never more placeholders than real games" cap the Lobby rails
-  // already use (see CategoryHomeGrid/LobbyDashboard) — this page used to
-  // always top up to a flat 14 regardless of real count, which read as a
-  // wall of fake cards for a sparse category (e.g. 2 real Live Casino
-  // games buried under 12 placeholders). Consistent now that placeholders
-  // default on for every visitor, not just Dev Panel opt-in.
+  // SCROLL/OVERFLOW TESTING PASS: flat PLACEHOLDER_TARGET_TOTAL regardless
+  // of real count — this flag is dev/testing-only (off by default), so a
+  // generous, consistent wall of fake cards on every category is exactly
+  // the point now, not something a real visitor could mistake for genuine
+  // sparse inventory (see PLACEHOLDER_TARGET_TOTAL's own comment).
   const displayGames = placeholdersEnabled && chip === "all"
     ? [...games, ...createPlaceholderGames({
         category: category.toLowerCase(),
         surface: "page",
         existingCount: games.length,
-        targetTotal: games.length > 0 ? Math.min(PLACEHOLDER_TARGET_TOTAL, games.length * 2) : 0,
+        targetTotal: games.length > 0 ? PLACEHOLDER_TARGET_TOTAL : 0,
       })]
     : games;
 
@@ -994,7 +992,7 @@ function CategoryHomeGrid({ category, tileProps }) {
   const mock = useDevMockState();
   const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails;
   const displayGames = placeholdersEnabled
-    ? [...games, ...createPlaceholderGames({ category: category.toLowerCase(), surface: "rail", existingCount: games.length, targetTotal: games.length > 0 ? Math.min(PLACEHOLDER_TARGET_TOTAL, games.length * 2) : 0 })]
+    ? [...games, ...createPlaceholderGames({ category: category.toLowerCase(), surface: "rail", existingCount: games.length, targetTotal: games.length > 0 ? PLACEHOLDER_TARGET_TOTAL : 0 })]
     : games;
 
   return displayGames.length ? (
@@ -1260,7 +1258,16 @@ export function CasinoCatalog({ category, view = "dashboard", providerSlug, quer
 // a fabricated brand mark, same reasoning as everywhere else in this app.
 const PROVIDER_TILE = "w-[220px] shrink-0";
 
-function ProviderTiles({ onSelectProvider }) {
+// SCROLL/OVERFLOW TESTING PASS: real providers first, then (dev/testing-
+// only, off by default) a long list of realistic-but-fake studio names —
+// same "real content first, placeholders after" ordering
+// createPlaceholderGames' callers already use for game rails. A placeholder
+// tile never navigates (there's no real /casino/provider/{slug} page behind
+// a fake name) — it shows the same kind of toast PlaceholderGameCard does,
+// via `data-placeholder="true"` marking it for tests exactly like a
+// placeholder game tile.
+function ProviderTiles({ onSelectProvider, placeholdersEnabled }) {
+  const placeholderProviders = placeholdersEnabled ? createPlaceholderProviders() : [];
   return (
     <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
       <div className="mb-4 flex items-center gap-2">
@@ -1287,6 +1294,24 @@ function ProviderTiles({ onSelectProvider }) {
             </button>
           );
         })}
+        {placeholderProviders.map((provider) => (
+          <button
+            key={provider.id}
+            type="button"
+            onClick={notifyPlaceholderProviderClicked}
+            data-placeholder="true"
+            aria-label={`${provider.name} — UI testing only, not a real provider`}
+            data-test-id={`provider-tile-${provider.id}`}
+            className={cn(
+              PROVIDER_TILE,
+              "flex aspect-[2/1] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 text-center transition hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            )}
+          >
+            <Building2 className="size-5 text-zinc-600" aria-hidden="true" />
+            <span className="text-sm font-bold text-zinc-300">{provider.name}</span>
+            <span className="text-[11px] text-zinc-600">UI Test Fixture</span>
+          </button>
+        ))}
       </div>
     </section>
   );
@@ -1383,17 +1408,13 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
   // placeholders back in; "Search: placeholders excluded" applies here
   // too, not just to the separate search dropdown. Recently Played and
   // Favorites are simply never passed through this helper at all.
-  // LOBBY POLISH: a section must never show more placeholders than real
-  // games — a sparse section reading as "mostly fake" is worse than a
-  // short, honest one. `createPlaceholderGames` itself always tops up to a
-  // flat `targetTotal` regardless of `existingCount` (kept that way
-  // deliberately — its own unit tests rely on that simple contract for
-  // exercising id/gradient mechanics), so the cap is applied here instead,
-  // by passing a smaller effective `targetTotal`: at most 2x the real
-  // count, so `needed` (targetTotal - existingCount) can never exceed
-  // existingCount. A section with 0 real games gets `targetTotal: 0` -> 0
-  // placeholders, so it self-hides via CasinoGameRail's own empty check
-  // rather than rendering a full fake row.
+  // SCROLL/OVERFLOW TESTING PASS: flat PLACEHOLDER_TARGET_TOTAL regardless
+  // of real count (see that constant's own comment) — every rail gets
+  // topped up to the same generous total, guaranteeing it clears the
+  // 8-item page size (RAIL_PAGE_SIZE) with room for multiple Load More
+  // clicks, dev/testing-only. A section with 0 real games still gets
+  // `targetTotal: 0` -> 0 placeholders, so it self-hides via CasinoGameRail's
+  // own empty check rather than rendering a full fake row out of nothing.
   const withPlaceholders = (realGames, placeholderCategory) =>
     placeholdersEnabled
       ? [
@@ -1402,7 +1423,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
             category: placeholderCategory,
             surface: "rail",
             existingCount: realGames.length,
-            targetTotal: realGames.length > 0 ? Math.min(PLACEHOLDER_TARGET_TOTAL, realGames.length * 2) : 0,
+            targetTotal: realGames.length > 0 ? PLACEHOLDER_TARGET_TOTAL : 0,
           }),
         ]
       : realGames;
@@ -1479,7 +1500,6 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         tileProps={tileProps}
         context="home"
         onSeeAll={popularHasMore ? seeAll("Popular") : undefined}
-        seeAllCount={popularHasMore ? popularCandidates.length : undefined}
       />
       <CasinoGameRail
         sectionId="casino-section-new-releases"
@@ -1494,10 +1514,9 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         tileProps={tileProps}
         context="home"
         onSeeAll={newReleasesHasMore ? seeAll("New") : undefined}
-        seeAllCount={newReleasesHasMore ? newReleasesCandidates.length : undefined}
       />
       <div className={GAP_REGULAR}>
-        <ProviderTiles onSelectProvider={onSelectProvider} />
+        <ProviderTiles onSelectProvider={onSelectProvider} placeholdersEnabled={placeholdersEnabled} />
       </div>
       <CasinoGameRail
         sectionId="casino-section-live-casino"
@@ -1511,7 +1530,6 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         tileProps={tileProps}
         context="home"
         onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined}
-        seeAllCount={liveCasinoHasMore ? liveCasinoCandidates.length : undefined}
       />
       <CasinoGameRail
         sectionId="casino-section-game-shows"
@@ -1525,7 +1543,6 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         tileProps={tileProps}
         context="home"
         onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined}
-        seeAllCount={gameShowsHasMore ? gameShowsCandidates.length : undefined}
       />
     </div>
   );

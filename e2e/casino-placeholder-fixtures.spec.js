@@ -87,40 +87,23 @@ test.describe("Casino placeholder fixtures — ordering and overflow", () => {
     expect(isPlaceholderFlags.slice(firstPlaceholderIndex).every(Boolean)).toBe(true);
   });
 
-  // LOBBY HIERARCHY PASS: this used to assert every eligible rail overflows
-  // at 1920px, back when placeholders always topped every rail up to a flat
-  // 14 tiles regardless of real content — a section with 1 real game got 13
-  // fake ones just to guarantee overflow for this test. That's exactly the
-  // "wall of fake cards" the hierarchy pass rules out (see
-  // lib/casinoPlaceholders.js and LobbyDashboard's `withPlaceholders`:
-  // placeholders are now capped at the real game count, so a sparse
-  // section — Popular has 4 real games, Live Casino/Game Shows have 1 each
-  // — stays sparse and honest instead of padded to force a scrollbar).
-  // Rails with enough real content (Originals/New Releases) still overflow
-  // and still exercise the affordance; the sparse ones don't.
-  //
-  // HOTFIX (page size): "overflow" is now a fixed 8-item page cap rather
-  // than container-overflow measurement (see CasinoGameRail's
-  // RAIL_PAGE_SIZE) — the OVERFLOWING/SPARSE split below is unchanged
-  // (each rail's real-game count relative to 8, once placeholders can top
-  // it up to at most 2x that count, lands in the exact same bucket as
-  // before), only the mechanism underneath changed. PROVIDERS RE-ENABLE:
-  // Tribet Studio (previously always-overflowing on its own, 12 real
-  // games) is gone — no per-provider rail exists to replace it with.
-  test("rails with enough content show Load More at 1920px; sparse rails correctly do not", async ({ page }) => {
+  // SCROLL/OVERFLOW TESTING PASS: this used to split rails into
+  // "overflowing" (enough real content) vs. "sparse" (padded only up to 2x
+  // real count, so a 1-real-game section stayed honest rather than showing
+  // a wall of fake cards). That restraint was a PRODUCTION-facing concern;
+  // this flag is dev/testing-only (off by default, opt-in via the Dev
+  // Panel) and exists specifically to exercise overflow/Load More/scroll —
+  // so every populated rail is now topped up to the same flat
+  // PLACEHOLDER_TARGET_TOTAL regardless of real count, and every one of
+  // them shows Load More once enabled. There is no more "correctly stays
+  // sparse" case to guard.
+  test("every populated rail shows Load More once placeholders are enabled, at 1920px", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await gotoLobbyWithPlaceholders(page);
 
-    const OVERFLOWING = ["originals-rail", "new-releases-rail"];
-    const SPARSE = ["popular-rail", "live-casino-rail", "game-shows-rail"];
-
-    for (const testId of OVERFLOWING) {
+    for (const testId of ELIGIBLE_RAILS) {
       const loadMore = page.locator(`[data-test-id="${testId}-load-more"]`);
-      await expect(loadMore, `${testId} should show Load More (overflow exists)`).toBeVisible();
-    }
-    for (const testId of SPARSE) {
-      const loadMore = page.locator(`[data-test-id="${testId}-load-more"]`);
-      await expect(loadMore, `${testId} should not show Load More (real content is sparse, not padded to force overflow)`).toHaveCount(0);
+      await expect(loadMore, `${testId} should show Load More (topped up past the 8-item page size)`).toBeVisible();
     }
   });
 });

@@ -151,6 +151,10 @@ test.describe("Casino lobby rail controls", () => {
     expect(box.width).toBeGreaterThan(0);
   });
 
+  // SCROLL/OVERFLOW TESTING PASS: placeholders now top every rail up to a
+  // flat 24 regardless of real count (see PLACEHOLDER_TARGET_TOTAL) — New
+  // Releases (6 real) totals 24, needing two Load More clicks (8 -> 16 ->
+  // 24) to exhaust, not one.
   test("clicking Load More appends the next page and removes the control once exhausted", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 1080 });
     await gotoLobby(page);
@@ -159,7 +163,11 @@ test.describe("Casino lobby rail controls", () => {
     const loadMore = rail.locator('[data-test-id="new-releases-rail-load-more"]');
     const cardsBefore = await rail.locator('[data-test-id^="game-card-"]').count();
     await loadMore.click();
-    await expect(loadMore).toHaveCount(0); // 6 real + up to 6 placeholder = 12, page size 8: one Load More exhausts it
+    await expect(loadMore).toBeVisible(); // 8 -> 16, more still to reveal
+    const cardsMidway = await rail.locator('[data-test-id^="game-card-"]').count();
+    expect(cardsMidway).toBeGreaterThan(cardsBefore);
+    await loadMore.click();
+    await expect(loadMore).toHaveCount(0); // 16 -> 24, fully exhausted
     const cardsAfter = await rail.locator('[data-test-id^="game-card-"]').count();
     expect(cardsAfter).toBeGreaterThan(cardsBefore);
     await expect(rail.locator('[data-test-id^="game-card-"]').first()).toBeVisible();
