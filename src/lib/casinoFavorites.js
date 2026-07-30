@@ -33,16 +33,3 @@ export function toggleFavorite(set, id) {
   const adding = !set.has(id);
   return { next: withFavorite(set, id, adding), adding };
 }
-
-// Account-connect merge: baseline (favorites picked before any wallet was
-// ever connected on this device) union that address's own saved bucket.
-// Always recomputed from the fixed baseline, never from whatever `favs`
-// currently holds — see App.jsx's deviceBaselineRef comment for why
-// (switching from account A to account B must never carry A's picks into
-// B). Returns the merged set plus how many new ids the account bucket
-// actually contributed, so the caller can decide whether a "Synced N
-// favorites" toast is worth showing (0 added = nothing to announce).
-export function mergeAccountFavorites(baseline, accountFavorites) {
-  const merged = new Set([...baseline, ...accountFavorites]);
-  return { merged, added: merged.size - baseline.size };
-}

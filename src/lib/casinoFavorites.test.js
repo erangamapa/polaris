@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { withFavorite, toggleFavorite, mergeAccountFavorites } from "./casinoFavorites";
+import { withFavorite, toggleFavorite } from "./casinoFavorites";
 
 // FAVORITES SYSTEM AUDIT AND CLEANUP — scenario coverage. This module holds
 // the only new pure logic the task introduces (everything else — game
@@ -74,23 +74,5 @@ describe("toggleFavorite", () => {
     const { next: afterAdd } = toggleFavorite(original, "roulette");
     const { next: afterRevert } = toggleFavorite(afterAdd, "roulette");
     expect(afterRevert).toEqual(original);
-  });
-});
-
-describe("mergeAccountFavorites", () => {
-  it("unions the baseline and account sets", () => {
-    const { merged } = mergeAccountFavorites(new Set(["a"]), new Set(["b"]));
-    expect(merged).toEqual(new Set(["a", "b"]));
-  });
-
-  it("reports how many new ids the account bucket actually contributed", () => {
-    expect(mergeAccountFavorites(new Set(["a"]), new Set(["a", "b", "c"])).added).toBe(2);
-    expect(mergeAccountFavorites(new Set(["a"]), new Set()).added).toBe(0);
-    expect(mergeAccountFavorites(new Set(["a"]), new Set(["a"])).added).toBe(0);
-  });
-
-  it("never drops a baseline id even if the account bucket is empty", () => {
-    const { merged } = mergeAccountFavorites(new Set(["a", "b"]), new Set());
-    expect(merged).toEqual(new Set(["a", "b"]));
   });
 });

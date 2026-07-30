@@ -89,7 +89,58 @@ CasinoCatalog (src/components/casino/CasinoCatalog.jsx)
 | `src/web3/useBetSwirl.js` | `BETSWIRL_GAMES` list + on-chain bet flow |
 | `src/web3/` | wallet, Azuro, config |
 | `packages/shared/chains.js` | pinned chains/contracts/tokens |
-| `api/` | Vercel serverless functions (balance/history/bet-prepare) |
+| `api/` | Vercel serverless functions (balance/history/bet-prepare, settings, SIWE auth) |
+| `packages/shared/playerSettings.js` | player-settings schema + normalisation (imported by BOTH client and server) |
+| `packages/shared/siwe.js` | SIWE (EIP-4361) message build/parse |
+| `src/lib/usePlayerSettings.jsx` | the one store every persisted player setting reads/writes through |
+
+---
+
+## Per-player settings (persisted per wallet)
+
+There is **no login screen and no password** — the connected wallet is the
+identity. Settings are stored one JSON blob per lowercased address.
+
+**How it works.** Local-first: `localStorage` answers the first frame, the
+server is the durable cross-device copy, and the two reconcile by whole-blob
+last-write-wins. The player is **never** prompted to sign on connect. One
+wallet signature (SIWE) is requested the first time they *change* a setting
+with no live session; declining keeps everything working locally and is never
+re-prompted automatically.
+
+```
+change a setting -> localStorage + UI immediately (optimistic)
+                 -> debounced 800ms -> PUT /api/settings (session cookie)
+                 -> 401? one SIWE signature, then retry once
+```
+
+**Adding a setting:** add it to `DEFAULT_SETTINGS` in
+`packages/shared/playerSettings.js` and give it a case in `normalizeSettings`
+(that function is the trust boundary — the server runs it on untrusted PUT
+bodies). Then read/write it via `usePlayerSettings()`'s
+`settings` / `updateGroup(group, patch)`. Do **not** add a new localStorage key.
+
+**Honesty rule — read this before adding a Responsible Gaming control.**
+Persisting a setting is not enforcing it. `realityCheckMinutes` is genuinely
+enforced (`src/lib/useRealityCheck.js` runs a real timer); deposit and loss
+limits are saved only, and the UI says so on the control itself. Cool-off and
+self-exclusion are deliberately absent — those are the two where "saved but not
+enforced" actively harms a player who believes they are protected. Do not add a
+control the app cannot honour.
+
+**Environment variables** (all optional — with none set the app runs fully, on
+a per-process in-memory store, and tells the player their settings are
+device-only rather than claiming a save):
+
+| Var | What it does |
+|---|---|
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token |
+| `SESSION_SECRET` | HMAC key for session cookies. Unset = a random per-process secret, so sessions die on restart |
+
+Upstash **eviction must stay disabled** — it is a store of record here, and
+eviction would silently drop the settings of any player who hasn't visited
+recently.
 
 ## Verify & ship
 ```bash
