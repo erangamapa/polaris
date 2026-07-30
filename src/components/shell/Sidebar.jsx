@@ -109,7 +109,7 @@ const tooltipSide = () => (typeof document !== "undefined" && document.dir === "
 // icons within this layer's own constant 60px box, never within a
 // growing container (the bug the previous version had — see the report).
 // ════════════════════════════════════════════════════════════════════════
-function CompactButton({ id, icon, label, active, onClick, disabled, disabledLabel, badge, ariaCurrent, testId, tooltipsEnabled }) {
+function CompactButton({ id, icon, label, active, onClick, disabled, disabledLabel, badge, ariaCurrent, testId, tooltipsEnabled, pulse }) {
   const [tipOpen, setTipOpen] = useState(false);
   useEffect(() => { if (!tooltipsEnabled) setTipOpen(false); }, [tooltipsEnabled]);
 
@@ -135,8 +135,26 @@ function CompactButton({ id, icon, label, active, onClick, disabled, disabledLab
               inheriting the same --muted-foreground the label next to
               them (in the expanded layer) also uses — active/disabled
               icons are untouched, keeping ACTIVE_ACCENT's inherited color
-              and the existing disabled treatment exactly as before. */}
-          <ItemIcon icon={icon} className={cn("size-4", !disabled && !active && "text-[var(--icon-secondary)]", disabled && "opacity-50")} />
+              and the existing disabled treatment exactly as before.
+              FIRST-FAVORITE CUE: `pulse` (only ever set on the Favorites
+              item, see App.jsx's sidebar builder) is a mutually-exclusive
+              branch of the same color ternary, not an appended class —
+              this app's Tailwind build doesn't guarantee "last class in
+              the string wins" for two conflicting color utilities, so the
+              override has to replace the normal color decision rather
+              than race it. A one-shot coral tint behind just the icon,
+              never the whole row (see VISUAL STYLE: "no permanently red
+              sidebar row"). */}
+          <span className={cn("relative grid size-6 place-items-center rounded-md", pulse && "bg-[rgba(255,84,104,0.12)]")}>
+            <ItemIcon
+              icon={icon}
+              className={cn(
+                "size-4",
+                pulse ? "text-[#FF5468] sidebar-fav-pulse" : (!disabled && !active && "text-[var(--icon-secondary)]"),
+                disabled && "opacity-50"
+              )}
+            />
+          </span>
           {badge && <span className="absolute -end-1 -top-1">{badge}</span>}
         </button>
       </TooltipTrigger>
@@ -191,6 +209,7 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
             onClick={() => (it.action ? it.action() : onSelect(it.id))}
             testId={it.id === "Favorites" ? "sidebar-favorites-collapsed" : undefined}
             tooltipsEnabled={tooltipsEnabled}
+            pulse={it.pulse}
             badge={
               it.count > 0 ? (
                 <StatusBadge
@@ -216,7 +235,7 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
 // widening (OPENING always completes before EXPANDED_REVEALING begins —
 // see lib/sidebarTransition.js), so its width never has to "catch up".
 // ════════════════════════════════════════════════════════════════════════
-function ExpandedItemRow({ id, icon, label, active, onClick, badge, ariaCurrent, testId }) {
+function ExpandedItemRow({ id, icon, label, active, onClick, badge, ariaCurrent, testId, pulse }) {
   return (
     <button
       id={id}
@@ -230,15 +249,21 @@ function ExpandedItemRow({ id, icon, label, active, onClick, badge, ariaCurrent,
       style={active ? { background: ACTIVE_ACCENT.item.background, color: ACTIVE_ACCENT.item.color } : undefined}
     >
       {active && <SideIndicator color={ACTIVE_ACCENT.bar} />}
-      <span className="grid size-6 shrink-0 place-items-center">
+      <span className={cn("relative grid size-6 shrink-0 place-items-center rounded-md", pulse && "bg-[rgba(255,84,104,0.12)]")}>
         {/* SURFACE HIERARCHY POLISH: icon and label are separate elements
             but previously inherited the identical --muted-foreground tone
             from this button when inactive — --icon-secondary gives the
             icon its own slightly brighter value without touching the
             label span below, which stays on --muted-foreground exactly as
             before. Active rows are untouched (still inherit
-            ACTIVE_ACCENT's colour via the button's inline style). */}
-        <ItemIcon icon={icon} className={cn("size-4", !active && "text-[var(--icon-secondary)]")} />
+            ACTIVE_ACCENT's colour via the button's inline style).
+            FIRST-FAVORITE CUE: see CompactButton's own comment on why
+            `pulse` is a mutually-exclusive ternary branch, not an appended
+            class, and why the tint sits behind just the icon. */}
+        <ItemIcon
+          icon={icon}
+          className={cn("size-4", pulse ? "text-[#FF5468] sidebar-fav-pulse" : (!active && "text-[var(--icon-secondary)]"))}
+        />
       </span>
       <span className="min-w-0 flex-1 truncate whitespace-nowrap text-start text-sm">{label}</span>
       {badge && <span className="ms-auto shrink-0">{badge}</span>}
@@ -310,6 +335,7 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
               ariaCurrent={selected === it.id ? "page" : undefined}
               onClick={() => (it.action ? it.action() : onSelect(it.id))}
               testId={it.id === "Favorites" ? "sidebar-favorites-count" : undefined}
+              pulse={it.pulse}
               badge={
                 it.count > 0 ? (
                   <StatusBadge

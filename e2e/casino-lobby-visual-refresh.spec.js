@@ -166,17 +166,34 @@ test.describe("Casino lobby rail controls", () => {
   });
 });
 
+// FAVORITES LOBBY REMOVAL: Favorites no longer renders as a Lobby rail at
+// all (see CasinoCatalog.jsx's LobbyDashboard) — it's a dedicated sidebar
+// destination, so adding a favorite must never insert/remove/reorder a
+// Lobby section. This describe block now verifies both halves: the Lobby
+// stays stable, and the sidebar/Favorites-page path still works.
 test.describe("Casino lobby Favorites section", () => {
-  test("favoriting a game shows a dynamic count badge and the card is launchable from Favorites", async ({ page }) => {
+  test("favoriting a game does not add a lobby row; sidebar count updates and the card is launchable from the Favorites page", async ({ page }) => {
     await gotoLobby(page);
+    const railOrderBefore = await page.locator('[data-test-id="main-content"] section[data-test-id]').evaluateAll((els) => els.map((el) => el.getAttribute("data-test-id")));
+
     const addStar = page.getByLabel(/^Add .+ to Favorites$/).first();
     await addStar.click();
 
-    const favoritesRail = page.locator('[data-test-id="favorites-rail"]');
-    await expect(favoritesRail).toBeVisible();
-    await expect(favoritesRail.getByText(/^1 game$/)).toBeVisible();
+    // Sidebar count updates immediately, no navigation.
+    await expect(page.locator('[data-test-id="sidebar-favorites-count"]').getByText("1", { exact: true })).toBeVisible();
+    expect(page.url()).not.toContain("play=");
 
-    const favoritedCard = favoritesRail.locator('[data-test-id^="game-card-"]').first();
+    // Lobby section order is byte-for-byte unchanged — no inserted/removed/
+    // reordered row, and specifically no favorites-rail at any position.
+    const railOrderAfter = await page.locator('[data-test-id="main-content"] section[data-test-id]').evaluateAll((els) => els.map((el) => el.getAttribute("data-test-id")));
+    expect(railOrderAfter).toEqual(railOrderBefore);
+    expect(railOrderAfter).not.toContain("favorites-rail");
+
+    // The favorited game is still reachable and launchable — from the
+    // dedicated Favorites destination now, not a lobby rail.
+    await page.locator('[data-test-id="sidebar-favorites-count"]').click();
+    await page.waitForSelector('[data-test-id="main-content"]');
+    const favoritedCard = page.locator('[data-test-id^="game-card-"]').first();
     await favoritedCard.click();
     await expect(page).toHaveURL(/[?&]play=/);
   });

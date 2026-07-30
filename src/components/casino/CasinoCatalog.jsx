@@ -1183,9 +1183,11 @@ function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, p
 //  - category === "Recently Played" → the Recently Played page.
 //  - category is a tag category (Popular/Slots/Live Casino/Game Shows/New)
 //    → its own page: title, chips, full grid, never deduped.
-//  - anything else (Lobby, default) → the lobby dashboard: Recently Played →
-//    Favorites → Originals (always) → Popular → New Releases → Providers
-//    → Live Casino → Game Shows.
+//  - anything else (Lobby, default) → the lobby dashboard: Recently Played
+//    (conditional) → Originals (always) → Popular → New Releases →
+//    Providers → Live Casino → Game Shows. Favorites is never a Lobby row —
+//    it's a dedicated sidebar destination (see FAVORITES LOBBY REMOVAL in
+//    LobbyDashboard below).
 // `recentIds` (most-recent-first favIds) and favorites are two distinct
 // personalized rails, not a merged "Your games" umbrella — they answer
 // different questions (what you saved vs. what you actually played) and the
@@ -1236,7 +1238,7 @@ export function CasinoCatalog({ category, view = "dashboard", providerSlug, quer
 
   return (
     <LobbyDashboard
-      category={category} query={query} q={q} favorites={favorites} recentGames={recentGames}
+      category={category} query={query} q={q} recentGames={recentGames}
       tileProps={tileProps} onBrowseGames={onBrowseGames} onSelectCategory={onSelectCategory}
       onSelectProvider={onSelectProvider}
       expandedRails={expandedRails} onExpandRail={onExpandRail}
@@ -1294,7 +1296,7 @@ function ProviderTiles({ onSelectProvider }) {
 // view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
 // itself returns early for Favorites/CategoryPage before this would ever be
 // reached, and hooks can't live after an early return in the same component.
-function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory, onSelectProvider, expandedRails, onExpandRail }) {
+function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGames, onSelectCategory, onSelectProvider, expandedRails, onExpandRail }) {
   // CASINO PLACEHOLDER FIXTURES — read unconditionally, before any early
   // return below (this hook must run every render, in the same order,
   // regardless of `isEmpty`). Only actually used further down, past the
@@ -1330,24 +1332,19 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   const newReleasesHasMore = newReleasesRow.length < newReleasesCandidates.length;
   const liveCasinoHasMore = liveCasinoRow.length < liveCasinoCandidates.length;
   const gameShowsHasMore = gameShowsRow.length < gameShowsCandidates.length;
-  // Favorites' rail already shows the exact same complete list the
-  // Favorites page renders (no dedup, nothing hidden) — See all only earns
-  // its place once there are enough favorites that the destination's grid
-  // view genuinely helps (see SEE ALL: "the rail contains only 1-3 items
-  // with no added destination value" — literally true below that count).
-  const favoritesHasMore = favorites.length > 3;
 
-  const isEmpty = q && !favorites.length && !recentGames.length && !onchain.length
+  const isEmpty = q && !recentGames.length && !onchain.length
     && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length;
 
   // Personalized rows only count as "visible" once populated — they no
   // longer render an empty placeholder that would otherwise count as shown
   // (see LOBBY HIERARCHY: "personalized rows are conditional"). Providers
   // is excluded from `q` results (the tile row is a set of navigation
-  // entry points, not search-filterable game content).
+  // entry points, not search-filterable game content). Favorites is a
+  // dedicated sidebar destination now, never a Lobby section — see FAVORITES
+  // LOBBY REMOVAL below.
   const visibleSections = [
     recentGames.length > 0 && "recently-played",
-    favorites.length > 0 && "favorites",
     "originals",
     popularRow.length > 0 && "popular",
     newReleasesRow.length > 0 && "new-releases",
@@ -1410,13 +1407,19 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         ]
       : realGames;
 
-  // Player-first hierarchy (see LOBBY HIERARCHY): Recently Played, then
-  // Favorites — each conditional, hidden entirely (not a placeholder) when
-  // empty, via CasinoGameRail's own self-hide (no emptyState passed) — then
-  // the stable discovery base every player sees regardless of history:
-  // Tribet Originals, Popular, New Releases, Providers, Live Casino, Game
-  // Shows. Slots/Table Games are omitted — no supported inventory exists
-  // for either (see FINAL RESPONSE: Slots-inventory findings).
+  // FAVORITES LOBBY REMOVAL — Favorites is no longer a Lobby row at all
+  // (was a conditional rail here, inserted the moment the first game was
+  // favorited — that insertion/removal shifted every section below it,
+  // and duplicated Recently Played's "quick return" role with a second,
+  // state-dependent section). Favorites now lives exclusively as a
+  // dedicated sidebar destination (see App.jsx's sidebar builder /
+  // CASINO_PERSONAL_DESTINATIONS) — the Lobby's own row order is now
+  // static regardless of favorite state: Recently Played (conditional,
+  // hidden when empty), then the stable discovery base every player sees
+  // regardless of history: Tribet Originals, Popular, New Releases,
+  // Providers, Live Casino, Game Shows. Slots/Table Games are omitted —
+  // no supported inventory exists for either (see FINAL RESPONSE:
+  // Slots-inventory findings).
   //
   // LOBBY HIERARCHY PASS: replaced the previous single `space-y-8` (one
   // identical gap between every section, regardless of importance) with a
@@ -1445,21 +1448,6 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         games={recentGames}
         tileProps={tileProps}
         context="recent"
-      />
-
-      <CasinoGameRail
-        testId="favorites-rail"
-        visibleCount={expandedRails?.get("favorites-rail")}
-        onExpand={(total) => onExpandRail?.("favorites-rail", total)}
-        title="Favorites"
-        tier="secondary"
-        className={GAP_REGULAR}
-        icon={<Heart className="size-4 shrink-0 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
-        badge={favorites.length > 0 ? `${favorites.length} game${favorites.length === 1 ? "" : "s"}` : undefined}
-        games={favorites}
-        tileProps={tileProps}
-        context="favorites"
-        onSeeAll={favoritesHasMore ? seeAll("Favorites") : undefined}
       />
 
       <CasinoGameRail
