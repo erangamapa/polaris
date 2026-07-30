@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Star, History, ChevronLeft, ChevronRight, Gamepad2, Building2 } from "lucide-react";
+import { History, Heart, Gamepad2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
 // Imported from betswirlCatalog.js directly, NOT useBetSwirl.js — that file
@@ -15,16 +15,17 @@ import { PROFILE_VARIANT } from "@/lib/profileState";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 import { useDevMockState } from "@/lib/devMock";
 import { createPlaceholderGames, notifyPlaceholderClicked, PLACEHOLDER_TITLE, PLACEHOLDER_ARIA_LABEL, PLACEHOLDER_TARGET_TOTAL } from "@/lib/casinoPlaceholders";
-import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS, scrollToRail } from "@/lib/casinoCategories";
-import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from "@/lib/casinoLobbyScroll";
+import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
 // Onchain games carry no provider field of their own (BETSWIRL_GAMES has
-// none — see useBetSwirl.js); provider-kind games carry an identical
-// "Tribet Studio" `badge` on every entry. Two real studios exist in this
-// catalog today, not eleven — deriving anything more granular would be
-// inventing providers that don't exist. Lives here (not in casinoSearch.js,
-// which already imports FROM this file) so both CasinoGameCard and search
-// can use the exact same label without a circular import.
+// none — see useBetSwirl.js) and are never a provider at all (nav spec
+// §6.6 — Tribet Originals is first-party content and a category, never a
+// provider). Provider-kind games resolve their display name via the real
+// `providerId` FK against CASINO_PROVIDERS (see ProviderGame.jsx/
+// casinoCategories.js) — not a repeated display-string match. Lives here
+// (not in casinoSearch.js, which already imports FROM this file) so both
+// CasinoGameCard and search can use the exact same label without a
+// circular import.
 //
 // FINAL QA fix: onchain games previously showed the internal SDK/vendor
 // name "BetSwirl" here — exactly the kind of exposed technical prototype
@@ -33,7 +34,8 @@ import { activateLobbyPill, useLobbyActiveSection, restoreSectionFromHash } from
 // Lobby rail already uses (see casinoCategories.js's CATEGORY_LABEL_OVERRIDE),
 // so this now agrees with, rather than contradicts, the section heading
 // these cards sit under.
-export const gameProviderName = (game) => (game.kind === "onchain" ? CATEGORY_LABEL.Originals : (game.badge ?? "Tribet Studio"));
+export const gameProviderName = (game) =>
+  game.kind === "onchain" ? CATEGORY_LABEL.Originals : (CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider");
 
 // Shared broken-image detection — one `onError` state machine, reused by
 // every place a game's artwork renders (full cards here, the compact search
@@ -65,16 +67,21 @@ export const findGameByFavId = (favId) => ALL_GAMES.find((g) => g.favId === favI
 // by ArrowUp/Down within one combobox listbox, and a second real tab stop
 // per row would break that linear keyboard model.
 //
+// HEART REDESIGN: a Star reads as "featured/recommended" — this control
+// means "this is one of MY games," a personal collection, so it's a Heart
+// instead. Purely visual/semantic; the toggle behavior, aria-label wording
+// ("Favorites", never "star"), and press animation below are all unchanged.
+//
 // `variant` picks the chrome, since the two surfaces need genuinely
 // different treatments rather than one style forced onto both:
-// - "chip" (default): the Favorites redesign's glass chip — 36px visual
-//   chip inside a 40px touch target, gold-filled star when active, meant to
-//   sit on top of arbitrary game artwork. Used by CasinoGameCard below.
+// - "chip" (default): the Favorites glass chip — 36px visual chip inside a
+//   40px touch target, coral-filled heart when active, meant to sit on top
+//   of arbitrary game artwork. Used by CasinoGameCard below.
 // - "plain": the older flat icon-only treatment (no background box), for
 //   CasinoSearch's dense list row where a 40px glass chip would be far too
 //   heavy — that surface supplies its own hover/color chrome via
 //   `className` exactly as before.
-// Active-state gold (`--favorite-gold`) is shared by both variants so
+// Active-state coral (`--favorite-heart`) is shared by both variants so
 // "favorited" reads identically everywhere; only the surrounding chrome
 // differs.
 export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, variant = "chip", ...rest }) {
@@ -112,18 +119,18 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
           pulse > 0 && "fav-chip-pop",
           isChip
             ? cn(
-                "size-9 rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
+                "size-9 rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
                 faved
-                  ? "bg-[rgba(15,20,38,0.44)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_9px_-2px_var(--favorite-gold-glow)]"
-                  : "bg-[rgba(12,16,30,0.42)] group-hover/fav:bg-[rgba(15,20,38,0.5)]"
+                  ? "border-[var(--global-cta-soft-border)] bg-[rgba(15,20,38,0.5)] group-hover/fav:border-[color-mix(in_srgb,var(--global-cta)_60%,transparent)]"
+                  : "border-white/10 bg-[rgba(12,16,30,0.42)] group-hover/fav:border-white/20 group-hover/fav:bg-[rgba(15,20,38,0.5)]"
               )
             : "size-full rounded-md transition-colors duration-200 group-hover/fav:bg-white/10"
         )}
       >
-        <Star
+        <Heart
           className={cn(
             "size-4 transition-transform duration-200 group-hover/fav:scale-[1.08]",
-            faved ? "fill-[var(--favorite-gold)] text-[var(--favorite-gold)]" : isChip ? "text-white/75" : "text-[var(--muted-foreground)]"
+            faved ? "fill-[var(--favorite-heart)] text-[var(--favorite-heart)]" : isChip ? "text-[rgba(255,255,255,0.72)]" : "text-[var(--muted-foreground)]"
           )}
         />
       </span>
@@ -214,6 +221,13 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
         href={gameHref(game)}
         onClick={playable ? linkClick(onLaunch, game, context) : (e) => e.preventDefault()}
         aria-disabled={!playable || undefined}
+        // NAV SPEC §5.4: "COMING SOON tiles... are non-interactive... not
+        // focusable and do not route." Non-routing was already true
+        // (onClick above); this card was still a real, tabbable <a> for a
+        // Coming Soon game though — `pointer-events-none` only blocks
+        // mouse interaction, keyboard Tab still landed on it. Removed from
+        // the tab order entirely for the non-playable case.
+        tabIndex={playable ? undefined : -1}
         data-test-id={`game-card-${testKey}`}
         aria-label={playable ? `Play ${game.title}` : `${game.title} — ${statusLabel}`}
         className={cn(
@@ -237,17 +251,21 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
             )}
           />
         )}
-        {/* SURFACE HIERARCHY POLISH: /85 -> /92, /40 -> /43 (~8% increase on
-            each stop) — title/provider legibility across bright, pale,
-            busy or dark artwork, fixed once here since every card in the
-            app (rails, grids, category pages) shares this one component.
-            Shape/reach of the gradient (p-2 pt-6, to-transparent higher
-            up) is unchanged, so this stays a soft fade, never a hard
-            edge, and never covers materially more artwork than before. */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/43 to-transparent p-2 pt-6">
-          <div className="line-clamp-2 text-xs font-bold leading-snug text-white">{game.title}</div>
-          {showProvider && <div className="truncate text-[10px] leading-snug text-zinc-400">{gameProviderName(game)}</div>}
-        </div>
+        {/* HOTFIX (double titles): every real cover-art asset in this
+            catalog already bakes its own title (and, for provider games,
+            a studio wordmark) directly into the image — see
+            public/img/games/*.svg/.webp. This HTML overlay duplicated
+            that text on top of the art. It's only real content when
+            there's no baked title to show at all, i.e. the `broken`
+            fallback (missing/failed image, plain icon) — everywhere a
+            real image renders, this stays hidden. Shape/reach of the
+            gradient is otherwise unchanged from before. */}
+        {broken && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/43 to-transparent p-2 pt-6">
+            <div className="line-clamp-2 text-xs font-bold leading-snug text-white">{game.title}</div>
+            {showProvider && <div className="truncate text-[10px] leading-snug text-zinc-400">{gameProviderName(game)}</div>}
+          </div>
+        )}
       </a>
       {/* Semi-transparent black background is a deliberate exception (needs
           to stay legible over arbitrary colorful game artwork, not a
@@ -330,7 +348,7 @@ function PlaceholderGameCard({ game }) {
         </div>
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent p-2 pt-6">
-        {/* Never a real provider name (Tribet Studio/Tribet Originals/
+        {/* Never a real provider name (Provider #1/Tribet Originals/
             BetSwirl) — see lib/casinoPlaceholders.js's PLACEHOLDER_BADGE. */}
         <div className="truncate text-[10px] leading-snug text-zinc-400">{game.badge}</div>
       </div>
@@ -373,9 +391,6 @@ const GAP_COMPACT = "mt-5 md:mt-6 lg:mt-7"; // stepping down into discovery
 
 const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
 
-// Matches the scroll body's own `gap-3` below — the arrow step calculation
-// needs the real inter-card gap, not just each card's own width.
-const RAIL_GAP_PX = 12;
 const RAIL_SKELETON_COUNT = 6;
 
 // How many whole cards fit in one arrow-click "page" of a rail's visible
@@ -390,52 +405,28 @@ export function railCardsPerPage(clientWidth, cardWidth, gap) {
   return Math.max(1, Math.floor(clientWidth / step));
 }
 
-// Tracks whether a rail's scroll body has more content past either edge, so
-// the prev/next buttons can disable themselves at the real boundary instead
-// of just always being clickable. Re-measures on scroll and on resize (a
-// rail that fit unscrolled at desktop width may not once the viewport
-// shrinks).
-function useRailScroll(itemCount) {
-  const ref = useRef(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+// HOTFIX (ragged rows): every rail is capped at a fixed page size — never
+// "show everything" — so column count and Load More visibility are both
+// driven by a plain item count instead of container/overflow measurement.
+const RAIL_PAGE_SIZE = 8;
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      setCanScrollLeft(el.scrollLeft > 4);
-      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-    };
-    measure();
-    el.addEventListener("scroll", measure, { passive: true });
-    window.addEventListener("resize", measure);
-    return () => {
-      el.removeEventListener("scroll", measure);
-      window.removeEventListener("resize", measure);
-    };
-  }, [itemCount]);
-
-  // Steps by however many WHOLE cards fit in one viewport segment (never a
-  // fractional card), so every arrow click lands cleanly on a card boundary
-  // instead of stopping partway through the next one.
-  const scrollByPage = (direction) => {
-    const el = ref.current;
-    if (!el) return;
-    const firstCard = el.firstElementChild;
-    const cardWidth = firstCard?.getBoundingClientRect().width ?? el.clientWidth;
-    const cardStep = cardWidth + RAIL_GAP_PX;
-    const cardsPerPage = railCardsPerPage(el.clientWidth, cardWidth, RAIL_GAP_PX);
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollBy({ left: direction * cardsPerPage * cardStep, behavior: reduceMotion ? "auto" : "smooth" });
-  };
-
-  return { ref, canScrollLeft, canScrollRight, scrollByPage };
-}
+// HOTFIX (ragged rows): the previous grid (`lg:grid-cols-[repeat(auto-fill,
+// minmax(170px,1fr))]`) resolved its actual column count against context
+// that could vary per rail, so the same breakpoint could render a
+// different tile width in one rail than another. Fixed, literal column
+// counts here instead — 4 at tablet, 8 at desktop (>=1280px) — mean every
+// rail on the page always divides the exact same container width into the
+// exact same number of tracks, so tile width is identical everywhere,
+// and a sparse rail simply leaves its remaining columns empty rather than
+// stretching its few real tiles wider. Mobile is untouched: still the
+// existing horizontal-scroll track (~2.5 tiles visible), never a grid.
+const RAIL_TRACK =
+  "flex gap-3 overflow-x-auto p-1 pr-4 snap-x snap-proximity [scrollbar-width:none] [&::-webkit-scrollbar]:hidden " +
+  "md:grid md:grid-cols-4 md:overflow-visible md:snap-none xl:grid-cols-8";
 
 // TITLE TYPOGRAPHY FIX: every Casino Lobby section title (Recently Played,
-// Favorites, Tribet Originals, Popular, New Releases, Live Casino, Game
-// Shows, Tribet Studio, Providers) now shares ONE size/weight — previously
+// Favorites, Tribet Originals, Popular, New Releases, Providers, Live
+// Casino, Game Shows) now shares ONE size/weight — previously
 // each had its own tier-keyed size (see the removed TIER_TITLE_CLASS map),
 // which is exactly what produced "Popular" reading larger than "New
 // Releases". This constant is that one shared size, using Popular's former
@@ -459,7 +450,11 @@ const TIER_SUBTITLE_CLASS = {
 // them — previously each branch hand-rolled its own near-identical
 // icon+title row. `onScroll` is only passed by the normal branch (loading
 // and empty states never had arrows/See-all, and still don't).
-function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeAllCount, canScrollLeft, canScrollRight, onScroll }) {
+// NAV SPEC §5.2/§5.3 — carousel arrows removed from the header entirely
+// (replaced by Load More below the rail — see CasinoGameRail); the header
+// now only ever shows title/badge/subtitle on the left and View All
+// ("See all") on the right, "level with the title, plain weight."
+function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeAllCount }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-2 sm:mb-5 lg:mb-6">
       <div className="flex min-w-0 items-center gap-2">
@@ -477,64 +472,19 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeA
           {subtitle && <p className={cn("truncate", TIER_SUBTITLE_CLASS[tier])}>{subtitle}</p>}
         </div>
       </div>
-      {onScroll && (
-        <div className="flex shrink-0 items-center gap-1.5">
-          {onSeeAll && (
-            <button
-              type="button"
-              onClick={onSeeAll}
-              data-test-id={testId ? `${testId}-see-all` : undefined}
-              // Arena color as text is banned — this appears on every rail
-              // across the whole lobby (Popular/New Releases/Live Casino/
-              // Game Shows/Favorites), so it was the single most-repeated
-              // instance of this violation in the app.
-              className="mr-1 text-xs font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {seeAllCount ? `See all (${seeAllCount})` : "See all"}
-            </button>
-          )}
-          {/* MOCKUP ALIGNMENT CORRECTION: base border-white/10 with no fill
-              read as "nearly invisible" — bumped to a real (if still
-              subtle) fill + border so the control reads as a discrete,
-              discoverable button at rest, not just a faint icon; hover
-              deepens both. size-7 -> size-8 for a slightly larger hit
-              area. Disabled state (no overflow to scroll) is unchanged:
-              still present but faded via disabled:opacity-30, matching
-              the existing "hide the affordance, don't remove it" rule for
-              rails that don't currently overflow. */}
-          <button
-            type="button"
-            aria-label={`Previous ${title}`}
-            disabled={!canScrollLeft}
-            onClick={() => onScroll(-1)}
-            // SURFACE HIERARCHY POLISH: /15 -> /12 — a modest reduction,
-            // not a reversion to the old /10 that read as "nearly
-            // invisible" (see the still-fresh comment above). The resting
-            // fill (bg-white/[0.03]) is untouched, so discoverability at
-            // rest is unaffected; only the border's own contribution is
-            // toned down slightly, matching the "surfaces do more of the
-            // separation work, borders do less" brief.
-            className="hidden size-8 place-items-center rounded-md border border-white/12 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
-          >
-            <ChevronLeft className="size-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            aria-label={`Next ${title}`}
-            disabled={!canScrollRight}
-            onClick={() => onScroll(1)}
-            // SURFACE HIERARCHY POLISH: /15 -> /12 — a modest reduction,
-            // not a reversion to the old /10 that read as "nearly
-            // invisible" (see the still-fresh comment above). The resting
-            // fill (bg-white/[0.03]) is untouched, so discoverability at
-            // rest is unaffected; only the border's own contribution is
-            // toned down slightly, matching the "surfaces do more of the
-            // separation work, borders do less" brief.
-            className="hidden size-8 place-items-center rounded-md border border-white/12 bg-white/[0.03] text-zinc-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30 sm:grid"
-          >
-            <ChevronRight className="size-4" aria-hidden="true" />
-          </button>
-        </div>
+      {onSeeAll && (
+        <button
+          type="button"
+          onClick={onSeeAll}
+          data-test-id={testId ? `${testId}-see-all` : undefined}
+          // Arena color as text is banned — this appears on every rail
+          // across the whole lobby (Popular/New Releases/Live Casino/
+          // Game Shows/Favorites), so it was the single most-repeated
+          // instance of this violation in the app.
+          className="shrink-0 text-xs font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {seeAllCount ? `See all (${seeAllCount})` : "See all"}
+        </button>
       )}
     </div>
   );
@@ -563,9 +513,17 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll, seeA
 // independent of both — the hierarchy pass calls out different sections
 // for each (e.g. Popular keeps standard-size cards — a "dense standard
 // carousel" per the brief — despite having the same title size as Originals).
-export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, seeAllCount, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", className }) {
-  const { ref, canScrollLeft, canScrollRight, scrollByPage } = useRailScroll(games.length);
+export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, seeAllCount, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", className, visibleCount, onExpand }) {
+  // HOTFIX (page size) — every rail shows at most RAIL_PAGE_SIZE items to
+  // start; Load More reveals the next RAIL_PAGE_SIZE, capped at the real
+  // total. `visibleCount` is lifted to App.jsx's `expandedRails` (same
+  // mechanism/reasoning as before: it must live above the component that
+  // unmounts/remounts across a game round-trip to survive a real browser
+  // Back — see App.jsx's `expandRail`/`restoreLobbyAfterGame`) so it's
+  // undefined until the caller has ever loaded more for this rail.
   const tileClass = TILE_SCALE_CLASS[tileScale] ?? TILE_SCALE_CLASS.standard;
+  const shown = games.slice(0, visibleCount ?? Math.min(RAIL_PAGE_SIZE, games.length));
+  const hasMore = shown.length < games.length;
 
   if (isLoading) {
     return (
@@ -592,9 +550,9 @@ export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps,
     );
   }
 
-  const scroll = (direction) => {
-    scrollByPage(direction);
-    track("casino_rail_scrolled", { railTitle: title, direction: direction < 0 ? "previous" : "next" });
+  const loadMore = () => {
+    onExpand?.(games.length);
+    track("casino_rail_expanded", { railTitle: title });
   };
 
   return (
@@ -608,21 +566,29 @@ export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps,
         testId={testId}
         onSeeAll={onSeeAll}
         seeAllCount={seeAllCount}
-        canScrollLeft={canScrollLeft}
-        canScrollRight={canScrollRight}
-        onScroll={scroll}
       />
-      <div
-        ref={ref}
-        aria-label={`${title} carousel`}
-        className="flex snap-x snap-proximity gap-3 overflow-x-auto p-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {games.map((game) => (
-          <div key={game.favId} className={cn(tileClass, "snap-start")}>
+      <div aria-label={`${title} carousel`} className={RAIL_TRACK}>
+        {shown.map((game) => (
+          <div key={game.favId} className={cn(tileClass, "snap-start md:w-full")}>
             {game.isPlaceholder ? <PlaceholderGameCard game={game} /> : <CasinoGameCard game={game} {...tileProps} context={context} />}
           </div>
         ))}
       </div>
+      {/* HOTFIX (page size): hidden entirely once every real item is
+          showing — never a disabled/no-op control — driven by the plain
+          item-count comparison above, not container overflow. */}
+      {hasMore && (
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            data-test-id={testId ? `${testId}-load-more` : undefined}
+            className="text-xs font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Load more
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -752,7 +718,7 @@ export function RecentlyPlayedEmptyCard({ profileVariant, onBrowseGames, onLogin
 export function FavoritesEmptyCard({ onBrowseGames }) {
   return (
     <RailEmptyCard
-      icon={Star}
+      icon={Heart}
       title="No favorites yet"
       description="Save games to find them quickly"
       actionLabel="Browse games"
@@ -775,46 +741,30 @@ const displayLabel = (category) => CATEGORY_LABEL[category] ?? category;
 // second sticky bar below it would push content down and add a second
 // scroll-offset to account for, without a page long enough here to justify
 // it — see STICKY BEHAVIOR: "non-sticky on Casino Home if the global
-// header already consumes significant space"). Real navigation-link
-// semantics for anything NOT reached from the Lobby (a route actually
-// changes on selection when `selected !== "Lobby"` — reaching this bar from
-// Favorites/a standalone category page still works exactly as before), not
-// ARIA tabs — this isn't an in-place tab panel.
+// header already consumes significant space").
 //
-// PILL NAVIGATION CONSISTENCY: every pill now behaves identically while on
-// the Lobby — smoothly scroll to that category's real Lobby section,
-// updating the active pill as you go, never opening a standalone category
-// page (see lib/casinoLobbyScroll.js's activateLobbyPill/
-// useLobbyActiveSection, which own the actual scroll/scroll-spy mechanics).
-// This is a deliberately different interaction model from Search/Sidebar
-// (which still open a full category destination for routed categories) —
-// scoped specifically to this pill bar, per that task's own instruction.
-export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
+// NAV SPEC §5.5 — every pill click NAVIGATES (changes the URL to
+// `/casino/lobby/{category}`, the spec's "home" filter view: promo strip
+// and this chip rail both stay mounted, the rails are replaced by a plain
+// grid). This supersedes the previous scroll-spy behavior (Lobby pills
+// smooth-scrolling to an in-page section, never changing the URL) — see
+// lib/casinoLobbyScroll.js, whose scroll-spy hook this component no longer
+// calls; that module's pure geometry helpers are unused by this component
+// now but kept in place, not deleted. `activeView` distinguishes "home"
+// (chip-driven, a pill can be active) from every other view this bar isn't
+// rendered on at all (App.jsx's CasinoLobby only mounts this bar for
+// "dashboard"/"home" — see the two-route split there).
+export function CategoryNav({ selected, activeView, onSelectHomeFilter, onPillActivated }) {
   const activeRef = useRef(null);
-  const isOnLobby = selected === "Lobby";
-  const [activeSectionId, setActiveSectionId] = useLobbyActiveSection(isOnLobby);
-
-  // Restores a valid `#section` hash left by a previous visit/share, once,
-  // on first mount — see restoreSectionFromHash's own comment for why this
-  // is instant (not animated) and why an unrecognized hash is a silent
-  // no-op rather than an error.
-  useEffect(() => {
-    if (isOnLobby) restoreSectionFromHash(setActiveSectionId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately once, on mount only; see comment above.
-  }, []);
 
   useEffect(() => {
     // Keeps the active pill in view on mobile after a direct link/back-
-    // forward navigation, a search selection, or manual Lobby scrolling
-    // lands on a category the horizontal scroll position doesn't already
-    // show. Deliberately NOT scrollIntoView: that API can reach past this
-    // bar's own horizontal scrollbox and nudge an ANCESTOR's vertical
-    // scroll too (block: "nearest" is only a hint, not a hard axis lock) —
-    // which fought the Lobby's own section-scroll every time a pill click
-    // changed `activeSectionId` a moment after the click itself already
-    // started scrolling <main> (see PILL NAVIGATION CONSISTENCY: "prevent
-    // competing animations"). Plain scrollLeft arithmetic only ever touches
-    // this nav's own horizontal position.
+    // forward navigation or a search selection lands on a category the
+    // horizontal scroll position doesn't already show. Deliberately NOT
+    // scrollIntoView: that API can reach past this bar's own horizontal
+    // scrollbox and nudge an ANCESTOR's vertical scroll too (block:
+    // "nearest" is only a hint, not a hard axis lock). Plain scrollLeft
+    // arithmetic only ever touches this nav's own horizontal position.
     const btn = activeRef.current;
     const nav = btn?.parentElement;
     if (!btn || !nav) return;
@@ -824,28 +774,19 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
     const visibleRight = visibleLeft + nav.clientWidth;
     if (btnLeft < visibleLeft) nav.scrollLeft = btnLeft;
     else if (btnRight > visibleRight) nav.scrollLeft = btnRight - nav.clientWidth;
-  }, [selected, activeSectionId]);
+  }, [selected, activeView]);
 
   const handleClick = (category) => {
     onPillActivated?.(category);
-    activateLobbyPill(category, { currentCategory: selected, onNavigateToLobby, setActiveSectionId });
+    onSelectHomeFilter?.(category.id);
   };
 
   return (
     <nav aria-label="Casino categories" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {CASINO_CATEGORIES.map((category) => {
-        // While on the Lobby, active state tracks the scroll-spy (which
-        // section is actually in view) instead of the route — every pill
-        // click keeps `selected` pinned at "Lobby", so a plain string
-        // comparison against it would leave every pill permanently
-        // inactive. Off the Lobby (Favorites, a standalone category page
-        // reached via Search/Sidebar/a direct URL), this falls back to the
-        // original simple comparison, unchanged — see PILL NAVIGATION
-        // CONSISTENCY: "do not accidentally break... Search result
-        // destinations."
-        const isSelected = isOnLobby
-          ? (category.id === "Lobby" ? activeSectionId === null : activeSectionId === category.id)
-          : selected === category.id;
+        const isSelected = category.id === "Lobby"
+          ? (selected === "Lobby" && activeView === "dashboard")
+          : (selected === category.id && activeView === "home");
         return (
           <button
             key={category.id}
@@ -890,10 +831,73 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
   );
 }
 
-// A category page (Popular/Slots/Live Casino/Game Shows/New): title,
-// description, kind filter chips, plain grid. Never the top promo tiles
-// (those are Lobby-only), never deduped against "Your games" — a full
-// category listing should always be the complete, real list.
+// NAV SPEC (§4.1/§4.2) — "Originals" has no CATEGORY_META entry (it's
+// sourced straight from the onchain game list, never a `tags` filter — see
+// LobbyDashboard below), so it needs its own small resolution layer rather
+// than assuming every one of the spec's 5 tag categories has a real
+// CATEGORY_META row. `TAG_CATEGORY_DESCRIPTIONS` supplies the one missing
+// description (Originals) that CATEGORY_META doesn't carry, reusing the
+// exact subtitle its Lobby rail already shows so the two surfaces agree.
+const TAG_CATEGORY_DESCRIPTIONS = { Originals: "Games created by Tribet" };
+function isTagCategory(category) {
+  return category === "Originals" || Boolean(CATEGORY_META[category]);
+}
+function tagCategoryDescription(category) {
+  return CATEGORY_META[category]?.description ?? TAG_CATEGORY_DESCRIPTIONS[category] ?? null;
+}
+function gamesForTagCategory(category) {
+  if (category === "Originals") return ONCHAIN;
+  const tag = CATEGORY_META[category]?.tag;
+  return tag ? ALL_GAMES.filter((g) => g.tags?.includes(tag)) : [];
+}
+
+// NAV SPEC §7 DEFAULT sort options are Popular/Newest/Most Players/
+// Featured — this catalog has no live player-count field and no editorial
+// "featured" flag anywhere in the game data (confirmed: BETSWIRL_GAMES/
+// PROVIDER_GAMES carry only key/title/image/tags(/playable/control) or
+// (/src/badge)), so those two are omitted rather than inventing production
+// data. "Popular" is the catalog's own authored order (a no-op sort, not a
+// fabricated score); "Newest" is a real, derived stable-partition on the
+// same "new" tag New Releases itself is built from — tagged games first,
+// in their existing relative order, everything else after.
+const SORT_OPTIONS = [
+  { id: "popular", label: "Popular" },
+  { id: "newest", label: "Newest" },
+];
+function sortGames(games, sortId) {
+  if (sortId !== "newest") return games;
+  return [...games.filter((g) => g.tags?.includes("new")), ...games.filter((g) => !g.tags?.includes("new"))];
+}
+
+// NAV SPEC §7: "Both are labelled dropdowns, not icon-only." One shared
+// control for Filter and Sort so the two never drift out of visual sync.
+function LabeledSelect({ label, value, onChange, options, testId }) {
+  return (
+    <label className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+      {label}:
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        data-test-id={testId}
+        className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+      </select>
+    </label>
+  );
+}
+function SortSelect({ value, onChange }) {
+  return <LabeledSelect label="Sort" value={value} onChange={onChange} options={SORT_OPTIONS} testId="category-sort" />;
+}
+function FilterSelect({ value, onChange }) {
+  return <LabeledSelect label="Filter" value={value} onChange={onChange} options={KIND_CHIPS} testId="category-filter" />;
+}
+
+// The DESTINATION route (spec §4.1: `/casino/category/{category}`) — hero
+// + filter + sort + grid, no promo strip, no chip rail (App.jsx's
+// CasinoLobby renders a standalone search bar above this instead). Never
+// deduped against "Your games" — a full category listing should always be
+// the complete, real list.
 //
 // MOTION QUALITY PASS: this (and FavoritesPage/RecentlyPlayedPage below)
 // used to carry their own `animate-fade-in-up` on the outer <section>,
@@ -905,53 +909,60 @@ export function CategoryNav({ selected, onNavigateToLobby, onPillActivated }) {
 // opacity-only crossfade (see App.jsx/ArenaContentStage.jsx) — an
 // in-Casino category change like this one intentionally has no transition
 // of its own at all.
-function CategoryPage({ category, tileProps, onBrowseGames }) {
+function CategoryDestinationPage({ category, tileProps, onBrowseGames }) {
   const [chip, setChip] = useState("all");
-  const meta = CATEGORY_META[category];
-  const games = ALL_GAMES.filter((g) => g.tags?.includes(meta.tag)).filter((g) => chip === "all" || g.kind === chip);
+  const [sort, setSort] = useState("popular");
+  const description = tagCategoryDescription(category);
+  const games = sortGames(gamesForTagCategory(category), sort).filter((g) => chip === "all" || g.kind === chip);
 
   // CASINO PLACEHOLDER FIXTURES — the "See all" destination for a Lobby
-  // rail (Popular/New/Live Casino/Game Shows) gets the same fixture logic,
-  // real games first, per the task's "See All pages" requirement. Only at
-  // `chip === "all"` — a placeholder has no real on-chain/provider kind of
-  // its own, so narrowing to one specific kind reasonably shows only real
-  // games of that kind. Gated on the SAME Dev Panel flag as the Lobby
-  // rails (see LobbyDashboard below); Favorites/Recently Played have no
-  // CATEGORY_META entry at all, so they can never reach this function.
+  // rail (Popular/New/Live Casino/Game Shows/Originals) gets the same
+  // fixture logic, real games first, per the task's "See All pages"
+  // requirement. Only at `chip === "all"` — a placeholder has no real
+  // on-chain/provider kind of its own, so narrowing to one specific kind
+  // reasonably shows only real games of that kind. Gated on the SAME Dev
+  // Panel flag as the Lobby rails (see LobbyDashboard below); Favorites/
+  // Recently Played are not tag categories, so they can never reach this
+  // function.
   const mock = useDevMockState();
   const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails;
+  // Same "never more placeholders than real games" cap the Lobby rails
+  // already use (see CategoryHomeGrid/LobbyDashboard) — this page used to
+  // always top up to a flat 14 regardless of real count, which read as a
+  // wall of fake cards for a sparse category (e.g. 2 real Live Casino
+  // games buried under 12 placeholders). Consistent now that placeholders
+  // default on for every visitor, not just Dev Panel opt-in.
   const displayGames = placeholdersEnabled && chip === "all"
-    ? [...games, ...createPlaceholderGames({ category: meta.tag, surface: "page", existingCount: games.length })]
+    ? [...games, ...createPlaceholderGames({
+        category: category.toLowerCase(),
+        surface: "page",
+        existingCount: games.length,
+        targetTotal: games.length > 0 ? Math.min(PLACEHOLDER_TARGET_TOTAL, games.length * 2) : 0,
+      })]
     : games;
+
+  // NAV SPEC §7 hero: "title left · oversized category icon right."
+  const CategoryIcon = CASINO_CATEGORIES.find((c) => c.id === category)?.icon;
 
   return (
     <section>
-      <h1 className="text-lg font-bold">{displayLabel(category)}</h1>
-      {meta.description && <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-bold">{displayLabel(category)}</h1>
+          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        </div>
+        {CategoryIcon && <CategoryIcon className="size-8 shrink-0 text-zinc-600" aria-hidden="true" />}
+      </div>
 
-      <div className="mb-4 mt-3 flex gap-2" role="group" aria-label="Filter by provider">
-        {KIND_CHIPS.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setChip(c.id)}
-            aria-pressed={chip === c.id}
-            data-test-id={`category-chip-${c.id}`}
-            className={cn(
-              // RESKIN (guide §5.3): active chip is neutral surface-2/
-              // ink-high, not an arena-tinted fill — "retire the maroon
-              // 'Lobby' active state" applies to every chip like this one.
-              "rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              chip === c.id
-                ? "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
-                // SURFACE HIERARCHY POLISH: same treatment as CategoryNav's
-                // inactive pills above — subtle resting fill + a slightly
-                // quieter border.
-                : "border-white/8 bg-white/[0.03] text-zinc-400 hover:text-white"
-            )}
-          >
-            {c.label}
-          </button>
-        ))}
+      {/* NAV SPEC §7: "Filter left, sort right, same row, directly under
+          search and directly above the grid. Both are labelled dropdowns,
+          not icon-only." On /casino/category/tribet-originals, the filter
+          is hidden — every result is already onchain, so the control would
+          have one meaningless option — leaving Sort alone, still right-
+          aligned in the same row position. */}
+      <div className="mb-4 mt-3 flex items-center justify-between gap-3">
+        {category !== "Originals" ? <FilterSelect value={chip} onChange={setChip} /> : <span />}
+        <SortSelect value={sort} onChange={setSort} />
       </div>
 
       {displayGames.length ? (
@@ -968,6 +979,101 @@ function CategoryPage({ category, tileProps, onBrowseGames }) {
           title={`No ${displayLabel(category).toLowerCase()} games yet`}
           cta={<BrowseGamesButton onClick={onBrowseGames} />}
         />
+      )}
+    </section>
+  );
+}
+
+// The "HOME" filter view (spec §4.1: `/casino/lobby/{category}`) — entered
+// from the chip rail. App.jsx's CasinoLobby keeps the promo strip and chip
+// rail mounted above this (unlike the destination route above); this
+// component supplies only the grid that replaces the multi-row dashboard —
+// no hero, no filter chips, no sort, per the spec's own chrome table.
+function CategoryHomeGrid({ category, tileProps }) {
+  const games = gamesForTagCategory(category);
+  const mock = useDevMockState();
+  const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails;
+  const displayGames = placeholdersEnabled
+    ? [...games, ...createPlaceholderGames({ category: category.toLowerCase(), surface: "rail", existingCount: games.length, targetTotal: games.length > 0 ? Math.min(PLACEHOLDER_TARGET_TOTAL, games.length * 2) : 0 })]
+    : games;
+
+  return displayGames.length ? (
+    <div className={GRID}>
+      {displayGames.map((game) => (
+        game.isPlaceholder
+          ? <PlaceholderGameCard key={game.favId} game={game} />
+          : <CasinoGameCard key={game.favId} game={game} {...tileProps} context="home" />
+      ))}
+    </div>
+  ) : (
+    <EmptyState
+      icon={<Gamepad2 className="size-5 text-zinc-500" aria-hidden="true" />}
+      title={`No ${displayLabel(category).toLowerCase()} games yet`}
+    />
+  );
+}
+
+// Provider route family (spec §6.2/§6.3). Landscape tiles — visibly
+// distinct from the portrait (aspect-[3/4]) game tile — since the shape
+// difference is what tells the user "this navigates to a filter, not a
+// game" at a glance, per the spec's own reasoning. No per-provider logo
+// asset exists in this app, so every tile uses the same neutral icon
+// rather than a fabricated brand mark (same rule this catalog already
+// applies everywhere else real asset data doesn't exist).
+function ProvidersIndexPage({ onSelectProvider }) {
+  return (
+    <section>
+      <h1 className="text-lg font-bold">Providers</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Browse games by studio.</p>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {CASINO_PROVIDERS.map((provider) => {
+          const count = ALL_GAMES.filter((g) => g.providerId === provider.id).length;
+          return (
+            <button
+              key={provider.id}
+              type="button"
+              onClick={() => onSelectProvider?.(provider.id)}
+              aria-label={`Browse ${provider.name} games`}
+              data-test-id={`provider-tile-${provider.id}`}
+              className="flex aspect-[16/9] flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-zinc-900 text-center transition hover:border-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Building2 className="size-6 text-zinc-500" aria-hidden="true" />
+              <span className="text-sm font-bold text-white">{provider.name}</span>
+              <span className="text-[11px] text-zinc-500">{count} game{count === 1 ? "" : "s"}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function ProviderDetailPage({ providerSlug, tileProps }) {
+  const provider = CASINO_PROVIDERS.find((p) => p.id === providerSlug);
+  const [sort, setSort] = useState("popular");
+  const games = sortGames(provider ? ALL_GAMES.filter((g) => g.providerId === provider.id) : [], sort);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-bold">{provider?.name ?? "Provider"}</h1>
+      </div>
+      {/* NAV SPEC §6.4: Sort on its own row, directly above the grid — same
+          row position CategoryDestinationPage uses, minus Filter, which is
+          deliberately absent here (every result already shares this one
+          provider, so the control would have exactly one meaningful
+          option). */}
+      {games.length > 0 && (
+        <div className="mb-4 mt-3 flex items-center justify-end gap-3">
+          <SortSelect value={sort} onChange={setSort} />
+        </div>
+      )}
+      {games.length ? (
+        <div className={GRID}>
+          {games.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="category" />)}
+        </div>
+      ) : (
+        <EmptyState icon={<Building2 className="size-5 text-zinc-500" aria-hidden="true" />} title="No games from this provider yet" />
       )}
     </section>
   );
@@ -992,7 +1098,7 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
   return (
     <section>
       <div className="mb-4 flex items-center gap-2">
-        <Star className="size-5 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" />
+        <Heart className="size-5 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" />
         <h1 className="text-lg font-bold">Favorites</h1>
         {favorites.length > 0 && (
           <MicroLabel>
@@ -1006,15 +1112,15 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
         </div>
       ) : q ? (
         <EmptyState
-          icon={<Star className="size-5 text-zinc-500" aria-hidden="true" />}
+          icon={<Heart className="size-5 text-zinc-500" aria-hidden="true" />}
           title={`No favorites match "${query}"`}
           cta={<BrowseGamesButton onClick={onBrowseGames} />}
         />
       ) : (
         <EmptyState
-          icon={<Star className="size-5 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
+          icon={<Heart className="size-5 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
           title="No favorite games yet"
-          description="Tap the star on any game to save it here."
+          description="Tap the heart on any game to save it here."
           cta={<BrowseGamesButton onClick={onBrowseGames} testId="favorites-browse-games" />}
         />
       )}
@@ -1078,14 +1184,14 @@ function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, p
 //  - category is a tag category (Popular/Slots/Live Casino/Game Shows/New)
 //    → its own page: title, chips, full grid, never deduped.
 //  - anything else (Lobby, default) → the lobby dashboard: Recently Played →
-//    Favorites → Originals (always) → Popular → New Releases → Live Casino
-//    → Game Shows → Providers.
+//    Favorites → Originals (always) → Popular → New Releases → Providers
+//    → Live Casino → Game Shows.
 // `recentIds` (most-recent-first favIds) and favorites are two distinct
 // personalized rails, not a merged "Your games" umbrella — they answer
 // different questions (what you saved vs. what you actually played) and the
 // same game legitimately appearing in both is fine. `query` (from the
 // search box above the catalog) filters every row/page by title.
-export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, profileVariant, onLogin }) {
+export function CasinoCatalog({ category, view = "dashboard", providerSlug, query, onLaunch, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, onSelectProvider, expandedRails, onExpandRail, profileVariant, onLogin }) {
   const tileProps = { onLaunchOnchain: onLaunch, onLaunchProvider, isFav, onFav };
   const q = query?.trim().toLowerCase() ?? "";
   const favorites = (isFav ? ALL_GAMES.filter((g) => isFav(g)) : []).filter((g) => matchesQuery(g, q));
@@ -1093,6 +1199,15 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     .map((id) => ALL_GAMES.find((g) => g.favId === id))
     .filter(Boolean)
     .filter((g) => matchesQuery(g, q));
+
+  // PROVIDER ROUTE FAMILY (spec §6.2) — checked before category branches
+  // since neither view carries a real content category.
+  if (view === "providers") {
+    return <ProvidersIndexPage onSelectProvider={onSelectProvider} />;
+  }
+  if (view === "provider") {
+    return <ProviderDetailPage providerSlug={providerSlug} tileProps={tileProps} />;
+  }
 
   if (category === "Favorites") {
     return <FavoritesPage favorites={favorites} q={q} query={query} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
@@ -1107,29 +1222,43 @@ export function CasinoCatalog({ category, query, onLaunch, onLaunchProvider, isF
     );
   }
 
-  if (CATEGORY_META[category]) {
-    return <CategoryPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
+  // TWO-ROUTE SPLIT (spec §4.1) — the same tag category resolves to two
+  // different content components depending on how it was reached: the
+  // chip rail's "home" filter (grid only, promo+chips stay mounted above
+  // this in App.jsx's CasinoLobby) vs. the sidebar/rail "See all"
+  // destination (hero+filter+sort+grid, no promo/chips above it).
+  if (isTagCategory(category) && view === "home") {
+    return <CategoryHomeGrid category={category} tileProps={tileProps} />;
+  }
+  if (isTagCategory(category)) {
+    return <CategoryDestinationPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
   return (
     <LobbyDashboard
       category={category} query={query} q={q} favorites={favorites} recentGames={recentGames}
       tileProps={tileProps} onBrowseGames={onBrowseGames} onSelectCategory={onSelectCategory}
+      onSelectProvider={onSelectProvider}
+      expandedRails={expandedRails} onExpandRail={onExpandRail}
     />
   );
 }
 
-// Compact provider-browsing tiles — was the "Providers" category's Lobby
-// destination. Deliberately unused/unreferenced now (see the disabled
-// "Providers" entry in lib/casinoCategories.js): there is no real,
-// multi-provider inventory yet, so this whole browsable-providers concept
-// is dormant, not deleted, for when real provider inventory exists (see
-// FINAL QA's PROVIDERS section: "preserve future provider architecture
-// privately"). No real per-studio logo assets exist in this app either, so
-// every tile would use the same neutral icon rather than a fabricated
-// brand mark, same reasoning as everywhere else in this app.
-// eslint-disable-next-line no-unused-vars -- intentionally dormant, not dead code to delete
-function ProviderTiles() {
+// RE-ENABLED (previously dormant behind the disabled "Providers" entry in
+// lib/casinoCategories.js — see that entry's own comment on why). The
+// provider tile itself is the entry point to /casino/provider/{slug}, not
+// a scroll target — there is exactly one Providers rail on the Lobby, not
+// one rail per provider (see LobbyDashboard below), so a click navigates
+// via `onSelectProvider` rather than `scrollToRail`. Landscape (~2:1)
+// tiles, deliberately a different shape than the portrait (aspect-[3/4])
+// game tile — the shape itself is what tells a player "this leads to a
+// filtered view, not a game" (same reasoning ProvidersIndexPage already
+// uses for its own landscape tiles). No real per-provider logo assets
+// exist in this app, so every tile uses the same neutral icon rather than
+// a fabricated brand mark, same reasoning as everywhere else in this app.
+const PROVIDER_TILE = "w-[220px] shrink-0";
+
+function ProviderTiles({ onSelectProvider }) {
   return (
     <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
       <div className="mb-4 flex items-center gap-2">
@@ -1137,22 +1266,22 @@ function ProviderTiles() {
       </div>
       <div className="flex gap-3 overflow-x-auto p-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {CASINO_PROVIDERS.map((provider) => {
-          const count = ALL_GAMES.filter((g) => g.kind === provider.kind).length;
+          const count = ALL_GAMES.filter((g) => g.providerId === provider.id).length;
           return (
             <button
               key={provider.id}
               type="button"
-              onClick={() => scrollToRail(provider.railTarget)}
+              onClick={() => onSelectProvider?.(provider.id)}
               aria-label={`Browse ${provider.name} games`}
               data-test-id={`provider-tile-${provider.id}`}
               className={cn(
-                RAIL_TILE,
-                "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-zinc-900 px-3 py-4 text-center transition hover:border-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                PROVIDER_TILE,
+                "flex aspect-[2/1] flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-zinc-900 px-3 text-center transition hover:border-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               )}
             >
               <Building2 className="size-5 text-zinc-500" aria-hidden="true" />
-              <span className="text-xs font-bold text-white">{provider.name}</span>
-              <span className="text-[10px] text-zinc-500">{count} game{count === 1 ? "" : "s"}</span>
+              <span className="text-sm font-bold text-white">{provider.name}</span>
+              <span className="text-[11px] text-zinc-500">{count} game{count === 1 ? "" : "s"}</span>
             </button>
           );
         })}
@@ -1165,7 +1294,7 @@ function ProviderTiles() {
 // view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
 // itself returns early for Favorites/CategoryPage before this would ever be
 // reached, and hooks can't live after an early return in the same component.
-function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory }) {
+function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps, onBrowseGames, onSelectCategory, onSelectProvider, expandedRails, onExpandRail }) {
   // CASINO PLACEHOLDER FIXTURES — read unconditionally, before any early
   // return below (this hook must run every render, in the same order,
   // regardless of `isEmpty`). Only actually used further down, past the
@@ -1175,12 +1304,6 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails && !q;
 
   const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
-  // The full TriBet Studio catalog — the "Providers" nav category no longer
-  // points at this rail directly (see ProviderTiles above); it's now this
-  // specific studio's own real, complete collection, named for what it
-  // actually is rather than the generic "Providers" label a mixed rail
-  // wore before.
-  const tribetStudio = PROVIDER.filter((g) => matchesQuery(g, q));
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
 
   // Discovery rails dedup sequentially against each other (and against the
@@ -1188,11 +1311,7 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   // adjacent "what's hot" sections — e.g. Roulette is tagged both "popular"
   // and "live-casino", so it now only ever shows once. Favorites/Recently
   // Played are exempt: overlap between a personalized rail and a discovery
-  // rail is expected (a favorited game still belongs in Popular), as is
-  // TriBet Studio, which stays a stable, complete "browse the studio"
-  // catch-all rather than a rotating spotlight — deduping it against the
-  // tag rails above would collapse it to empty, since most of its games
-  // carry at least one of those tags.
+  // rail is expected (a favorited game still belongs in Popular).
   const seen = new Set(onchain.map((g) => g.favId));
   const popularCandidates = byTag("popular");
   const newReleasesCandidates = byTag("new");
@@ -1219,25 +1338,22 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   const favoritesHasMore = favorites.length > 3;
 
   const isEmpty = q && !favorites.length && !recentGames.length && !onchain.length
-    && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length && !tribetStudio.length;
+    && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length;
 
   // Personalized rows only count as "visible" once populated — they no
   // longer render an empty placeholder that would otherwise count as shown
   // (see LOBBY HIERARCHY: "personalized rows are conditional"). Providers
-  // is excluded from `q` results (see the tile row below); "tribet-studio"
-  // is its own distinct id now, never reported as "providers" (see
-  // ANALYTICS: "do not keep misleading analytics names such as Providers
-  // for a generic game rail").
+  // is excluded from `q` results (the tile row is a set of navigation
+  // entry points, not search-filterable game content).
   const visibleSections = [
     recentGames.length > 0 && "recently-played",
     favorites.length > 0 && "favorites",
     "originals",
     popularRow.length > 0 && "popular",
     newReleasesRow.length > 0 && "new-releases",
+    !q && "providers",
     liveCasinoRow.length > 0 && "live-casino",
     gameShowsRow.length > 0 && "game-shows",
-    !q && "providers",
-    tribetStudio.length > 0 && "tribet-studio",
   ].filter(Boolean).join(",");
   useEffect(() => {
     if (!isEmpty) track("casino_lobby_section_viewed", { sections: visibleSections.split(",") });
@@ -1298,10 +1414,9 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   // Favorites — each conditional, hidden entirely (not a placeholder) when
   // empty, via CasinoGameRail's own self-hide (no emptyState passed) — then
   // the stable discovery base every player sees regardless of history:
-  // Tribet Originals, Popular, New Releases, Live Casino, Game Shows,
-  // Providers, TriBet Studio. Slots/Table Games are omitted — no supported
-  // inventory exists for either (see FINAL RESPONSE: Slots-inventory
-  // findings).
+  // Tribet Originals, Popular, New Releases, Providers, Live Casino, Game
+  // Shows. Slots/Table Games are omitted — no supported inventory exists
+  // for either (see FINAL RESPONSE: Slots-inventory findings).
   //
   // LOBBY HIERARCHY PASS: replaced the previous single `space-y-8` (one
   // identical gap between every section, regardless of importance) with a
@@ -1310,16 +1425,19 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
   // own worked examples ("trending or popular games, Tribet Originals, live
   // casino" -> primary; "Recently Played, Favourites, New Releases, Game
   // Shows" -> secondary; "providers, collections" -> tertiary, which is
-  // Tribet Studio's role here, the one stable "browse everything" catch-all
-  // — see its own rail comment above). GAP_MAJOR appears exactly once, right
-  // before Originals, the one section this pass calls the flagship; every
-  // other boundary is GAP_REGULAR; GAP_COMPACT appears once, stepping down
-  // into the lowest-priority discovery rail at the very end. Recently
-  // Played (first on the page) carries no top margin of its own.
+  // the Providers row's role here, the one stable "browse by studio"
+  // catch-all — see ProviderTiles' own comment above). GAP_MAJOR appears
+  // exactly once, right before Originals, the one section this pass calls
+  // the flagship; every other boundary is GAP_REGULAR; GAP_COMPACT appears
+  // once, stepping down into the lowest-priority discovery rail at the very
+  // end. Recently Played (first on the page) carries no top margin of its
+  // own.
   return (
     <div>
       <CasinoGameRail
         testId="recently-played-rail"
+        visibleCount={expandedRails?.get("recently-played-rail")}
+        onExpand={(total) => onExpandRail?.("recently-played-rail", total)}
         title="Recently played"
         subtitle="Continue where you left off"
         tier="secondary"
@@ -1331,10 +1449,12 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
 
       <CasinoGameRail
         testId="favorites-rail"
+        visibleCount={expandedRails?.get("favorites-rail")}
+        onExpand={(total) => onExpandRail?.("favorites-rail", total)}
         title="Favorites"
         tier="secondary"
         className={GAP_REGULAR}
-        icon={<Star className="size-4 shrink-0 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
+        icon={<Heart className="size-4 shrink-0 fill-[var(--global-cta-hover)] text-[var(--global-cta-hover)]" aria-hidden="true" />}
         badge={favorites.length > 0 ? `${favorites.length} game${favorites.length === 1 ? "" : "s"}` : undefined}
         games={favorites}
         tileProps={tileProps}
@@ -1345,6 +1465,8 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
       <CasinoGameRail
         sectionId="casino-section-originals"
         testId="originals-rail"
+        visibleCount={expandedRails?.get("originals-rail")}
+        onExpand={(total) => onExpandRail?.("originals-rail", total)}
         title={CATEGORY_LABEL.Originals}
         subtitle="Games created by Tribet"
         badge="Provably fair"
@@ -1359,6 +1481,8 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
       <CasinoGameRail
         sectionId="casino-section-popular"
         testId="popular-rail"
+        visibleCount={expandedRails?.get("popular-rail")}
+        onExpand={(total) => onExpandRail?.("popular-rail", total)}
         title="Popular"
         subtitle="Based on recent player activity"
         tier="primary"
@@ -1372,6 +1496,8 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
       <CasinoGameRail
         sectionId="casino-section-new-releases"
         testId="new-releases-rail"
+        visibleCount={expandedRails?.get("new-releases-rail")}
+        onExpand={(total) => onExpandRail?.("new-releases-rail", total)}
         title="New Releases"
         subtitle="Newly added to the casino"
         tier="secondary"
@@ -1382,9 +1508,14 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
         onSeeAll={newReleasesHasMore ? seeAll("New") : undefined}
         seeAllCount={newReleasesHasMore ? newReleasesCandidates.length : undefined}
       />
+      <div className={GAP_REGULAR}>
+        <ProviderTiles onSelectProvider={onSelectProvider} />
+      </div>
       <CasinoGameRail
         sectionId="casino-section-live-casino"
         testId="live-casino-rail"
+        visibleCount={expandedRails?.get("live-casino-rail")}
+        onExpand={(total) => onExpandRail?.("live-casino-rail", total)}
         title="Live Casino"
         tier="primary"
         className={GAP_REGULAR}
@@ -1397,28 +1528,16 @@ function LobbyDashboard({ category, query, q, favorites, recentGames, tileProps,
       <CasinoGameRail
         sectionId="casino-section-game-shows"
         testId="game-shows-rail"
+        visibleCount={expandedRails?.get("game-shows-rail")}
+        onExpand={(total) => onExpandRail?.("game-shows-rail", total)}
         title="Game Shows"
         tier="secondary"
-        className={GAP_REGULAR}
+        className={GAP_COMPACT}
         games={withPlaceholders(gameShowsRow, "game-shows")}
         tileProps={tileProps}
         context="home"
         onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined}
         seeAllCount={gameShowsHasMore ? gameShowsCandidates.length : undefined}
-      />
-      {/* ProviderTiles is intentionally not rendered — see the "Providers"
-          category's own disabled entry in lib/casinoCategories.js for why
-          (no real, multi-provider inventory yet). Kept defined below, not
-          deleted, for when real provider inventory exists. */}
-      <CasinoGameRail
-        testId="tribet-studio-rail"
-        title="Tribet Studio"
-        subtitle="Every game in Tribet's studio catalogue"
-        tier="tertiary"
-        className={GAP_COMPACT}
-        games={withPlaceholders(tribetStudio, "tribet-studio")}
-        tileProps={tileProps}
-        context="home"
       />
     </div>
   );

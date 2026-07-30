@@ -1,33 +1,41 @@
 // Lightweight URL <-> state sync (no router dependency).
 // Paths:
-//   /casino/:category
+//   /casino/lobby                     — Lobby dashboard (rails)
+//   /casino/lobby/:category            — CHIP/"home" filter view (promo+chips retained, grid replaces rails)
+//   /casino/category/:category         — destination view (hero+search+filter+sort+grid, no promo/chips)
+//   /casino/favorites | /casino/recently-played
+//   /casino/collection/provider        — providers index
+//   /casino/provider/:slug             — single provider page
 //   /predictions/:section
 //   /sports/home | /sports/live | /sports/my-bets | /sports/dev
 //   /sports/:sport
 //   /sports/:sport/:country/:league
 //   /sports/:sport/event/:eventId
-import { ROUTED_CATEGORIES } from "@/lib/casinoCategories";
+import { ROUTED_CATEGORIES, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 import { PRED_CATEGORIES } from "@/lib/predictionsData";
 import { MVP_SPORT_IDS } from "@/lib/sportsModel";
 
-// Every casinoCategory value routing.js accepts from a URL — the shared
-// taxonomy's ROUTED_CATEGORIES (Popular/New/Live Casino/Game Shows/Slots,
-// see lib/casinoCategories.js) plus the three destinations that aren't
-// content-tag categories at all: Lobby (the default), and Favorites/
-// Recently Played (personal destinations — see CASINO_PERSONAL_DESTINATIONS
-// in that same module). Previously validated against a separate, stale
-// `CATEGORIES` array in lib/mockData.js that had drifted out of sync with
-// the real taxonomy (missing "Recently Played" entirely, still listing
-// "Favorites" but not deriving from the same source) — this is the one
-// place route validity is decided now, matching every other Casino
-// navigation surface's "no independent category array" rule.
-const VALID_CASINO_CATEGORIES = ["Lobby", "Favorites", "Recently Played", ...ROUTED_CATEGORIES];
+// TAG_CATEGORIES — every category the two-route split (spec §4.1) applies
+// to: the 5 content-tag categories a "home"/"category" URL pair can exist
+// for. "Originals" has no CATEGORY_META entry (it's sourced straight from
+// the onchain game list, not a `tags` filter — see CasinoCatalog.jsx's
+// LobbyDashboard), so it's listed here explicitly rather than derived from
+// ROUTED_CATEGORIES alone.
+const TAG_CATEGORIES = ["Originals", ...ROUTED_CATEGORIES];
 
 const slug = (s) => s.toLowerCase().replace(/\s+/g, "-");
 
 export const DEFAULT_NAV = {
   product: "casino",
   casinoCategory: "Lobby",
+  // TWO-ROUTE SPLIT (spec §4.1): "dashboard" is the default multi-rail
+  // Lobby; "home" is the chip-driven in-lobby filter (promo+chips kept,
+  // grid replaces rails); "category" is the standalone destination (hero+
+  // filter+sort+grid, no promo/chips). "providers"/"provider" are the new
+  // provider-route family (spec §6.2) — kept as a separate view rather than
+  // overloading casinoCategory, since a provider isn't a content category.
+  casinoView: "dashboard",
+  casinoProviderSlug: null,
   predSection: "Trending",
   sportsView: "home",
   sportsSport: null,
@@ -62,11 +70,45 @@ function parseSportsPath(rest) {
   return { ...SPORTS_DEFAULTS, sportsView: "sport", sportsSport: sport };
 }
 
+function parseCasinoPath(rest) {
+  const [seg1, seg2] = rest;
+
+  // /casino/collection/provider — providers index (spec §6.2 surface 3).
+  if (seg1 === "collection" && seg2 === "provider") {
+    return { casinoCategory: "Lobby", casinoView: "providers", casinoProviderSlug: null };
+  }
+  // /casino/provider/:slug — a single provider page (spec §6.2 surface 4).
+  if (seg1 === "provider" && seg2) {
+    const provider = CASINO_PROVIDERS.find((p) => p.id === seg2);
+    return provider
+      ? { casinoCategory: "Lobby", casinoView: "provider", casinoProviderSlug: provider.id }
+      : { casinoCategory: "Lobby", casinoView: "dashboard", casinoProviderSlug: null };
+  }
+  // /casino/category/:category — the destination view (spec §4.1).
+  if (seg1 === "category" && seg2) {
+    const category = TAG_CATEGORIES.find((c) => slug(c) === seg2);
+    return category
+      ? { casinoCategory: category, casinoView: "category", casinoProviderSlug: null }
+      : { casinoCategory: "Lobby", casinoView: "dashboard", casinoProviderSlug: null };
+  }
+  // /casino/lobby/:category — the chip-driven "home" filter view (spec
+  // §4.1); bare /casino/lobby (no seg2) is just the ordinary dashboard.
+  if (seg1 === "lobby" && seg2) {
+    const category = TAG_CATEGORIES.find((c) => slug(c) === seg2);
+    return category
+      ? { casinoCategory: category, casinoView: "home", casinoProviderSlug: null }
+      : { casinoCategory: "Lobby", casinoView: "dashboard", casinoProviderSlug: null };
+  }
+  // /casino/favorites, /casino/recently-played, /casino/lobby, unknown -> Lobby
+  const personal = ["Favorites", "Recently Played"].find((c) => slug(c) === seg1);
+  return { casinoCategory: personal ?? "Lobby", casinoView: "dashboard", casinoProviderSlug: null };
+}
+
 export function parsePath(pathname) {
   const parts = pathname.replace(/^\/+/, "").split("/").filter(Boolean);
   const [p, ...rest] = parts;
   if (p === "casino") {
-    return { ...DEFAULT_NAV, product: "casino", casinoCategory: VALID_CASINO_CATEGORIES.find((c) => slug(c) === rest[0]) ?? "Lobby" };
+    return { ...DEFAULT_NAV, product: "casino", ...parseCasinoPath(rest) };
   }
   if (p === "predictions") {
     const opts = [...PRED_CATEGORIES, "My Positions"];
@@ -88,8 +130,18 @@ function pathForSports({ sportsView, sportsSport, sportsCountry, sportsLeague, s
   return "/sports/home";
 }
 
-export function pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId }) {
+function pathForCasino({ casinoCategory, casinoView, casinoProviderSlug }) {
+  if (casinoView === "providers") return "/casino/collection/provider";
+  if (casinoView === "provider" && casinoProviderSlug) return `/casino/provider/${casinoProviderSlug}`;
+  if (casinoView === "category" && TAG_CATEGORIES.includes(casinoCategory)) return `/casino/category/${slug(casinoCategory)}`;
+  if (casinoView === "home" && TAG_CATEGORIES.includes(casinoCategory)) return `/casino/lobby/${slug(casinoCategory)}`;
+  if (casinoCategory === "Favorites") return "/casino/favorites";
+  if (casinoCategory === "Recently Played") return "/casino/recently-played";
+  return "/casino/lobby";
+}
+
+export function pathFor({ product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId }) {
   if (product === "predictions") return `/predictions/${slug(predSection)}`;
   if (product === "sports") return pathForSports({ sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
-  return `/casino/${slug(casinoCategory)}`;
+  return pathForCasino({ casinoCategory, casinoView, casinoProviderSlug });
 }

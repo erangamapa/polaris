@@ -869,6 +869,52 @@ export function ScopedSearch({
     if (!rootRef.current?.contains(e.relatedTarget)) setOpen(false);
   };
 
+  // NAV SPEC §8 — "the scrim absorbs the outside click": clicking a sidebar
+  // row (or anything else outside this combobox) while the panel is open
+  // must close search WITHOUT that same click also registering as a real
+  // navigation click on whatever it landed on.
+  //
+  // The naive version of this (a click-capture listener attached only while
+  // `open` is true) does not work: for a real mouse user, `mousedown` moves
+  // focus to the outside element FIRST, which fires `onBlur` above and
+  // closes the panel — and React's resulting re-render (which tears down
+  // the "while open" listener as its cleanup) reliably finishes before the
+  // browser dispatches the follow-up `click` event for that same gesture.
+  // So by the time `click` arrives, open is already false and the listener
+  // meant to catch it has already unmounted (verified empirically: adding
+  // logging showed the effect cleanup running between mousedown and click
+  // every time). The fix is to stop depending on React state's timing
+  // entirely: `openRef` mirrors `open` synchronously (no render involved),
+  // and the swallow decision is made and latched at `mousedown` — before
+  // blur/focus/any re-render can happen — then consumed by the next `click`
+  // regardless of what `open` has become by then. Both listeners stay
+  // attached for the component's whole lifetime (gated only on `hasPanel`,
+  // never on `open`), so there is no attach/detach race to begin with.
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
+
+  const swallowNextClickRef = useRef(false);
+  useEffect(() => {
+    if (!hasPanel) return undefined;
+    const onDocumentMouseDownCapture = (e) => {
+      swallowNextClickRef.current = Boolean(
+        openRef.current && rootRef.current && !rootRef.current.contains(e.target)
+      );
+    };
+    const onDocumentClickCapture = (e) => {
+      if (!swallowNextClickRef.current) return;
+      swallowNextClickRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    document.addEventListener("mousedown", onDocumentMouseDownCapture, true);
+    document.addEventListener("click", onDocumentClickCapture, true);
+    return () => {
+      document.removeEventListener("mousedown", onDocumentMouseDownCapture, true);
+      document.removeEventListener("click", onDocumentClickCapture, true);
+    };
+  }, [hasPanel]);
+
   return (
     <div>
       {/* VISUAL REFRESH: visible "Search" caption removed (redundant next
