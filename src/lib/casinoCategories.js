@@ -1,4 +1,4 @@
-import { LayoutGrid, Sparkles, Flame, Rocket, Radio, Tv, Cherry, Spade, Building2, Star, History } from "lucide-react";
+import { LayoutGrid, Sparkles, Flame, Rocket, Radio, Tv, Cherry, Spade, Building2, Heart, History } from "lucide-react";
 
 // Casino taxonomy — the one shared source every Casino navigation surface
 // (in-page CategoryNav, Sidebar/mobile menu, Casino search's category and
@@ -74,17 +74,12 @@ const ALL_CASINO_CATEGORIES = [
   { id: "Live Casino", label: "Live Casino", kind: "routed", sectionId: "casino-section-live-casino", icon: Radio, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 5 },
   { id: "Game Shows", label: "Game Shows", kind: "routed", sectionId: "casino-section-game-shows", icon: Tv, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 6 },
   { id: "Table Games", label: "Table Games", kind: "unsupported", icon: Spade, enabled: false, showInSidebar: false, showInTopNav: false, showAsLobbyRow: false, order: 7 },
-  // FINAL QA fix: there is no real, multi-provider inventory yet — this
-  // app's "two providers" are really just its own onchain games (Tribet
-  // Originals) vs. its own vendored demo games (Tribet Studio), not
-  // distinct third parties worth a dedicated browsing destination (see
-  // FINAL QA's own PROVIDERS section: "no visible Providers row... no
-  // provider pill... no provider grouping in search... preserve future
-  // provider architecture privately"). Disabled the same way Slots/Table
-  // Games already are — code (ProviderTiles, CASINO_PROVIDERS,
-  // SEARCH_PROVIDERS) stays intact for when real provider inventory
-  // exists, it just isn't offered anywhere active right now.
-  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail", sectionId: "casino-section-providers", icon: Building2, enabled: false, showInSidebar: false, showInTopNav: false, showAsLobbyRow: false, order: 8 },
+  // RE-ENABLED: a previous "FINAL QA" pass disabled this because only one
+  // provider (Tribet Studio) existed — not enough for a real browsing
+  // destination. Superseded now that three real providers exist (see
+  // CASINO_PROVIDERS below) — a genuine multi-provider Lobby row, sidebar
+  // item, top pill, and search grouping all make sense again.
+  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail", sectionId: "casino-section-providers", icon: Building2, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 8 },
 ].sort((a, b) => a.order - b.order);
 
 // Nav-visible categories only — every enabled entry, in order. This is what
@@ -106,18 +101,22 @@ export const CATEGORY_LABEL = Object.fromEntries(ALL_CASINO_CATEGORIES.map((c) =
 // no route at all, so it can never appear here.
 export const ROUTED_CATEGORIES = Object.keys(CATEGORY_META);
 
-// The two real game studios in this catalog — not a generic mixed rail
-// mislabeled "Providers" (see CasinoCatalog.jsx's gameProviderName, which
-// this mirrors 1:1 via `kind`: onchain games are BetSwirl, provider games
-// are TriBet Studio, exactly two studios, never eleven invented ones). No
-// dedicated provider page exists (see ProviderGame.jsx) so each provider's
-// real destination is its own Lobby rail — BetSwirl's is the always-shown
-// Originals rail; TriBet Studio's is its own dedicated games rail. `kind`
-// lets any consumer compute a real, non-fabricated game count against
-// ALL_GAMES without this module needing to import game data itself.
+// NAV SPEC §6.1/§6.6 — Provider is a first-class entity, and Tribet
+// Originals is explicitly NOT one ("must never appear... in the Providers
+// rail... conflates 'who made this' with 'is this ours'"). Onchain/BetSwirl
+// games are first-party content and a category (Tribet Originals), not a
+// provider — removed from this array entirely rather than listed and
+// filtered out ad hoc at each call site. Three real providers now split the
+// vendored ProviderGame.jsx catalog (see that file's `providerId` FK
+// against this array's `id`, not a repeated display-string match — see
+// gameProviderName in CasinoCatalog.jsx). `railTarget` is kept for shape
+// consistency with the rest of this config even though nothing scrolls to
+// it — the Lobby's one shared Providers rail is the entry point, not a
+// per-provider rail (see CasinoCatalog.jsx's ProviderTiles).
 export const CASINO_PROVIDERS = [
-  { id: "betswirl", name: "BetSwirl", kind: "onchain", railTarget: "originals-rail" },
-  { id: "tribet-studio", name: "TriBet Studio", kind: "provider", railTarget: "tribet-studio-rail" },
+  { id: "provider-1", name: "Provider #1", railTarget: "provider-1-rail" },
+  { id: "provider-2", name: "Provider #2", railTarget: "provider-2-rail" },
+  { id: "provider-3", name: "Provider #3", railTarget: "provider-3-rail" },
 ];
 
 // Personal/utility destinations — NOT Casino content categories (they don't
@@ -134,8 +133,14 @@ export const CASINO_PROVIDERS = [
 // route) — the shared config only carries the static id/label/icon; App.jsx
 // attaches the real `action`/`count` per item, same as it already did for
 // Favorites' count before this task.
+//
+// HEART REDESIGN: Favorites uses a Heart (not Star) — a personal
+// collection ("my games"), not featured/recommended content. The prior
+// "Following" (followed providers) destination has been removed entirely,
+// not just hidden — Personal now contains only Favorites and Recently
+// Played.
 export const CASINO_PERSONAL_DESTINATIONS = [
-  { id: "Favorites", label: "Favorites", icon: Star, kind: "route" },
+  { id: "Favorites", label: "Favorites", icon: Heart, kind: "route" },
   { id: "Recently Played", label: "Recently Played", icon: History, kind: "route" },
 ];
 

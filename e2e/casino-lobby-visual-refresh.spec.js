@@ -12,6 +12,18 @@ async function gotoLobby(page) {
   await page.waitForSelector('[data-test-id="main-content"]');
 }
 
+// PROVIDERS RE-ENABLE: the Tribet Studio catalog (previously one rail with
+// 12 real games, always exceeding RAIL_PAGE_SIZE on its own) is now split
+// across three providers with ~4 games each — no single rail is
+// guaranteed to overflow without placeholder fixtures topping it up. Same
+// Dev Panel toggle used by casino-placeholder-fixtures.spec.js.
+async function enablePlaceholders(page) {
+  await page.keyboard.press("Shift+D");
+  await page.waitForSelector("text=Developer Panel");
+  await page.locator('label:has-text("Populate rails with placeholder tiles")').click();
+  await page.locator('button[aria-label="Close Developer Panel"]').click();
+}
+
 test.describe("Casino lobby promo hierarchy", () => {
   // MOCKUP ALIGNMENT CORRECTION: replaces the old "wallet hero is visibly
   // wider" test — the approved direction requires strictly equal widths,
@@ -118,22 +130,39 @@ test.describe("Casino lobby category navigation", () => {
 });
 
 test.describe("Casino lobby rail controls", () => {
-  // MOCKUP ALIGNMENT CORRECTION: the task explicitly reported these as
-  // "nearly invisible" — guards a minimum real hit area and a visible
-  // border/background at rest (not just on hover), rather than asserting
-  // exact colour values (brittle).
-  test("rail prev/next controls have a real hit area and a visible border at rest", async ({ page }) => {
-    await page.setViewportSize({ width: 1920, height: 1080 });
+  // NAV SPEC §5.3: carousel prev/next arrows were replaced by Load More +
+  // View All — a rail that overflows its own visible track now shows a
+  // "Load More" text control below it instead of arrow buttons in the
+  // header. Guards a real, clickable hit area (comfortably above the
+  // smallest acceptable touch target) rather than asserting exact colour
+  // values (brittle).
+  // HOTFIX (page size): every rail is capped at RAIL_PAGE_SIZE (8) real
+  // items before Load More has anything to reveal. No single rail's real
+  // catalog exceeds 8 on its own since Providers re-enable (New Releases
+  // has 6) — placeholder fixtures top it up past that threshold instead.
+  test("an overflowing rail shows a Load More control with a real hit area", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 1080 });
     await gotoLobby(page);
-    const nextBtn = page.locator('[aria-label^="Next "]').first();
-    await expect(nextBtn).toBeVisible();
-    const box = await nextBtn.boundingBox();
-    expect(box.width).toBeGreaterThanOrEqual(28);
-    expect(box.height).toBeGreaterThanOrEqual(28);
-    const border = await nextBtn.evaluate((el) => getComputedStyle(el).borderColor);
-    // Fully transparent would mean "no visible border at rest" — the exact
-    // regression this test guards against.
-    expect(border).not.toBe("rgba(0, 0, 0, 0)");
+    await enablePlaceholders(page);
+    const loadMore = page.locator('[data-test-id="new-releases-rail-load-more"]');
+    await expect(loadMore).toBeVisible();
+    const box = await loadMore.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(16);
+    expect(box.width).toBeGreaterThan(0);
+  });
+
+  test("clicking Load More appends the next page and removes the control once exhausted", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 1080 });
+    await gotoLobby(page);
+    await enablePlaceholders(page);
+    const rail = page.locator('[data-test-id="new-releases-rail"]');
+    const loadMore = rail.locator('[data-test-id="new-releases-rail-load-more"]');
+    const cardsBefore = await rail.locator('[data-test-id^="game-card-"]').count();
+    await loadMore.click();
+    await expect(loadMore).toHaveCount(0); // 6 real + up to 6 placeholder = 12, page size 8: one Load More exhausts it
+    const cardsAfter = await rail.locator('[data-test-id^="game-card-"]').count();
+    expect(cardsAfter).toBeGreaterThan(cardsBefore);
+    await expect(rail.locator('[data-test-id^="game-card-"]').first()).toBeVisible();
   });
 });
 

@@ -645,15 +645,12 @@ html {
   --global-cta-focus-ring: rgba(61, 109, 255, 0.22);
   --global-cta-glow: rgba(61, 109, 255, 0.55);
 
-  /* Favorites chip redesign: the one control in the app where "active"
-     reads as gold rather than the brand blue (blue is reused instead for
+  /* Favorites heart redesign: the one control in the app where "active"
+     reads as coral rather than the brand blue (blue is reused instead for
      the chip's active border, so the two accents divide the state clearly:
-     gold = favorited, blue = focus/selection everywhere else). Matches the
-     #FFD36B gold already used as a decorative accent in shell artwork (see
-     SportsLiveMatch.jsx etc.) — not previously promoted to a shared token
-     since no other control needed it before this one. */
-  --favorite-gold: #FFD36B;
-  --favorite-gold-glow: rgba(255, 211, 107, 0.4);
+     coral = favorited, blue = focus/selection everywhere else). No glow —
+     the filled heart alone is the signal. */
+  --favorite-heart: #FF5468;
 
   --success: #46C98C;
   --success-bg: color-mix(in srgb, var(--success) 14%, transparent);

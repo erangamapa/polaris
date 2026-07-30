@@ -7,15 +7,13 @@ import { ALL_GAMES } from "@/components/casino/CasinoCatalog";
 import { CASINO_CATEGORIES, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
 // Exactly CASINO_PROVIDERS (the shared provider taxonomy — see
-// lib/casinoCategories.js) plus a live count computed against ALL_GAMES,
-// not a second hand-maintained provider list. `railTarget` is a Lobby
-// rail's data-test-id — there's no dedicated provider page (see
-// ProviderGame.jsx), so selecting a provider result is a real, working
-// destination (scroll the Lobby to that provider's rail) rather than a
-// dead link or an invented page.
+// lib/casinoCategories.js, which no longer includes Tribet Originals per
+// nav spec §6.6) plus a live count computed against ALL_GAMES via the real
+// `providerId` FK (not a `kind` match), not a second hand-maintained
+// provider list.
 export const SEARCH_PROVIDERS = CASINO_PROVIDERS.map((p) => ({
   ...p,
-  count: ALL_GAMES.filter((g) => g.kind === p.kind).length,
+  count: ALL_GAMES.filter((g) => g.providerId === p.id).length,
 }));
 
 // Exactly CASINO_CATEGORIES minus Lobby — the same shared config the

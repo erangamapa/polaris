@@ -11,7 +11,7 @@ import { MobileFullScreenMenu } from "./components/shell/MobileFullScreenMenu";
 import { Footer } from "./components/shell/Footer";
 import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
-import { PromoStrip } from "./components/casino/PromoStrip";
+import { PromoStrip, ScopedSearch } from "./components/casino/PromoStrip";
 import { CasinoCatalog, CategoryNav, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
 // Not lazy-loaded: this component has no heavy dependencies of its own (a
 // small iframe wrapper — the actual weight for provider games is each
@@ -220,6 +220,35 @@ export default function App() {
   const initialPlatformScope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
   const [product, setProduct] = useState(resolveScopedProduct(initialNav.product, initialPlatformScope));
 
+  // NAV SPEC §4.3 — "Every overlay owns a `modal` query param value...
+  // Opening = pushState. Browser back closes the modal and returns to the
+  // exact prior state. Every modal is deep-linkable and shareable." Covers
+  // the app's six previously URL-less dialogs (Funds/History/Responsible
+  // Gambling/Support/Account/Compliance-block — see openFunds etc. below);
+  // Casino's `?play=`/`?info=` params are deliberately left alone — both
+  // already satisfy the same behavior (URL-driven, deep-linkable, closed by
+  // Back) under their own established, working, Casino-specific names, so
+  // migrating them to a generic `modal=` value would be a pure style
+  // change with real regression risk for zero behavioral gain.
+  const readModalParam = () => new URLSearchParams(window.location.search).get("modal");
+  const [modal, setModal] = useState(() => (typeof window !== "undefined" ? readModalParam() : null));
+  const openModal = (name) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("modal", name);
+    window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setModal(name);
+  };
+  // Closing always goes through the browser's own Back when WE pushed the
+  // modal entry (the ✕ button and a real Back press must be indistinguishable
+  // — both just remove the one history entry the open added) — falling back
+  // to a plain state clear only for the edge case of a modal opened via a
+  // fresh deep link/reload, where there is no "opened this" history entry
+  // for Back to land on.
+  const closeModal = () => {
+    if (readModalParam()) window.history.back();
+    else setModal(null);
+  };
+
   // Desktop/tablet (≥768px): a persistent expanded/collapsed rail, never
   // fully hidden. Defaults (no stored preference): expanded ≥1280px,
   // collapsed 768-1279px.
@@ -246,6 +275,32 @@ export default function App() {
   // CASINO GAME EXPERIENCE (routing): <main>'s scroll position captured on
   // game launch, restored on close — see launchGame/closeGame below.
   const lobbyScrollTopRef = useRef(null);
+  // NAV SPEC §5.3 — "expanded-rail depth" (how many items each Lobby rail's
+  // Load More has revealed, see CasinoCatalog.jsx's CasinoGameRail) must
+  // survive a round-trip through a game the same way scroll position does.
+  // Lifted here (App.jsx never unmounts across a game launch/close, unlike
+  // CasinoLobby/LobbyDashboard/CasinoGameRail, which fully remount) rather
+  // than encoded in the URL — a Lobby can have several independently-
+  // expanded rails at once, and a `?expanded=a,b,c`-style param for that is
+  // more fragile than plain session state for no real deep-linking benefit
+  // (nobody shares "with these specific rails pre-expanded" as a link).
+  // Keyed by each rail's own `testId` (already a stable, unique per-rail
+  // identity used for data-test-id) -> how many of that rail's items are
+  // currently visible (HOTFIX: a count, not a boolean — every rail now
+  // pages by RAIL_PAGE_SIZE instead of revealing everything at once; see
+  // CasinoCatalog.jsx). Session-only (a plain useState, not persisted to
+  // localStorage) — this only needs to survive within one browser
+  // session's back/forward, not a full reload.
+  const [expandedRails, setExpandedRails] = useState(() => new Map());
+  const expandRail = (testId, totalCount) => setExpandedRails((prev) => {
+    const RAIL_PAGE_SIZE = 8;
+    const current = prev.get(testId) ?? Math.min(RAIL_PAGE_SIZE, totalCount);
+    const next = Math.min(current + RAIL_PAGE_SIZE, totalCount);
+    if (next === current) return prev;
+    const copy = new Map(prev);
+    copy.set(testId, next);
+    return copy;
+  });
   useEffect(() => {
     const el = mainRef.current;
     if (el) el.style.overflowY = mobileMenuOpen ? "hidden" : "";
@@ -311,6 +366,42 @@ export default function App() {
   };
 
   const [casinoCategory, setCasinoCategory] = useState(initialNav.casinoCategory);
+  // TWO-ROUTE SPLIT (spec §4.1): "dashboard" (default multi-rail Lobby),
+  // "home" (chip-driven in-lobby filter — promo+chips retained, grid
+  // replaces rails), "category" (standalone destination — hero+filter+
+  // sort+grid, no promo/chips), "providers"/"provider" (spec §6.2's
+  // provider route family). Kept alongside `casinoCategory` rather than
+  // folded into it, since the same category can be reached via either of
+  // two different views (or, for a provider page, no content category at
+  // all is selected).
+  const [casinoView, setCasinoView] = useState(initialNav.casinoView);
+  const [casinoProviderSlug, setCasinoProviderSlug] = useState(initialNav.casinoProviderSlug);
+  // Single place every Casino content-category selection goes through, so
+  // `casinoCategory`/`casinoView`/`casinoProviderSlug` can never drift out
+  // of sync with each other (a call site that only set `casinoCategory`
+  // would silently fall back to the Lobby path in `pathFor` — see
+  // routing.js). `view` defaults to "category" (spec §4.1: "Entered from:
+  // sidebar, rail View All" -> the destination route) since every existing
+  // call site (sidebar, search, rail "See all") already meant exactly that
+  // before this split existed; only the chip rail's new "home" filter
+  // click passes `"home"` explicitly. Lobby/Favorites/Recently Played have
+  // no "home"/"category" distinction, so the view always collapses to
+  // "dashboard" for them regardless of what's passed.
+  const selectCasinoCategory = (id, view = "category") => {
+    setCasinoCategory(id);
+    setCasinoView(id === "Lobby" || id === "Favorites" || id === "Recently Played" ? "dashboard" : view);
+    setCasinoProviderSlug(null);
+  };
+  const selectCasinoProvidersIndex = () => {
+    setCasinoCategory("Lobby");
+    setCasinoView("providers");
+    setCasinoProviderSlug(null);
+  };
+  const selectCasinoProvider = (providerId) => {
+    setCasinoCategory("Lobby");
+    setCasinoView("provider");
+    setCasinoProviderSlug(providerId);
+  };
   const [predSection, setPredSection] = useState(initialNav.predSection);
   // Sports nav is a deeper hierarchy than the other two arenas (sport ->
   // country -> league -> event), so it's five fields instead of one — see
@@ -325,9 +416,9 @@ export default function App() {
 
   // Keep the URL in sync with navigation, and restore state on back/forward.
   useEffect(() => {
-    const path = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
+    const path = pathFor({ product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
     if (window.location.pathname !== path) window.history.pushState({}, "", path);
-  }, [product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId]);
+  }, [product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId]);
   // FINAL QA fix: this listener is attached once ([] deps — re-adding it
   // every render would be wasteful, and every setter below is already
   // stable) but its body calls `resolveLaunchFromUrl`/`resolveInfoFromUrl`,
@@ -352,12 +443,15 @@ export default function App() {
     const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
     setProduct(resolveScopedProduct(nav.product, scope));
     setCasinoCategory(nav.casinoCategory);
+    setCasinoView(nav.casinoView);
+    setCasinoProviderSlug(nav.casinoProviderSlug);
     setPredSection(nav.predSection);
     setSportsView(nav.sportsView);
     setSportsSport(nav.sportsSport);
     setSportsCountry(nav.sportsCountry);
     setSportsLeague(nav.sportsLeague);
     setSportsEventId(nav.sportsEventId);
+    setModal(readModalParam());
     resolveLaunchFromUrl();
     resolveInfoFromUrl();
   };
@@ -424,7 +518,7 @@ export default function App() {
   useEffect(() => {
     if (!isArenaAllowed(product, platformScope)) {
       setProduct("casino");
-      setCasinoCategory(DEFAULT_NAV.casinoCategory);
+      selectCasinoCategory(DEFAULT_NAV.casinoCategory);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to
     // scope flips and product changes, not every unrelated devMock field.
@@ -549,12 +643,15 @@ export default function App() {
   // without new evidence it's actually broken wasn't worth the risk here.
   const gameInfoTriggerRef = useRef(null);
 
-  const [fundsOpen, setFundsOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [rgOpen, setRgOpen] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [complianceBlockOpen, setComplianceBlockOpen] = useState(false);
+  // Each derived straight from the one URL-backed `modal` value above —
+  // only one of these is ever true at a time, since only one modal name can
+  // occupy the param.
+  const fundsOpen = modal === "funds";
+  const historyOpen = modal === "history";
+  const rgOpen = modal === "rg";
+  const supportOpen = modal === "support";
+  const accountOpen = modal === "account";
+  const complianceBlockOpen = modal === "compliance-block";
 
   // PERFORMANCE task: each of these lazy dialogs' chunk is only fetched
   // once it's genuinely been requested open — see useLazyMount above.
@@ -578,12 +675,11 @@ export default function App() {
   // betslip while ANY of these (including the menu) happen to be open — is
   // guarded from the other side, in SportsArena's pick().
   const closeOtherOverlays = () => {
-    setFundsOpen(false);
-    setHistoryOpen(false);
-    setRgOpen(false);
-    setSupportOpen(false);
-    setAccountOpen(false);
-    setComplianceBlockOpen(false);
+    // A plain state clear, not closeModal()'s history.back() — this fires
+    // right before some OTHER navigation (opening a different overlay,
+    // launching a game, switching arenas), which will itself update the URL;
+    // going back here too would remove an extra, unrelated history entry.
+    setModal(null);
     closeGame();
   };
 
@@ -654,19 +750,19 @@ export default function App() {
 
   // Only one overlay owns focus/scroll-lock at a time — any dialog opening
   // closes the mobile drawer first so they never stack.
-  const openFunds = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setFundsOpen(true); };
-  const openHistory = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setHistoryOpen(true); };
+  const openFunds = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; openModal("funds"); };
+  const openHistory = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; openModal("history"); };
   // Not wallet-gated — Responsible Gambling/Support are reachable whether
   // or not a wallet is connected. Hoisted out of Footer's own inline
   // handlers so the new desktop ProfileMenu (see TopBar.jsx) can open the
   // exact same dialogs rather than a second copy.
-  const openRg = () => { setMobileMenuOpen(false); setRgOpen(true); };
-  const openSupport = () => { setMobileMenuOpen(false); setSupportOpen(true); };
+  const openRg = () => { setMobileMenuOpen(false); openModal("rg"); };
+  const openSupport = () => { setMobileMenuOpen(false); openModal("support"); };
   // Not wallet-gated — Account is reachable logged-out and session-expired
   // too (it renders its own sign-in entry point in those cases; see
   // AccountDialog.jsx), unlike Wallet/Activity which require a connected
   // wallet before there's anything real to show.
-  const openAccount = () => { setMobileMenuOpen(false); setAccountOpen(true); };
+  const openAccount = () => { setMobileMenuOpen(false); openModal("account"); };
 
   // Player Profile / Account — same auth/wallet-independence model
   // TopBar.jsx's desktop ProfileMenu uses (see lib/profileState.js),
@@ -723,7 +819,7 @@ export default function App() {
   const attemptLaunch = (game, source, categoryId) => {
     if (game && game.kind === "onchain" && game.playable) {
       if (!canPerformAction({ action: "launch-real-game", complianceStatus: devMock.complianceStatus })) {
-        setComplianceBlockOpen(true);
+        openModal("compliance-block");
         return;
       }
       if (!ensureAuth()) return;
@@ -750,7 +846,7 @@ export default function App() {
     }
     if (supportOpen) {
       lastFocusedRef.current = null;
-      setSupportOpen(false);
+      setModal(null);
     }
   };
   const launchGame = (game, context) => {
@@ -771,11 +867,16 @@ export default function App() {
     window.history.pushState({}, "", gameHref(game));
     attemptLaunch(game, context, casinoCategory);
   };
-  const closeGame = () => {
+  // NAV SPEC §5.3 — "Tribet must restore both scroll position and expanded-
+  // rail depth when returning to the lobby from a game... it must survive a
+  // real back navigation, not just an in-app router push." Split out of the
+  // old `closeGame` (which only ran from the header's own in-app Back
+  // button) so the SAME restore logic also runs from a genuine browser Back
+  // press — see resolveLaunchFromUrl below, which used to call
+  // `launch.closeLaunch` directly and skip this whole thing entirely. Takes
+  // no action on history itself; callers own that.
+  const restoreLobbyAfterGame = () => {
     closeCasinoGameOverlays();
-    launch.closeLaunch("game-back");
-    const bare = pathFor({ product, casinoCategory, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
-    if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
     // Restore the scroll position captured in `launchGame` — CasinoLobby is
     // about to remount fresh (same category, per the lifted `casinoCategory`
     // state above) one frame from now; wait for its real content/height
@@ -801,6 +902,12 @@ export default function App() {
       };
       requestAnimationFrame(reassert);
     }
+  };
+  const closeGame = () => {
+    launch.closeLaunch("game-back");
+    const bare = pathFor({ product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
+    if (window.location.pathname + window.location.search !== bare) window.history.replaceState({}, "", bare);
+    restoreLobbyAfterGame();
   };
 
   // ARENA-SWITCH TEARDOWN — the canonical path for leaving an active Casino
@@ -841,7 +948,7 @@ export default function App() {
   const switchArena = (nextProduct) => {
     if (isLaunchActive(launch.state.status)) {
       teardownActiveCasinoGame("arena-switch");
-      setCasinoCategory(DEFAULT_NAV.casinoCategory);
+      selectCasinoCategory(DEFAULT_NAV.casinoCategory);
     }
     setProduct(nextProduct);
   };
@@ -885,7 +992,14 @@ export default function App() {
     // SWITCH TEARDOWN task explicitly calls out to prevent.
     const onCasinoPath = window.location.pathname.startsWith("/casino");
     const favId = onCasinoPath ? new URLSearchParams(window.location.search).get("play") : null;
-    if (!favId) { if (launch.state.status !== GAME_LAUNCH_STATUS.IDLE) launch.closeLaunch("browser-navigation"); return; }
+    // NAV SPEC §5.3 — a genuine browser Back press (this function's caller,
+    // the popstate handler) used to skip straight to `launch.closeLaunch`
+    // here, never touching scroll/overlay restoration at all: only the
+    // header's own in-app Back button (closeGame) got that. Routing this
+    // through the same `restoreLobbyAfterGame` closeGame uses is the actual
+    // fix — a real Back press now restores scroll exactly like the in-app
+    // button does, not just a fresh scrolled-to-top remount.
+    if (!favId) { if (launch.state.status !== GAME_LAUNCH_STATUS.IDLE) { launch.closeLaunch("browser-navigation"); restoreLobbyAfterGame(); } return; }
     if (launch.state.gameId === favId && launch.state.status !== GAME_LAUNCH_STATUS.IDLE) return;
     attemptLaunch(findGameByFavId(favId), "direct-link", casinoCategory);
   };
@@ -1049,7 +1163,7 @@ export default function App() {
     syncFavorite(game, adding).then((ok) => {
       if (ok) {
         showFavoriteToast("success", adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
-          action: { label: "View favorites", onClick: () => { setCasinoCategory("Favorites"); } },
+          action: { label: "View favorites", onClick: () => { selectCasinoCategory("Favorites"); } },
         } : undefined);
         track(adding ? "casino_favorite_added" : "casino_favorite_removed", { gameId: game.favId, category: casinoCategory });
       } else {
@@ -1133,10 +1247,19 @@ export default function App() {
       const lobbyEntry = CASINO_CATEGORIES.find((c) => c.id === "Lobby");
       const gamesItems = CASINO_CATEGORIES.filter((c) => c.kind !== "lobby")
         .map((c) => ({ id: c.id, label: c.label, icon: c.icon }));
+      // NAV SPEC §3.2.1 — count badges belong on every PERSONAL-band row
+      // whose count changes whether the click is worth it (Favorites,
+      // Recently Played), hidden entirely at zero, never on a GAMES-band
+      // row.
+      const personalCount = (id) => {
+        if (id === "Favorites") return favs.size > 0 ? favs.size : undefined;
+        if (id === "Recently Played") return effectiveRecentIds.length > 0 ? effectiveRecentIds.length : undefined;
+        return undefined;
+      };
       const personalItems = CASINO_PERSONAL_DESTINATIONS.map((d) =>
         d.kind === "action"
           ? { id: d.id, label: d.label, icon: d.icon, action: openHistory }
-          : { id: d.id, label: d.label, icon: d.icon, count: d.id === "Favorites" && favs.size > 0 ? favs.size : undefined }
+          : { id: d.id, label: d.label, icon: d.icon, count: personalCount(d.id) }
       );
       return {
         title: "Casino",
@@ -1153,8 +1276,8 @@ export default function App() {
           // changing Sidebar.jsx's onSelect contract to pass a whole
           // object, so Predictions/Sports' own onSelect stays untouched.
           const category = CASINO_CATEGORIES.find((c) => c.id === id);
-          if (category?.kind === "rail") activateCasinoCategory(category, setCasinoCategory);
-          else setCasinoCategory(id);
+          if (category?.kind === "rail") activateCasinoCategory(category, selectCasinoCategory);
+          else selectCasinoCategory(id);
         },
         items: [
           { id: "Lobby", label: lobbyEntry.label, icon: lobbyEntry.icon },
@@ -1281,7 +1404,7 @@ export default function App() {
   const selectMobileArena = (id) => {
     closeMobileMenu();
     switchArena(id);
-    if (id === "casino") setCasinoCategory(DEFAULT_NAV.casinoCategory);
+    if (id === "casino") selectCasinoCategory(DEFAULT_NAV.casinoCategory);
     else if (id === "predictions") setPredSection(DEFAULT_NAV.predSection);
     else if (id === "sports") navigateSports({ view: DEFAULT_NAV.sportsView, sport: DEFAULT_NAV.sportsSport, country: DEFAULT_NAV.sportsCountry, league: DEFAULT_NAV.sportsLeague, eventId: DEFAULT_NAV.sportsEventId });
     track("mobile_bottom_nav_selected", { target: id });
@@ -1302,10 +1425,10 @@ export default function App() {
   if (geo.blocked) {
     return (
       <>
-        <GeoBlock reason={geo.reason} onContactSupport={() => setSupportOpen(true)} />
+        <GeoBlock reason={geo.reason} onContactSupport={() => openModal("support")} />
         {supportMounted && (
           <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
-            <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+            <SupportDialog open={supportOpen} onClose={closeModal} />
           </Suspense>
         )}
       </>
@@ -1372,7 +1495,7 @@ export default function App() {
                     onRestartFromLoading={restartLoadingGame}
                     onRetryFailed={launch.retryLaunch}
                     onBack={closeGame}
-                    onBrowseGames={() => { closeGame(); setCasinoCategory("Lobby"); }}
+                    onBrowseGames={() => { closeGame(); selectCasinoCategory("Lobby"); }}
                     onOpenGameInfo={launchedGame ? () => openGameInfo(launchedGame.favId, "gameplay-frame") : undefined}
                     onReportIssue={openSupport}
                   >
@@ -1398,13 +1521,20 @@ export default function App() {
                 ) : (
                   <CasinoLobby
                     category={casinoCategory}
+                    view={casinoView}
+                    providerSlug={casinoProviderSlug}
                     onLaunchOnchain={launchGame}
                     onLaunchProvider={launchGame}
                     isFav={effectiveIsFav}
                     onFav={toggleFav}
                     recentIds={effectiveRecentIds}
-                    onBrowseGames={() => setCasinoCategory("Lobby")}
-                    onSelectCategory={setCasinoCategory}
+                    onBrowseGames={() => selectCasinoCategory("Lobby")}
+                    onSelectCategory={selectCasinoCategory}
+                    onSelectHomeFilter={(id) => selectCasinoCategory(id, "home")}
+                    onSelectProvidersIndex={selectCasinoProvidersIndex}
+                    onSelectProvider={selectCasinoProvider}
+                    expandedRails={expandedRails}
+                    onExpandRail={expandRail}
                   />
                 )
               )}
@@ -1550,7 +1680,7 @@ export default function App() {
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
           <BetHistoryDialog
             open={historyOpen}
-            onClose={() => setHistoryOpen(false)}
+            onClose={closeModal}
             onCloseAutoFocus={restoreFocus}
             casinoPendingRounds={casinoPendingRounds}
             casinoLiveResults={casinoLiveResults}
@@ -1568,7 +1698,7 @@ export default function App() {
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
           <AccountDialog
             open={accountOpen}
-            onClose={() => setAccountOpen(false)}
+            onClose={closeModal}
             onCloseAutoFocus={restoreFocus}
             variant={profileVariant}
             address={devWallet.address}
@@ -1583,19 +1713,19 @@ export default function App() {
       )}
       {rgMounted && (
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
-          <ResponsibleGamblingDialog open={rgOpen} onClose={() => setRgOpen(false)} onCloseAutoFocus={restoreFocus} complianceStatus={devMock.complianceStatus} onSupport={openSupport} />
+          <ResponsibleGamblingDialog open={rgOpen} onClose={closeModal} onCloseAutoFocus={restoreFocus} complianceStatus={devMock.complianceStatus} onSupport={openSupport} />
         </Suspense>
       )}
       {supportMounted && (
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
-          <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} onCloseAutoFocus={restoreFocus} />
+          <SupportDialog open={supportOpen} onClose={closeModal} onCloseAutoFocus={restoreFocus} />
         </Suspense>
       )}
       {complianceBlockMounted && (
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
           <ComplianceBlockDialog
             open={complianceBlockOpen}
-            onClose={() => setComplianceBlockOpen(false)}
+            onClose={closeModal}
             onCloseAutoFocus={restoreFocus}
             complianceStatus={devMock.complianceStatus}
             onSupport={openSupport}
@@ -1605,65 +1735,77 @@ export default function App() {
       )}
       {fundsMounted && (
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
-          <FundsDialog open={fundsOpen} onClose={() => setFundsOpen(false)} onCloseAutoFocus={restoreFocus} />
+          <FundsDialog open={fundsOpen} onClose={closeModal} onCloseAutoFocus={restoreFocus} />
         </Suspense>
       )}
     </div>
   );
 }
 
-function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory }) {
+// TWO-ROUTE SPLIT (nav spec §4.1) — `view` picks which chrome renders
+// above CasinoCatalog's content: "dashboard"/"home" keep the promo strip +
+// chip rail (the Lobby's own navigation layer); "category"/"providers"/
+// "provider" are standalone destinations with their own hero (rendered by
+// CasinoCatalog's own page components) and get a bare search bar instead —
+// no promo cards, no chip rail, per the spec's own chrome table.
+function CasinoLobby({ category, view, providerSlug, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, onSelectHomeFilter, onSelectProvider, expandedRails, onExpandRail }) {
   const [query, setQuery] = useState("");
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
   const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
-  // CategoryNav now owns its own click behavior (see
-  // lib/casinoLobbyScroll.js's activateLobbyPill — every pill scrolls the
-  // Lobby to its section instead of navigating away, see PILL NAVIGATION
-  // CONSISTENCY). It only needs a way to actually switch to the Lobby route
-  // when clicked from somewhere else (Favorites, a standalone category
-  // page), and a place to report analytics — this file keeps owning both,
-  // same as every other Casino selection handler here.
-  const navigateToLobby = () => { setQuery(""); onSelectCategory?.("Lobby"); };
+  const selectHomeFilter = (id) => { setQuery(""); onSelectHomeFilter?.(id); };
   const onPillActivated = (categoryConfig) => {
     track("casino_category_selected", {
       categoryId: categoryConfig.id,
       source: "category-nav",
       previousCategory: category,
-      destination: categoryConfig.id === "Lobby" ? "lobby-top" : "lobby-scroll",
+      destination: categoryConfig.id === "Lobby" ? "lobby-dashboard" : "lobby-home-filter",
     });
   };
 
   // Casino-only grouped search (games/providers/categories, ranking,
   // keyboard nav, recent searches, mobile full-screen surface) — see
   // CasinoSearch.jsx. Sports/Predictions keep the plain ScopedSearch input
-  // (see ArenaTileRow.jsx), untouched by this.
+  // (see ArenaTileRow.jsx), untouched by this. Called unconditionally
+  // (hooks can't be conditional) even though only one of the two chrome
+  // branches below actually renders its output.
   const { searchPanelProps, mobileOverlay } = useCasinoSearch({
     query, onQuery: setQuery, onLaunchOnchain, onLaunchProvider, isFav, onFav,
     onSelectCategory: selectCategory,
   });
 
+  const isDestination = view === "category" || view === "providers" || view === "provider";
+
   return (
     <ArenaPageColumn>
       {/* The default Lobby view has no visible title (the promo area already
-          sets the context) but every page needs exactly one <h1> — Favorites
-          and each category page render their own visible one; this covers
-          the one remaining case without adding visual chrome the design
-          doesn't call for. */}
-      {category === "Lobby" && <h1 className="sr-only">Casino Lobby</h1>}
-      {/* LOBBY HIERARCHY PASS: search + category pills read as one
-          navigation layer, not two independently-spaced blocks — grouped
-          into their own `space-y-4` (matching PromoStrip's own internal
-          promo-row/search rhythm) so this boundary is visibly tighter than
-          the nav-layer -> game-rails gap below, which still gets
-          ArenaPageColumn's full `space-y-8` since this whole group is now
-          ONE of its two children instead of two of its three. */}
-      <div className="space-y-4">
-        <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
-        {mobileOverlay}
-        <CategoryNav selected={category} onNavigateToLobby={navigateToLobby} onPillActivated={onPillActivated} />
-      </div>
+          sets the context) but every page needs exactly one <h1> — Favorites,
+          the destination views, and each category page render their own
+          visible one; this covers the one remaining case without adding
+          visual chrome the design doesn't call for. */}
+      {category === "Lobby" && view === "dashboard" && <h1 className="sr-only">Casino Lobby</h1>}
+      {isDestination ? (
+        <div className="space-y-4">
+          <ScopedSearch query={query} onQuery={setQuery} {...searchPanelProps} />
+          {mobileOverlay}
+        </div>
+      ) : (
+        /* LOBBY HIERARCHY PASS: search + category pills read as one
+           navigation layer, not two independently-spaced blocks — grouped
+           into their own `space-y-4` (matching PromoStrip's own internal
+           promo-row/search rhythm) so this boundary is visibly tighter than
+           the nav-layer -> content gap below, which still gets
+           ArenaPageColumn's full `space-y-8` since this whole group is now
+           ONE of its two children instead of two of its three. */
+        <div className="space-y-4">
+          <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
+          {mobileOverlay}
+          <CategoryNav selected={category} activeView={view} onSelectHomeFilter={selectHomeFilter} onPillActivated={onPillActivated} />
+        </div>
+      )}
       <CasinoCatalog
         category={category}
+        view={view}
+        providerSlug={providerSlug}
         query={query}
         onLaunch={onLaunchOnchain}
         onLaunchProvider={onLaunchProvider}
@@ -1672,6 +1814,9 @@ function CasinoLobby({ category, onLaunchOnchain, onLaunchProvider, isFav, onFav
         recentIds={recentIds}
         onBrowseGames={browseAll}
         onSelectCategory={selectCategory}
+        onSelectProvider={onSelectProvider}
+        expandedRails={expandedRails}
+        onExpandRail={onExpandRail}
       />
     </ArenaPageColumn>
   );

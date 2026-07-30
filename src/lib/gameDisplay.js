@@ -122,8 +122,8 @@ const GAME_OVERRIDES = {
 
 // Resolves the final, fully-merged display metadata for one game object
 // (as found in CasinoCatalog.jsx's ALL_GAMES — has `favId`, `kind`,
-// `key`, `badge`). Pure function: the same game object always yields the
-// same result, so it's unit-testable without rendering anything.
+// `key`, `providerId`). Pure function: the same game object always yields
+// the same result, so it's unit-testable without rendering anything.
 export function getGameDisplayMetadata(game) {
   const override = (game && GAME_OVERRIDES[game.favId]) || {};
   const displayProfile = override.displayProfile ?? DISPLAY_PROFILE.FLEXIBLE;
@@ -131,7 +131,7 @@ export function getGameDisplayMetadata(game) {
   const isOnchain = game?.kind === "onchain";
   return {
     id: game?.favId ?? null,
-    provider: isOnchain ? "tribet-originals" : (game?.badge ?? "Tribet Studio"),
+    provider: isOnchain ? "tribet-originals" : (game?.providerId ?? "provider-1"),
     implementation: isOnchain ? "internal" : "iframe",
     displayProfile,
     sizingMode: profile.sizingMode,

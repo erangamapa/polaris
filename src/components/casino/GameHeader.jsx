@@ -45,7 +45,9 @@ export function GameHeader({ game, onBack, backDisabled, isFav, onFav, onOpenMen
 
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold leading-tight text-white">{game?.title ?? "Game"}</div>
-          {game && <div className="truncate text-[11px] leading-tight text-zinc-400">{gameProviderName(game)}</div>}
+          {game && (
+            <div className="truncate text-[11px] leading-tight text-zinc-400">{gameProviderName(game)}</div>
+          )}
         </div>
       </div>
 

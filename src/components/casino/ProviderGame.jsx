@@ -1,26 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import { attachMockHost } from "@/lib/gameBridge";
 import { MicroLabel } from "@/components/ui/micro-label";
+import { CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
 // Vendored provider games (self-contained apps under public/games/*).
 // Served as static assets and embedded via iframe, loaded on demand.
+// NAV SPEC §6.1: "Provider is a first-class entity... games join to a
+// provider by FK, never a string match." `providerId` is that FK (against
+// CASINO_PROVIDERS' own `id` — see lib/casinoCategories.js) — every entry
+// here previously carried a literal, repeated `badge: "Tribet Studio"`
+// display string instead, which is exactly the string-match anti-pattern
+// the spec rules out.
+// Distributed across the three real providers in fixed, deterministic
+// blocks of 4 (catalog order, not shuffled) — see lib/casinoCategories.js's
+// CASINO_PROVIDERS for the provider identities themselves.
 export const PROVIDER_GAMES = [
-  { key: "crash", title: "Warpout", src: "/games/crash/index.html", badge: "Tribet Studio", image: "/img/games/warpout.jpg", tags: ["new", "popular"] },
-  { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", badge: "Tribet Studio", image: "/img/games/vector-dice.svg", tags: ["popular"] },
+  { key: "crash", title: "Warpout", src: "/games/crash/index.html", providerId: "provider-1", image: "/img/games/warpout.jpg", tags: ["new", "popular"] },
+  { key: "dice", title: "Vector Dice", src: "/games/dice/index.html", providerId: "provider-1", image: "/img/games/vector-dice.svg", tags: ["popular"] },
   // Reference game built from skills/build-casino-game — runs on mock balance via the bridge.
-  { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", badge: "Tribet Studio", image: "/img/games/coinflip.svg", tags: ["popular"] },
-  { key: "nova-wheel", title: "Nova Wheel", src: "/games/nova-wheel/index.html", badge: "Tribet Studio", image: "/img/games/nova-wheel.svg", tags: ["game-shows"] },
-  { key: "spacex-rush", title: "SpaceX Rush", src: "/games/spacex-rush/index.html", badge: "Tribet Studio", image: "/img/games/spacex-rush.svg", tags: ["new"] },
+  { key: "coinflip", title: "Coin Flip", src: "/games/coinflip/index.html", providerId: "provider-1", image: "/img/games/coinflip.svg", tags: ["popular"] },
+  { key: "nova-wheel", title: "Nova Wheel", src: "/games/nova-wheel/index.html", providerId: "provider-1", image: "/img/games/nova-wheel.svg", tags: ["game-shows"] },
+  { key: "spacex-rush", title: "SpaceX Rush", src: "/games/spacex-rush/index.html", providerId: "provider-2", image: "/img/games/spacex-rush.svg", tags: ["new"] },
   // Imported via skills/import-casino-game — self-contained crash game (own mock economy).
-  { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", badge: "Tribet Studio", image: "/img/games/tumble.svg", tags: ["new"] },
+  { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", providerId: "provider-2", image: "/img/games/tumble.svg", tags: ["new"] },
   // Imported from aquistsang GitHub — self-contained (own mock economy).
-  { key: "coin-fighters", title: "Coin Fighters", src: "/games/coin-fighters/index.html", badge: "Tribet Studio", image: "/img/games/coin-fighters.svg", tags: ["new", "game-shows"] },
-  { key: "raiders-escape", title: "Raider's Escape", src: "/games/raiders-escape/index.html", badge: "Tribet Studio", image: "/img/games/raiders-escape.svg", tags: ["new", "popular"] },
-  { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", badge: "Tribet Studio", image: "/img/games/keymines-v2.svg", tags: ["new"] },
-  { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", badge: "Tribet Studio", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
+  { key: "coin-fighters", title: "Coin Fighters", src: "/games/coin-fighters/index.html", providerId: "provider-2", image: "/img/games/coin-fighters.svg", tags: ["new", "game-shows"] },
+  { key: "raiders-escape", title: "Raider's Escape", src: "/games/raiders-escape/index.html", providerId: "provider-2", image: "/img/games/raiders-escape.svg", tags: ["new", "popular"] },
+  { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", providerId: "provider-3", image: "/img/games/keymines-v2.svg", tags: ["new"] },
+  { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", providerId: "provider-3", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
   // Self-contained crash-style bubble inflate (own mock economy).
-  { key: "bubble-girl", title: "Bubble Girl", src: "/games/bubble-girl/index.html", badge: "Tribet Studio", image: "/img/games/bubble-girl.svg", tags: ["new"] },
-  { key: "mage-keno", title: "Mage Keno", src: "/games/mage-keno/dist/index.html", badge: "Tribet Studio", image: "/img/games/mage-keno.svg", tags: ["new"] },
+  { key: "bubble-girl", title: "Bubble Girl", src: "/games/bubble-girl/index.html", providerId: "provider-3", image: "/img/games/bubble-girl.svg", tags: ["new"] },
+  { key: "mage-keno", title: "Mage Keno", src: "/games/mage-keno/dist/index.html", providerId: "provider-3", image: "/img/games/mage-keno.svg", tags: ["new"] },
 ];
 
 // Provider games run inside a sandboxed iframe (loaded only when opened). Games
@@ -49,7 +59,7 @@ export function ProviderGame({ game, onReady, onFailed }) {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-4 py-2">
-        <MicroLabel>{game.badge ?? "Provider game"}</MicroLabel>
+        <MicroLabel>{CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider game"}</MicroLabel>
         {balance !== null && (
           <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{balance.toFixed(2)} TBET</div>
         )}

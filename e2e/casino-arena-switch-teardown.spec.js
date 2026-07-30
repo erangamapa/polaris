@@ -185,13 +185,17 @@ test.describe("Internal Game Back is unaffected by arena-switch teardown", () =>
   });
 
   test("Casino category -> Game -> Back -> same Casino category", async ({ page }) => {
-    await page.goto("/casino/new");
+    // NAV SPEC (§4.1 two-route split): the destination route moved from a
+    // bare `/casino/new` to `/casino/category/new` — the bare path no
+    // longer resolves to a category page (falls back to the Lobby
+    // dashboard instead), which is why this needs the new URL.
+    await page.goto("/casino/category/new");
     await page.waitForTimeout(300);
     await page.locator('[data-test-id="game-card-provider-tumble"]').first().click();
     await page.waitForTimeout(500);
     await page.locator('[data-test-id="game-header-back"]').click();
     await page.waitForTimeout(300);
-    await expect(page).toHaveURL(/\/casino\/new/);
+    await expect(page).toHaveURL(/\/casino\/category\/new/);
   });
 });
 

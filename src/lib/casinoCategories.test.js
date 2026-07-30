@@ -14,14 +14,14 @@ import { CASINO_CATEGORIES, CATEGORY_LABEL, ROUTED_CATEGORIES, CASINO_PROVIDERS,
 //  1.  One shared config drives every nav surface       -> code review (CategoryNav, Sidebar/mobile menu, casinoSearch.js's SEARCH_CATEGORIES/SEARCH_PROVIDERS, App.jsx's Casino sidebar builder all import from this module — no second hand-rolled list)
 //  2.  Only real catalog/route content is shown          -> unit test (CASINO_CATEGORIES shape, `enabled` flags) + code review (Slots/Table Games excluded — zero real games/tags for either)
 //  3.  Each category has one clear route/filter behavior  -> unit test (activateCasinoCategory)
-//  4.  Providers is real provider browsing, not a mixed rail -> unit test (CASINO_PROVIDERS shape) + code review (see CasinoCatalog.jsx's ProviderTiles/tribet-studio-rail)
+//  4.  Providers is real provider browsing, not a mixed rail -> unit test (CASINO_PROVIDERS shape) + code review (see CasinoCatalog.jsx's ProviderTiles)
 //  5.  Tribet Originals naming is consistent everywhere      -> unit test (CATEGORY_LABEL.Originals)
 //  6.  Personal destinations are modeled separately from Casino content categories -> unit test (CASINO_PERSONAL_DESTINATIONS shape)
 //  7.  A disabled category's route still resolves its real label            -> unit test (CATEGORY_LABEL.Slots)
 
 describe("CASINO_CATEGORIES", () => {
-  it("has exactly six nav-visible entries, in the target sidebar/pill order", () => {
-    expect(CASINO_CATEGORIES).toHaveLength(6);
+  it("has exactly seven nav-visible entries, in the target sidebar/pill order", () => {
+    expect(CASINO_CATEGORIES).toHaveLength(7);
     expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
       "Lobby",
       "Originals",
@@ -29,18 +29,22 @@ describe("CASINO_CATEGORIES", () => {
       "New",
       "Live Casino",
       "Game Shows",
+      "Providers",
     ]);
   });
 
-  it("never includes Slots, Table Games, or Providers (no supported inventory/real provider data for any)", () => {
-    // Providers: this app has no real, multi-provider inventory yet — its
-    // "two providers" are really just its own onchain vs. vendored demo
-    // games, not distinct third parties worth a browsing destination (see
-    // FINAL QA's PROVIDERS section). Disabled the same way as Slots/Table
-    // Games — code (ProviderTiles, CASINO_PROVIDERS) is preserved, unused.
+  it("never includes Slots or Table Games (no supported inventory for either)", () => {
     expect(CASINO_CATEGORIES.some((c) => c.id === "Slots")).toBe(false);
     expect(CASINO_CATEGORIES.some((c) => c.id === "Table Games")).toBe(false);
-    expect(CASINO_CATEGORIES.some((c) => c.id === "Providers")).toBe(false);
+  });
+
+  it("re-enables Providers now that three real providers exist (supersedes the prior FINAL QA disable)", () => {
+    const providers = CASINO_CATEGORIES.find((c) => c.id === "Providers");
+    expect(providers).toBeTruthy();
+    expect(providers.enabled).toBe(true);
+    expect(providers.showInSidebar).toBe(true);
+    expect(providers.showInTopNav).toBe(true);
+    expect(providers.showAsLobbyRow).toBe(true);
   });
 
   it("still resolves a disabled category's real label (Slots stays a working direct link)", () => {
@@ -85,11 +89,14 @@ describe("CASINO_CATEGORIES", () => {
 });
 
 describe("CASINO_PERSONAL_DESTINATIONS", () => {
+  // HEART REDESIGN — the prior "Following" (followed providers) destination
+  // has been removed entirely (not just hidden): Personal now contains only
+  // Favorites and Recently Played, never a Casino content category.
   it("lists exactly Favorites and Recently Played — never a Casino content category", () => {
     expect(CASINO_PERSONAL_DESTINATIONS.map((d) => d.id)).toEqual(["Favorites", "Recently Played"]);
   });
 
-  it("marks both entries as routes", () => {
+  it("marks every entry as a route", () => {
     const byId = Object.fromEntries(CASINO_PERSONAL_DESTINATIONS.map((d) => [d.id, d.kind]));
     expect(byId.Favorites).toBe("route");
     expect(byId["Recently Played"]).toBe("route");
@@ -109,15 +116,19 @@ describe("CASINO_PERSONAL_DESTINATIONS", () => {
 });
 
 describe("CASINO_PROVIDERS", () => {
-  it("lists exactly the two real studios behind this catalog, not an invented directory", () => {
-    expect(CASINO_PROVIDERS).toHaveLength(2);
-    expect(CASINO_PROVIDERS.map((p) => p.id)).toEqual(["betswirl", "tribet-studio"]);
+  // NAV SPEC §6.6 — Tribet Originals (the onchain/BetSwirl catalog) is
+  // first-party content and a category, never a provider; it must never
+  // appear in the Providers rail/directory. Three real providers exist in
+  // this catalog now (superseding the prior "exactly one" FINAL QA state).
+  it("lists exactly the three real providers, excluding Tribet Originals", () => {
+    expect(CASINO_PROVIDERS).toHaveLength(3);
+    expect(CASINO_PROVIDERS.map((p) => p.id)).toEqual(["provider-1", "provider-2", "provider-3"]);
+    expect(CASINO_PROVIDERS.some((p) => p.id === "tribet-studio")).toBe(false);
+    expect(CASINO_PROVIDERS.some((p) => p.id.includes("original"))).toBe(false);
   });
 
-  it("maps each provider to a distinct game kind and a distinct real rail destination", () => {
-    const kinds = CASINO_PROVIDERS.map((p) => p.kind);
+  it("maps each provider to a distinct real rail destination", () => {
     const targets = CASINO_PROVIDERS.map((p) => p.railTarget);
-    expect(new Set(kinds).size).toBe(CASINO_PROVIDERS.length);
     expect(new Set(targets).size).toBe(CASINO_PROVIDERS.length);
   });
 });
@@ -139,10 +150,8 @@ describe("activateCasinoCategory", () => {
     vi.stubGlobal("requestAnimationFrame", (cb) => cb());
     vi.stubGlobal("document", { querySelector: () => null });
     const onSelectCategory = vi.fn();
-    // "Providers" itself is disabled (see FINAL QA fix) and no longer in
-    // CASINO_CATEGORIES, but this test is really about "rail"-kind
-    // categories in general redirecting to Lobby — "Originals" is the
-    // same kind and still enabled, so it exercises the identical branch.
+    // "Originals" is a "rail"-kind category (same as "Providers"), so it
+    // exercises the identical redirect-to-Lobby branch.
     const originals = CASINO_CATEGORIES.find((c) => c.id === "Originals");
     activateCasinoCategory(originals, onSelectCategory);
     expect(onSelectCategory).toHaveBeenCalledWith("Lobby");

@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 
-// CASINO FAVORITES REGRESSION — covers a bug where the star toggle's toast
+// CASINO FAVORITES REGRESSION — covers a bug where the heart toggle's toast
 // ("Added to Favorites" / "Removed from Favorites") fired correctly while
-// the actual favorite state, star icon, Favorites rail/page and count all
+// the actual favorite state, heart icon, Favorites rail/page and count all
 // stayed visually frozen. Root cause: App.jsx's `effectiveIsFav` — the
-// value every star/Favorites surface actually reads through — defers to a
+// value every heart/Favorites surface actually reads through — defers to a
 // FIXED, mock answer whenever the Dev Panel's `favoritesPreset` isn't
 // "default" (see devMock.js), completely ignoring the real `favs` Set that
 // `toggleFav` was (and always had been) correctly mutating. If that mock
@@ -45,7 +45,7 @@ async function setDevMock(page, patch) {
 
 // Scoped to a single rail so the locator can't match the same game's card
 // twice once it also appears in the Favorites rail.
-function starIn(page, railTestId, gameTestId) {
+function heartIn(page, railTestId, gameTestId) {
   return page
     .locator(`[data-test-id="${railTestId}"]`)
     .locator(`[data-test-id="${gameTestId}"]`)
@@ -54,18 +54,18 @@ function starIn(page, railTestId, gameTestId) {
 }
 
 test.describe("Favorites toggle — core state flow", () => {
-  test("unfavorited card: star activates, count/rail update, no navigation, correct toast", async ({ page }) => {
+  test("unfavorited card: heart activates, count/rail update, no navigation, correct toast", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await expect(star).toHaveAttribute("aria-pressed", "false");
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await expect(heart).toHaveAttribute("aria-pressed", "false");
 
-    await star.click();
+    await heart.click();
 
     // 1. Card must not launch/navigate.
     expect(page.url()).not.toContain("play=");
     // 2 & 3. Canonical state + icon update immediately.
-    await expect(star).toHaveAttribute("aria-pressed", "true");
-    await expect(star.locator("svg")).toHaveClass(/fill-\[var\(--favorite-gold\)\]/);
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
+    await expect(heart.locator("svg")).toHaveClass(/fill-\[var\(--favorite-heart\)\]/);
     // 4. Count updates immediately.
     const favoritesRail = page.locator('[data-test-id="favorites-rail"]');
     await expect(favoritesRail.getByText(/^1 game$/)).toBeVisible();
@@ -75,25 +75,25 @@ test.describe("Favorites toggle — core state flow", () => {
     await expect(page.getByText("Added to Favorites")).toBeVisible();
   });
 
-  test("favorited card: star deactivates, disappears from Favorites, correct toast", async ({ page }) => {
+  test("favorited card: heart deactivates, disappears from Favorites, correct toast", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await star.click();
-    await expect(star).toHaveAttribute("aria-pressed", "true");
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await heart.click();
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
 
-    await star.click();
+    await heart.click();
 
     expect(page.url()).not.toContain("play=");
-    await expect(star).toHaveAttribute("aria-pressed", "false");
+    await expect(heart).toHaveAttribute("aria-pressed", "false");
     await expect(page.locator('[data-test-id="favorites-rail"]')).toBeHidden();
     await expect(page.getByText("Removed from Favorites")).toBeVisible();
   });
 
   test("persistence: localStorage reflects the toggled state", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await star.click();
-    await expect(star).toHaveAttribute("aria-pressed", "true");
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await heart.click();
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
 
     const stored = await page.evaluate(() => localStorage.getItem("tribet_favs"));
     expect(JSON.parse(stored)).toContain("casino:dice");
@@ -101,20 +101,20 @@ test.describe("Favorites toggle — core state flow", () => {
 
   test("state survives a page refresh", async ({ page }) => {
     await gotoLobby(page);
-    await starIn(page, "originals-rail", "game-card-casino-dice").click();
-    await expect(starIn(page, "originals-rail", "game-card-casino-dice")).toHaveAttribute("aria-pressed", "true");
+    await heartIn(page, "originals-rail", "game-card-casino-dice").click();
+    await expect(heartIn(page, "originals-rail", "game-card-casino-dice")).toHaveAttribute("aria-pressed", "true");
 
     await page.reload();
     await page.waitForSelector('[data-test-id="main-content"]');
-    await expect(starIn(page, "originals-rail", "game-card-casino-dice")).toHaveAttribute("aria-pressed", "true");
+    await expect(heartIn(page, "originals-rail", "game-card-casino-dice")).toHaveAttribute("aria-pressed", "true");
   });
 });
 
 test.describe("Favorites toggle — click isolation", () => {
-  test("star click does not launch the game or trigger the card's own action", async ({ page }) => {
+  test("heart click does not launch the game or trigger the card's own action", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await star.click();
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await heart.click();
     await page.waitForTimeout(150);
     expect(page.url()).toContain("/casino/lobby");
     expect(page.url()).not.toContain("play=");
@@ -122,49 +122,49 @@ test.describe("Favorites toggle — click isolation", () => {
     await expect(page.locator('[data-test-id="game-card-casino-dice"]')).toHaveCount(2); // original + now-favorited rail copy
   });
 
-  test("keyboard activation (Enter and Space) toggles the star", async ({ page }) => {
+  test("keyboard activation (Enter and Space) toggles the heart", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await star.focus();
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await heart.focus();
     await page.keyboard.press("Enter");
-    await expect(star).toHaveAttribute("aria-pressed", "true");
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press(" ");
-    await expect(star).toHaveAttribute("aria-pressed", "false");
+    await expect(heart).toHaveAttribute("aria-pressed", "false");
   });
 
 });
 
 test.describe("Favorites toggle — robustness", () => {
-  // LOBBY HIERARCHY PASS: switched from two racing `star.click()` calls to
+  // LOBBY HIERARCHY PASS: switched from two racing `heart.click()` calls to
   // two rapid keyboard activations. This test exists to verify App.jsx's
   // functional setState guard against a stale-closure race in the toggle
   // handler itself — it was never about whether two physical mouse clicks
   // can land on a moving target. Favoriting Dice inserts the whole
   // Favorites rail above Tribet Originals (pre-existing behavior, not new
-  // this pass), shifting Originals — and this star — further down the
+  // this pass), shifting Originals — and this heart — further down the
   // page; the hierarchy pass's own larger inter-section gap before
   // Originals amplified that shift enough to occasionally beat Playwright's
   // per-click actionability re-check, making the SECOND mouse click land at
-  // a stale pre-reflow coordinate and silently miss the (moved) star. Two
-  // `keyboard.press("Enter")` calls on the already-focused star don't
+  // a stale pre-reflow coordinate and silently miss the (moved) heart. Two
+  // `keyboard.press("Enter")` calls on the already-focused heart don't
   // depend on screen position at all, so they exercise the exact same
   // rapid-toggle race in App.jsx without being coupled to how far the page
   // happens to reflow in between.
   test("rapid double-activation nets out to the original state, no corruption", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await expect(star).toHaveAttribute("aria-pressed", "false");
-    await star.focus();
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await expect(heart).toHaveAttribute("aria-pressed", "false");
+    await heart.focus();
 
     await Promise.all([page.keyboard.press("Enter"), page.keyboard.press("Enter")]);
     await page.waitForTimeout(300);
 
-    expect(await star.getAttribute("aria-pressed")).toBe("false");
+    expect(await heart.getAttribute("aria-pressed")).toBe("false");
     const stored = await page.evaluate(() => localStorage.getItem("tribet_favs"));
     expect(JSON.parse(stored)).not.toContain("casino:dice");
   });
 
-  // Placeholder-specific behavior (click-to-toast, no favorite star, never
+  // Placeholder-specific behavior (click-to-toast, no favorite heart, never
   // mixed into Favorites/Recently Played) already has its own dedicated
   // suite — see casino-placeholder-fixtures.spec.js's "a placeholder card
   // has no favorite control" and related tests. Not duplicated here.
@@ -172,10 +172,10 @@ test.describe("Favorites toggle — robustness", () => {
   test("Dev Panel favoritesPreset mock never masks a real toggle (the regression this file guards)", async ({ page }) => {
     await setDevMock(page, { favoritesPreset: "populated" });
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await expect(star).toBeVisible();
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await expect(heart).toBeVisible();
 
-    await star.click();
+    await heart.click();
     await page.waitForTimeout(150);
 
     // The mock preset must be superseded by the real action...
@@ -186,7 +186,7 @@ test.describe("Favorites toggle — robustness", () => {
     // ...and the real, persisted state must reflect the actual toggle.
     const stored = await page.evaluate(() => localStorage.getItem("tribet_favs"));
     expect(JSON.parse(stored)).toContain("casino:dice");
-    await expect(star).toHaveAttribute("aria-pressed", "true");
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
   });
 });
 
@@ -232,10 +232,10 @@ test.describe("Wallet-sync hydration must stay silent", () => {
 
   test("manual add/remove feedback is unaffected by the hydration-toast fix", async ({ page }) => {
     await gotoLobby(page);
-    const star = starIn(page, "originals-rail", "game-card-casino-dice");
-    await star.click();
+    const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
+    await heart.click();
     await expect(page.getByText("Added to Favorites")).toBeVisible();
-    await star.click();
+    await heart.click();
     await expect(page.getByText("Removed from Favorites")).toBeVisible();
   });
 });
