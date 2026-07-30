@@ -43,6 +43,17 @@ async function setDevMock(page, patch) {
   }, patch);
 }
 
+// PLAYER SETTINGS MIGRATION: favorites moved off the old standalone
+// `tribet_favs` localStorage key onto the shared player-settings envelope
+// (see lib/playerSettingsStorage.js / lib/usePlayerSettings.jsx) —
+// `tribet.settings.v1.device` for a disconnected/no-wallet session (every
+// test in this file), `data.casino.favorites` inside that envelope.
+async function readStoredFavorites(page) {
+  const raw = await page.evaluate(() => localStorage.getItem("tribet.settings.v1.device"));
+  const envelope = raw ? JSON.parse(raw) : null;
+  return envelope?.data?.casino?.favorites ?? [];
+}
+
 // Scoped to a single rail so the locator can't match the same game's card
 // twice once it also appears in the Favorites rail.
 function heartIn(page, railTestId, gameTestId) {
@@ -100,8 +111,8 @@ test.describe("Favorites toggle — core state flow", () => {
     await heart.click();
     await expect(heart).toHaveAttribute("aria-pressed", "true");
 
-    const stored = await page.evaluate(() => localStorage.getItem("tribet_favs"));
-    expect(JSON.parse(stored)).toContain("casino:dice");
+    const favorites = await readStoredFavorites(page);
+    expect(favorites).toContain("casino:dice");
   });
 
   test("state survives a page refresh", async ({ page }) => {
@@ -167,8 +178,8 @@ test.describe("Favorites toggle — robustness", () => {
     await page.waitForTimeout(300);
 
     expect(await heart.getAttribute("aria-pressed")).toBe("false");
-    const stored = await page.evaluate(() => localStorage.getItem("tribet_favs"));
-    expect(JSON.parse(stored)).not.toContain("casino:dice");
+    const favorites = await readStoredFavorites(page);
+    expect(favorites).not.toContain("casino:dice");
   });
 
   // Placeholder-specific behavior (click-to-toast, no favorite heart, never
@@ -191,8 +202,8 @@ test.describe("Favorites toggle — robustness", () => {
     );
     expect(preset).toBe("default");
     // ...and the real, persisted state must reflect the actual toggle.
-    const stored = await page.evaluate(() => localStorage.getItem("tribet_favs"));
-    expect(JSON.parse(stored)).toContain("casino:dice");
+    const favorites = await readStoredFavorites(page);
+    expect(favorites).toContain("casino:dice");
     await expect(heart).toHaveAttribute("aria-pressed", "true");
   });
 });
