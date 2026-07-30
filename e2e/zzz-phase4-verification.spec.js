@@ -25,12 +25,17 @@ test("4b: expand a rail, enter a game, press back — scroll + expansion state",
   await page.locator('button[aria-label="Close Developer Panel"]').click();
   await page.waitForTimeout(200);
 
+  // SCROLL/OVERFLOW TESTING PASS: placeholders now top every rail up to a
+  // flat 24 (see PLACEHOLDER_TARGET_TOTAL) — New Releases (6 real) totals
+  // 24, needing two Load More clicks (8 -> 16 -> 24) to fully exhaust.
   const loadMore = page.locator('[data-test-id="new-releases-rail-load-more"]');
   await loadMore.scrollIntoViewIfNeeded();
   await loadMore.click();
   await page.waitForTimeout(200);
+  await loadMore.click();
+  await page.waitForTimeout(200);
 
-  // Confirm the rail is actually expanded (Load More control gone).
+  // Confirm the rail is actually fully expanded (Load More control gone).
   await expect(loadMore).toHaveCount(0);
 
   // Scroll to the game card we're about to click FIRST (Playwright's own
