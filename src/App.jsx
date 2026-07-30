@@ -71,7 +71,9 @@ import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock
 import { DEV_PANEL_ENABLED } from "./lib/devPanelFlag";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
 import { canPerformAction } from "./lib/complianceState";
-import { toggleFavorite, mergeAccountFavorites } from "./lib/casinoFavorites";
+import { toggleFavorite } from "./lib/casinoFavorites";
+import { usePlayerSettings } from "./lib/usePlayerSettings.jsx";
+import { useRealityCheck } from "./lib/useRealityCheck";
 import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
 import { GAME_LAUNCH_STATUS, isLaunchActive } from "./lib/casinoGameLaunch";
@@ -156,41 +158,19 @@ class GameChunkErrorBoundary extends Component {
   render() { return this.state.hasError ? null : this.props.children; }
 }
 
-// Favorites persist across sessions in localStorage, keyed by the game's favId.
-const FAVS_KEY = "tribet_favs";
-const loadFavs = () => {
-  try { return new Set(JSON.parse(localStorage.getItem(FAVS_KEY) || "[]")); }
-  catch { return new Set(); }
-};
-const saveFavs = (set) => {
-  try { localStorage.setItem(FAVS_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
-};
-
-// Recently-played games (most-recent-first), capped — feeds the Recently
-// Played rail, a distinct personalized section from Favorites (see
-// CasinoCatalog.jsx). Persisted like favorites.
-const RECENT_KEY = "tribet_recent";
+// Favorites and recently-played are PLAYER SETTINGS now, stored per wallet and
+// synced across devices (see lib/usePlayerSettings.jsx). They used to be three
+// separate localStorage buckets here — a device bucket, a per-address bucket
+// simulating a backend, and a baseline ref to merge between them — because
+// there was no backend to key them to. There is one now: the settings store
+// owns the scoping (including seeding a newly-connected wallet from whatever
+// was chosen before connecting — see lib/playerSettingsStorage.js's
+// readAccountEnvelope), so none of that machinery lives here anymore.
+//
+// Recently-played is capped here as well as in the store (the store's cap is a
+// storage bound; this is the product's "how long is the rail" number).
 const RECENT_CAP = 12;
-const loadRecent = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
-  } catch { return []; }
-};
-const saveRecent = (list) => {
-  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* ignore */ }
-};
 
-// Mock "account favorites" — there's no real backend, so wallet-linked
-// favorites are simulated as a per-address localStorage bucket (easy to swap
-// for a real API later without touching the merge logic below).
-const loadAccountFavs = (address) => {
-  try { return new Set(JSON.parse(localStorage.getItem(`tribet_favs_${address}`) || "[]")); }
-  catch { return new Set(); }
-};
-const saveAccountFavs = (address, set) => {
-  try { localStorage.setItem(`tribet_favs_${address}`, JSON.stringify([...set])); } catch { /* ignore */ }
-};
 const PRED_ICONS = {
   Trending: Flame, Politics: Landmark, Crypto: Bitcoin, Sports: Trophy, Tech: Cpu, Economy: LineChart,
 };
@@ -547,7 +527,17 @@ export default function App() {
 
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
-  const [favs, setFavs] = useState(loadFavs);
+  // Derived from the settings store rather than held as its own state, so there
+  // is exactly one source of truth for favorites (see the note above the
+  // RECENT_CAP constant). `readSettings` is the synchronous escape hatch the
+  // rapid-click path needs — see toggleFav.
+  const { settings: playerSettings, readSettings, updateGroup: updateSettings } = usePlayerSettings();
+  // Delivers the reality-check reminder the player configured in Responsible
+  // Gaming — mounted once here, app-wide, since it is about time spent in the
+  // app rather than any one screen.
+  useRealityCheck();
+  const favs = useMemo(() => new Set(playerSettings.casino.favorites), [playerSettings.casino.favorites]);
+  const setFavorites = (set) => updateSettings("casino", { favorites: [...set] });
   // FIRST-FAVORITE CUE — a brief, one-shot attention pulse on the sidebar's
   // own Favorites row (see the sidebar builder below) the moment the very
   // first favorite is ever added, so a player who just favorited a game
@@ -558,19 +548,10 @@ export default function App() {
   // from a previous toggle rather than letting an old one stomp a new one.
   const [favoritesCue, setFavoritesCue] = useState(false);
   const favoritesCueTimeoutRef = useRef(null);
-  // Favorites captured before any wallet was ever connected on this device —
-  // the baseline every account merge starts from, so switching accounts
-  // never carries a *different* account's favorites forward (see the merge
-  // effect below). Captured once; never mutated after mount.
-  const deviceBaselineRef = useRef(loadFavs());
-  // While a wallet is connected, favorites are account-scoped (see toggleFav)
-  // and must not bleed back into the shared device bucket, or the next
-  // account to connect on this device would inherit them.
-  useEffect(() => { if (!wallet.isConnected) saveFavs(favs); }, [favs, wallet.isConnected]);
-  const [recentIds, setRecentIds] = useState(loadRecent);
-  useEffect(() => { saveRecent(recentIds); }, [recentIds]);
+  const recentIds = playerSettings.casino.recentlyPlayed;
   const trackRecent = (game) => {
-    setRecentIds((list) => [game.favId, ...list.filter((id) => id !== game.favId)].slice(0, RECENT_CAP));
+    const list = readSettings().casino.recentlyPlayed;
+    updateSettings("casino", { recentlyPlayed: [game.favId, ...list.filter((id) => id !== game.favId)].slice(0, RECENT_CAP) });
   };
 
   // Casino-only "just happened in this tab" round cache — feeds
@@ -1104,12 +1085,13 @@ export default function App() {
   const effectiveRecentIds = devMock.recentlyPlayedPreset === "empty" ? []
     : devMock.recentlyPlayedPreset === "populated" ? ALL_GAMES.slice(0, 4).map((g) => g.favId)
     : recentIds;
-  // Optimistic: the star fills / sidebar count updates immediately (setFavs is
-  // synchronous). "Sync in background" has nothing real to sync against yet —
-  // there's no favorites backend, only localStorage — so this always
-  // "succeeds"; the shape (a resolved promise + a revert path) is here so a
-  // real API can slot in later without changing the calling code or the
-  // never-navigate/never-a-modal contract.
+  // Optimistic: the star fills / sidebar count updates immediately, because the
+  // settings store applies writes to state and localStorage synchronously and
+  // only the network push is deferred (see lib/usePlayerSettings.jsx). The
+  // resolved-promise shape and the revert path below are kept as-is: the store
+  // reports sync failures through its own status surface (see
+  // SettingsSyncNotice) rather than by rejecting individual writes, so a
+  // favorite toggle still never navigates and never opens a modal.
   const syncFavorite = () => Promise.resolve(true);
   // Coalesces rapid toggling into one visible toast instead of stacking one
   // per click — dismissing whatever favorite-toggle toast is still showing
@@ -1148,24 +1130,18 @@ export default function App() {
     if (DEV_PANEL_ENABLED && getDevMockState().favoritesPreset !== "default") {
       setDevMockState({ favoritesPreset: "default" });
     }
-    // RAPID-CLICK FIX: functional setFavs (not a `toggleFavorite(favs, …)`
-    // read off the outer closure) so two clicks fired before React has
-    // re-rendered each still see the OTHER click's result as `prev`, not
-    // the same stale `favs` twice — otherwise a fast double-click could
-    // compute "adding" from the same stale snapshot twice instead of
-    // correctly alternating add/remove, and the toast/telemetry below
-    // would fire twice for what should net out to a single flip.
-    // `adding`/`next` are captured from inside the updater (which React
-    // runs synchronously on this dispatch) since the toast/persistence
-    // calls after this need to know which way the flip went and the
-    // resulting Set — not just schedule a render.
-    let adding, next;
-    setFavs((prev) => {
-      const result = toggleFavorite(prev, game.favId);
-      adding = result.adding;
-      next = result.next;
-      return next;
-    });
+    // RAPID-CLICK FIX: read through `readSettings()` (not the `favs` Set from
+    // the outer closure) so two clicks fired before React has re-rendered each
+    // see the OTHER click's result, not the same stale snapshot twice —
+    // otherwise a fast double-click could compute "adding" from the same stale
+    // snapshot twice instead of correctly alternating add/remove, and the
+    // toast/telemetry below would fire twice for what should net out to a
+    // single flip. `readSettings` returns the store's ref-backed current value,
+    // which every `updateSettings` call updates synchronously — the same
+    // guarantee the previous functional-setState form relied on.
+    const before = new Set(readSettings().casino.favorites);
+    const { next, adding } = toggleFavorite(before, game.favId);
+    setFavorites(next);
     // FIRST-FAVORITE CUE — fires only on the real 0 -> 1 transition, never
     // on the 2nd+ favorite (see the state's own comment above). 850ms
     // matches the spec's ~700-900ms coral-highlight window; the scale-pop
@@ -1179,10 +1155,10 @@ export default function App() {
       setFavoritesCue(true);
       favoritesCueTimeoutRef.current = setTimeout(() => setFavoritesCue(false), 850);
     }
-    // Once connected, favorites are account-scoped — persist to that
-    // account's own bucket so a different account connecting later on this
-    // device never inherits this one's picks (see the merge effect below).
-    if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, next);
+    // Persistence and account scoping are the settings store's job now — a
+    // connected wallet's favorites go to that wallet's bucket and sync up;
+    // a disconnected player's go to the device bucket (see
+    // lib/playerSettingsStorage.js). Nothing to do here.
     syncFavorite(game, adding).then((ok) => {
       if (ok) {
         showFavoriteToast("success", adding ? "Added to Favorites" : "Removed from Favorites", adding ? {
@@ -1190,59 +1166,36 @@ export default function App() {
         } : undefined);
         track(adding ? "casino_favorite_added" : "casino_favorite_removed", { gameId: game.favId, category: casinoCategory });
       } else {
-        let reverted;
-        setFavs((prev) => {
-          reverted = toggleFavorite(prev, game.favId).next;
-          return reverted;
-        });
-        if (wallet.isConnected && wallet.address) saveAccountFavs(wallet.address, reverted);
+        setFavorites(toggleFavorite(new Set(readSettings().casino.favorites), game.favId).next);
         showFavoriteToast("error", "Couldn't update Favorites. Try again.");
       }
     });
   };
 
-  // Favorites work fully offline (local-first) via `deviceBaselineRef` — the
-  // set captured before any wallet was ever connected. Every account merge
-  // starts from that same fixed baseline (not from whatever `favs` currently
-  // holds), so switching from account A to account B can never carry A's
-  // picks into B: on disconnect it reverts to the baseline, and on connect
-  // it's baseline ∪ that address's own bucket, always freshly computed.
+  // Favorites hydration used to live here: a device baseline unioned with a
+  // per-address localStorage bucket, recomputed on every connect. The settings
+  // store does all of that now (account scoping, seeding a first-time wallet
+  // from pre-connect choices, and reconciling with the server) — see
+  // lib/playerSettingsStorage.js and lib/usePlayerSettings.jsx.
   //
-  // SILENT HYDRATION FIX: this effect is ROUTINE BACKGROUND SYNC, not a
-  // user-triggered action — it runs on every mount where a wallet happens
-  // to already be connected (a restored session on initial load, a plain
-  // refresh, a hard refresh, reconnecting the same wallet, or switching to
-  // a different one), because `mergedForAddress` is a plain ref: it always
-  // starts back at `null` on a fresh page load, so the `=== wallet.address`
-  // guard below never has anything to compare against yet and this always
-  // takes the "first time merging this address" branch again. It used to
-  // also fire `toast.success("Synced N favorites from your wallet")` on
-  // that branch — meaning ANY reload with an already-connected wallet showed
-  // that toast, every single time, not just on a genuine first-ever
-  // connect. There is currently no separate "manual sync" action anywhere
-  // in this app (Favorites sync only ever happens through this one
-  // hydration effect) — every call site is routine background sync, so the
-  // success toast is removed here at the source rather than gated behind a
-  // parameter with only one caller that would always pass the same value.
-  // If a real manual "sync now" control is ever added, THAT call site is
-  // the one that should surface a success toast — this hydration path
-  // should not. The merge/dedup logic, `setFavs`, persistence and telemetry
-  // below are all unchanged; only the success notification is gone.
-  const mergedForAddress = useRef(null);
+  // What remains is the telemetry that effect also carried. Its
+  // once-per-address guard is kept for exactly the reason documented before:
+  // `connectedForAddress` is a plain ref that starts at `null` on every page
+  // load, so this fires on any mount with an already-connected wallet (restored
+  // session, plain refresh, reconnect, account switch) — which is why it stays
+  // silent. It emits an event; it must never surface a toast, because none of
+  // those cases is a user-initiated action. The one genuinely user-initiated
+  // sync in the app is the explicit "Sync to wallet" control (see
+  // SettingsSyncNotice), and that is where feedback belongs.
+  const connectedForAddress = useRef(null);
   useEffect(() => {
     if (!wallet.isConnected || !wallet.address) {
-      if (mergedForAddress.current) setFavs(deviceBaselineRef.current);
-      mergedForAddress.current = null;
+      connectedForAddress.current = null;
       return;
     }
-    if (mergedForAddress.current === wallet.address) return;
-    mergedForAddress.current = wallet.address;
+    if (connectedForAddress.current === wallet.address) return;
+    connectedForAddress.current = wallet.address;
     track("wallet_connected", { walletState: "connected" });
-    const account = loadAccountFavs(wallet.address);
-    const { merged } = mergeAccountFavorites(deviceBaselineRef.current, account);
-    setFavs(merged);
-    saveAccountFavs(wallet.address, merged);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.isConnected, wallet.address]);
 
   // network_switched fires on real chain changes only — not on the very

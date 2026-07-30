@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
+import { ODDS_FORMATS } from "@shared/playerSettings";
 import { cn } from "@/lib/utils";
+import { usePlayerSettings } from "@/lib/usePlayerSettings.jsx";
 
-const KEY = "polaris_odds_format";
 const OddsCtx = createContext(null);
 
 function gcd(a, b) { return b ? gcd(b, a % b) : a; }
@@ -28,12 +29,20 @@ export function formatOdds(dec, format) {
   return dec.toFixed(2);
 }
 
+// Odds format is a stored player setting now, not a local-only key — it follows
+// the wallet across devices (see lib/usePlayerSettings.jsx). No state of its
+// own: this is a view over one field of the settings store, which already
+// validates the value against ODDS_FORMATS on the way in and out.
 export function OddsFormatProvider({ children }) {
-  const [format, setFormat] = useState(() => {
-    try { return localStorage.getItem(KEY) || "decimal"; } catch { return "decimal"; }
-  });
-  useEffect(() => { try { localStorage.setItem(KEY, format); } catch { /* ignore */ } }, [format]);
-  const value = useMemo(() => ({ format, setFormat, fmtOdds: (d) => formatOdds(d, format) }), [format]);
+  const { settings, updateGroup } = usePlayerSettings();
+  const format = settings.preferences.oddsFormat;
+
+  const setFormat = useCallback((next) => {
+    if (!ODDS_FORMATS.includes(next)) return;
+    updateGroup("preferences", { oddsFormat: next });
+  }, [updateGroup]);
+
+  const value = useMemo(() => ({ format, setFormat, fmtOdds: (d) => formatOdds(d, format) }), [format, setFormat]);
   return <OddsCtx.Provider value={value}>{children}</OddsCtx.Provider>;
 }
 

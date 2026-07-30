@@ -7,9 +7,18 @@ import { User, ShieldCheck, ShieldAlert, LifeBuoy, LogOut, LogIn, Clock, AlertTr
 import { shortAddress } from "@/web3/useWallet";
 import { PROFILE_VARIANT, getAccountAuthMethod } from "@/lib/profileState";
 import { useCurrency, CURRENCIES } from "@/lib/currency";
+import { useOddsFormat } from "@/lib/odds";
+import { usePlayerSettings } from "@/lib/usePlayerSettings.jsx";
+import { SettingsSyncNotice } from "@/components/settings/SettingsSyncNotice";
 import { track } from "@/lib/telemetry";
 
 const AUTH_METHOD_LABEL = { wallet: "Wallet", unknown: "Unknown" };
+
+const NOTIFICATION_OPTIONS = [
+  { key: "betSettled", label: "Bet settled" },
+  { key: "largeWins", label: "Large wins" },
+  { key: "promotions", label: "Promotions and bonuses" },
+];
 
 // The one Account destination in the app — reached from ProfileMenu.jsx
 // (desktop popover) and the mobile menu's account section, both of which
@@ -28,6 +37,8 @@ export function AccountDialog({
 }) {
   const [tab, setTab] = useState("profile");
   const { currency, setCurrency } = useCurrency();
+  const { format: oddsFormat, setFormat: setOddsFormat } = useOddsFormat();
+  const { settings, updateGroup } = usePlayerSettings();
   const isLoggedIn = variant === PROFILE_VARIANT.LOGGED_IN;
   const isExpired = variant === PROFILE_VARIANT.SESSION_EXPIRED;
   const authMethod = getAccountAuthMethod({ authStatus, isConnected });
@@ -116,14 +127,13 @@ export function AccountDialog({
               </TabsContent>
 
               <TabsContent value="preferences" className="mt-3 space-y-3">
-                {/* The one real, persisted preference in this app (see
-                    lib/currency.jsx's CurrencyProvider, mounted app-wide in
-                    main.jsx) — reused here directly, not a second store (see
-                    PREFERENCES: "use existing setting state"). Theme,
-                    language and notification channels are all genuinely
-                    unsupported today (no toggle/i18n/notification-delivery
-                    system exists anywhere in this app) and are omitted
-                    rather than faked. */}
+                {/* Both of these are persisted per wallet now, not per browser
+                    (see lib/usePlayerSettings.jsx) — still read through their
+                    existing providers rather than a second store (see
+                    PREFERENCES: "use existing setting state"), those providers
+                    are just backed by the settings store now. Theme and
+                    language remain genuinely unsupported (no toggle, no i18n
+                    anywhere in this app) and stay omitted rather than faked. */}
                 <Field label="Display currency">
                   <select
                     value={currency}
@@ -134,6 +144,52 @@ export function AccountDialog({
                     {CURRENCIES.map((c) => <option key={c.id} value={c.id}>{c.id}</option>)}
                   </select>
                 </Field>
+
+                <Field label="Odds format">
+                  <select
+                    value={oddsFormat}
+                    onChange={(e) => { setOddsFormat(e.target.value); track("account_preference_changed", { preference: "oddsFormat" }); }}
+                    data-test-id="account-odds-format-select"
+                    className="rounded-md border bg-background px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="decimal">Decimal</option>
+                    <option value="fractional">Fractional</option>
+                    <option value="american">American</option>
+                  </select>
+                </Field>
+
+                {/* NOTIFICATIONS — saved, and honestly labelled as not yet
+                    delivered. No notification system exists in this app, so
+                    presenting these as live alerts would be the same fake-form
+                    pattern the Responsible Gaming dialog had to have removed.
+                    They are kept because the player's choice is worth
+                    remembering for when delivery ships. */}
+                <div className="space-y-2 rounded-lg border p-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                    <span className="text-sm font-semibold">Notifications</span>
+                    <span className="text-[11px] text-muted-foreground">Saved — not delivered yet.</span>
+                  </div>
+                  {NOTIFICATION_OPTIONS.map((option) => (
+                    <label key={option.key} className="flex min-h-9 items-center justify-between gap-3 text-sm text-muted-foreground">
+                      <span>{option.label}</span>
+                      <input
+                        type="checkbox"
+                        checked={settings.notifications[option.key]}
+                        onChange={(e) => {
+                          updateGroup("notifications", { [option.key]: e.target.checked });
+                          track("account_preference_changed", { preference: `notifications.${option.key}` });
+                        }}
+                        data-test-id={`account-notify-${option.key}`}
+                        className="size-4 accent-[var(--global-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </label>
+                  ))}
+                  <p className="text-xs text-muted-foreground" data-test-id="account-notifications-note">
+                    We'll use these once in-app notifications are available. Nothing is sent today.
+                  </p>
+                </div>
+
+                <SettingsSyncNotice />
               </TabsContent>
             </Tabs>
 
