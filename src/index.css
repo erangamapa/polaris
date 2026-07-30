@@ -344,6 +344,19 @@ html {
 }
 .fav-chip-pop { animation: fav-chip-pop 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
+/* Sidebar Favorites first-add cue — a one-shot attention pulse on the
+   sidebar's own Heart icon only (see Sidebar.jsx's `pulse` prop), not a new
+   lobby row, tooltip, or modal. Scale only; the coral fill/background tint
+   themselves are plain boolean-driven state, not transitioned/animated
+   properties, so only this keyframe is subject to (and already covered by)
+   this file's existing blanket prefers-reduced-motion rule below. */
+@keyframes sidebar-fav-pulse {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.sidebar-fav-pulse { animation: sidebar-fav-pulse 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+
 /* StatusBadge's own count-change pulse — subtle, single-shot, no bounce. */
 @keyframes status-badge-pulse {
   0% { transform: scale(1); }

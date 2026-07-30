@@ -548,6 +548,16 @@ export default function App() {
   const [balance, setBalance] = useState(250);
   const [activity, setActivity] = useState([]);
   const [favs, setFavs] = useState(loadFavs);
+  // FIRST-FAVORITE CUE — a brief, one-shot attention pulse on the sidebar's
+  // own Favorites row (see the sidebar builder below) the moment the very
+  // first favorite is ever added, so a player who just favorited a game
+  // from a card (with no lobby rail to look at anymore — see FAVORITES
+  // LOBBY REMOVAL) still has some signal for "this saved somewhere." Purely
+  // transient UI state — never persisted, never re-fires for the 2nd+
+  // favorite. `favoritesCueTimeoutRef` clears any still-pending timeout
+  // from a previous toggle rather than letting an old one stomp a new one.
+  const [favoritesCue, setFavoritesCue] = useState(false);
+  const favoritesCueTimeoutRef = useRef(null);
   // Favorites captured before any wallet was ever connected on this device —
   // the baseline every account merge starts from, so switching accounts
   // never carries a *different* account's favorites forward (see the merge
@@ -1156,6 +1166,19 @@ export default function App() {
       next = result.next;
       return next;
     });
+    // FIRST-FAVORITE CUE — fires only on the real 0 -> 1 transition, never
+    // on the 2nd+ favorite (see the state's own comment above). 850ms
+    // matches the spec's ~700-900ms coral-highlight window; the scale-pop
+    // keyframe itself (see index.css's `sidebar-fav-pulse`) is a separate,
+    // shorter animation that plays once while this stays true, and is
+    // already collapsed to ~0 duration under prefers-reduced-motion by this
+    // app's existing blanket reduced-motion rule — no extra check needed
+    // here for that part specifically.
+    if (adding && next.size === 1) {
+      if (favoritesCueTimeoutRef.current) clearTimeout(favoritesCueTimeoutRef.current);
+      setFavoritesCue(true);
+      favoritesCueTimeoutRef.current = setTimeout(() => setFavoritesCue(false), 850);
+    }
     // Once connected, favorites are account-scoped — persist to that
     // account's own bucket so a different account connecting later on this
     // device never inherits this one's picks (see the merge effect below).
@@ -1259,7 +1282,7 @@ export default function App() {
       const personalItems = CASINO_PERSONAL_DESTINATIONS.map((d) =>
         d.kind === "action"
           ? { id: d.id, label: d.label, icon: d.icon, action: openHistory }
-          : { id: d.id, label: d.label, icon: d.icon, count: personalCount(d.id) }
+          : { id: d.id, label: d.label, icon: d.icon, count: personalCount(d.id), pulse: d.id === "Favorites" && favoritesCue }
       );
       return {
         title: "Casino",

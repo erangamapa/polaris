@@ -126,9 +126,13 @@ test.describe("Casino placeholder fixtures — ordering and overflow", () => {
 });
 
 test.describe("Casino placeholder fixtures — contextual sections stay genuine", () => {
-  test("Favorites rail/page receive no placeholders even with the flag on", async ({ page }) => {
+  // FAVORITES LOBBY REMOVAL: there is no more favorites-rail on the Lobby at
+  // all (Favorites is a dedicated sidebar destination now) — nothing left
+  // to check there; the dedicated Favorites page itself is still real and
+  // still must never fill its empty state with placeholders.
+  test("Favorites page receives no placeholders even with the flag on", async ({ page }) => {
     await gotoLobbyWithPlaceholders(page);
-    await expect(page.locator('[data-test-id="favorites-rail"] [data-placeholder="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-test-id="favorites-rail"]')).toHaveCount(0);
 
     await page.goto("/casino/favorites");
     await page.waitForTimeout(200);

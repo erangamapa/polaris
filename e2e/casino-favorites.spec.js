@@ -54,7 +54,12 @@ function heartIn(page, railTestId, gameTestId) {
 }
 
 test.describe("Favorites toggle — core state flow", () => {
-  test("unfavorited card: heart activates, count/rail update, no navigation, correct toast", async ({ page }) => {
+  // FAVORITES LOBBY REMOVAL: there is no more favorites-rail — Favorites is
+  // a dedicated sidebar destination now (see casino-lobby-visual-refresh.
+  // spec.js's own "Favorites section" describe block for the "reachable and
+  // launchable from there" coverage). This test now checks the sidebar
+  // count directly instead of a rail that no longer exists.
+  test("unfavorited card: heart activates, sidebar count updates, no navigation, correct toast", async ({ page }) => {
     await gotoLobby(page);
     const heart = heartIn(page, "originals-rail", "game-card-casino-dice");
     await expect(heart).toHaveAttribute("aria-pressed", "false");
@@ -66,11 +71,10 @@ test.describe("Favorites toggle — core state flow", () => {
     // 2 & 3. Canonical state + icon update immediately.
     await expect(heart).toHaveAttribute("aria-pressed", "true");
     await expect(heart.locator("svg")).toHaveClass(/fill-\[var\(--favorite-heart\)\]/);
-    // 4. Count updates immediately.
-    const favoritesRail = page.locator('[data-test-id="favorites-rail"]');
-    await expect(favoritesRail.getByText(/^1 game$/)).toBeVisible();
-    // 5. Favorites rail includes the game.
-    await expect(favoritesRail.locator('[data-test-id="game-card-casino-dice"]')).toBeVisible();
+    // 4. Sidebar count updates immediately.
+    await expect(page.locator('[data-test-id="sidebar-favorites-count"]').getByText("1", { exact: true })).toBeVisible();
+    // 5. There is still no favorites-rail anywhere in the Lobby.
+    await expect(page.locator('[data-test-id="favorites-rail"]')).toHaveCount(0);
     // 7. Toast reflects the real, final state.
     await expect(page.getByText("Added to Favorites")).toBeVisible();
   });
@@ -85,7 +89,8 @@ test.describe("Favorites toggle — core state flow", () => {
 
     expect(page.url()).not.toContain("play=");
     await expect(heart).toHaveAttribute("aria-pressed", "false");
-    await expect(page.locator('[data-test-id="favorites-rail"]')).toBeHidden();
+    // Sidebar count badge hides entirely at zero (existing convention).
+    await expect(page.locator('[data-test-id="sidebar-favorites-count"] [aria-label*="favorite" i]')).toHaveCount(0);
     await expect(page.getByText("Removed from Favorites")).toBeVisible();
   });
 
@@ -118,8 +123,10 @@ test.describe("Favorites toggle — click isolation", () => {
     await page.waitForTimeout(150);
     expect(page.url()).toContain("/casino/lobby");
     expect(page.url()).not.toContain("play=");
-    // The underlying game link/button never received the click either.
-    await expect(page.locator('[data-test-id="game-card-casino-dice"]')).toHaveCount(2); // original + now-favorited rail copy
+    // The underlying game link/button never received the click either — and
+    // FAVORITES LOBBY REMOVAL means there's no favorites-rail to duplicate
+    // the card into anymore, so exactly one copy is the correct count now.
+    await expect(page.locator('[data-test-id="game-card-casino-dice"]')).toHaveCount(1);
   });
 
   test("keyboard activation (Enter and Space) toggles the heart", async ({ page }) => {
