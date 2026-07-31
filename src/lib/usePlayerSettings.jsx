@@ -75,6 +75,10 @@ export function PlayerSettingsProvider({ children }) {
   // — being asked to sign on every toggle is exactly the nagging this design
   // exists to avoid. Cleared only by an explicit opt-in (see enableSync).
   const declinedRef = useRef(false);
+  // Spent as soon as ONE automatic signature prompt has been raised for this
+  // wallet on this page load, whatever its outcome. Only an explicit user
+  // action clears it (see enableSync) — nothing automatic ever re-arms it.
+  const autoSignInUsedRef = useRef(false);
   const addressRef = useRef(address);
 
   const apply = useCallback((next, { local = null } = {}) => {
@@ -162,14 +166,29 @@ export function PlayerSettingsProvider({ children }) {
 
     if (await push(toPush) !== null) return;
 
-    // 401 — no live session. Ask for one signature, unless the player already
-    // said no, then retry exactly once.
-    if (declinedRef.current) {
-      setSyncState(SYNC_STATE.LOCAL);
+    // A 401 here means no live session. AT MOST ONE automatic wallet prompt is
+    // ever raised per page load — `autoSignInUsedRef` is what guarantees it.
+    //
+    // Without that guarantee this degenerates into a signature prompt on every
+    // single settings change, and it is NOT a hypothetical: if the server
+    // cannot verify the session cookie it just issued (a deployment with no
+    // SESSION_SECRET gives each serverless instance its own ephemeral signing
+    // key, so a cookie signed by one instance is rejected by the next), every
+    // push 401s, and re-prompting on each one turns a background save into an
+    // endless stream of wallet popups. The client must not be able to do that
+    // to a player no matter how the server misbehaves.
+    //
+    // So: one automatic attempt. If a signature is obtained and the very next
+    // push STILL 401s, the session is not sticking — stop, stay local, and let
+    // the player decide via the explicit "Sync to wallet" control.
+    if (declinedRef.current || autoSignInUsedRef.current) {
+      setSyncState(declinedRef.current ? SYNC_STATE.DECLINED : SYNC_STATE.ERROR);
       return;
     }
+    autoSignInUsedRef.current = true;
+
     if (!(await signIn(current))) return;
-    await push(envelopeRef.current);
+    if (await push(envelopeRef.current) === null) setSyncState(SYNC_STATE.ERROR);
   }, [push, signIn]);
 
   const schedulePush = useCallback(() => {
@@ -193,9 +212,14 @@ export function PlayerSettingsProvider({ children }) {
   const enableSync = useCallback(async () => {
     const current = addressRef.current;
     if (!current) return false;
+    // The one and only thing that re-arms automatic syncing, precisely because
+    // it is a deliberate press of a button rather than a background retry.
     declinedRef.current = false;
+    autoSignInUsedRef.current = true;
     if (!(await signIn(current))) return false;
-    return (await push(envelopeRef.current)) !== null;
+    const saved = (await push(envelopeRef.current)) !== null;
+    if (!saved) setSyncState(SYNC_STATE.ERROR);
+    return saved;
   }, [push, signIn]);
 
   // Wallet changed (connected, disconnected, or switched account): swap to that
@@ -204,6 +228,7 @@ export function PlayerSettingsProvider({ children }) {
   useEffect(() => {
     addressRef.current = address;
     declinedRef.current = false;
+    autoSignInUsedRef.current = false;
 
     const local = readAccountEnvelope(address);
     envelopeRef.current = local;
