@@ -66,6 +66,11 @@ export function PlayerSettingsProvider({ children }) {
   // tell the player the truth when it does not (see api/_kv.js's fallback) —
   // never claim a save that will not survive.
   const [persistent, setPersistent] = useState(true);
+  // Whether signing in can succeed on this deployment at all (see
+  // api/auth/session.js). Starts true so nothing is prematurely disabled before
+  // the first check answers; flipped false only on an explicit "no".
+  const [sessionsAvailable, setSessionsAvailable] = useState(true);
+  const sessionsAvailableRef = useRef(true);
 
   const envelopeRef = useRef(envelope);
   envelopeRef.current = envelope;
@@ -181,6 +186,13 @@ export function PlayerSettingsProvider({ children }) {
     // So: one automatic attempt. If a signature is obtained and the very next
     // push STILL 401s, the session is not sticking — stop, stay local, and let
     // the player decide via the explicit "Sync to wallet" control.
+    // Never ask for a signature the server cannot honour (see
+    // api/auth/session.js's sessionsAvailable) — the player would approve a
+    // wallet prompt and get nothing for it.
+    if (!sessionsAvailableRef.current) {
+      setSyncState(SYNC_STATE.LOCAL);
+      return;
+    }
     if (declinedRef.current || autoSignInUsedRef.current) {
       setSyncState(declinedRef.current ? SYNC_STATE.DECLINED : SYNC_STATE.ERROR);
       return;
@@ -211,7 +223,7 @@ export function PlayerSettingsProvider({ children }) {
   // declined flag — hence a deliberate user action, never inferred.
   const enableSync = useCallback(async () => {
     const current = addressRef.current;
-    if (!current) return false;
+    if (!current || !sessionsAvailableRef.current) return false;
     // The one and only thing that re-arms automatic syncing, precisely because
     // it is a deliberate press of a button rather than a background retry.
     declinedRef.current = false;
@@ -242,6 +254,11 @@ export function PlayerSettingsProvider({ children }) {
     (async () => {
       const session = await jsonFetch('/api/auth/session');
       if (cancelled) return;
+
+      if (typeof session.body?.sessionsAvailable === 'boolean') {
+        sessionsAvailableRef.current = session.body.sessionsAvailable;
+        setSessionsAvailable(session.body.sessionsAvailable);
+      }
 
       // A session for a DIFFERENT address is not ours to use — the player
       // switched accounts in their wallet. Left alone, no prompt.
@@ -294,12 +311,14 @@ export function PlayerSettingsProvider({ children }) {
     syncState,
     isSignedIn,
     persistent,
+    sessionsAvailable,
     enableSync,
-    // True when there is something worth syncing but it is only on this device
-    // — what the UI needs to decide whether offering "sync to my wallet" is
-    // even meaningful.
-    canOfferSync: Boolean(address) && !isSignedIn && hasStoredSettings(envelope.data),
-  }), [envelope.data, readSettings, updateGroup, syncState, isSignedIn, persistent, enableSync, address]);
+    // True when there is something worth syncing, it is only on this device,
+    // AND the deployment can actually complete a sign-in — offering "sync to my
+    // wallet" when the server cannot hold a nonce would be offering a button
+    // that always fails.
+    canOfferSync: Boolean(address) && !isSignedIn && sessionsAvailable && hasStoredSettings(envelope.data),
+  }), [envelope.data, readSettings, updateGroup, syncState, isSignedIn, persistent, sessionsAvailable, enableSync, address]);
 
   return <SettingsCtx.Provider value={value}>{children}</SettingsCtx.Provider>;
 }
@@ -315,6 +334,7 @@ export function usePlayerSettings() {
     syncState: SYNC_STATE.LOCAL,
     isSignedIn: false,
     persistent: true,
+    sessionsAvailable: true,
     enableSync: async () => false,
     canOfferSync: false,
   };

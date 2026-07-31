@@ -14,7 +14,7 @@ import { track } from "@/lib/telemetry";
 // lie in at least three of them.
 export function SettingsSyncNotice() {
   const { isConnected } = useAccount();
-  const { syncState, isSignedIn, persistent, canOfferSync, enableSync } = usePlayerSettings();
+  const { syncState, isSignedIn, persistent, sessionsAvailable, canOfferSync, enableSync } = usePlayerSettings();
 
   const syncNow = async () => {
     track("settings_sync_requested", {});
@@ -28,6 +28,17 @@ export function SettingsSyncNotice() {
     return (
       <Notice icon={CloudOff} testId="settings-sync-local">
         Saved on this device. Connect a wallet to keep these settings across devices.
+      </Notice>
+    );
+  }
+
+  // This deployment has no shared store, so signing in cannot succeed at all
+  // (see api/auth/session.js). Said plainly, with no sync button offered —
+  // there is nothing the player could do here that would work.
+  if (!sessionsAvailable) {
+    return (
+      <Notice icon={CloudOff} testId="settings-sync-unavailable">
+        Saved on this device. Cross-device sync isn't set up on this deployment yet.
       </Notice>
     );
   }
