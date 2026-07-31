@@ -35,12 +35,15 @@ export default function App() {
           <span className="brand-mark">✦</span>
           <h1>MAGE KENO</h1>
         </div>
-        <p className="tagline">Pick up to 10 · 20 fireballs · Match to win</p>
+        <p className="tagline">
+          Pick up to 10 goblins · 20 fireballs · Match hits to stun them and win
+        </p>
       </header>
 
       <main className="stage">
         <section className="arena">
-          <div className="arena-frame">
+          <div className={`arena-frame${impactPlaying ? ' has-storm' : ''}`}>
+            <StaffImpact active={impactPlaying} onEnded={onImpactEnded} />
             <MageCanvas
               gridRef={gridRef}
               selected={game.selected}
@@ -50,7 +53,7 @@ export default function App() {
               onFireballImpact={game.onFireballImpact}
               onSequenceComplete={game.onSequenceComplete}
             />
-            <div className={`grid-panel${impactPlaying ? ' is-impact' : ''}`}>
+            <div className="grid-panel">
               <div className="keno-grid-slot">
                 <KenoGrid
                   gridRef={gridRef}
@@ -59,7 +62,6 @@ export default function App() {
                   disabled={game.phase === 'playing'}
                   onToggle={game.toggleNumber}
                 />
-                <StaffImpact active={impactPlaying} onEnded={onImpactEnded} />
               </div>
             </div>
           </div>

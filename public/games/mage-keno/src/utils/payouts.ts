@@ -59,6 +59,22 @@ export function payoutRowsForSpots(spots: number): { hits: number; mult: number 
   });
 }
 
+/**
+ * Always show hits 1–10. Multipliers come from the current pick-count table;
+ * hits above your pick count are marked impossible.
+ */
+export function payoutRowsForDisplay(
+  spots: number,
+): { hits: number; mult: number; possible: boolean }[] {
+  const n = spots >= 1 ? Math.min(MAX_PICKS, Math.floor(spots)) : MAX_PICKS;
+  const table = PAYOUTS_BY_SPOTS[n] ?? {};
+  return Array.from({ length: MAX_PICKS }, (_, i) => {
+    const hits = i + 1;
+    const possible = hits <= n;
+    return { hits, mult: possible ? (table[hits] ?? 0) : 0, possible };
+  });
+}
+
 export function pickRandomNumbers(count: number, max = GRID_SIZE): number[] {
   const pool = Array.from({ length: max }, (_, i) => i + 1);
   for (let i = pool.length - 1; i > 0; i--) {

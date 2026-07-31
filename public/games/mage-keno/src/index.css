@@ -106,9 +106,10 @@ body {
 
 .tagline {
   margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 13px;
+  color: #f6d6e6;
   letter-spacing: 0.06em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .stage {
@@ -158,17 +159,13 @@ body {
 
 .grid-panel {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   /* Reserve left column for mage — keeps numbers clear of character */
   padding: 14px 16px 10px clamp(240px, 42vw, 400px);
   min-height: 0;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-}
-
-.grid-panel.is-impact .keno-grid {
-  visibility: hidden;
 }
 
 .keno-grid-slot {
@@ -184,16 +181,16 @@ body {
   max-width: none;
 }
 
+/* Firestorm behind the mage (chroma key lets it show through) */
 .staff-impact {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 0;
   display: grid;
   place-items: center;
-  background: #0a0408;
+  background: #12040a;
   overflow: hidden;
   pointer-events: none;
-  border-radius: 10px;
 }
 
 .staff-impact-video {
@@ -201,6 +198,14 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  filter: saturate(1.1) brightness(0.92);
+}
+
+.arena-frame.has-storm {
+  box-shadow:
+    0 0 0 2px #4a0818,
+    0 0 36px rgba(255, 100, 30, 0.45),
+    inset 0 0 40px rgba(0, 0, 0, 0.35);
 }
 
 .keno-grid {
@@ -353,32 +358,35 @@ body {
 }
 
 .payout-panel {
-  display: flex;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   border: 2px solid rgba(240, 193, 75, 0.55);
   border-top: 1px solid rgba(240, 193, 75, 0.35);
   border-radius: 0;
   background: var(--panel);
-  padding: 6px 12px;
+  padding: 8px 12px;
   box-shadow: inset 0 0 20px rgba(224, 24, 106, 0.15);
-  overflow-x: auto;
+  overflow: hidden;
   flex: 0 0 auto;
   margin: 0;
+  min-height: 64px;
 }
 
 .payout-label {
-  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 64px;
+  width: 88px;
+  min-width: 88px;
+  max-width: 88px;
 }
 
 .payout-title {
   margin: 0;
   font-family: Cinzel, serif;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--gold);
   letter-spacing: 0.08em;
   white-space: nowrap;
@@ -386,26 +394,35 @@ body {
 
 .payout-sub {
   margin: 0;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.payout-spots {
+  display: inline-block;
+  min-width: 1.25em;
+  text-align: right;
+  color: var(--gold);
+  font-weight: 700;
 }
 
 .payout-table {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   font-size: 11px;
-  flex: 1;
   min-width: 0;
+  width: 100%;
 }
 
 .payout-table-line {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
+  width: 100%;
 }
 
 .payout-row {
@@ -414,12 +431,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 6px 8px;
+  padding: 6px 4px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  min-width: 44px;
-  flex: 1 1 0;
+  min-width: 0;
 }
 
 .payout-row.is-zero {
@@ -431,29 +447,33 @@ body {
 }
 
 .payout-hit {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 .payout-mult {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .bet-bar {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 10px 12px;
-  align-items: end;
-  padding: 10px 12px;
+  gap: 8px 10px;
+  align-items: stretch;
+  padding: 8px 12px;
   border: 2px solid rgba(240, 193, 75, 0.45);
   border-top: 1px solid rgba(240, 193, 75, 0.3);
   border-radius: 0 0 12px 12px;
   background: var(--panel);
   margin: 0;
   flex: 0 0 auto;
+  min-height: 64px;
 }
 
 .bet-row-stats {
@@ -474,8 +494,9 @@ body {
 .meta-pill {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 10px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -483,14 +504,16 @@ body {
 }
 
 .meta-label {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .meta-value {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .btn-secondary,
@@ -504,11 +527,14 @@ body {
 }
 
 .btn-secondary {
-  padding: 10px 14px;
+  padding: 8px 14px;
   background: linear-gradient(180deg, #5a2040, #2a0c1c);
   color: var(--text);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -525,14 +551,20 @@ body {
 .bet-amount {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px;
   flex: 1 1 auto;
   min-width: 120px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(240, 193, 75, 0.35);
+  box-shadow: inset 0 0 18px rgba(224, 24, 106, 0.12);
 }
 
 .bet-stepper {
   display: grid;
-  grid-template-columns: 40px 1fr 40px;
+  grid-template-columns: 36px 1fr 36px;
   gap: 6px;
   align-items: center;
 }
@@ -540,35 +572,86 @@ body {
 .bet-stepper input {
   width: 100%;
   min-width: 0;
+  appearance: textfield;
+  -moz-appearance: textfield;
   font-family: inherit;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-align: center;
-  padding: 10px 6px;
+  padding: 6px 4px;
   border-radius: 8px;
-  border: 2px solid #000;
-  background: #0a0408;
-  color: var(--text);
+  border: 1.5px solid rgba(240, 193, 75, 0.55);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(90, 20, 48, 0.9) 0%, transparent 70%),
+    linear-gradient(180deg, #2a0c1a 0%, #12040a 100%);
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(240, 193, 75, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 160, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45);
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.bet-stepper input::-webkit-outer-spin-button,
+.bet-stepper input::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bet-stepper input:hover:not(:disabled) {
+  border-color: rgba(240, 193, 75, 0.85);
+}
+
+.bet-stepper input:focus-visible {
+  border-color: var(--gold);
+  box-shadow:
+    0 0 0 2px rgba(224, 24, 106, 0.35),
+    0 0 14px rgba(240, 193, 75, 0.25),
+    inset 0 1px 0 rgba(255, 220, 160, 0.1);
+}
+
+.bet-stepper input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .btn-step {
-  height: 42px;
-  background: linear-gradient(180deg, #4a1830, #220812);
+  height: 34px;
+  background: linear-gradient(180deg, #6a2040 0%, #3a1024 45%, #1a0810 100%);
   color: var(--gold);
-  font-size: 18px;
+  font-size: 17px;
+  border: 1.5px solid rgba(240, 193, 75, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 230, 0.12),
+    0 2px 0 #0a0206;
+}
+
+.btn-step:hover:not(:disabled) {
+  filter: brightness(1.12);
+  border-color: rgba(240, 193, 75, 0.8);
 }
 
 .btn-bet {
-  min-width: 120px;
-  min-height: 52px;
-  padding: 12px 22px;
-  font-size: 16px;
+  min-width: 110px;
+  min-height: 0;
+  height: 100%;
+  padding: 8px 18px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #041a0c;
   background: linear-gradient(180deg, #7dffb0 0%, var(--green) 45%, var(--green-deep) 100%);
   box-shadow:
-    0 4px 0 #065c34,
-    0 0 16px rgba(57, 217, 138, 0.45);
+    0 3px 0 #065c34,
+    0 0 14px rgba(57, 217, 138, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-bet:hover:not(:disabled) {
@@ -626,24 +709,30 @@ body {
   }
 
   .top-bar {
-    margin-bottom: 0;
-    line-height: 1;
+    margin-bottom: 2px;
+    line-height: 1.15;
+    padding: 2px 0 1px;
   }
 
   .brand {
-    gap: 6px;
+    gap: 7px;
   }
 
   .brand-mark {
-    font-size: 12px;
+    font-size: 15px;
   }
 
   .brand h1 {
-    font-size: clamp(13px, 3.6vw, 17px);
+    font-size: clamp(16px, 4.4vw, 20px);
   }
 
   .tagline {
-    display: none;
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    line-height: 1.25;
+    color: #f6d6e6;
   }
 
   .stage {
@@ -669,51 +758,55 @@ body {
 
   .payout-panel {
     flex: 0 0 auto;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    padding: 4px 6px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    padding: 6px 8px;
     gap: 6px;
-    overflow-x: visible;
-    border-width: 1px;
+    overflow: hidden;
+    border-width: 2px;
+    min-height: 52px;
   }
 
   .payout-label {
-    font-size: 8px;
-    white-space: nowrap;
-    min-width: 0;
-    justify-content: center;
+    width: 64px;
+    min-width: 64px;
+    max-width: 64px;
   }
 
   .payout-title {
-    font-size: 11px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
   }
 
   .payout-sub {
     display: block;
-    font-size: 8px;
+    font-size: 9px;
+    white-space: nowrap;
+    max-width: none;
+    line-height: 1.2;
   }
 
   .payout-table {
-    gap: 3px;
+    gap: 4px;
   }
 
   .payout-table-line {
-    gap: 4px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3px;
   }
 
   .payout-row {
     min-width: 0;
-    flex: 1 1 0;
-    padding: 3px 2px;
-    border-radius: 5px;
+    padding: 4px 1px;
+    border-radius: 6px;
   }
 
   .payout-hit {
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .payout-mult {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .mage-canvas-wrap {
@@ -725,11 +818,11 @@ body {
 
   .grid-panel {
     position: relative;
-    z-index: 1;
+    z-index: 3;
     flex: 0 0 auto;
     width: 100%;
     min-height: 0;
-    padding: 0 6px 6px;
+    padding: 0 4px 4px;
     justify-content: center;
     align-items: flex-end;
   }
@@ -740,16 +833,16 @@ body {
     margin: 0;
   }
 
-  /* True circles: width-driven 8×5 board (frees vertical room for mage) */
+  /* Tighter board so the mage band above gets more room */
   .keno-grid {
     grid-template-columns: repeat(8, minmax(0, 1fr));
     aspect-ratio: 8 / 5;
     width: 100%;
     height: auto;
     max-width: 100%;
-    max-height: 100%;
+    max-height: min(34dvh, 100%);
     margin: 0 auto;
-    gap: 4px;
+    gap: 3px;
   }
 
   .keno-ball {
@@ -764,73 +857,77 @@ body {
     font-size: clamp(12px, 3.6vw, 16px);
   }
 
-  /* Balance · Picks · Bet USD on one row; actions below */
+  /* Balance · Picks · Bet USD on one row; actions below — same visual weight as payouts */
   .bet-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
-    padding: 4px 6px;
+    gap: 6px;
+    padding: 7px 8px;
+    min-height: 0;
   }
 
   .bet-row-stats {
     width: 100%;
-    gap: 4px;
+    gap: 6px;
   }
 
   .meta-pill {
     flex: 1 1 0;
     min-width: 0;
-    padding: 4px 5px;
-    gap: 1px;
+    padding: 6px 7px;
+    gap: 2px;
   }
 
   .meta-label {
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .meta-value {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .bet-amount {
     flex: 1.4 1 0;
     min-width: 0;
-    gap: 1px;
+    gap: 2px;
+    padding: 6px 7px;
   }
 
   .bet-stepper {
-    grid-template-columns: 30px 1fr 30px;
-    gap: 3px;
+    grid-template-columns: 32px 1fr 32px;
+    gap: 4px;
   }
 
   .bet-stepper input {
-    font-size: 13px;
+    font-size: 14px;
     padding: 5px 3px;
   }
 
   .btn-step {
-    height: 30px;
-    font-size: 15px;
+    height: 32px;
+    font-size: 16px;
   }
 
   .bet-row-actions {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr 1.35fr;
-    gap: 4px;
+    gap: 6px;
+    min-height: 40px;
   }
 
   .btn-secondary {
-    padding: 7px 4px;
-    font-size: 10px;
+    padding: 8px 6px;
+    font-size: 11px;
   }
 
   .btn-bet {
     min-width: 0;
-    min-height: 36px;
+    min-height: 40px;
+    height: auto;
     width: 100%;
-    padding: 7px 8px;
-    font-size: 13px;
+    padding: 8px 10px;
+    font-size: 14px;
   }
 }
 

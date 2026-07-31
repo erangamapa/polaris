@@ -12,7 +12,7 @@ type Props = {
   gridRef: RefObject<HTMLDivElement | null>;
   selected: Set<number>;
   activeDraw: { id: number; numbers: number[] } | null;
-  /** True after the staff-impact overlay finishes (or is skipped). */
+  /** True after the staff-impact firestorm finishes (or is skipped). */
   impactComplete: boolean;
   onStaffHit: () => void;
   onFireballImpact: (n: number) => void;
@@ -33,6 +33,8 @@ const REVEAL_INTERVAL_MS = 280;
 const CAST_STAFF_HIT_SEC = 2.9;
 /** Keep playing cast this long after the hit before the impact overlay. */
 const CAST_AFTER_HIT_HOLD_SEC = 1;
+/** Cast clip speed-up (1 = normal; another +40% on prior 1.82×). */
+const CAST_PLAYBACK_RATE = 2.55;
 
 export function MageCanvas({
   gridRef,
@@ -254,6 +256,7 @@ export function MageCanvas({
     videoSeekingRef.current = false;
     idle?.pause();
     cast.loop = false;
+    cast.playbackRate = CAST_PLAYBACK_RATE;
     cast.currentTime = 0;
     activeVideoRef.current = cast;
 
@@ -269,6 +272,7 @@ export function MageCanvas({
       cast.pause();
       castingRef.current = false;
       if (idle) {
+        idle.playbackRate = 1;
         activeVideoRef.current = idle;
         idle.play().catch(() => {});
       }
@@ -301,6 +305,7 @@ export function MageCanvas({
     castDoneRef.current = true;
     cast?.pause();
     if (idle) {
+      idle.playbackRate = 1;
       activeVideoRef.current = idle;
       idle.play().catch(() => {});
     }
@@ -450,17 +455,26 @@ export function MageCanvas({
       let mageY: number;
 
       if (portrait) {
-        // Fill all space above the number grid — no dead gap
+        // Fill the full band between top edge and numbers — as big as possible
+        // without clipping the hat/fire or covering the grid.
         const gridTop = getGridTop();
-        const bandH = Math.max(gridTop - 6, canvas.height * 0.45);
-        const boxW = canvas.width * 0.99;
-        const boxH = bandH * 0.99;
-        const scale =
-          srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1;
-        mageW = srcW > 0 ? srcW * scale : boxW;
-        mageH = srcH > 0 ? srcH * scale : boxH;
+        const padTop = Math.max(6, canvas.height * 0.01);
+        const footY = Math.max(padTop + 80, gridTop - 2);
+        const bandH = Math.max(80, footY - padTop);
+        // Height-first: ignore width so we never shrink for side margins.
+        // Extra scale crops green-screen letterbox (mostly under the feet).
+        const scale = srcH > 0 ? (bandH / srcH) * 1.212 : 1; // ~5% smaller than 1.276
+        mageW = srcW > 0 ? srcW * scale : canvas.width;
+        mageH = srcH > 0 ? srcH * scale : bandH;
         mageX = (canvas.width - mageW) / 2;
-        mageY = Math.max(0, bandH - mageH);
+        const overflow = Math.max(0, mageH - bandH);
+        // Crop ~20% of overflow from top (empty sky), rest from under feet
+        mageY = padTop - overflow * 0.2;
+        if (mageY + mageH > gridTop) mageY = gridTop - mageH;
+        // Cap top crop so hat/fire stay mostly in frame (no shrink-back)
+        if (mageY < padTop - overflow * 0.28) mageY = padTop - overflow * 0.28;
+        // Clear feet + fire from the number balls
+        mageY -= Math.max(22, canvas.height * 0.028);
       } else {
         // Desktop: large mage on the left edge of the frame
         const boxW = canvas.width * 0.42;
@@ -475,8 +489,18 @@ export function MageCanvas({
       }
 
       // Cast clip is brighter green; idle uses similar key
+      // Cast slam needs aggressive keying — green pockets around staff/fire
       const key = castingRef.current
-        ? { keyR: 22, keyG: 223, keyB: 13 }
+        ? {
+            keyR: 20,
+            keyG: 220,
+            keyB: 12,
+            similarity: 0.58,
+            blend: 0.04,
+            despill: 0.92,
+            expandPasses: 6,
+            aggressive: true,
+          }
         : { keyR: 25, keyG: 225, keyB: 13 };
 
       if (source && off && srcW > 0 && keyLive) {
@@ -550,6 +574,7 @@ export function MageCanvas({
           cast.pause();
           castingRef.current = false;
           if (idle) {
+            idle.playbackRate = 1;
             activeVideoRef.current = idle;
             idle.play().catch(() => {});
           }
