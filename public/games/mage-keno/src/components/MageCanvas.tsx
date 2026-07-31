@@ -29,12 +29,10 @@ const MAGE_IMG_SRC = './assets/mage.png';
 const FIREBALL_WHOOSH_SRC = './assets/fireball-whoosh.mp3';
 
 const REVEAL_INTERVAL_MS = 280;
-/** Staff strikes the ground in mage-cast.mp4 around this timestamp. */
-const CAST_STAFF_HIT_SEC = 2.9;
-/** Keep playing cast this long after the hit before the impact overlay. */
-const CAST_AFTER_HIT_HOLD_SEC = 1;
-/** Cast clip speed-up (1 = normal; another +40% on prior 1.82×). */
+/** Cast clip speed-up (1 = normal). */
 const CAST_PLAYBACK_RATE = 2.55;
+/** Drop this many seconds off the end of mage-cast before the firestorm. */
+const CAST_TRIM_END_SEC = 0.8;
 
 export function MageCanvas({
   gridRef,
@@ -260,41 +258,46 @@ export function MageCanvas({
     cast.currentTime = 0;
     activeVideoRef.current = cast;
 
-    let hitHandled = false;
-    const cutAt = CAST_STAFF_HIT_SEC + CAST_AFTER_HIT_HOLD_SEC;
+    let finished = false;
 
-    const handleStaffHit = () => {
-      if (hitHandled) return;
-      hitHandled = true;
+    const finishCast = () => {
+      if (finished) return;
+      finished = true;
       staffHitRef.current = true;
       cast.removeEventListener('ended', onEnded);
       cast.removeEventListener('timeupdate', onTimeUpdate);
       cast.pause();
       castingRef.current = false;
+      // Resume idle under the firestorm so there's no frozen staff pose
       if (idle) {
         idle.playbackRate = 1;
         activeVideoRef.current = idle;
         idle.play().catch(() => {});
       }
-      // Hold reveals until impact overlay finishes
       waitingImpactRef.current = true;
       castDoneRef.current = false;
       callbacksRef.current.onStaffHit();
     };
 
     const onTimeUpdate = () => {
-      if (cast.currentTime >= cutAt) handleStaffHit();
+      // Cut the trailing beat, then start the firestorm immediately
+      if (
+        Number.isFinite(cast.duration) &&
+        cast.duration > CAST_TRIM_END_SEC + 0.25 &&
+        cast.currentTime >= cast.duration - CAST_TRIM_END_SEC
+      ) {
+        finishCast();
+      }
     };
 
     const onEnded = () => {
-      // Fallback if staff-hit timestamp was missed
-      handleStaffHit();
+      finishCast();
     };
 
     cast.addEventListener('timeupdate', onTimeUpdate);
     cast.addEventListener('ended', onEnded);
     cast.play().catch(() => {
-      handleStaffHit();
+      finishCast();
     });
   };
 
@@ -558,18 +561,16 @@ export function MageCanvas({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Staff-hit + hold fallback if timeupdate is sparse
+      // Cast trimmed end — start firestorm (fallback if timeupdate is sparse)
       if (castingRef.current && !staffHitRef.current) {
         const cast = castVideoRef.current;
         const idle = idleVideoRef.current;
-        const cutAt = CAST_STAFF_HIT_SEC + CAST_AFTER_HIT_HOLD_SEC;
-        const nearEnd =
+        const trimReady =
           cast &&
           Number.isFinite(cast.duration) &&
-          cast.duration > 0 &&
-          cast.currentTime >= cast.duration - 0.05;
-        const hitNow = cast && cast.currentTime >= cutAt;
-        if (hitNow || nearEnd) {
+          cast.duration > CAST_TRIM_END_SEC + 0.25 &&
+          cast.currentTime >= cast.duration - CAST_TRIM_END_SEC;
+        if (trimReady || (cast && cast.ended)) {
           staffHitRef.current = true;
           cast.pause();
           castingRef.current = false;

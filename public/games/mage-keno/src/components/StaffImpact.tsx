@@ -16,28 +16,42 @@ type Props = {
 export function StaffImpact({ active, onEnded }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const endedRef = useRef(false);
+  const onEndedRef = useRef(onEnded);
 
   useEffect(() => {
+    onEndedRef.current = onEnded;
+  }, [onEnded]);
+
+  // Keep the clip decoded so the first active frame isn't a blank load
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.load();
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
     if (!active) {
       endedRef.current = false;
-      const v = videoRef.current;
-      if (v) {
-        v.pause();
-        v.currentTime = 0;
-        v.playbackRate = 1;
+      video.pause();
+      try {
+        video.currentTime = 0;
+      } catch {
+        /* ignore seek before ready */
       }
+      video.playbackRate = 1;
       return;
     }
 
     endedRef.current = false;
-    const video = videoRef.current;
-    if (!video) return;
 
     const finish = () => {
       if (endedRef.current) return;
       endedRef.current = true;
       video.pause();
-      onEnded();
+      onEndedRef.current();
     };
 
     const onTimeUpdate = () => {
@@ -48,21 +62,32 @@ export function StaffImpact({ active, onEnded }: Props) {
       if (video.currentTime >= endAt) finish();
     };
 
-    video.playbackRate = IMPACT_PLAYBACK_RATE;
-    video.currentTime = 0;
+    const start = () => {
+      video.playbackRate = IMPACT_PLAYBACK_RATE;
+      try {
+        video.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+      video.play().catch(() => finish());
+    };
+
     video.addEventListener('timeupdate', onTimeUpdate);
-    video.play().catch(() => finish());
+    if (video.readyState >= 2) start();
+    else video.addEventListener('loadeddata', start, { once: true });
 
     return () => {
       video.removeEventListener('timeupdate', onTimeUpdate);
+      video.removeEventListener('loadeddata', start);
       video.pause();
     };
-  }, [active, onEnded]);
-
-  if (!active) return null;
+  }, [active]);
 
   return (
-    <div className="staff-impact" aria-hidden="true">
+    <div
+      className={`staff-impact${active ? ' is-active' : ''}`}
+      aria-hidden="true"
+    >
       <video
         ref={videoRef}
         className="staff-impact-video"
@@ -72,12 +97,12 @@ export function StaffImpact({ active, onEnded }: Props) {
         onEnded={() => {
           if (endedRef.current) return;
           endedRef.current = true;
-          onEnded();
+          onEndedRef.current();
         }}
         onError={() => {
           if (endedRef.current) return;
           endedRef.current = true;
-          onEnded();
+          onEndedRef.current();
         }}
       >
         <source src={IMPACT_WEBM} type="video/webm" />
