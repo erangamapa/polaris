@@ -12,8 +12,6 @@ type Props = {
   gridRef: RefObject<HTMLDivElement | null>;
   selected: Set<number>;
   activeDraw: { id: number; numbers: number[] } | null;
-  /** True after the staff-impact firestorm finishes (or is skipped). */
-  impactComplete: boolean;
   onStaffHit: () => void;
   onFireballImpact: (n: number) => void;
   onSequenceComplete: () => void;
@@ -38,7 +36,6 @@ export function MageCanvas({
   gridRef,
   selected,
   activeDraw,
-  impactComplete,
   onStaffHit,
   onFireballImpact,
   onSequenceComplete,
@@ -55,7 +52,6 @@ export function MageCanvas({
   const castingRef = useRef(false);
   const castDoneRef = useRef(true);
   const staffHitRef = useRef(false);
-  const waitingImpactRef = useRef(false);
   const whooshRef = useRef<HTMLAudioElement | null>(null);
   const particlesRef = useRef<Particle[]>([]);
   const queueRef = useRef<number[]>([]);
@@ -65,7 +61,6 @@ export function MageCanvas({
   const flashRef = useRef(0);
   const lastDrawIdRef = useRef<number | null>(null);
   const callbacksRef = useRef({ onFireballImpact, onSequenceComplete, onStaffHit });
-  const impactCompleteRef = useRef(impactComplete);
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -74,15 +69,6 @@ export function MageCanvas({
   useEffect(() => {
     callbacksRef.current = { onFireballImpact, onSequenceComplete, onStaffHit };
   }, [onFireballImpact, onSequenceComplete, onStaffHit]);
-
-  useEffect(() => {
-    impactCompleteRef.current = impactComplete;
-    // Impact overlay finished — allow number reveals to begin
-    if (impactComplete && waitingImpactRef.current && !castDoneRef.current) {
-      waitingImpactRef.current = false;
-      castDoneRef.current = true;
-    }
-  }, [impactComplete]);
 
   useEffect(() => {
     chromaOffscreenRef.current = document.createElement('canvas');
@@ -243,14 +229,13 @@ export function MageCanvas({
     if (!cast) {
       // No cast clip — jump straight to impact/reveal pipeline
       staffHitRef.current = true;
-      waitingImpactRef.current = true;
+      castDoneRef.current = true;
       callbacksRef.current.onStaffHit();
       return;
     }
     castingRef.current = true;
     castDoneRef.current = false;
     staffHitRef.current = false;
-    waitingImpactRef.current = false;
     videoSeekingRef.current = false;
     idle?.pause();
     cast.loop = false;
@@ -274,8 +259,8 @@ export function MageCanvas({
         activeVideoRef.current = idle;
         idle.play().catch(() => {});
       }
-      waitingImpactRef.current = true;
-      castDoneRef.current = false;
+      // Start rainstorm + number reveals together
+      castDoneRef.current = true;
       callbacksRef.current.onStaffHit();
     };
 
@@ -318,7 +303,6 @@ export function MageCanvas({
     if (!activeDraw) {
       lastDrawIdRef.current = null;
       staffHitRef.current = false;
-      waitingImpactRef.current = false;
       return;
     }
     if (lastDrawIdRef.current === activeDraw.id && runningRef.current) return;
@@ -328,7 +312,6 @@ export function MageCanvas({
     finishedRef.current = false;
     castDoneRef.current = false;
     staffHitRef.current = false;
-    waitingImpactRef.current = false;
     particlesRef.current = [];
     startCastPlayback();
   }, [activeDraw]);
@@ -561,7 +544,7 @@ export function MageCanvas({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Cast trimmed end — start firestorm (fallback if timeupdate is sparse)
+      // Cast trimmed end — start firestorm + reveals together
       if (castingRef.current && !staffHitRef.current) {
         const cast = castVideoRef.current;
         const idle = idleVideoRef.current;
@@ -579,20 +562,9 @@ export function MageCanvas({
             activeVideoRef.current = idle;
             idle.play().catch(() => {});
           }
-          waitingImpactRef.current = true;
-          castDoneRef.current = false;
+          castDoneRef.current = true;
           callbacksRef.current.onStaffHit();
         }
-      }
-
-      // Impact overlay finished while we were waiting
-      if (
-        waitingImpactRef.current &&
-        impactCompleteRef.current &&
-        !castDoneRef.current
-      ) {
-        waitingImpactRef.current = false;
-        castDoneRef.current = true;
       }
 
       if (

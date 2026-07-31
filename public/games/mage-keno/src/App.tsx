@@ -10,23 +10,20 @@ export default function App() {
   const game = useKenoGame();
   const gridRef = useRef<HTMLDivElement>(null);
   const [impactPlaying, setImpactPlaying] = useState(false);
-  const [impactComplete, setImpactComplete] = useState(false);
 
-  // Reset impact pipeline for each new bet/draw
+  // Reset storm for each new bet/draw
   useEffect(() => {
     setImpactPlaying(false);
-    setImpactComplete(false);
   }, [game.activeDraw?.id]);
 
   const onStaffHit = useCallback(() => {
-    setImpactComplete(false);
     setImpactPlaying(true);
   }, []);
 
-  const onImpactEnded = useCallback(() => {
+  const onSequenceComplete = useCallback(() => {
     setImpactPlaying(false);
-    setImpactComplete(true);
-  }, []);
+    game.onSequenceComplete();
+  }, [game.onSequenceComplete]);
 
   return (
     <div className={`app-shell ${game.flashHit ? 'is-flash' : ''}`}>
@@ -43,15 +40,14 @@ export default function App() {
       <main className="stage">
         <section className="arena">
           <div className={`arena-frame${impactPlaying ? ' has-storm' : ''}`}>
-            <StaffImpact active={impactPlaying} onEnded={onImpactEnded} />
+            <StaffImpact active={impactPlaying} />
             <MageCanvas
               gridRef={gridRef}
               selected={game.selected}
               activeDraw={game.activeDraw}
-              impactComplete={impactComplete}
               onStaffHit={onStaffHit}
               onFireballImpact={game.onFireballImpact}
-              onSequenceComplete={game.onSequenceComplete}
+              onSequenceComplete={onSequenceComplete}
             />
             <div className="grid-panel">
               <div className="keno-grid-slot">
