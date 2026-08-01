@@ -27,6 +27,8 @@ const MAGE_IMG_SRC = './assets/mage.png';
 const FIREBALL_WHOOSH_SRC = './assets/fireball-whoosh.mp3';
 /** Spell cast ambience (audio only) under the cast animation */
 const CAST_SPELL_SFX_SRC = './assets/cast-spell.mp3';
+/** Goblin grunt when a pick is knocked out (hit) */
+const GOBLIN_HIT_SFX_SRC = './assets/goblin-hit.mp3';
 
 const REVEAL_INTERVAL_MS = 280;
 /** Cast clip speed-up (1 = normal). */
@@ -63,6 +65,7 @@ export function MageCanvas({
   const whooshRef = useRef<HTMLAudioElement | null>(null);
   const castSfxRef = useRef<HTMLAudioElement | null>(null);
   const castSfxDelayRef = useRef<number | null>(null);
+  const goblinHitRef = useRef<HTMLAudioElement | null>(null);
   const particlesRef = useRef<Particle[]>([]);
   const queueRef = useRef<number[]>([]);
   const runningRef = useRef(false);
@@ -88,6 +91,11 @@ export function MageCanvas({
     whoosh.preload = 'auto';
     whoosh.volume = 0.7;
     whooshRef.current = whoosh;
+
+    const goblinHit = new Audio(GOBLIN_HIT_SFX_SRC);
+    goblinHit.preload = 'auto';
+    goblinHit.volume = 0.9;
+    goblinHitRef.current = goblinHit;
 
     const castSfx = new Audio(CAST_SPELL_SFX_SRC);
     castSfx.preload = 'auto';
@@ -176,6 +184,10 @@ export function MageCanvas({
         whoosh.pause();
         whoosh.currentTime = 0;
       }).catch(() => {});
+      goblinHit.play().then(() => {
+        goblinHit.pause();
+        goblinHit.currentTime = 0;
+      }).catch(() => {});
       castSfx.play().then(() => {
         castSfx.pause();
         castSfx.currentTime = 0;
@@ -199,6 +211,8 @@ export function MageCanvas({
       activeVideoRef.current = null;
       whoosh.pause();
       whooshRef.current = null;
+      goblinHit.pause();
+      goblinHitRef.current = null;
       castSfx.pause();
       castSfxRef.current = null;
       if (castSfxDelayRef.current != null) {
@@ -431,6 +445,19 @@ export function MageCanvas({
       }
     };
 
+    const playGoblinHit = () => {
+      const master = goblinHitRef.current;
+      if (!master) return;
+      try {
+        const shot = master.cloneNode(true) as HTMLAudioElement;
+        shot.volume = master.volume;
+        void shot.play().catch(() => {});
+      } catch {
+        master.currentTime = 0;
+        void master.play().catch(() => {});
+      }
+    };
+
     const revealNext = () => {
       const next = queueRef.current.shift();
       if (next == null) {
@@ -439,6 +466,7 @@ export function MageCanvas({
       }
       playWhoosh();
       const hit = selectedRef.current.has(next);
+      if (hit) playGoblinHit();
       const at = getBallCenter(next);
       callbacksRef.current.onFireballImpact(next);
       if (at) {

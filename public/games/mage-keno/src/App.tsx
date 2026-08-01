@@ -55,6 +55,7 @@ export default function App() {
                   gridRef={gridRef}
                   selected={game.selected}
                   ballState={game.ballState}
+                  animatingNumber={game.animatingNumber}
                   disabled={game.phase === 'playing'}
                   onToggle={game.toggleNumber}
                 />

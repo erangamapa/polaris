@@ -6,6 +6,7 @@ import type { BallVisualState } from '../hooks/useKenoGame';
 type Props = {
   selected: Set<number>;
   ballState: Map<number, BallVisualState>;
+  animatingNumber?: number | null;
   disabled?: boolean;
   onToggle: (n: number) => void;
   gridRef?: RefObject<HTMLDivElement | null>;
@@ -82,7 +83,14 @@ function GoblinMark({
   return <canvas ref={canvasRef} className={markClass} aria-hidden="true" />;
 }
 
-export function KenoGrid({ selected, ballState, disabled, onToggle, gridRef }: Props) {
+export function KenoGrid({
+  selected,
+  ballState,
+  animatingNumber = null,
+  disabled,
+  onToggle,
+  gridRef,
+}: Props) {
   const numbers = useMemo(() => Array.from({ length: GRID_SIZE }, (_, i) => i + 1), []);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasesRef = useRef(new Set<HTMLCanvasElement>());
@@ -175,13 +183,16 @@ export function KenoGrid({ selected, ballState, disabled, onToggle, gridRef }: P
       {numbers.map((n) => {
         const visual = ballState.get(n) ?? (selected.has(n) ? 'selected' : 'idle');
         const flipped = visual === 'selected' || visual === 'hit';
+        const hitImpact = visual === 'hit' && animatingNumber === n;
         return (
           <button
             key={n}
             type="button"
             data-num={n}
             disabled={disabled}
-            className={`keno-ball ${stateClass[visual]} ${flipped ? 'is-flipped' : ''}`}
+            className={`keno-ball ${stateClass[visual]} ${flipped ? 'is-flipped' : ''}${
+              hitImpact ? ' is-hit-impact' : ''
+            }`}
             onClick={() => onToggle(n)}
             aria-pressed={selected.has(n)}
             aria-label={
