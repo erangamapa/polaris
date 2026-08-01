@@ -25,12 +25,20 @@ const MAGE_CAST_SRC = './assets/mage-cast.mp4';
 const MAGE_IMG_SRC = './assets/mage.png';
 /** Whoosh SFX per revealed number */
 const FIREBALL_WHOOSH_SRC = './assets/fireball-whoosh.mp3';
+/** Spell cast ambience (audio only) under the cast animation */
+const CAST_SPELL_SFX_SRC = './assets/cast-spell.mp3';
 
 const REVEAL_INTERVAL_MS = 280;
 /** Cast clip speed-up (1 = normal). */
 const CAST_PLAYBACK_RATE = 2.55;
 /** Drop this many seconds off the end of mage-cast before the firestorm. */
 const CAST_TRIM_END_SEC = 0.8;
+/** Source-time in mage-cast.mp4 when the staff hits the ground. */
+const CAST_STAFF_HIT_SEC = 2.9;
+/** Time in cast-spell.mp3 of the ground-impact transient. */
+const CAST_SFX_GROUND_HIT_SEC = 1.46;
+/** Fine nudge (sec): positive = delay SFX impact vs staff; negative = earlier. */
+const CAST_SFX_SYNC_NUDGE_SEC = 0;
 
 export function MageCanvas({
   gridRef,
@@ -53,6 +61,8 @@ export function MageCanvas({
   const castDoneRef = useRef(true);
   const staffHitRef = useRef(false);
   const whooshRef = useRef<HTMLAudioElement | null>(null);
+  const castSfxRef = useRef<HTMLAudioElement | null>(null);
+  const castSfxDelayRef = useRef<number | null>(null);
   const particlesRef = useRef<Particle[]>([]);
   const queueRef = useRef<number[]>([]);
   const runningRef = useRef(false);
@@ -78,6 +88,11 @@ export function MageCanvas({
     whoosh.preload = 'auto';
     whoosh.volume = 0.7;
     whooshRef.current = whoosh;
+
+    const castSfx = new Audio(CAST_SPELL_SFX_SRC);
+    castSfx.preload = 'auto';
+    castSfx.volume = 0.85;
+    castSfxRef.current = castSfx;
 
     const makeVideo = (src: string, loopManual: boolean) => {
       const video = document.createElement('video');
@@ -161,6 +176,10 @@ export function MageCanvas({
         whoosh.pause();
         whoosh.currentTime = 0;
       }).catch(() => {});
+      castSfx.play().then(() => {
+        castSfx.pause();
+        castSfx.currentTime = 0;
+      }).catch(() => {});
     };
     window.addEventListener('pointerdown', unlock, { once: true });
     window.addEventListener('keydown', unlock, { once: true });
@@ -180,6 +199,12 @@ export function MageCanvas({
       activeVideoRef.current = null;
       whoosh.pause();
       whooshRef.current = null;
+      castSfx.pause();
+      castSfxRef.current = null;
+      if (castSfxDelayRef.current != null) {
+        window.clearTimeout(castSfxDelayRef.current);
+        castSfxDelayRef.current = null;
+      }
     };
   }, []);
 
@@ -243,6 +268,41 @@ export function MageCanvas({
     cast.currentTime = 0;
     activeVideoRef.current = cast;
 
+    // Spell SFX under the cast — offset so ground hit lines up with staff slam
+    const castSfx = castSfxRef.current;
+    if (castSfxDelayRef.current != null) {
+      window.clearTimeout(castSfxDelayRef.current);
+      castSfxDelayRef.current = null;
+    }
+    if (castSfx) {
+      try {
+        castSfx.pause();
+      } catch {
+        /* ignore */
+      }
+      const wallToStaffHit =
+        CAST_STAFF_HIT_SEC / CAST_PLAYBACK_RATE + CAST_SFX_SYNC_NUDGE_SEC;
+      const sfxAtCastStart = CAST_SFX_GROUND_HIT_SEC - wallToStaffHit;
+      const startSfx = (fromSec: number) => {
+        try {
+          castSfx.currentTime = Math.max(0, fromSec);
+        } catch {
+          /* ignore */
+        }
+        castSfx.play().catch(() => {});
+      };
+      if (sfxAtCastStart >= 0) {
+        // Skip early SFX so its impact lands when the staff hits
+        startSfx(sfxAtCastStart);
+      } else {
+        // Staff hit is later than the SFX impact — delay audio start
+        castSfxDelayRef.current = window.setTimeout(() => {
+          castSfxDelayRef.current = null;
+          startSfx(0);
+        }, -sfxAtCastStart * 1000);
+      }
+    }
+
     let finished = false;
 
     const finishCast = () => {
@@ -292,6 +352,19 @@ export function MageCanvas({
     castingRef.current = false;
     castDoneRef.current = true;
     cast?.pause();
+    if (castSfxDelayRef.current != null) {
+      window.clearTimeout(castSfxDelayRef.current);
+      castSfxDelayRef.current = null;
+    }
+    const castSfx = castSfxRef.current;
+    if (castSfx) {
+      castSfx.pause();
+      try {
+        castSfx.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+    }
     if (idle) {
       idle.playbackRate = 1;
       activeVideoRef.current = idle;
@@ -459,19 +532,24 @@ export function MageCanvas({
         if (mageY + mageH > gridTop) mageY = gridTop - mageH;
         // Cap top crop so hat/fire stay mostly in frame (no shrink-back)
         if (mageY < padTop - overflow * 0.28) mageY = padTop - overflow * 0.28;
-        // Clear feet + fire from the number balls
-        mageY -= Math.max(22, canvas.height * 0.028);
+        // Clear feet + fire from the number balls / bottom border
+        mageY -= Math.max(32, canvas.height * 0.038);
       } else {
-        // Desktop: large mage on the left edge of the frame
+        // Desktop: large mage on the left of the frame
         const boxW = canvas.width * 0.42;
         const boxH = canvas.height * 0.98;
         const scale =
-          srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1;
-        mageW = srcW > 0 ? srcW * scale : boxW;
-        mageH = srcH > 0 ? srcH * scale : boxH;
-        mageX = canvas.width * 0.012;
+          (srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1) * 1.15;
+        mageW = srcW > 0 ? srcW * scale : boxW * 1.15;
+        mageH = srcH > 0 ? srcH * scale : boxH * 1.15;
+        mageX = canvas.width * 0.045;
         const gridBottom = getGridBottom();
-        mageY = Math.max(4, (gridBottom || canvas.height * 0.98) - mageH);
+        const cssH = wrapEl?.clientHeight || canvas.height;
+        const pxPerCss = canvas.height / Math.max(1, cssH);
+        const oneCm = (96 / 2.54) * pxPerCss;
+        const lift =
+          Math.max(48, canvas.height * 0.06) + canvas.height * 0.1 + oneCm;
+        mageY = Math.max(4, (gridBottom || canvas.height * 0.98) - mageH - lift);
       }
 
       // Cast clip is brighter green; idle uses similar key
