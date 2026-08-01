@@ -67,10 +67,13 @@ export function PlayerSettingsProvider({ children }) {
   // never claim a save that will not survive.
   const [persistent, setPersistent] = useState(true);
   // Whether signing in can succeed on this deployment at all (see
-  // api/auth/session.js). Starts true so nothing is prematurely disabled before
-  // the first check answers; flipped false only on an explicit "no".
+  // api/auth/session.js). Starts true so the UI does not flash a "sync
+  // unavailable" notice before the first check has answered.
   const [sessionsAvailable, setSessionsAvailable] = useState(true);
   const sessionsAvailableRef = useRef(true);
+  // Caches the capability answer for the page load — it is a property of the
+  // deployment, not of the wallet, so it is asked once and reused.
+  const capabilityRef = useRef(null);
 
   const envelopeRef = useRef(envelope);
   envelopeRef.current = envelope;
@@ -161,6 +164,41 @@ export function PlayerSettingsProvider({ children }) {
     }
   }, [chainId, signMessageAsync]);
 
+  // Resolves whether sign-in can work, asking the server if nobody has yet.
+  //
+  // This exists to close a race that would otherwise produce exactly the wallet
+  // popup this design is meant to prevent: `sessionsAvailable` starts optimistic
+  // so the UI does not flicker, and the connect effect corrects it — but a
+  // player who changes a setting before that request lands would hit `flush`
+  // while the optimistic `true` is still in place, and get a signature prompt
+  // that cannot succeed. Awaiting the real answer removes the window entirely.
+  //
+  // Fails CLOSED: an unreachable or malformed answer counts as "cannot sign in",
+  // because the cost of being wrong in that direction is a missed background
+  // sync, while being wrong the other way is an unwanted wallet popup. The
+  // failed answer is not cached, so a transient network blip is retried rather
+  // than disabling sync for the whole page load.
+  const ensureSessionsAvailable = useCallback(async () => {
+    if (capabilityRef.current) return capabilityRef.current;
+
+    const pending = (async () => {
+      const { body } = await jsonFetch('/api/auth/session');
+      if (typeof body?.sessionsAvailable !== 'boolean') {
+        capabilityRef.current = null;
+        return false;
+      }
+      sessionsAvailableRef.current = body.sessionsAvailable;
+      setSessionsAvailable(body.sessionsAvailable);
+      return body.sessionsAvailable;
+    })().catch(() => {
+      capabilityRef.current = null;
+      return false;
+    });
+
+    capabilityRef.current = pending;
+    return pending;
+  }, []);
+
   const flush = useCallback(async () => {
     const current = addressRef.current;
     const toPush = envelopeRef.current;
@@ -188,8 +226,9 @@ export function PlayerSettingsProvider({ children }) {
     // the player decide via the explicit "Sync to wallet" control.
     // Never ask for a signature the server cannot honour (see
     // api/auth/session.js's sessionsAvailable) — the player would approve a
-    // wallet prompt and get nothing for it.
-    if (!sessionsAvailableRef.current) {
+    // wallet prompt and get nothing for it. Awaited, not read from the ref, so
+    // this holds even on the very first change after connecting.
+    if (!(await ensureSessionsAvailable())) {
       setSyncState(SYNC_STATE.LOCAL);
       return;
     }
@@ -201,7 +240,7 @@ export function PlayerSettingsProvider({ children }) {
 
     if (!(await signIn(current))) return;
     if (await push(envelopeRef.current) === null) setSyncState(SYNC_STATE.ERROR);
-  }, [push, signIn]);
+  }, [push, signIn, ensureSessionsAvailable]);
 
   const schedulePush = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -223,7 +262,7 @@ export function PlayerSettingsProvider({ children }) {
   // declined flag — hence a deliberate user action, never inferred.
   const enableSync = useCallback(async () => {
     const current = addressRef.current;
-    if (!current || !sessionsAvailableRef.current) return false;
+    if (!current || !(await ensureSessionsAvailable())) return false;
     // The one and only thing that re-arms automatic syncing, precisely because
     // it is a deliberate press of a button rather than a background retry.
     declinedRef.current = false;
@@ -232,7 +271,7 @@ export function PlayerSettingsProvider({ children }) {
     const saved = (await push(envelopeRef.current)) !== null;
     if (!saved) setSyncState(SYNC_STATE.ERROR);
     return saved;
-  }, [push, signIn]);
+  }, [push, signIn, ensureSessionsAvailable]);
 
   // Wallet changed (connected, disconnected, or switched account): swap to that
   // account's local bucket, then — WITHOUT prompting — see whether a session
@@ -255,9 +294,12 @@ export function PlayerSettingsProvider({ children }) {
       const session = await jsonFetch('/api/auth/session');
       if (cancelled) return;
 
+      // Seed the capability cache from this same response so ensureSessionsAvailable
+      // does not repeat the request on the first settings change.
       if (typeof session.body?.sessionsAvailable === 'boolean') {
         sessionsAvailableRef.current = session.body.sessionsAvailable;
         setSessionsAvailable(session.body.sessionsAvailable);
+        capabilityRef.current = Promise.resolve(session.body.sessionsAvailable);
       }
 
       // A session for a DIFFERENT address is not ours to use — the player
