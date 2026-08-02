@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BetControls } from './components/BetControls';
 import { KenoGrid } from './components/KenoGrid';
-import { MageCloud } from './components/MageCloud';
 import { MageCanvas } from './components/MageCanvas';
 import { PayoutTable } from './components/PayoutTable';
 import { StaffImpact } from './components/StaffImpact';
@@ -40,8 +39,13 @@ export default function App() {
 
       <main className="stage">
         <section className="arena">
-          <div className={`arena-frame${impactPlaying ? ' has-storm' : ''}`}>
-            <MageCloud />
+          <div
+            className={`arena-frame${impactPlaying ? ' has-storm' : ''}`}
+            style={{
+              ['--arena-bg-mobile' as string]: "url('./assets/mage-bg.png')",
+              ['--arena-bg-desktop' as string]: "url('./assets/mage-bg-desktop.png')",
+            }}
+          >
             <StaffImpact active={impactPlaying} />
             <MageCanvas
               gridRef={gridRef}

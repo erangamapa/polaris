@@ -38,7 +38,11 @@ function useAvailableHeight(ref) {
     const measure = () => {
       const top = el.getBoundingClientRect().top;
       const vh = window.visualViewport?.height ?? window.innerHeight;
-      setHeight(Math.max(320, Math.round(vh - top - 16)));
+      // Match CasinoGamePage bottom padding (pb-[20px+safe] / sm:pb-8) so
+      // frame + padding stay inside the viewport — avoids mobile page scroll.
+      const sm = window.matchMedia("(min-width: 640px)").matches;
+      const bottomReserve = sm ? 40 : 36;
+      setHeight(Math.max(280, Math.round(vh - top - bottomReserve)));
     };
     measure();
     window.addEventListener("resize", measure);

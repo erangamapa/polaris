@@ -43,7 +43,6 @@ npm run build   # commits dist/ for TriBet iframe
 | File | Role |
 | --- | --- |
 | `mage.mp4` / `mage-cast.mp4` | Idle / cast (chroma-keyed) |
-| `mage-cloud.mp4` | Looping cloud behind mage (chroma-keyed) |
 | `staff-impact.*` | Firestorm behind mage during reveals |
 | `cast-spell.mp3` | Cast SFX (synced to staff hit) |
 | `fireball-whoosh.mp3` | Per-reveal whoosh |

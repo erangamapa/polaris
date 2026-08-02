@@ -147,15 +147,27 @@ body {
   position: relative;
   border: 3px solid var(--gold);
   border-radius: 14px 14px 0 0;
-  background:
-    linear-gradient(180deg, rgba(90, 10, 40, 0.65) 0%, rgba(20, 4, 12, 0.92) 100%);
+  background-color: #12081c;
+  /* Mobile portrait sky; desktop overrides via container query */
+  background-image: var(--arena-bg-mobile, var(--arena-bg, none));
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow:
     0 0 0 2px #4a0818,
     0 0 28px rgba(224, 24, 106, 0.35),
-    inset 0 0 40px rgba(0, 0, 0, 0.45);
+    inset 0 0 40px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   min-height: 0;
   flex: 0 0 auto;
+}
+
+/* Desktop: wide sky art, stretched to fill the arena */
+@container mage-keno (min-width: 861px) {
+  .arena-frame {
+    background-image: var(--arena-bg-desktop, var(--arena-bg-mobile, none));
+    background-size: 100% 100%;
+  }
 }
 
 .mage-canvas-wrap {
@@ -173,7 +185,7 @@ body {
 
 .grid-panel {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   /* Reserve left column for mage — cqw tracks the iframe box, not a
      lied-about device viewport (vw inside iframes is unreliable). */
   padding: 14px 16px 10px clamp(120px, 42cqw, 400px);
@@ -194,36 +206,6 @@ body {
 .keno-grid-slot .keno-grid {
   margin-left: 0;
   max-width: none;
-}
-
-/* Looping cloud behind the mage only (numbers stay above via z-index) */
-.mage-cloud {
-  position: absolute;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: clamp(200px, 44cqw, 440px);
-  mask-image: linear-gradient(
-    90deg,
-    #000 0%,
-    #000 72%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    #000 0%,
-    #000 72%,
-    transparent 100%
-  );
-}
-
-.mage-cloud-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
 }
 
 /* Firestorm behind the mage (chroma key lets it show through) */
@@ -913,27 +895,6 @@ body {
     font-size: 11px;
   }
 
-  .mage-cloud {
-    left: 0;
-    right: 0;
-    width: 100%;
-    top: 0;
-    bottom: 0;
-    /* Soft fade into the number board so cloud stays mage-side */
-    mask-image: linear-gradient(
-      180deg,
-      #000 0%,
-      #000 55%,
-      transparent 88%
-    );
-    -webkit-mask-image: linear-gradient(
-      180deg,
-      #000 0%,
-      #000 55%,
-      transparent 88%
-    );
-  }
-
   .mage-canvas-wrap {
     position: absolute;
     inset: 0;
@@ -943,7 +904,7 @@ body {
 
   .grid-panel {
     position: relative;
-    z-index: 3;
+    z-index: 4;
     flex: 0 0 auto;
     width: 100%;
     min-height: 0;
@@ -1053,6 +1014,93 @@ body {
     width: 100%;
     padding: 8px 10px;
     font-size: 14px;
+  }
+}
+
+/* TriBet iframe on a phone: compress vertical chrome so the whole game
+   fits the GameStage without scrolling the lobby page. */
+@container mage-keno (max-width: 860px) {
+  :root.is-embedded .tagline {
+    display: none;
+  }
+
+  :root.is-embedded .top-bar {
+    margin-bottom: 0;
+    padding: 0;
+  }
+
+  :root.is-embedded .brand h1 {
+    font-size: clamp(13px, 3.8cqw, 17px);
+  }
+
+  :root.is-embedded .brand-mark {
+    font-size: 12px;
+  }
+
+  :root.is-embedded .keno-grid {
+    max-height: min(26cqh, 100%);
+    gap: 2px;
+  }
+
+  :root.is-embedded .payout-panel {
+    min-height: 40px;
+    padding: 3px 6px;
+    gap: 4px;
+  }
+
+  :root.is-embedded .payout-title {
+    font-size: 10px;
+  }
+
+  :root.is-embedded .payout-sub {
+    display: none;
+  }
+
+  :root.is-embedded .payout-hit {
+    font-size: 9px;
+  }
+
+  :root.is-embedded .payout-mult {
+    font-size: 10px;
+  }
+
+  :root.is-embedded .payout-row {
+    padding: 2px 1px;
+  }
+
+  :root.is-embedded .bet-bar {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  :root.is-embedded .meta-pill,
+  :root.is-embedded .bet-amount {
+    padding: 4px 5px;
+  }
+
+  :root.is-embedded .meta-value {
+    font-size: 12px;
+  }
+
+  :root.is-embedded .btn-step {
+    height: 28px;
+    font-size: 14px;
+  }
+
+  :root.is-embedded .bet-row-actions {
+    min-height: 34px;
+    gap: 4px;
+  }
+
+  :root.is-embedded .btn-secondary {
+    padding: 5px 4px;
+    font-size: 10px;
+  }
+
+  :root.is-embedded .btn-bet {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 13px;
   }
 }
 

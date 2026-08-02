@@ -58,10 +58,10 @@ export function ProviderGame({ game, onReady, onFailed }) {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex shrink-0 items-center justify-between px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between px-3 py-1.5 sm:px-4 sm:py-2">
         <MicroLabel>{CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider game"}</MicroLabel>
         {balance !== null && (
-          <div className="rounded-lg bg-zinc-800 px-3 py-1.5 font-mono text-sm tabular-nums text-white">{balance.toFixed(2)} TBET</div>
+          <div className="rounded-lg bg-zinc-800 px-2.5 py-1 font-mono text-xs tabular-nums text-white sm:px-3 sm:py-1.5 sm:text-sm">{balance.toFixed(2)} TBET</div>
         )}
       </div>
 

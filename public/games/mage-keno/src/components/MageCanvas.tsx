@@ -262,6 +262,24 @@ export function MageCanvas({
     return (gRect.bottom - cRect.top) * scaleY;
   };
 
+  /** Cloud platform top (deck) + horizontal center in canvas pixels. */
+  const getCloudPlatform = (): { deckY: number; centerX: number; cloudH: number } | null => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const cloud = canvas.parentElement?.querySelector('.mage-cloud') as HTMLElement | null;
+    if (!cloud) return null;
+    const cRect = canvas.getBoundingClientRect();
+    const q = cloud.getBoundingClientRect();
+    if (cRect.height <= 0 || q.height <= 0) return null;
+    const scaleX = canvas.width / cRect.width;
+    const scaleY = canvas.height / cRect.height;
+    const cloudH = q.height * scaleY;
+    // Feet bury into the cloud (~55% down) so the platform reads underfoot
+    const deckY = (q.top - cRect.top) * scaleY + cloudH * 0.55;
+    const centerX = (q.left + q.width / 2 - cRect.left) * scaleX;
+    return { deckY, centerX, cloudH };
+  };
+
   const startCastPlayback = () => {
     const idle = idleVideoRef.current;
     const cast = castVideoRef.current;
@@ -535,6 +553,7 @@ export function MageCanvas({
       const wrapEl = wrapRef.current;
       const wrapW = wrapEl?.clientWidth ?? canvas.width;
       const portrait = wrapW < 860;
+      const platform = getCloudPlatform();
 
       let mageW: number;
       let mageH: number;
@@ -542,43 +561,63 @@ export function MageCanvas({
       let mageY: number;
 
       if (portrait) {
-        // Fill the full band between top edge and numbers — as big as possible
-        // without clipping the hat/fire or covering the grid.
+        // Fill the band above the numbers, but land feet on the cloud deck.
         const gridTop = getGridTop();
         const padTop = Math.max(6, canvas.height * 0.01);
-        const footY = Math.max(padTop + 80, gridTop - 2);
-        const bandH = Math.max(80, footY - padTop);
-        // Height-first: ignore width so we never shrink for side margins.
-        // Extra scale crops green-screen letterbox (mostly under the feet).
-        const scale = srcH > 0 ? (bandH / srcH) * 1.212 : 1; // ~5% smaller than 1.276
+        const footTarget = platform
+          ? Math.min(platform.deckY, gridTop - 8)
+          : Math.max(padTop + 80, gridTop - 2);
+        const bandH = Math.max(80, footTarget - padTop);
+        // Slightly smaller than full-band so the cloud pedestal reads underfoot
+        const scale = srcH > 0 ? (bandH / srcH) * (platform ? 1.05 : 1.212) : 1;
         mageW = srcW > 0 ? srcW * scale : canvas.width;
         mageH = srcH > 0 ? srcH * scale : bandH;
-        mageX = (canvas.width - mageW) / 2;
-        const overflow = Math.max(0, mageH - bandH);
-        // Crop ~20% of overflow from top (empty sky), rest from under feet
-        mageY = padTop - overflow * 0.2;
-        if (mageY + mageH > gridTop) mageY = gridTop - mageH;
-        // Cap top crop so hat/fire stay mostly in frame (no shrink-back)
-        if (mageY < padTop - overflow * 0.28) mageY = padTop - overflow * 0.28;
-        // Clear feet + fire from the number balls / bottom border
-        mageY -= Math.max(32, canvas.height * 0.038);
+        mageX = platform
+          ? platform.centerX - mageW / 2
+          : (canvas.width - mageW) / 2;
+        mageY = footTarget - mageH;
+        // Keep hat mostly in frame if the cloud sits low
+        if (mageY < padTop - mageH * 0.18) mageY = padTop - mageH * 0.18;
+        // Nudge down toward the number board (mobile only)
+        {
+          const cssH = wrapEl?.clientHeight || canvas.height;
+          const cmY = (96 / 2.54) * (canvas.height / Math.max(1, cssH));
+          mageY += cmY; // 1cm down
+        }
       } else {
-        // Desktop: large mage centered over the left cloud column
+        // Desktop: mage in the left column, clear of the number board
         const colW = canvas.width * 0.44;
-        const boxW = colW * 0.95;
-        const boxH = canvas.height * 0.98;
+        const boxW = colW * (platform ? 0.78 : 0.95);
+        const boxH = canvas.height * (platform ? 0.78 : 0.98);
         const scale =
-          (srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1) * 1.15;
-        mageW = srcW > 0 ? srcW * scale : boxW * 1.15;
-        mageH = srcH > 0 ? srcH * scale : boxH * 1.15;
-        mageX = (colW - mageW) / 2;
-        const gridBottom = getGridBottom();
-        const cssH = wrapEl?.clientHeight || canvas.height;
-        const pxPerCss = canvas.height / Math.max(1, cssH);
-        const oneCm = (96 / 2.54) * pxPerCss;
-        const lift =
-          Math.max(48, canvas.height * 0.06) + canvas.height * 0.1 + oneCm;
-        mageY = Math.max(4, (gridBottom || canvas.height * 0.98) - mageH - lift);
+          (srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1) *
+          (platform ? 1.02 : 1.15);
+        mageW = srcW > 0 ? srcW * scale : boxW;
+        mageH = srcH > 0 ? srcH * scale : boxH;
+        mageX = platform
+          ? platform.centerX - mageW / 2
+          : (colW - mageW) / 2;
+        if (platform) {
+          mageY = platform.deckY - mageH;
+          if (mageY < 4) mageY = 4;
+        } else {
+          const gridBottom = getGridBottom();
+          const cssH = wrapEl?.clientHeight || canvas.height;
+          const pxPerCss = canvas.height / Math.max(1, cssH);
+          const oneCm = (96 / 2.54) * pxPerCss;
+          const lift =
+            Math.max(48, canvas.height * 0.06) + canvas.height * 0.1 + oneCm;
+          mageY = Math.max(4, (gridBottom || canvas.height * 0.98) - mageH - lift);
+        }
+        // Nudge away from the number board (desktop only)
+        {
+          const cssW = wrapEl?.clientWidth || canvas.width;
+          const cssH = wrapEl?.clientHeight || canvas.height;
+          const cmX = (96 / 2.54) * (canvas.width / Math.max(1, cssW));
+          const cmY = (96 / 2.54) * (canvas.height / Math.max(1, cssH));
+          mageX -= cmX; // 1cm left
+          mageY -= cmY; // 1cm up
+        }
       }
 
       // Cast clip is brighter green; idle uses similar key
