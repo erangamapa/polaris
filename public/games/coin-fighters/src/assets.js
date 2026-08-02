@@ -191,12 +191,14 @@ export function portraitDataUrl(id) {
 
 /** @param {string} src @returns {Promise<HTMLImageElement>} */
 function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load: ${src}`));
-    img.src = src;
-  });
+  const attempt = () =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load: ${src}`));
+      img.src = `${src}${src.includes('?') ? '&' : '?'}cb=${Date.now()}-${Math.random()}`;
+    });
+  return attempt().catch(() => attempt()).catch(() => attempt());
 }
 
 /**

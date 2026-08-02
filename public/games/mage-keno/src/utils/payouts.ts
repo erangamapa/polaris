@@ -83,3 +83,74 @@ export function pickRandomNumbers(count: number, max = GRID_SIZE): number[] {
   }
   return pool.slice(0, count).sort((a, b) => a - b);
 }
+
+/** Binomial coefficient C(n,k). */
+function comb(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  k = Math.min(k, n - k);
+  let r = 1;
+  for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
+  return r;
+}
+
+/**
+ * Hypergeometric P(hits = k) weights for bridge settlement
+ * (N=40, draw=20, spots=n).
+ */
+export function hitCountWeights(spots: number): number[] {
+  const n = Math.max(1, Math.min(MAX_PICKS, Math.floor(spots) || 1));
+  const total = comb(GRID_SIZE, DRAW_COUNT);
+  return Array.from({ length: n + 1 }, (_, hits) => {
+    const w = comb(n, hits) * comb(GRID_SIZE - n, DRAW_COUNT - hits);
+    return total > 0 ? Math.max(0, w / total) : 0;
+  });
+}
+
+/** Weighted outcomes for host RNG — index = hit count. */
+export function bridgeOutcomesForSpots(spots: number): {
+  label: string;
+  weight: number;
+  multiplier: number;
+}[] {
+  const n = Math.max(1, Math.min(MAX_PICKS, Math.floor(spots) || 1));
+  const weights = hitCountWeights(n);
+  const table = PAYOUTS_BY_SPOTS[n] ?? {};
+  return weights.map((weight, hits) => ({
+    label: `${hits}-hit`,
+    weight,
+    multiplier: table[hits] ?? 0,
+  }));
+}
+
+/**
+ * Build a 20-ball draw that matches exactly `hits` of the player's picks
+ * (for animating after the host has already settled the hit count).
+ */
+export function drawConsistentWithHits(
+  picks: number[],
+  hits: number,
+): number[] {
+  const pickSet = [...new Set(picks)].filter((n) => n >= 1 && n <= GRID_SIZE);
+  const needHits = Math.max(0, Math.min(pickSet.length, Math.floor(hits)));
+  const pickPool = [...pickSet];
+  for (let i = pickPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pickPool[i], pickPool[j]] = [pickPool[j], pickPool[i]];
+  }
+  const hitNums = pickPool.slice(0, needHits);
+  const missPool = Array.from({ length: GRID_SIZE }, (_, i) => i + 1).filter(
+    (n) => !pickSet.includes(n),
+  );
+  for (let i = missPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [missPool[i], missPool[j]] = [missPool[j], missPool[i]];
+  }
+  const needMiss = Math.max(0, DRAW_COUNT - hitNums.length);
+  const draw = [...hitNums, ...missPool.slice(0, needMiss)];
+  for (let i = draw.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [draw[i], draw[j]] = [draw[j], draw[i]];
+  }
+  return draw;
+}

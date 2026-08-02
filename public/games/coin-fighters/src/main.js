@@ -110,6 +110,8 @@ const game = new Game(canvas, {
   btnSkipFlip,
   btnSkipFight,
 });
+/** @type {any} */
+globalThis.__cfGame = game;
 
 overlay.hidden = false;
 overlayTitle.textContent = 'LOADING';

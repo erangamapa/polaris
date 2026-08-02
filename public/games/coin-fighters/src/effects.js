@@ -137,6 +137,9 @@ export class EffectsSystem {
 
   /** @param {number} [strength] 0–1 @param {number} [duration] ms */
   triggerFlash(strength = 0.55, duration = 120) {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      return;
+    }
     this.flashes.push({
       life: duration,
       maxLife: duration,
@@ -147,6 +150,9 @@ export class EffectsSystem {
 
   /** @param {number} intensity @param {number} duration ms */
   triggerShake(intensity = 8, duration = 200) {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      return;
+    }
     this.shake.intensity = intensity;
     this.shake.duration = duration;
     this.shake.elapsed = 0;

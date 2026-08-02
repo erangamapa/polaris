@@ -1377,3 +1377,23 @@ body {
     padding: 6px 14px;
   }
 }
+
+/* Platform standard §20 — reduced / instant motion inside GameStage */
+@media (prefers-reduced-motion: reduce) {
+  .char-card,
+  .btn-hi,
+  .btn-lo,
+  .btn-cashout,
+  .btn-fight,
+  .btn-secondary,
+  .coin-flip-img,
+  .overlay,
+  .modal {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .coin-flip-img.is-flip {
+    transform: none !important;
+  }
+}

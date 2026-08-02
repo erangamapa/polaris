@@ -563,14 +563,15 @@ export function MageCanvas({
         // Clear feet + fire from the number balls / bottom border
         mageY -= Math.max(32, canvas.height * 0.038);
       } else {
-        // Desktop: large mage on the left of the frame
-        const boxW = canvas.width * 0.42;
+        // Desktop: large mage centered over the left cloud column
+        const colW = canvas.width * 0.44;
+        const boxW = colW * 0.95;
         const boxH = canvas.height * 0.98;
         const scale =
           (srcW > 0 && srcH > 0 ? Math.min(boxW / srcW, boxH / srcH) : 1) * 1.15;
         mageW = srcW > 0 ? srcW * scale : boxW * 1.15;
         mageH = srcH > 0 ? srcH * scale : boxH * 1.15;
-        mageX = canvas.width * 0.045;
+        mageX = (colW - mageW) / 2;
         const gridBottom = getGridBottom();
         const cssH = wrapEl?.clientHeight || canvas.height;
         const pxPerCss = canvas.height / Math.max(1, cssH);

@@ -118,6 +118,15 @@ const GAME_OVERRIDES = {
   "provider:nova-wheel": { displayProfile: DISPLAY_PROFILE.COMPACT },
   // Confirmed real `id="btnMuteSound"` control — see the inventory doc.
   "provider:drunken-pirate": { providerControls: { sound: true } },
+  // Coin Fighters: 960×540 stage + mobile 100dvh; own music/SFX mute toggles.
+  "provider:coin-fighters": {
+    displayProfile: DISPLAY_PROFILE.FLEXIBLE,
+    providerControls: { sound: true },
+  },
+  // Mage Keno: full-bleed Studio iframe (mobile portrait + desktop split).
+  "provider:mage-keno": {
+    displayProfile: DISPLAY_PROFILE.FLEXIBLE,
+  },
 };
 
 // Resolves the final, fully-merged display metadata for one game object

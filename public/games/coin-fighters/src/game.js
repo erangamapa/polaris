@@ -4,7 +4,7 @@
  * Flow: SELECT → BETTING → (HEADS or PAWS) → coin flip → RESOLVING (fight) → BETTING | GAME_OVER
  */
 
-import { GAME_PHASE, HEALTH, MULTIPLIER, STAGE, TIMING, WALLET } from './constants.js';
+import { GAME_PHASE, HEALTH, HOUSE, MULTIPLIER, STAGE, TIMING, WALLET } from './constants.js';
 import { Fighter } from './fighter.js';
 import { EffectsSystem } from './effects.js';
 import { InputHandler } from './input.js';
@@ -36,6 +36,7 @@ import {
   startFightMusic,
 } from './audio.js';
 import { Fairness } from './fairness.js';
+import { connectBridge, isEmbedded, placeBet as bridgePlaceBet } from './bridge.js';
 
 const ROUND_HISTORY_MAX = 16;
 const SKIP_VIDEOS_KEY = 'coin-fighters-skip-videos';
@@ -130,6 +131,13 @@ export class Game {
     /** Fight resolve animation can be skipped (like coin flip). */
     this._fightSkipArmed = false;
     this._fightResolveFinished = false;
+    /** Host owns balance/RNG when TriBet mock (or on-chain) host replies to `ready`. */
+    this.bridgeActive = false;
+    /** Original climb stake while bridge-settled pot is already in host balance. */
+    this._climbBaseStake = 0;
+    this._prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
 
     // Feet planted on the stone floor tiles
     this.player = new Fighter({
@@ -183,6 +191,16 @@ export class Game {
     this.opponent.registerAnimations(
       createOpponentAnimations(assets.opponentFighter, assets.opponentPunch)
     );
+    // Class A: announce GameReady; host replies with init { balance }
+    connectBridge({
+      onInit: (bal) => {
+        this.bridgeActive = true;
+        this.balance = bal;
+        this._syncWalletUi();
+        this._syncHud();
+      },
+    });
+    if (this._prefersReducedMotion) this.skipVideos = true;
     this._fillCharPortraits();
     this._syncHud();
     this._showCharacterSelect();
@@ -225,17 +243,24 @@ export class Game {
     if (this.player.isBusy || this.opponent.isBusy) return;
     if (this.cutsceneActive) return;
 
-    // Lock stake from balance on the first flip of a climb
-    if (this.activeStake <= 0) {
-      const amount = this._clampBet(this._readBetInput());
-      if (amount > this.balance || amount < WALLET.MIN_BET) {
+    const climbing = this.activeStake > 0 && this.multiplier > MULTIPLIER.START;
+    /** @type {number} */
+    let wager;
+    if (climbing) {
+      // Re-risk the current pot (already banked in host balance after last win).
+      wager = Math.round(this.activeStake * this.multiplier * 100) / 100;
+    } else {
+      wager = this._clampBet(this._readBetInput());
+      if (wager < WALLET.MIN_BET) {
         this._syncWalletUi();
         return;
       }
-      this.bet = amount;
-      this.balance -= amount;
-      this.activeStake = amount;
+      this.bet = wager;
+    }
+
+    if (!(this.bridgeActive || isEmbedded()) && (wager > this.balance || wager < WALLET.MIN_BET)) {
       this._syncWalletUi();
+      return;
     }
 
     unlockAudio();
@@ -244,19 +269,95 @@ export class Game {
     this.input.setEnabled(false);
     this._setButtonsDisabled(true);
 
-    const { face, playerWon } = await this.fairness.nextCard(choice);
+    /** @type {{ face: 'HEADS' | 'PAWS', playerWon: boolean }} */
+    let outcome;
+    if (this.bridgeActive || isEmbedded()) {
+      outcome = await this._resolveViaBridge(choice, wager, climbing);
+      if (!outcome) {
+        this.phase = GAME_PHASE.BETTING;
+        this.input.setEnabled(true);
+        this._setButtonsDisabled(false);
+        this._syncWalletUi();
+        return;
+      }
+    } else {
+      // Standalone: lock stake locally on first flip of a climb
+      if (!climbing) {
+        this.balance -= wager;
+        this.activeStake = wager;
+        this._climbBaseStake = wager;
+        this._syncWalletUi();
+      }
+      const card = await this.fairness.nextCard(choice);
+      outcome = { face: card.face, playerWon: card.playerWon };
+    }
 
-    this._lastCard = face;
+    this._lastCard = outcome.face;
     this._syncRtpUi();
 
-    // Landing still = RNG face (HEADS/cat or PAWS), not merely the player's pick
-    await this._playCoinFlip(face);
+    await this._playCoinFlip(outcome.face);
 
-    if (playerWon) {
+    if (outcome.playerWon) {
       this._resolveWin(choice);
     } else {
       this._resolveLoss();
     }
+  }
+
+  /**
+   * Host-owned RNG: each flip is a full settle. Climb = re-bet the pot;
+   * cash-out only clears climb UI (money already in host balance after wins).
+   * @param {'HEADS' | 'PAWS'} choice
+   * @param {number} wager
+   * @param {boolean} climbing
+   * @returns {Promise<{ face: 'HEADS' | 'PAWS', playerWon: boolean } | null>}
+   */
+  async _resolveViaBridge(choice, wager, climbing) {
+    const loseWeight = Math.max(0, 1 - HOUSE.WIN_CHANCE);
+    const outcomes = [
+      { label: 'win', weight: HOUSE.WIN_CHANCE, multiplier: MULTIPLIER.WIN_FACTOR },
+      { label: 'lose', weight: loseWeight, multiplier: 0 },
+    ];
+    const res = await bridgePlaceBet(wager, outcomes, {
+      side: choice,
+      climbing,
+      multiplier: this.multiplier,
+    });
+    if (res.type === 'rejected') {
+      if (res.reason === 'not-embedded') {
+        // Host not ready yet — fall back to local for this flip
+        if (!climbing) {
+          if (wager > this.balance) return null;
+          this.balance -= wager;
+          this.activeStake = wager;
+          this._climbBaseStake = wager;
+        }
+        const card = await this.fairness.nextCard(choice);
+        return { face: card.face, playerWon: card.playerWon };
+      }
+      if (typeof res.balance === 'number') this.balance = res.balance;
+      return null;
+    }
+
+    this.bridgeActive = true;
+    this.balance = res.balance;
+    const playerWon = res.outcomeIndex === 0 || res.isWin;
+    if (playerWon) {
+      if (!climbing) {
+        this.activeStake = wager;
+        this._climbBaseStake = wager;
+      }
+      // Multiplier bump happens in _resolveWin; stake stays the original base.
+    } else if (!climbing) {
+      // First-flip loss: stake never locked in UI (host already deducted).
+      this.activeStake = 0;
+      this._climbBaseStake = 0;
+    }
+    this._syncWalletUi();
+    const face = /** @type {'HEADS' | 'PAWS'} */ (
+      playerWon ? choice : choice === 'HEADS' ? 'PAWS' : 'HEADS'
+    );
+    return { face, playerWon };
   }
 
   /**
@@ -312,8 +413,8 @@ export class Game {
         }, landMs);
       });
 
-    // "Skip video" also skips the spin — still shows the result face.
-    if (this.skipVideos) {
+    // "Skip video" / reduced-motion also skips the spin — still shows the result face.
+    if (this.skipVideos || this._prefersReducedMotion) {
       return showLandingStill();
     }
 
@@ -380,9 +481,14 @@ export class Game {
     if (this.phase !== GAME_PHASE.BETTING) return;
     if (this.multiplier <= MULTIPLIER.START || this.activeStake <= 0) return;
 
-    const payout = this.activeStake * this.multiplier;
-    this.balance += payout;
+    if (!this.bridgeActive) {
+      // Standalone: stake was deducted up front — credit pot now.
+      const payout = this.activeStake * this.multiplier;
+      this.balance += payout;
+    }
+    // Bridge: each win already settled into host balance; cash-out is UI-only.
     this.activeStake = 0;
+    this._climbBaseStake = 0;
     this.multiplier = MULTIPLIER.START;
     this.effects.multiplierTint.active = false;
     playCoinsCollectSound();
@@ -898,9 +1004,12 @@ export class Game {
     this.streak = 0;
     this.round = 1;
     this.multiplier = MULTIPLIER.START;
-    this.balance = WALLET.START_BALANCE;
+    if (!this.bridgeActive) {
+      this.balance = WALLET.START_BALANCE;
+    }
     this.bet = WALLET.DEFAULT_BET;
     this.activeStake = 0;
+    this._climbBaseStake = 0;
     this.multiplierHistory = [];
     this.roundHistory = [];
     this._opponentDepleted = false;

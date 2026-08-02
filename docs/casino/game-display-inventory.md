@@ -41,11 +41,12 @@ Implementation: sandboxed iframe (`ProviderGame.jsx`) loading a static HTML app 
 | `provider:nova-wheel` | Nova Wheel | `/games/nova-wheel/index.html` | `.wheel-wrap { width: min(360px, 82vw); aspect-ratio: 1 }`, `.controls { max-width: 420px }` — clear evidence of a compact, centered layout, not a wide dashboard. | `compact` |
 | `provider:spacex-rush` | SpaceX Rush | `/games/spacex-rush/index.html` | Sound-related strings found; no layout-width evidence located in this pass. | `flexible` (unknown confidence) |
 | `provider:tumble` | Tumble | `/games/tumble/index.html` | Self-contained crash-style game (own mock economy, imported via `skills/import-casino-game`). Sound-related strings found. Its CSS is a minified vendor bundle — not practically inspectable for layout hints in this pass. | `flexible` (unknown confidence) |
-| `provider:coin-fighters` | Coin Fighters | `/games/coin-fighters/index.html` | `max-width: 420px`/`560px`/`52rem` (832px) at different breakpoints, own sound module (`src/audio.js`) — moderate-width, own responsive breakpoints already. | `flexible` |
+| `provider:coin-fighters` | Coin Fighters | `/games/coin-fighters/index.html` | 960×540 canvas stage + mobile `100dvh`; climb coin-flip with own music/SFX mute toggles; bridge `ready`/`init`/`bet` (host owns RNG — climb = re-bet pot). | `flexible` |
 | `provider:raiders-escape` | Raider's Escape | `/games/raiders-escape/index.html` | `max-width: 168px/128px` (small sub-panels) with its own breakpoints at 720px/380px — compact, already narrow-friendly. | `flexible` |
 | `provider:keymines-v2` | KeyMines V2 | `/games/keymines-v2/index.html` | Vendored/minified build; no first-party layout CSS located to inspect in this pass. | `flexible` (unknown confidence) |
 | `provider:drunken-pirate` | Drunken Pirate | `/games/drunken-pirate/index.html` | Real internal sound control confirmed (`id="btnMuteSound"`, `aria-pressed`, `title="Mute sound"`) — the host must not add a second, competing sound control for this game. Multiple internal `aspect-ratio` declarations at different states (`5/4`, `16/9`, `408/306`), `max-width: 520px`/`90vw`. | `flexible` |
 | `provider:bubble-girl` | Bubble Girl | `/games/bubble-girl/index.html` | Self-contained crash-style bubble-inflate game (own mock economy). No layout-width evidence located in this pass. | `flexible` (unknown confidence) |
+| `provider:mage-keno` | Mage Keno | `/games/mage-keno/dist/index.html` | Fantasy 40-ball Keno; React+canvas chroma-keyed mage; own SFX (cast/whoosh/hit); mobile `100dvh` portrait stack + desktop left-mage/right-grid; bridge `ready`/`init`/`bet`. Min usable ~320×568. | `flexible` |
 
 ### Provider-declared internal controls found (real evidence, not assumed)
 
@@ -55,7 +56,8 @@ Implementation: sandboxed iframe (`ProviderGame.jsx`) loading a static HTML app 
 | Drunken Pirate | **yes** (mute button) | unknown | none found |
 | Warpout (crash) | sound-related strings present, unconfirmed as a visible control | help-related strings present, unconfirmed | none found |
 | Raider's Escape | sound-related strings present, unconfirmed | unknown | none found |
-| Coin Fighters | dedicated `audio.js` module — likely yes, control itself unconfirmed | unknown | none found |
+| Coin Fighters | **yes** (`#btnToggleMusic`, `#btnToggleSfx`) | fairness modal | none found |
+| Mage Keno | SFX present (cast/whoosh/hit); mute control not found | unknown | none found |
 | SpaceX Rush | sound-related strings present, unconfirmed | unknown | none found |
 | Tumble | sound-related strings present, unconfirmed | unknown | none found |
 | all others | unknown | unknown | none found |

@@ -65,8 +65,22 @@ describe("getGameDisplayMetadata — provider games with real evidence", () => {
     expect(meta.providerControls.sound).toBe(true);
   });
 
+  it("assigns flexible + sound to Coin Fighters (stage layout; confirmed music/SFX mutes)", () => {
+    const meta = getGameDisplayMetadata({ favId: "provider:coin-fighters", kind: "provider" });
+    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
+    expect(meta.providerControls.sound).toBe(true);
+    expect(meta.minimumViewport.mobile.width).toBe(320);
+  });
+
+  it("assigns flexible to Mage Keno (full-bleed Studio iframe; no confirmed internal mute UI)", () => {
+    const meta = getGameDisplayMetadata({ favId: "provider:mage-keno", kind: "provider" });
+    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
+    expect(meta.providerControls.sound).toBe(false);
+    expect(meta.minimumViewport.mobile.width).toBe(320);
+  });
+
   it("every OTHER provider game defaults to the flexible profile (today's exact existing box, no invented shape)", () => {
-    const unclassified = ["provider:coinflip", "provider:spacex-rush", "provider:tumble", "provider:coin-fighters", "provider:raiders-escape", "provider:keymines-v2", "provider:bubble-girl"];
+    const unclassified = ["provider:coinflip", "provider:spacex-rush", "provider:tumble", "provider:raiders-escape", "provider:keymines-v2", "provider:bubble-girl"];
     for (const favId of unclassified) {
       const meta = getGameDisplayMetadata({ favId, kind: "provider" });
       expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
