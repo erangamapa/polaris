@@ -26,6 +26,8 @@ const PICK_GOBLIN_HIT_PNG = './assets/pick-mark-hit.png';
 
 function isMobileUi(): boolean {
   if (typeof window === 'undefined') return false;
+  const rootW = document.getElementById('root')?.clientWidth ?? 0;
+  if (rootW > 0) return rootW < 860;
   return (
     window.matchMedia('(max-width: 860px)').matches ||
     window.matchMedia('(pointer: coarse)').matches
