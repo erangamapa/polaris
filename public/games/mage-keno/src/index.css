@@ -12,6 +12,13 @@
   --muted: #c48aa4;
   --green: #39d98a;
   --green-deep: #0f8f52;
+  /* Night-sky frame — violet rim + warm sunset highlight */
+  --frame-edge: #c478ff;
+  --frame-edge-soft: rgba(196, 120, 255, 0.55);
+  --frame-warm: #ff8a5c;
+  --frame-deep: #1a0a2e;
+  --font-ui: Orbitron, system-ui, sans-serif;
+  --font-num: Rajdhani, Orbitron, system-ui, sans-serif;
 }
 
 * {
@@ -37,7 +44,7 @@ body,
 }
 
 body {
-  font-family: Orbitron, system-ui, sans-serif;
+  font-family: var(--font-ui);
   color: var(--text);
   background:
     radial-gradient(ellipse at 50% 0%, #6a1438 0%, transparent 50%),
@@ -145,7 +152,7 @@ body {
 
 .arena-frame {
   position: relative;
-  border: 3px solid var(--gold);
+  border: 2px solid transparent;
   border-radius: 14px 14px 0 0;
   background-color: #12081c;
   /* Mobile portrait sky; desktop overrides via container query */
@@ -153,10 +160,14 @@ body {
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
+  /* Violet rim + warm sunset wash matching the sky art */
   box-shadow:
-    0 0 0 2px #4a0818,
-    0 0 28px rgba(224, 24, 106, 0.35),
-    inset 0 0 40px rgba(0, 0, 0, 0.25);
+    0 0 0 1px rgba(255, 138, 92, 0.35),
+    0 0 0 3px rgba(88, 40, 140, 0.85),
+    0 0 22px rgba(196, 120, 255, 0.35),
+    0 0 40px rgba(255, 100, 60, 0.12),
+    inset 0 0 0 1px rgba(255, 200, 170, 0.18),
+    inset 0 0 28px rgba(20, 4, 40, 0.35);
   overflow: hidden;
   min-height: 0;
   flex: 0 0 auto;
@@ -237,9 +248,12 @@ body {
 
 .arena-frame.has-storm {
   box-shadow:
-    0 0 0 2px #4a0818,
-    0 0 36px rgba(255, 100, 30, 0.45),
-    inset 0 0 40px rgba(0, 0, 0, 0.35);
+    0 0 0 1px rgba(255, 138, 92, 0.55),
+    0 0 0 3px rgba(88, 40, 140, 0.9),
+    0 0 36px rgba(255, 100, 30, 0.5),
+    0 0 48px rgba(196, 120, 255, 0.3),
+    inset 0 0 0 1px rgba(255, 200, 170, 0.22),
+    inset 0 0 40px rgba(40, 8, 20, 0.4);
 }
 
 .keno-grid {
@@ -313,20 +327,27 @@ body {
   border-radius: 999px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  font-family: Nunito, "Segoe UI", sans-serif;
-  font-size: clamp(13px, 2.4vw, 20px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-num);
+  font-size: clamp(22px, 4.2vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
   line-height: 1;
-  border: 1.5px solid rgba(255, 200, 230, 0.25);
+  font-variant-numeric: tabular-nums;
+  border: 1.5px solid rgba(255, 210, 235, 0.55);
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.12),
-    0 2px 0 #0a0206;
+    inset 0 2px 5px rgba(255, 255, 255, 0.22),
+    0 2px 0 rgba(8, 2, 12, 0.85);
 }
 
 .keno-ball-front {
-  color: #fff;
-  background: radial-gradient(circle at 35% 30%, #5a2040, #1a0810 70%);
+  color: #1a1000;
+  text-shadow: 0 1px 0 rgba(255, 230, 160, 0.35);
+  background: radial-gradient(circle at 35% 30%, #ffe08a, #c48a10 55%, #6a4508 100%);
+  border-color: #ffe566;
+  box-shadow:
+    0 0 14px rgba(240, 193, 75, 0.65),
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    0 2px 0 rgba(20, 10, 0, 0.65);
 }
 
 .keno-ball-back {
@@ -391,7 +412,10 @@ body {
 
 .ball-miss .keno-ball-front {
   background: radial-gradient(circle at 35% 30%, #7a8eb8, #24304a 68%, #141c2c 100%);
-  color: #eef3ff;
+  color: #f4f7ff;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(160, 200, 255, 0.35);
   border-color: #9bb0d8;
   box-shadow:
     0 0 0 1.5px rgba(155, 180, 230, 0.55),
@@ -439,12 +463,14 @@ body {
   grid-template-columns: 88px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  border: 2px solid rgba(240, 193, 75, 0.55);
-  border-top: 1px solid rgba(240, 193, 75, 0.35);
+  border: 2px solid rgba(196, 120, 255, 0.4);
+  border-top: 1px solid rgba(255, 138, 92, 0.28);
   border-radius: 0;
   background: var(--panel);
   padding: 8px 12px;
-  box-shadow: inset 0 0 20px rgba(224, 24, 106, 0.15);
+  box-shadow:
+    inset 0 0 20px rgba(88, 40, 140, 0.2),
+    0 0 16px rgba(196, 120, 255, 0.08);
   overflow: hidden;
   flex: 0 0 auto;
   margin: 0;
@@ -454,33 +480,44 @@ body {
 .payout-label {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
   width: 88px;
   min-width: 88px;
   max-width: 88px;
+  text-align: center;
 }
 
 .payout-title {
   margin: 0;
-  font-family: Cinzel, serif;
-  font-size: 15px;
-  color: var(--gold);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   white-space: nowrap;
+  text-align: center;
 }
 
 .payout-sub {
   margin: 0;
-  font-size: 10px;
-  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  text-align: center;
 }
 
 .payout-spots {
   display: inline-block;
   min-width: 1.25em;
-  text-align: right;
+  text-align: center;
   color: var(--gold);
   font-weight: 700;
 }
@@ -489,6 +526,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  font-family: var(--font-ui);
   font-size: 11px;
   min-width: 0;
   width: 100%;
@@ -507,10 +545,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   padding: 6px 4px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.06);
   min-width: 0;
 }
@@ -524,17 +562,21 @@ body {
 }
 
 .payout-hit {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--muted);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   font-variant-numeric: tabular-nums;
 }
 
 .payout-mult {
-  font-size: 13px;
+  font-family: var(--font-ui);
+  font-size: 17px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+  letter-spacing: 0.02em;
 }
 
 .bet-bar {
@@ -544,13 +586,14 @@ body {
   gap: 8px 10px;
   align-items: stretch;
   padding: 8px 12px;
-  border: 2px solid rgba(240, 193, 75, 0.45);
-  border-top: 1px solid rgba(240, 193, 75, 0.3);
+  border: 2px solid rgba(196, 120, 255, 0.35);
+  border-top: 1px solid rgba(255, 138, 92, 0.22);
   border-radius: 0 0 12px 12px;
   background: var(--panel);
   margin: 0;
   flex: 0 0 auto;
   min-height: 64px;
+  box-shadow: 0 0 18px rgba(88, 40, 140, 0.15);
 }
 
 .bet-row-stats {
@@ -571,6 +614,7 @@ body {
 .meta-pill {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   gap: 3px;
   padding: 6px 10px;
@@ -578,19 +622,22 @@ body {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.06);
   min-width: 72px;
+  text-align: center;
 }
 
 .meta-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .meta-value {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.1;
+  text-align: center;
 }
 
 .btn-secondary,
@@ -607,7 +654,7 @@ body {
   padding: 8px 14px;
   background: linear-gradient(180deg, #5a2040, #2a0c1c);
   color: var(--text);
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.04em;
   display: inline-flex;
   align-items: center;
@@ -628,6 +675,7 @@ body {
 .bet-amount {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   gap: 4px;
   flex: 1 1 auto;
@@ -637,6 +685,7 @@ body {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(240, 193, 75, 0.35);
   box-shadow: inset 0 0 18px rgba(224, 24, 106, 0.12);
+  text-align: center;
 }
 
 .bet-stepper {
@@ -644,6 +693,7 @@ body {
   grid-template-columns: 36px 1fr 36px;
   gap: 6px;
   align-items: center;
+  width: 100%;
 }
 
 .bet-stepper input {
@@ -652,7 +702,7 @@ body {
   appearance: textfield;
   -moz-appearance: textfield;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-align: center;
@@ -718,7 +768,7 @@ body {
   min-height: 0;
   height: 100%;
   padding: 8px 18px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #041a0c;
@@ -838,7 +888,6 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    border-width: 2px;
     border-radius: 10px 10px 0 0;
   }
 
@@ -860,16 +909,16 @@ body {
   }
 
   .payout-title {
-    font-size: 12px;
-    letter-spacing: 0.04em;
+    font-size: 11px;
+    letter-spacing: 0.08em;
   }
 
   .payout-sub {
     display: block;
-    font-size: 9px;
+    font-size: 11px;
     white-space: nowrap;
     max-width: none;
-    line-height: 1.2;
+    line-height: 1.1;
   }
 
   .payout-table {
@@ -888,11 +937,11 @@ body {
   }
 
   .payout-hit {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .payout-mult {
-    font-size: 11px;
+    font-size: 15px;
   }
 
   .mage-canvas-wrap {
@@ -940,7 +989,7 @@ body {
   }
 
   .keno-ball-face {
-    font-size: clamp(12px, 3.6cqw, 16px);
+    font-size: clamp(20px, 6cqw, 28px);
   }
 
   /* Balance · Picks · Bet USD on one row; actions below — same visual weight as payouts */
@@ -965,11 +1014,11 @@ body {
   }
 
   .meta-label {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .meta-value {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .bet-amount {
@@ -985,13 +1034,13 @@ body {
   }
 
   .bet-stepper input {
-    font-size: 14px;
+    font-size: 16px;
     padding: 5px 3px;
   }
 
   .btn-step {
     height: 32px;
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .bet-row-actions {
@@ -1004,7 +1053,7 @@ body {
 
   .btn-secondary {
     padding: 8px 6px;
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .btn-bet {
@@ -1013,94 +1062,94 @@ body {
     height: auto;
     width: 100%;
     padding: 8px 10px;
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 
 /* TriBet iframe on a phone: compress vertical chrome so the whole game
    fits the GameStage without scrolling the lobby page. */
 @container mage-keno (max-width: 860px) {
-  :root.is-embedded .tagline {
+  .app-shell.is-embedded .tagline {
     display: none;
   }
 
-  :root.is-embedded .top-bar {
+  .app-shell.is-embedded .top-bar {
     margin-bottom: 0;
     padding: 0;
   }
 
-  :root.is-embedded .brand h1 {
+  .app-shell.is-embedded .brand h1 {
     font-size: clamp(13px, 3.8cqw, 17px);
   }
 
-  :root.is-embedded .brand-mark {
+  .app-shell.is-embedded .brand-mark {
     font-size: 12px;
   }
 
-  :root.is-embedded .keno-grid {
+  .app-shell.is-embedded .keno-grid {
     max-height: min(26cqh, 100%);
     gap: 2px;
   }
 
-  :root.is-embedded .payout-panel {
+  .app-shell.is-embedded .payout-panel {
     min-height: 40px;
     padding: 3px 6px;
     gap: 4px;
   }
 
-  :root.is-embedded .payout-title {
-    font-size: 10px;
-  }
-
-  :root.is-embedded .payout-sub {
-    display: none;
-  }
-
-  :root.is-embedded .payout-hit {
+  .app-shell.is-embedded .payout-title {
     font-size: 9px;
   }
 
-  :root.is-embedded .payout-mult {
-    font-size: 10px;
+  .app-shell.is-embedded .payout-sub {
+    display: none;
   }
 
-  :root.is-embedded .payout-row {
+  .app-shell.is-embedded .payout-hit {
+    font-size: 11px;
+  }
+
+  .app-shell.is-embedded .payout-mult {
+    font-size: 14px;
+  }
+
+  .app-shell.is-embedded .payout-row {
     padding: 2px 1px;
   }
 
-  :root.is-embedded .bet-bar {
+  .app-shell.is-embedded .bet-bar {
     padding: 4px 6px;
     gap: 4px;
   }
 
-  :root.is-embedded .meta-pill,
-  :root.is-embedded .bet-amount {
+  .app-shell.is-embedded .meta-pill,
+  .app-shell.is-embedded .bet-amount {
     padding: 4px 5px;
   }
 
-  :root.is-embedded .meta-value {
-    font-size: 12px;
-  }
-
-  :root.is-embedded .btn-step {
-    height: 28px;
+  .app-shell.is-embedded .meta-value {
     font-size: 14px;
   }
 
-  :root.is-embedded .bet-row-actions {
+  .app-shell.is-embedded .btn-step {
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .app-shell.is-embedded .bet-row-actions {
     min-height: 34px;
     gap: 4px;
   }
 
-  :root.is-embedded .btn-secondary {
+  .app-shell.is-embedded .btn-secondary {
     padding: 5px 4px;
-    font-size: 10px;
+    font-size: 12px;
   }
 
-  :root.is-embedded .btn-bet {
+  .app-shell.is-embedded .btn-bet {
     min-height: 34px;
     padding: 6px 8px;
-    font-size: 13px;
+    font-size: 15px;
   }
 }
 
@@ -1110,7 +1159,7 @@ body {
   }
 
   .keno-ball-face {
-    font-size: clamp(11px, 3.8cqw, 15px);
+    font-size: clamp(18px, 6.2cqw, 24px);
   }
 }
 

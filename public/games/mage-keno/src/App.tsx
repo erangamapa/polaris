@@ -5,11 +5,13 @@ import { MageCanvas } from './components/MageCanvas';
 import { PayoutTable } from './components/PayoutTable';
 import { StaffImpact } from './components/StaffImpact';
 import { useKenoGame } from './hooks/useKenoGame';
+import { isEmbedded } from './utils/bridge';
 
 export default function App() {
   const game = useKenoGame();
   const gridRef = useRef<HTMLDivElement>(null);
   const [impactPlaying, setImpactPlaying] = useState(false);
+  const embedded = isEmbedded();
 
   // Reset storm for each new bet/draw
   useEffect(() => {
@@ -26,7 +28,9 @@ export default function App() {
   }, [game.onSequenceComplete]);
 
   return (
-    <div className={`app-shell ${game.flashHit ? 'is-flash' : ''}`}>
+    <div
+      className={`app-shell${game.flashHit ? ' is-flash' : ''}${embedded ? ' is-embedded' : ''}`}
+    >
       <header className="top-bar">
         <div className="brand">
           <span className="brand-mark">✦</span>
@@ -90,7 +94,7 @@ export default function App() {
             <h2>{game.lastWin > 0 ? 'SPELL HIT!' : 'NO MATCH'}</h2>
             <p>
               {game.lastMatches} match{game.lastMatches === 1 ? '' : 'es'} ·{' '}
-              <span className="gold">{game.lastMultiplier.toFixed(1)}x</span>
+              <span className="gold">{game.lastMultiplier.toFixed(1)}×</span>
             </p>
             <p className="result-win">
               {game.lastWin > 0 ? `+$${game.lastWin.toLocaleString()}` : 'Better luck next cast'}

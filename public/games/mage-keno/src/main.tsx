@@ -6,6 +6,7 @@ import './index.css';
 
 if (isEmbedded()) {
   document.documentElement.classList.add('is-embedded');
+  document.getElementById('root')?.classList.add('is-embedded');
 }
 
 createRoot(document.getElementById('root')!).render(
