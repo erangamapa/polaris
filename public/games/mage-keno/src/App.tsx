@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BetControls } from './components/BetControls';
+import { FairnessFooter } from './components/FairnessFooter';
 import { KenoGrid } from './components/KenoGrid';
 import { MageCanvas } from './components/MageCanvas';
 import { PayoutTable } from './components/PayoutTable';
@@ -86,6 +87,12 @@ export default function App() {
         onRandom={game.randomSelect}
         onClear={game.clearSelection}
         onBet={game.startBet}
+      />
+
+      <FairnessFooter
+        spots={game.selected.size}
+        fairness={game.fairness}
+        shortHash={game.shortHash}
       />
 
       {game.phase === 'result' && (

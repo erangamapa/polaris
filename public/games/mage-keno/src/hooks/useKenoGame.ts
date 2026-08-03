@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { connectBridge, isEmbedded, placeBet } from '../utils/bridge';
+import { Fairness, type FairnessSnapshot } from '../utils/fairness';
 import {
   DEFAULT_BET,
   DRAW_COUNT,
@@ -42,6 +43,8 @@ export type UseKenoGameResult = {
   onSequenceComplete: () => void;
   /** Stays set for the full cast so canvas remounts can restart the sequence. */
   activeDraw: { id: number; numbers: number[] } | null;
+  fairness: FairnessSnapshot;
+  shortHash: (value?: string) => string;
 };
 
 type SettledRound = {
@@ -65,7 +68,16 @@ export function useKenoGame(): UseKenoGameResult {
   const [animatingNumber, setAnimatingNumber] = useState<number | null>(null);
   const [flashHit, setFlashHit] = useState(false);
   const [activeDraw, setActiveDraw] = useState<{ id: number; numbers: number[] } | null>(null);
+  const [fairnessSnap, setFairnessSnap] = useState<FairnessSnapshot>(() => ({
+    serverSeedHash: '—',
+    serverSeed: null,
+    clientSeed: '—',
+    nonce: 0,
+    lastDrawHash: null,
+    hostSettled: false,
+  }));
   const drawIdRef = useRef(0);
+  const fairnessRef = useRef(new Fairness());
 
   const selectedRef = useRef(selected);
   const betRef = useRef(bet);
@@ -90,6 +102,9 @@ export function useKenoGame(): UseKenoGameResult {
 
   // Class A: announce GameReady; host replies with init { balance }
   useEffect(() => {
+    void fairnessRef.current.initSession().then(() => {
+      setFairnessSnap(fairnessRef.current.snapshot());
+    });
     return connectBridge({
       onInit: (bal) => {
         bridgeActiveRef.current = true;
@@ -170,12 +185,16 @@ export function useKenoGame(): UseKenoGameResult {
 
     const runLocal = () => {
       settledRef.current = null;
-      const draw = pickRandomNumbers(DRAW_COUNT, GRID_SIZE);
-      setBalance((b) => b - amount);
-      beginRound(picks, amount, draw);
+      bettingLockRef.current = true;
+      void fairnessRef.current.nextDraw(DRAW_COUNT, GRID_SIZE).then(({ numbers, snapshot }) => {
+        bettingLockRef.current = false;
+        setFairnessSnap(snapshot);
+        setBalance((b) => b - amount);
+        beginRound(picks, amount, numbers);
+      });
     };
 
-    // Embedded: host owns RNG + balance (bridge). Standalone: local economy.
+    // Embedded: host owns RNG + balance (bridge). Standalone: local seeded draw.
     if (bridgeActiveRef.current || isEmbedded()) {
       bettingLockRef.current = true;
       const outcomes = bridgeOutcomesForSpots(picks.size);
@@ -196,6 +215,7 @@ export function useKenoGame(): UseKenoGameResult {
           win: Math.floor(res.payout),
           balance: res.balance,
         };
+        setFairnessSnap(fairnessRef.current.markHostSettled());
         setBalance(res.balance);
         const draw = drawConsistentWithHits([...picks], res.outcomeIndex);
         beginRound(picks, amount, draw);
@@ -257,6 +277,11 @@ export function useKenoGame(): UseKenoGameResult {
   const canBet =
     phase !== 'playing' && selected.size >= 1 && bet >= MIN_BET && bet <= balance;
 
+  const shortHash = useCallback(
+    (value?: string) => fairnessRef.current.shortHash(value),
+    [],
+  );
+
   return {
     balance,
     bet,
@@ -280,5 +305,7 @@ export function useKenoGame(): UseKenoGameResult {
     onFireballImpact,
     onSequenceComplete,
     activeDraw,
+    fairness: fairnessSnap,
+    shortHash,
   };
 }

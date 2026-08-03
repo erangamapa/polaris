@@ -411,26 +411,27 @@ body {
 }
 
 .ball-miss .keno-ball-front {
-  background: radial-gradient(circle at 35% 30%, #7a8eb8, #24304a 68%, #141c2c 100%);
-  color: #f4f7ff;
+  background: transparent;
+  color: #1a1000;
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.55),
-    0 0 10px rgba(160, 200, 255, 0.35);
-  border-color: #9bb0d8;
+    0 0 3px rgba(255, 245, 220, 0.95),
+    0 0 8px rgba(255, 255, 255, 0.55),
+    0 1px 0 rgba(255, 230, 160, 0.35);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow:
-    0 0 0 1.5px rgba(155, 180, 230, 0.55),
-    0 0 16px rgba(90, 130, 210, 0.5),
-    inset 0 2px 5px rgba(255, 255, 255, 0.18);
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 0 0 transparent;
   animation: missReveal 0.4s ease-out;
 }
 
 @keyframes missReveal {
   0% {
-    filter: brightness(1.55) saturate(1.2);
-    box-shadow:
-      0 0 0 2px rgba(180, 210, 255, 0.9),
-      0 0 22px rgba(120, 170, 255, 0.85),
-      inset 0 2px 5px rgba(255, 255, 255, 0.28);
+    filter: brightness(1.25);
+    border-color: rgba(255, 255, 255, 0.55);
+    text-shadow:
+      0 0 4px rgba(255, 245, 220, 1),
+      0 0 12px rgba(255, 255, 255, 0.75),
+      0 1px 0 rgba(255, 230, 160, 0.45);
   }
   100% {
     filter: none;
@@ -785,6 +786,166 @@ body {
   filter: brightness(1.08);
 }
 
+.fairness-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 2px 2px 0;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.fairness-footer-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fairness-footer strong {
+  font-weight: 700;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.fairness-sep {
+  opacity: 0.45;
+}
+
+.fairness-seed {
+  max-width: 42vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fairness-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.fairness-open-btn {
+  appearance: none;
+  flex: 0 0 auto;
+  border: 1px solid rgba(196, 120, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.fairness-open-btn:hover {
+  border-color: rgba(240, 193, 75, 0.55);
+  filter: brightness(1.08);
+}
+
+.fairness-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  padding: 16px;
+}
+
+.fairness-card {
+  width: min(100%, 420px);
+  max-height: min(90vh, 560px);
+  overflow: auto;
+  padding: 20px 18px;
+  border-radius: 14px;
+  border: 2px solid rgba(196, 120, 255, 0.45);
+  background: linear-gradient(180deg, #2a1438, #12081c);
+  box-shadow: 0 0 28px rgba(100, 60, 180, 0.35);
+}
+
+.fairness-card h2 {
+  margin: 0 0 8px;
+  font-family: Cinzel, serif;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  font-size: 18px;
+}
+
+.fairness-lead {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.fairness-list {
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fairness-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fairness-row dt {
+  margin: 0;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fairness-row dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.fairness-copy {
+  appearance: none;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.fairness-copy:hover {
+  border-color: rgba(240, 193, 75, 0.45);
+}
+
 .result-modal {
   position: fixed;
   inset: 0;
@@ -1063,6 +1224,22 @@ body {
     width: 100%;
     padding: 8px 10px;
     font-size: 16px;
+  }
+
+  .fairness-footer {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    font-size: 9px;
+    margin-top: 4px;
+  }
+
+  .fairness-footer-main {
+    justify-content: center;
+  }
+
+  .fairness-seed {
+    max-width: 56vw;
   }
 }
 

@@ -1,6 +1,6 @@
 # Mage Keno
 
-Fantasy **40-number Keno** (5×8 grid). Pick up to 10 spots; the mage draws 20 fireballs. Hits stun goblins; payouts by hit count (~97% RTP).
+Fantasy **40-number Keno** (5×8 grid). Pick up to 10 spots; the mage draws 20 fireballs. Hits stun goblins; payouts by hit count (**~97% RTP**, house edge **~3%** on every spot count — hypergeometric N=40, K=20).
 
 | Field | Value |
 | --- | --- |
