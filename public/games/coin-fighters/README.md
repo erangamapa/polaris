@@ -23,6 +23,7 @@ Street-fighter coin flip: pick **HEADS** or **PAWS**, climb a multiplier, cash o
 | No audio before user gesture | ✅ `unlockAudio` on first pointer |
 | Never call Fullscreen API | ✅ none |
 | Respect `prefers-reduced-motion` | ✅ skip long flip/cutscenes; no shake/flash; CSS transitions off |
+| Teardown (§14) | ✅ `Game.destroy()` on `pagehide` — RAF/timers/bridge/audio/videos |
 
 Standalone (open `index.html` directly) keeps the local play-money wallet + SHA-256 fairness session.
 

@@ -310,6 +310,21 @@ export function stopCoinSpinSound() {
   }
 }
 
+/** Pause/stop all audio on iframe teardown (BOY-36 §14/§16). */
+export function releaseAudio() {
+  stopCoinSpinSound();
+  stopCombatSounds();
+  if (fightMusic) {
+    try {
+      fightMusic.pause();
+      fightMusic.currentTime = 0;
+    } catch {
+      /* no-op */
+    }
+  }
+  musicStarted = false;
+}
+
 /** @param {string} key */
 function loadPref(key) {
   try {

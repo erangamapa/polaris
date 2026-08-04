@@ -23,13 +23,14 @@ export const PROVIDER_GAMES = [
   { key: "spacex-rush", title: "SpaceX Rush", src: "/games/spacex-rush/index.html", providerId: "provider-2", image: "/img/games/spacex-rush.svg", tags: ["new"] },
   // Imported via skills/import-casino-game — self-contained crash game (own mock economy).
   { key: "tumble", title: "Tumble", src: "/games/tumble/index.html", providerId: "provider-2", image: "/img/games/tumble.svg", tags: ["new"] },
-  // Imported from aquistsang GitHub — self-contained (own mock economy).
+  // Class A bridge (ready/init/bet) — host owns RNG when embedded.
   { key: "coin-fighters", title: "Coin Fighters", src: "/games/coin-fighters/index.html", providerId: "provider-2", image: "/img/games/coin-fighters.svg", tags: ["new", "game-shows"] },
   { key: "raiders-escape", title: "Raider's Escape", src: "/games/raiders-escape/index.html", providerId: "provider-2", image: "/img/games/raiders-escape.svg", tags: ["new", "popular"] },
   { key: "keymines-v2", title: "KeyMines V2", src: "/games/keymines-v2/index.html", providerId: "provider-3", image: "/img/games/keymines-v2.svg", tags: ["new"] },
   { key: "drunken-pirate", title: "Drunken Pirate", src: "/games/drunken-pirate/index.html", providerId: "provider-3", image: "/img/games/drunken-pirate.svg", tags: ["live-casino"] },
   // Self-contained crash-style bubble inflate (own mock economy).
   { key: "bubble-girl", title: "Bubble Girl", src: "/games/bubble-girl/index.html", providerId: "provider-3", image: "/img/games/bubble-girl.svg", tags: ["new"] },
+  // Class A bridge (ready/init/bet) — host owns RNG when embedded.
   { key: "mage-keno", title: "Mage Keno", src: "/games/mage-keno/dist/index.html", providerId: "provider-3", image: "/img/games/mage-keno.svg", tags: ["new"] },
 ];
 

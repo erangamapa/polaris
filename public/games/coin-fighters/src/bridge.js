@@ -64,6 +64,10 @@ export function connectBridge(handlers) {
   return () => {
     pending.clear();
     initHandler = null;
+    if (listening) {
+      window.removeEventListener('message', onMessage);
+      listening = false;
+    }
   };
 }
 

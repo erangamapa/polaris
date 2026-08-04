@@ -34,6 +34,7 @@ import {
   toggleMusicMuted,
   toggleSfxMuted,
   startFightMusic,
+  releaseAudio,
 } from './audio.js';
 import { Fairness } from './fairness.js';
 import { connectBridge, isEmbedded, placeBet as bridgePlaceBet } from './bridge.js';
@@ -167,6 +168,10 @@ export class Game {
     this._coinFlipRaf = null;
     /** @type {ReturnType<typeof setTimeout> | null} */
     this._coinFlipLandTimer = null;
+    /** @type {(() => void) | null} */
+    this._disconnectBridge = null;
+    /** @type {(() => void) | null} */
+    this._onResize = null;
     this.input.bindUI(ui);
     this._bindWalletUi();
     this._bindRulesAndFairnessUi();
@@ -176,7 +181,8 @@ export class Game {
     this._bindCharSelectUi();
     this._bindChangeFighterUi();
 
-    window.addEventListener('resize', () => this.renderer.resize());
+    this._onResize = () => this.renderer.resize();
+    window.addEventListener('resize', this._onResize);
     if (typeof ResizeObserver !== 'undefined' && this.canvas.parentElement) {
       this._stageResizeObserver = new ResizeObserver(() => this.renderer.resize());
       this._stageResizeObserver.observe(this.canvas.parentElement);
@@ -192,7 +198,7 @@ export class Game {
       createOpponentAnimations(assets.opponentFighter, assets.opponentPunch)
     );
     // Class A: announce GameReady; host replies with init { balance }
-    connectBridge({
+    this._disconnectBridge = connectBridge({
       onInit: (bal) => {
         this.bridgeActive = true;
         this.balance = bal;
@@ -207,6 +213,52 @@ export class Game {
     this.running = true;
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this._frame(t));
+  }
+
+  /** BOY-36 §14 — stop RAF/timers/audio/listeners when the iframe is torn down. */
+  destroy() {
+    this.running = false;
+    if (this._coinFlipRaf != null) {
+      cancelAnimationFrame(this._coinFlipRaf);
+      this._coinFlipRaf = null;
+    }
+    if (this._coinFlipLandTimer != null) {
+      clearTimeout(this._coinFlipLandTimer);
+      this._coinFlipLandTimer = null;
+    }
+    this._disconnectBridge?.();
+    this._disconnectBridge = null;
+    if (this._onResize) {
+      window.removeEventListener('resize', this._onResize);
+      this._onResize = null;
+    }
+    this._stageResizeObserver?.disconnect();
+    this._stageResizeObserver = null;
+    this.input?.destroy();
+    try {
+      const bg = assets.stageBackground;
+      if (bg && 'pause' in bg) {
+        /** @type {HTMLVideoElement} */ (bg).pause();
+      }
+    } catch {
+      /* no-op */
+    }
+    for (const el of [
+      this.ui.victoryVideoEl,
+      this.ui.victoryPrezzVideoEl,
+      this.ui.defeatVideoEl,
+      this.ui.defeatPrezzVideoEl,
+    ]) {
+      if (!el) continue;
+      try {
+        el.pause();
+        el.removeAttribute('src');
+        el.load();
+      } catch {
+        /* no-op */
+      }
+    }
+    releaseAudio();
   }
 
   /** @param {number} time */

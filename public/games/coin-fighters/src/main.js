@@ -132,6 +132,9 @@ game.init()
       },
       { once: true }
     );
+    const teardown = () => game.destroy();
+    window.addEventListener('pagehide', teardown);
+    window.addEventListener('beforeunload', teardown);
   })
   .catch((err) => {
     console.error(err);

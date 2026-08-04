@@ -86,7 +86,7 @@ Games are organized by **rendering/runtime class**, not by which game happens to
 
 | Class | Description | Compliance | Current example(s) |
 |---|---|---|---|
-| **A — Iframe Games** | A self-contained HTML/JS/CSS bundle, sandboxed in an `<iframe>`, communicating with the host only via a defined message protocol (§17). | Fully specified today. | All 11 "Studio" games (Appendix D) |
+| **A — Iframe Games** | A self-contained HTML/JS/CSS bundle, sandboxed in an `<iframe>`, communicating with the host only via a defined message protocol (§17). | Fully specified today. | All 12 "Studio" games (Appendix D) |
 | **B — React DOM Games** | Rendered directly in the host's own React tree as plain DOM/CSS, no iframe boundary. | Fully specified today. | The 6 on-chain BetSwirl games (Appendix D) |
 | **C — Canvas Games** | A game that renders to an HTML `<canvas>` element owned/sized by the host (`GameStage`). | **[FUTURE]** — no sizing/DPI/resize contract exists yet (see §21 gap, Appendix F). | None today |
 | **D — PixiJS Games** | A canvas-class game specifically built on PixiJS. | **[FUTURE]** — treated as a specialization of Class C once Class C's contract exists. | None today |
@@ -519,11 +519,12 @@ No screenshots/demo pages/Storybook exist (no `.storybook` config, no Storybook 
 | `nova-wheel` | Nova Wheel | ✅ | Shared mock balance |
 | `spacex-rush` | SpaceX Rush | ✅ | Shared mock balance |
 | `tumble` | Tumble | ❌ | Self-contained |
-| `coin-fighters` | Coin Fighters | ❌ | Self-contained |
+| `coin-fighters` | Coin Fighters | ✅ | Shared mock balance (climb = re-bet pot) |
 | `raiders-escape` | Raider's Escape | ❌ | Self-contained |
 | `keymines-v2` | KeyMines V2 | ❌ | Self-contained |
 | `drunken-pirate` | Drunken Pirate | ❌ | Self-contained |
 | `bubble-girl` | Bubble Girl | ❌ | Self-contained |
+| `mage-keno` | Mage Keno | ✅ | Shared mock balance |
 
 Integration is via `src/lib/gameBridge.js`'s `attachMockHost(iframe, {currency, onBalance, settle?})`, sandbox `allow-scripts allow-same-origin allow-pointer-lock`. Attachment is unconditional — called for every game once its iframe loads, regardless of whether that game's own JS speaks the protocol (inert for non-integrated games). Teardown is DOM-unmount-driven; no explicit "destroy" message is sent into the iframe.
 
@@ -579,7 +580,7 @@ Pure-logic/orchestration-hook pairing repeated throughout `src/lib/` (e.g. `casi
 | Component | File | Role |
 |---|---|---|
 | `BetSwirlGame` | `src/components/casino/BetSwirlGame.jsx` | All 6 Class B games |
-| `ProviderGame` | `src/components/casino/ProviderGame.jsx` | All 11 Class A games + `PROVIDER_GAMES` catalog |
+| `ProviderGame` | `src/components/casino/ProviderGame.jsx` | All 12 Class A games + `PROVIDER_GAMES` catalog |
 | `CasinoGamePage` | `src/components/casino/CasinoGamePage.jsx` | Page composition, fullscreen ownership, `useAvailableHeight` |
 | `GamePlayerFrame` | `src/components/casino/GamePlayerFrame.jsx` | Shared width/height/centring |
 | `GameHeader` | `src/components/casino/GameHeader.jsx` | Back/title/favourite/more |
@@ -600,7 +601,7 @@ Pure-logic/orchestration-hook pairing repeated throughout `src/lib/` (e.g. `casi
 
 ## Appendix D — Current Game Inventory (combined)
 
-17 total games: 6 Class B (onchain, `casino:*`) + 11 Class A (iframe, `provider:*`). See Appendix A.2/A.3 for full tables. `public/games/` folders: `bubble-girl`, `coin-fighters`, `coinflip`, `crash`, `dice`, `drunken-pirate`, `keymines-v2`, `nova-wheel`, `raiders-escape`, `spacex-rush`, `tumble` (11, matching `PROVIDER_GAMES`).
+18 total games: 6 Class B (onchain, `casino:*`) + 12 Class A (iframe, `provider:*`). See Appendix A.2/A.3 for full tables. `public/games/` folders: `bubble-girl`, `coin-fighters`, `coinflip`, `crash`, `dice`, `drunken-pirate`, `keymines-v2`, `mage-keno`, `nova-wheel`, `raiders-escape`, `spacex-rush`, `tumble` (12, matching `PROVIDER_GAMES`).
 
 ## Appendix E — Current Bridge Protocol (V1 Game Platform API)
 

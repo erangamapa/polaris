@@ -1,6 +1,6 @@
 # Tribet Casino — Game Display Inventory
 
-Every game currently reachable through the Casino experience (Lobby rails, Search, Favorites, Recently Played, receipts — all read from the same `ALL_GAMES` list in `CasinoCatalog.jsx`, so there is exactly one catalog, not several). 17 games total: 6 "Tribet Originals" (on-chain, BetSwirl SDK) + 11 provider/vendored games (iframe, self-contained HTML apps under `public/games/*`).
+Every game currently reachable through the Casino experience (Lobby rails, Search, Favorites, Recently Played, receipts — all read from the same `ALL_GAMES` list in `CasinoCatalog.jsx`, so there is exactly one catalog, not several). 18 games total: 6 "Tribet Originals" (on-chain, BetSwirl SDK) + 12 provider/vendored games (iframe, self-contained HTML apps under `public/games/*`).
 
 No internal proof-of-concept routes, external redirects, or games reachable only through a side-channel were found — `findGameByFavId`/`ALL_GAMES` is the single source every entry point (Lobby card, search result, Favorites/Recently Played row, round receipt's "view game info") resolves through.
 
