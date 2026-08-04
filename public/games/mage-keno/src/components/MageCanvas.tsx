@@ -552,7 +552,9 @@ export function MageCanvas({
 
       const wrapEl = wrapRef.current;
       const wrapW = wrapEl?.clientWidth ?? canvas.width;
-      const portrait = wrapW < 860;
+      const rootW = document.getElementById('root')?.clientWidth ?? wrapW;
+      // Prefer the iframe/#root box — device width can lie inside TriBet.
+      const portrait = Math.min(wrapW, rootW) < 860;
       const platform = getCloudPlatform();
 
       let mageW: number;
@@ -561,25 +563,25 @@ export function MageCanvas({
       let mageY: number;
 
       if (portrait) {
-        // Mobile: size by width so the mage reads hero-scale, not tiny in a short band.
+        // Mobile: hero-scale mage — fill width and most of the sky above the board.
         const gridTop = getGridTop();
-        const padTop = Math.max(4, canvas.height * 0.005);
-        // Allow feet to sit slightly into the number board so he fills the sky.
+        const padTop = Math.max(2, canvas.height * 0.002);
+        // Feet overlap the number board so the figure reads large vs the coins.
         const footTarget = platform
-          ? Math.min(platform.deckY, gridTop + canvas.height * 0.04)
-          : gridTop + canvas.height * 0.06;
-        const bandH = Math.max(120, footTarget - padTop);
-        const widthScale = srcW > 0 ? (canvas.width * 0.98) / srcW : 1;
-        const heightScale = srcH > 0 ? (bandH / srcH) * 1.38 : 1;
-        const scale = Math.max(widthScale, heightScale) * (platform ? 1.02 : 1.08);
+          ? Math.min(platform.deckY, gridTop + canvas.height * 0.1)
+          : gridTop + canvas.height * 0.14;
+        const bandH = Math.max(180, footTarget - padTop);
+        const widthScale = srcW > 0 ? (canvas.width * 1.08) / srcW : 1;
+        const heightScale = srcH > 0 ? (bandH / srcH) * 1.55 : 1;
+        const scale = Math.max(widthScale, heightScale) * 1.12;
         mageW = srcW > 0 ? srcW * scale : canvas.width;
         mageH = srcH > 0 ? srcH * scale : bandH;
         mageX = platform
           ? platform.centerX - mageW / 2
           : (canvas.width - mageW) / 2;
         mageY = footTarget - mageH;
-        // Keep most of the hat in frame
-        if (mageY < padTop - mageH * 0.12) mageY = padTop - mageH * 0.12;
+        // Allow slight hat crop so body/staff stay huge in frame
+        if (mageY < padTop - mageH * 0.18) mageY = padTop - mageH * 0.18;
       } else {
         // Desktop: mage in the left column, clear of the number board
         const colW = canvas.width * 0.44;
