@@ -538,16 +538,18 @@ export default function App() {
   useRealityCheck();
   const favs = useMemo(() => new Set(playerSettings.casino.favorites), [playerSettings.casino.favorites]);
   const setFavorites = (set) => updateSettings("casino", { favorites: [...set] });
-  // FIRST-FAVORITE CUE — a brief, one-shot attention pulse on the sidebar's
-  // own Favorites row (see the sidebar builder below) the moment the very
-  // first favorite is ever added, so a player who just favorited a game
-  // from a card (with no lobby rail to look at anymore — see FAVORITES
-  // LOBBY REMOVAL) still has some signal for "this saved somewhere." Purely
-  // transient UI state — never persisted, never re-fires for the 2nd+
-  // favorite. `favoritesCueTimeoutRef` clears any still-pending timeout
-  // from a previous toggle rather than letting an old one stomp a new one.
-  const [favoritesCue, setFavoritesCue] = useState(false);
-  const favoritesCueTimeoutRef = useRef(null);
+  // FAVORITES ADD CUE — a brief, premium attention pulse on the sidebar's
+  // own Heart icon (see the sidebar builder below) every time a favorite is
+  // successfully ADDED, so a player who just favorited a game from a card
+  // (with no lobby rail to look at anymore — see FAVORITES LOBBY REMOVAL)
+  // always sees where it landed — not just on the very first favorite.
+  // Purely transient UI state, never persisted. A monotonically increasing
+  // sequence rather than a boolean: Sidebar.jsx keys the animated icon off
+  // this value, so each new add remounts and replays the animation fresh
+  // even if the previous one is still mid-flight (see index.css's
+  // sidebar-fav-heart-pulse) — no timeout/cleanup needed, since the CSS
+  // animation is a single finite play with no fill-mode holding it open.
+  const [favoritesCueSeq, setFavoritesCueSeq] = useState(0);
   const recentIds = playerSettings.casino.recentlyPlayed;
   const trackRecent = (game) => {
     const list = readSettings().casino.recentlyPlayed;
@@ -1142,18 +1144,15 @@ export default function App() {
     const before = new Set(readSettings().casino.favorites);
     const { next, adding } = toggleFavorite(before, game.favId);
     setFavorites(next);
-    // FIRST-FAVORITE CUE — fires only on the real 0 -> 1 transition, never
-    // on the 2nd+ favorite (see the state's own comment above). 850ms
-    // matches the spec's ~700-900ms coral-highlight window; the scale-pop
-    // keyframe itself (see index.css's `sidebar-fav-pulse`) is a separate,
-    // shorter animation that plays once while this stays true, and is
-    // already collapsed to ~0 duration under prefers-reduced-motion by this
-    // app's existing blanket reduced-motion rule — no extra check needed
-    // here for that part specifically.
-    if (adding && next.size === 1) {
-      if (favoritesCueTimeoutRef.current) clearTimeout(favoritesCueTimeoutRef.current);
-      setFavoritesCue(true);
-      favoritesCueTimeoutRef.current = setTimeout(() => setFavoritesCue(false), 850);
+    // FAVORITES ADD CUE — fires on every real add, never on a remove (see
+    // the state's own comment above). Incrementing (not toggling a boolean)
+    // is what makes rapid back-to-back favorites each replay their own full
+    // animation in Sidebar.jsx rather than a second `true` being a no-op
+    // against an already-`true` value. Already collapsed to ~0 duration
+    // under prefers-reduced-motion by this app's existing blanket
+    // reduced-motion rule (index.css) — no extra check needed here.
+    if (adding) {
+      setFavoritesCueSeq((n) => n + 1);
     }
     // Persistence and account scoping are the settings store's job now — a
     // connected wallet's favorites go to that wallet's bucket and sync up;
@@ -1235,7 +1234,7 @@ export default function App() {
       const personalItems = CASINO_PERSONAL_DESTINATIONS.map((d) =>
         d.kind === "action"
           ? { id: d.id, label: d.label, icon: d.icon, action: openHistory }
-          : { id: d.id, label: d.label, icon: d.icon, count: personalCount(d.id), pulse: d.id === "Favorites" && favoritesCue }
+          : { id: d.id, label: d.label, icon: d.icon, count: personalCount(d.id), pulseSeq: d.id === "Favorites" ? favoritesCueSeq : undefined }
       );
       return {
         title: "Casino",

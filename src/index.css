@@ -344,18 +344,55 @@ html {
 }
 .fav-chip-pop { animation: fav-chip-pop 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
-/* Sidebar Favorites first-add cue — a one-shot attention pulse on the
-   sidebar's own Heart icon only (see Sidebar.jsx's `pulse` prop), not a new
-   lobby row, tooltip, or modal. Scale only; the coral fill/background tint
-   themselves are plain boolean-driven state, not transitioned/animated
-   properties, so only this keyframe is subject to (and already covered by)
-   this file's existing blanket prefers-reduced-motion rule below. */
-@keyframes sidebar-fav-pulse {
-  0% { transform: scale(0.92); }
-  50% { transform: scale(1.12); }
-  100% { transform: scale(1); }
+/* Sidebar Favorites add cue — fires on EVERY successful favorite add (not
+   just the first — see App.jsx's favoritesCueSeq), so a player who favorites
+   from a card (no lobby row to watch anymore — see FAVORITES LOBBY REMOVAL)
+   always sees where it landed. Only the sidebar's own Heart icon animates —
+   no background tint, no row highlight (Sidebar.jsx no longer applies a
+   pulse-driven bg tint to the icon's wrapping span at all). The icon is
+   remounted via a `key` tied to the increasing sequence number on every
+   trigger, so back-to-back favorites each get a full fresh play instead of
+   a no-op re-application of an already-present class.
+   Scale rises to a peak then settles to a lower plateau (one direction per
+   phase, never past target and back) — not a bounce/spring/overshoot. Color
+   and fill ramp from transparent/muted to solid coral, hold, then ease back
+   — no fill-mode, so the instant the animation ends, control reverts to the
+   underlying Tailwind color class (muted, or the active-nav accent if the
+   Favorites row happens to be selected), rather than the animation
+   permanently pinning the icon to its resting tone. Duration/easing land in
+   the ~550-700ms smooth ease-in-out band this app's motion doc calls
+   "calm and elegant" — deliberately slower than this app's snappier presses
+   (fav-chip-pop, status-badge-pulse) since this is ambient confirmation, not
+   press feedback. Already collapsed to near-zero under prefers-reduced-motion
+   by this file's existing blanket rule below — no extra override needed. */
+@keyframes sidebar-fav-heart-pulse {
+  0% {
+    transform: scale(1);
+    color: var(--icon-secondary);
+    fill: rgba(255, 84, 104, 0);
+  }
+  22% {
+    transform: scale(1.16);
+    color: var(--icon-secondary);
+    fill: rgba(255, 84, 104, 0);
+  }
+  45% {
+    transform: scale(1.08);
+    color: var(--favorite-heart);
+    fill: var(--favorite-heart);
+  }
+  68% {
+    transform: scale(1.08);
+    color: var(--favorite-heart);
+    fill: var(--favorite-heart);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--icon-secondary);
+    fill: rgba(255, 84, 104, 0);
+  }
 }
-.sidebar-fav-pulse { animation: sidebar-fav-pulse 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.sidebar-fav-heart-pulse { animation: sidebar-fav-heart-pulse 620ms ease-in-out; }
 
 /* StatusBadge's own count-change pulse — subtle, single-shot, no bounce. */
 @keyframes status-badge-pulse {
