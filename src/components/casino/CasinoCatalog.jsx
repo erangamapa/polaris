@@ -196,6 +196,15 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
   const statusLabel = status ? STATUS_LABEL[status] ?? status : null;
   const { broken, onError } = useBrokenImage();
   const testKey = game.favId.replace(":", "-");
+  // A11Y: the link's accessible NAME stays "Play {title}" (short, so tabbing
+  // through a full grid of cards doesn't get verbose) — studio is reachable
+  // to AT via aria-describedby instead, which (unlike descendant content) is
+  // unaffected by the aria-label set on the <a> below: aria-label overrides
+  // name computation from content entirely, so a hidden span placed inside
+  // the link would be silently ignored, but aria-describedby is a separate
+  // computation and works regardless. See the sr-only <span id={studioDescId}>
+  // right after the closing </a>.
+  const studioDescId = `${testKey}-studio`;
 
   return (
     <div
@@ -230,6 +239,7 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
         tabIndex={playable ? undefined : -1}
         data-test-id={`game-card-${testKey}`}
         aria-label={playable ? `Play ${game.title}` : `${game.title} — ${statusLabel}`}
+        aria-describedby={showProvider ? studioDescId : undefined}
         className={cn(
           "absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           !playable && "pointer-events-none cursor-not-allowed"
@@ -267,6 +277,18 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
           </div>
         )}
       </a>
+      {/* A11Y: studio, reachable to AT via the aria-describedby wired above
+          without adding to the link's accessible name (see studioDescId's
+          own comment) — read automatically on focus by NVDA/JAWS/VoiceOver
+          at default verbosity. Always rendered here (not only inside the
+          `broken` fallback above), so a screen reader user gets the same
+          studio attribution a sighted user reads off the artwork in the
+          normal case too, not just when the image fails to load. */}
+      {showProvider && (
+        <span id={studioDescId} className="sr-only">
+          {gameProviderName(game)}
+        </span>
+      )}
       {/* Semi-transparent black background is a deliberate exception (needs
           to stay legible over arbitrary colorful game artwork, not a
           neutral card surface) — font/weight/size/tracking/radius/case
