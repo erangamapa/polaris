@@ -19,15 +19,17 @@ import { ARENAS } from "@/lib/arenas";
 export { CARD_H };
 
 // LOBBY HIERARCHY PASS — Casino's top-of-page area was pushed for a more
-// compact top area so the first game rail sits higher in the viewport.
-// Deliberately a LOCAL constant, not a change to the shared `CARD_H` this
-// file re-exports from PromoCard.jsx: that constant also sizes Sports' and
-// Predictions' promo cards (via PromoCard.jsx directly), and this task is
-// Casino-lobby-only — shrinking it there would be an unrelated-page
-// regression. ~10% mobile/tablet, ~15% desktop reduction (160->144px,
-// 208->176px), used only by Casino's three bespoke cards below
-// (WalletCard/WelcomeOfferCard/WeeklyRaceCard).
-const CASINO_CARD_H = "h-36 lg:h-44"; // 144px mobile/tablet, 176px desktop
+// compact top area so the first game rail sits higher in the viewport
+// (~10% mobile/tablet, ~15% desktop reduction: 160->144px, 208->176px).
+// This used to be a LOCAL constant here, deliberately kept separate from
+// the shared `CARD_H` this file imports/re-exports from PromoCard.jsx —
+// at the time, that constant also sized Sports'/Predictions' promo cards
+// (via PromoCard.jsx directly), and shrinking it there would have been an
+// unrelated-page regression. The CASINO PARITY PASS brought Sports/
+// Predictions' promo cards up to this same corrected height instead (see
+// PromoCard.jsx), which is what makes the shared `CARD_H` the right value
+// for Casino to consume directly now — the two constants had converged,
+// so the local copy was removed rather than kept in sync by hand.
 
 // CLICKABLE CARD PASS: every promo card's own nested "real" control (CTA,
 // the wallet copy button) sits inside the card's own onClick region — a
@@ -216,7 +218,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       // element removes that ceiling entirely instead of fighting it with
       // a compensating negative offset.
       className={cn(
-        CASINO_CARD_H,
+        CARD_H,
         "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border text-left shadow-[var(--elevation-low)]",
         tone === "warning" ? "border-[var(--warning)]/30 bg-[var(--card)]" : "border-[var(--border)]",
         onActivate && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -233,7 +235,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
           z-index:auto (the artwork) paints above normal in-flow content
           by default regardless of DOM order, so without an explicit
           higher z-index here the artwork would sit on top, not behind. */}
-      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4 sm:max-w-[58%] lg:max-w-[54%] xl:max-w-[52%]">
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4">
         {children}
       </div>
       {/* WALLET PROMO ARTWORK — FLUSH RIGHT-EDGE PASS: absolutely
@@ -421,26 +423,20 @@ function WelcomeOfferCard({ eyebrow, title, metadata, cta, onCtaClick }) {
           : undefined
       }
       className={cn(
-        CASINO_CARD_H,
+        CARD_H,
         "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]",
         onCtaClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}
       style={{ background: "var(--wallet-card-bg)" }}
     >
-      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4 sm:max-w-[58%] lg:max-w-[54%] xl:max-w-[52%]">
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4">
         <div className="min-w-0">
           <MicroLabel className="-ml-[9px]">{eyebrow}</MicroLabel>
-          <h3
-            className="mt-1.5 text-lg font-bold text-[var(--foreground)]"
-            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-          >
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">
             {title}
           </h3>
           {metadata && (
-            <p
-              className="mt-1 text-xs leading-snug text-[var(--ink-dim)]"
-              style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-            >
+            <p className="promo-card__body mt-1 text-[var(--ink-dim)]">
               {metadata}
             </p>
           )}
@@ -547,26 +543,20 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
           : undefined
       }
       className={cn(
-        CASINO_CARD_H,
+        CARD_H,
         "promo-card relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]",
         onCtaClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}
       style={{ background: "var(--wallet-card-bg)" }}
     >
-      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4 sm:max-w-[58%] lg:max-w-[54%] xl:max-w-[52%]">
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4">
         <div className="min-w-0">
           <MicroLabel className="-ml-[9px]">{eyebrow}</MicroLabel>
-          <h3
-            className="mt-1.5 text-lg font-bold text-[var(--foreground)]"
-            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-          >
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">
             {title}
           </h3>
           {metadata && (
-            <p
-              className="mt-1 text-xs leading-snug text-[var(--ink-dim)]"
-              style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-            >
+            <p className="promo-card__body mt-1 text-[var(--ink-dim)]">
               {metadata}
             </p>
           )}
@@ -612,8 +602,8 @@ export function PlayerTile() {
       <WalletCard>
         <div className="min-w-0" role="status" aria-live="polite">
           <MicroLabel>Wallet</MicroLabel>
-          <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">Connecting…</h3>
-          <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Approve the request in your wallet.</p>
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">Connecting…</h3>
+          <p className="promo-card__body mt-1 text-[var(--ink-dim)]">Approve the request in your wallet.</p>
         </div>
         <Button size="sm" disabled className="w-fit" aria-label="Connecting to wallet">
           <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -640,12 +630,12 @@ export function PlayerTile() {
               two words of accent colour, not body copy. Supporting copy
               is no longer breakpoint-gated — shown at every size now,
               same as the other two cards' metadata. */}
-          <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">
             One wallet.
             <br />
             <span className="text-[var(--global-cta-hover)]">Every game.</span>
           </h3>
-          <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Play, earn and withdraw with one connection.</p>
+          <p className="promo-card__body mt-1 text-[var(--ink-dim)]">Play, earn and withdraw with one connection.</p>
         </div>
         {/* Not converted to the promo-outline secondary style — the task's
             own list ("View wallet, Claim bonus, View race") doesn't
@@ -669,8 +659,8 @@ export function PlayerTile() {
       >
         <div className="min-w-0" role="status" aria-live="polite">
           <MicroLabel className="text-amber-400/80">Wallet</MicroLabel>
-          <h3 className="mt-1.5 text-lg font-bold leading-tight text-[var(--foreground)]">Wrong network</h3>
-          <p className="mt-1 text-xs leading-snug text-[var(--ink-dim)]">Switch to Base Sepolia to continue.</p>
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">Wrong network</h3>
+          <p className="promo-card__body mt-1 text-[var(--ink-dim)]">Switch to Base Sepolia to continue.</p>
         </div>
         <Button
           size="sm"

@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MicroLabel } from "@/components/ui/micro-label";
@@ -14,19 +15,21 @@ import { MicroLabel } from "@/components/ui/micro-label";
 // Neutral chrome only — no arena-tinted border, background, focus ring, or
 // colored rail (see the removed 2px --casino rail on the old "Welcome
 // offer" card: a promo card is not a selected/active/focus state, and a
-// colored edge read as exactly that). The CTA is the one exception, per
-// the CTA OWNERSHIP SYSTEM: every promo card rendered through this
-// component is an ARENA action (Claim Bonus, View Race, Bet Now, Build a
-// bet, View market, Explore markets — never a platform action like
-// Deposit/Wallet), so its button uses the "action" variant, which
-// resolves to the current page's arena color automatically.
-// MOCKUP ALIGNMENT CORRECTION: 160px flat read as too short for the
-// approved mockup's richer, more premium card — artwork in particular had
-// no real room to create emotional impact. Mobile/tablet (below lg:) keep
-// the original, already-tuned 160px; only the desktop tier (where the
-// approved mockup applies and all three cards now share one grid row)
-// grows to 208px.
-export const CARD_H = "h-40 lg:h-52"; // 160px mobile/tablet, 208px desktop
+// colored edge read as exactly that).
+//
+// CASINO PARITY PASS: brought in line with the Casino promo cards
+// (PromoStrip.jsx's WalletCard/WelcomeOfferCard/WeeklyRaceCard), which had
+// drifted onto their own bespoke, shorter, more compact system (corrected
+// height, responsive text, outlined secondary CTA) while this shared
+// component — still Sports/Predictions' only promo-card implementation —
+// kept the older, taller one. Rather than give Sports/Predictions their
+// own third copy, this component now reuses the exact same building
+// blocks Casino's cards use: `CARD_H` (below) matches Casino's own
+// constant value, `.promo-card`/`.promo-card__content`/`.promo-card__title`/
+// `.promo-card__body` are the same shared classes (index.css) Casino's
+// cards apply directly, and the CTA uses the same `promo-outline` variant
+// — one system, not three that happen to agree.
+export const CARD_H = "h-36 lg:h-44"; // 144px mobile/tablet, 176px desktop — matches Casino's own promo cards exactly
 
 export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCtaClick, artwork: Artwork }) {
   const Wrapper = href ? "a" : "div";
@@ -34,49 +37,57 @@ export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCt
     <Wrapper
       {...(href ? { href, "aria-label": ariaLabel || title } : {})}
       // CARD POLISH: same subtle resting elevation as every other card in
-      // the app (--elevation-low) instead of perfectly flat.
+      // the app (--elevation-low) instead of perfectly flat. `promo-card`
+      // (index.css) is Casino's own shared hover/press treatment — a
+      // border brighten + small lift, plus (via its descendant selector)
+      // bringing the promo-outline CTA below into its own hover state
+      // when the card itself is hovered. Replaces this component's
+      // previous bespoke `hover:bg-[var(--secondary)]` treatment, which
+      // was a second, different-feeling hover effect Casino's cards never
+      // had — one shared hover feel now, not two.
       className={cn(
         CARD_H,
-        "group relative flex w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-left shadow-[var(--elevation-low)] transition duration-150",
-        href && "hover:bg-[var(--secondary)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        "promo-card group relative flex w-full min-w-0 items-stretch gap-3 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-left shadow-[var(--elevation-low)]",
+        href && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       )}
     >
-      <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
+      {/* `promo-card__content` (index.css) is the same shared content-safe
+          zone Casino's cards use: container-relative width tiers plus
+          `container-type: inline-size`, which is what lets the title/body
+          classes below scale off THIS column's own rendered width rather
+          than the viewport. */}
+      <div className="promo-card__content flex h-full min-w-0 flex-1 flex-col justify-between">
         <div className="min-w-0">
           {/* -ml-[9px] cancels the pill's own left padding (px-[9px]) so
               its text starts at the same x as the title/CTA below it. */}
           <MicroLabel className="-ml-[9px]">{eyebrow}</MicroLabel>
-          {/* ONE typography system: the same text-lg font-bold recipe
-              every page/card/dialog title in the app uses. */}
-          <h3
-            className="mt-1.5 text-lg font-bold text-[var(--foreground)]"
-            style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-          >
+          {/* `promo-card__title`/`promo-card__body` (index.css) are
+              Casino's own responsive title/body classes — cqw-scaled font
+              size (so 13"-class laptop widths shrink text instead of
+              forcing awkward wraps or ellipsis-truncating it), a 2-line
+              cap as a safety net, and `text-wrap: balance` on the title
+              for readable line breaks. Same rules everywhere now, not a
+              second arena-specific font-size scheme. */}
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">
             {title}
           </h3>
-          {/* MOCKUP ALIGNMENT CORRECTION: `truncate` produced visible
-              mid-sentence ellipsis clipping ("Match on your first
-              deposit. Ins…") — unacceptable per the approved direction.
-              line-clamp-2 lets the actual configured copy (short enough
-              to fit two lines at this card's text-column width) wrap
-              naturally instead; it only silently clips if a future copy
-              string is much longer than today's, and never mid-word with
-              a visible ellipsis in the normal case. Shown at every
-              breakpoint now (was hidden below sm:) — the mobile carousel
-              card is already ~82% of the viewport, plenty of room. */}
           {metadata && (
-            <p
-              className="mt-1 text-xs leading-snug text-[var(--ink-dim)]"
-              style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-            >
+            <p className="promo-card__body mt-1 text-[var(--ink-dim)]">
               {metadata}
             </p>
           )}
         </div>
-        {/* ONE-BRAND UNIFICATION: every primary action uses the single
-            Tribet brand colour now — no arena-owned "action" tone. */}
-        <Button variant="default" size="sm" onClick={onCtaClick} className="w-fit">
+        {/* PROMO CARD SECONDARY CTA: the same `promo-outline` variant
+            Casino's Welcome Offer/Weekly Race cards use for their main
+            action — transparent fill, blue border/text — now that the
+            header's own filled brand button is the app's one true
+            primary CTA and the Wallet tile (PlayerTile, shared byte-for-
+            byte across all three arenas) is the only promo-row CTA that
+            stays filled. The trailing arrow matches Casino's own two
+            outlined CTAs exactly, not a one-off addition here. */}
+        <Button variant="promo-outline" size="sm" onClick={onCtaClick} className="w-fit">
           {cta}
+          <ArrowRight className="size-3.5" aria-hidden="true" />
         </Button>
       </div>
       {Artwork && (
@@ -87,8 +98,13 @@ export function PromoCard({ href, ariaLabel, eyebrow, title, metadata, cta, onCt
         // effect". Applied once here so every current/future artwork
         // (SVG or raster) gets the same treatment automatically, rather
         // than each artwork component re-implementing its own fade.
+        // Width tiers now match Casino's own artwork zone (40/44/46%)
+        // exactly, not a close-but-different 38/42% — the artwork itself
+        // is untouched (each SVG sizes itself as a percentage of this
+        // wrapper, so it scales down cleanly with the shorter CARD_H
+        // above with no separate change needed there).
         <div
-          className="hidden w-[38%] shrink-0 sm:block lg:w-[42%]"
+          className="hidden w-[40%] shrink-0 sm:block lg:w-[44%] xl:w-[46%]"
           style={{
             maskImage: "linear-gradient(to right, transparent, black 30%)",
             WebkitMaskImage: "linear-gradient(to right, transparent, black 30%)",

@@ -569,6 +569,86 @@ html {
   }
 }
 
+/* PROMO CARD RESPONSIVE TEXT — fixes title-wrap/body-ellipsis breakage on
+   13"-class laptop widths (1280-1440px) across all three Casino promo cards
+   (Wallet/Welcome Offer/Weekly Race — PromoStrip.jsx). Root cause: title/body
+   sat at a fixed font-size (text-lg/text-xs) while the content column's own
+   width already shrinks below 100vw at these breakpoints — narrow-column +
+   fixed-size text is exactly what forced "200% up to 1,000 / USDT"-style
+   breaks and truncated Weekly Race's body mid-word. Two moves, not a
+   redesign: (1) the max-width tiers move here, out of three copies of the
+   same Tailwind arbitrary-value string in PromoStrip.jsx, so there is
+   actually ONE shared rule rather than three that merely happen to agree
+   today; (2) title/body font-size scales in `cqw` (1cqw = 1% of THIS
+   column's own rendered width) instead of `vw` (1% of viewport width) —
+   deliberately container-relative, not viewport-relative, because viewport
+   width does not predict this column's width here: the sidebar defaults
+   expanded (~220px) at >=1280px viewport but collapsed (~60px) just below it
+   (see App.jsx's railMode default), so a 1024px viewport can hand this
+   column MORE real width than a 1280px one despite being "narrower" — a
+   vw-based clamp would tune against the wrong axis entirely, and measuring
+   confirmed the sidebar's role in it: real card width at 1440px (expanded
+   sidebar) is 384px; at 1024px (collapsed, ~60px sidebar) it's ~299px — a
+   real drop, but nowhere near what a naive 1024-vs-1440 viewport-only ratio
+   would predict (416px less viewport, but the collapsed sidebar claws back
+   ~160px of it). A single width tier below 1280px (not a separate 1024px
+   step) held up empirically at that ~299px card / ~173px content-column
+   width — an intermediate 1024px-specific tier was tried first and made
+   the 1024-1279px band's actual longest body copy ("Wager to climb the
+   leaderboard. Paid out every Monday.") keep truncating; widening the
+   whole sub-1280 band to match the existing sm-tier percentage instead of
+   adding a step is what actually fixed it (see the floor tuning below).
+   Ceiling on both clamps equals the exact text-lg/text-xs sizes this app
+   already uses, so nothing changes on wide desktop — large-screen behavior
+   is preserved by construction (the clamp simply never reaches its floor
+   there), not by a separate breakpoint override. Floors were tuned against
+   the real approved copy (not guessed): "Wager to climb the leaderboard.
+   Paid out every Monday." is the longest of the three bodies and the one
+   that was actually observed truncating; both floors below are the values
+   that keep it (and the shorter Welcome Offer body) inside two lines at the
+   narrowest real column width this ever renders at, verified by measuring
+   actual rendered `.promo-card__content` width and reproducing it directly
+   rather than trusting hand-computed character-per-line estimates. */
+.promo-card__content {
+  container-type: inline-size;
+}
+/* No width cap below 640px, matching the mobile carousel this replaces
+   (the original Tailwind classes were `sm:max-w-[...]` — gated the same
+   way): artwork is `hidden` below `sm:` (see PromoStrip.jsx), so the
+   content column already has the whole card to itself there and forcing
+   58% early would just waste the space the hidden artwork isn't using. */
+@media (min-width: 640px) {
+  .promo-card__content { max-width: 58%; }
+}
+@media (min-width: 1280px) {
+  .promo-card__content { max-width: 52%; }
+}
+/* text-wrap:balance is the actual fix for "avoid `200% up to 1,000` /
+   `USDT`"-style orphan breaks — it's the browser's own line-breaking
+   algorithm for exactly this ("distribute a short heading evenly across the
+   lines it already takes"), not a hand-tuned width/font-size guess that
+   would only hold for this one string. -webkit-line-clamp stays as the
+   2-line safety net it always was; the clamp() floor is tuned so real
+   approved copy fits within it at every tested width instead of relying on
+   the clamp to hide overflow. */
+.promo-card__title {
+  font-size: clamp(0.9375rem, 8.5cqw, 1.125rem);
+  line-height: 1.2;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.promo-card__body {
+  font-size: clamp(0.5625rem, 5.75cqw, 0.75rem);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* LOBBY HIERARCHY PASS — game card hover lift. Same split as .promo-card
    above: border-color/box-shadow stay as Tailwind utilities on the card
    itself (CasinoCatalog.jsx), only the transform lives here, so reduced
