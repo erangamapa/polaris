@@ -359,12 +359,13 @@ html {
    — no fill-mode, so the instant the animation ends, control reverts to the
    underlying Tailwind color class (muted, or the active-nav accent if the
    Favorites row happens to be selected), rather than the animation
-   permanently pinning the icon to its resting tone. Duration/easing land in
-   the ~550-700ms smooth ease-in-out band this app's motion doc calls
-   "calm and elegant" — deliberately slower than this app's snappier presses
-   (fav-chip-pop, status-badge-pulse) since this is ambient confirmation, not
-   press feedback. Already collapsed to near-zero under prefers-reduced-motion
-   by this file's existing blanket rule below — no extra override needed. */
+   permanently pinning the icon to its resting tone. Duration is 1240ms —
+   2x the original ~620ms "calm and elegant" pass, per explicit request to
+   draw the sequence out further; keyframe percentages are untouched, so
+   doubling the duration stretches every phase (scale-up, fill, hold,
+   fade-back) proportionally rather than just adding a longer hold. Already
+   collapsed to near-zero under prefers-reduced-motion by this file's
+   existing blanket rule below — no extra override needed. */
 @keyframes sidebar-fav-heart-pulse {
   0% {
     transform: scale(1);
@@ -392,7 +393,7 @@ html {
     fill: rgba(255, 84, 104, 0);
   }
 }
-.sidebar-fav-heart-pulse { animation: sidebar-fav-heart-pulse 620ms ease-in-out; }
+.sidebar-fav-heart-pulse { animation: sidebar-fav-heart-pulse 1240ms ease-in-out; }
 
 /* StatusBadge's own count-change pulse — subtle, single-shot, no bounce. */
 @keyframes status-badge-pulse {
