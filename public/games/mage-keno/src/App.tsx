@@ -83,7 +83,16 @@ export default function App() {
               </div>
             </div>
           </div>
-          <PayoutTable spots={game.selected.size} />
+          <PayoutTable
+            spots={game.selected.size}
+            currentHits={
+              game.phase === 'playing'
+                ? game.revealed.filter((n) => game.selected.has(n)).length
+                : game.phase === 'result'
+                  ? game.lastMatches
+                  : 0
+            }
+          />
         </section>
       </main>
 
