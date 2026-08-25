@@ -2,6 +2,13 @@
 
 Guidance for AI agents (and humans) working in this repo. Read this before adding a game.
 
+## New here? Get a funded wallet first
+You cannot place a bet without a testnet wallet. Run the **`setup-test-wallet`**
+skill (`.claude/skills/setup-test-wallet/`) and it will walk you through it
+interactively: generate a throwaway key → import it into MetaMask → faucet funds
+→ verify on-chain → connect and play. Agents: invoke that skill rather than
+improvising wallet setup, and never hand a human a seed phrase (see its rules).
+
 ## What this is
 TriBet is a **fully on-chain, non-custodial** three-in-one app: **Casino**, **Sports**, **Predictions**.
 - **Casino** = on-chain games via **BetSwirl** (Chainlink VRF) **+** embedded **provider games** (vendored static apps).
