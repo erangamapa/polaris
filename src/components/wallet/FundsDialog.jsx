@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 // one root swaps, never a second modal stacked on top of it. This is also
 // the reference implementation for Tribet's shared Modal system (see
 // components/ui/modal.jsx) — every state uses the SAME fixed
-// `transactional` shell (~470x440) so the frame never resizes moving
+// `transactional` shell (~420x400) so the frame never resizes moving
 // between them; only `dismissible` (the X) varies per state.
 const FLOW = {
   WALLET: "wallet",
@@ -218,7 +218,7 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
   return (
     <Modal open={open} onOpenChange={handleOpenChange}>
-      <ModalContent size="transactional" dismissible={DISMISSIBLE[displayState]} onCloseAutoFocus={onCloseAutoFocus} className="py-6">
+      <ModalContent size="transactional" dismissible={DISMISSIBLE[displayState]} onCloseAutoFocus={onCloseAutoFocus} className="py-4">
         <div className={cn("flex flex-1 flex-col", crossfadeClassName)}>
           {displayState === FLOW.WALLET && (
             <WalletBody
@@ -270,7 +270,7 @@ function WalletBody({
           not just a second copy of the same fill — see AGENTS.md's Modal
           system note on surface hierarchy). Fixed height (~72-84px, per
           the compact-portrait shell), sits right under the header. */}
-      <div className="mt-4 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-3">
+      <div className="mt-3 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-3">
         <WalletAvatar address={address} size={32} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -318,10 +318,10 @@ function WalletBody({
             <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
           </div>
         )}
-        <div className="mt-2 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
+        <div className="mt-1.5 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
 
         {isZero && (
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
@@ -338,7 +338,7 @@ function WalletBody({
       {/* FOOTER — a real divider, not just a gap, so the destructive action
           reads as belonging to its own zone. Fixed height, pinned to the
           bottom of the shell. */}
-      <div className="shrink-0 border-t pt-5">
+      <div className="shrink-0 border-t pt-4">
         <button
           onClick={onDisconnectRequest}
           data-test-id="disconnect"
@@ -356,7 +356,18 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
   const isError = flowState === FLOW.DISCONNECT_ERROR;
 
   return (
-    <>
+    // This state's own content (title/copy/buttons) is short relative to
+    // Wallet's — pinning header-to-top and footer-to-bottom the way
+    // Wallet/Success do would leave one huge dead gap sitting between the
+    // copy and the buttons (measured and confirmed: ~230px of pure blank
+    // space at the 420x400 shell size). Centering the whole block as a
+    // group instead moves that same slack to symmetric, unremarkable
+    // padding above the title and below the buttons — a "controlled" gap
+    // (a small fixed margin, not a `flex-1` void) between copy and
+    // actions, per WALLET MODAL SHELL REDUCTION task's explicit "remove
+    // the large empty center... do not add decorative content simply to
+    // fill space."
+    <div className="flex flex-1 flex-col justify-center">
       <ModalHeader className="gap-4 text-left">
         <ModalTitle className={TITLE_CLASS}>Disconnect Wallet?</ModalTitle>
         <ModalDescription className={BODY_TEXT_CLASS}>
@@ -364,19 +375,13 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
         </ModalDescription>
       </ModalHeader>
 
-      {/* Fills the remaining space so the buttons stay anchored to the
-          shell's footer zone instead of sitting right under the
-          description — same fixed shell as Wallet/Success. Left-aligned
-          to the same content edge as the title/description above it. */}
-      <div className="flex flex-1 flex-col justify-center">
-        {isError && (
-          <p className="text-sm font-medium text-[var(--danger)]" role="alert">
-            Couldn&rsquo;t disconnect the wallet. Please try again.
-          </p>
-        )}
-      </div>
+      {isError && (
+        <p className="mt-4 text-sm font-medium text-[var(--danger)]" role="alert">
+          Couldn&rsquo;t disconnect the wallet. Please try again.
+        </p>
+      )}
 
-      <ModalFooter className="mt-0 grid shrink-0 grid-cols-2">
+      <ModalFooter className="mt-8 grid shrink-0 grid-cols-2">
         <button
           ref={cancelRef}
           onClick={onCancel}
@@ -399,13 +404,16 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
           ) : isError ? "Try Again" : "Disconnect"}
         </button>
       </ModalFooter>
-    </>
+    </div>
   );
 }
 
 function SuccessBody({ continueRef, onContinue }) {
   return (
-    <>
+    // Same reasoning as ConfirmBody: this state's content (title + one icon
+    // row) is too short to pin header-to-top/footer-to-bottom without a
+    // large dead gap above Continue — center the block as a group instead.
+    <div className="flex flex-1 flex-col justify-center">
       <ModalHeader className="text-left">
         <ModalTitle className={TITLE_CLASS}>Wallet Disconnected</ModalTitle>
         <ModalDescription className="sr-only">You can reconnect at any time.</ModalDescription>
@@ -418,14 +426,12 @@ function SuccessBody({ continueRef, onContinue }) {
           horizontal row, left-aligned to the same content edge as the
           title above — a centered stacked block here is exactly what made
           this state read as disconnected from the rest of the flow. */}
-      <div className="mt-6 flex shrink-0 items-center gap-3">
+      <div className="mt-4 flex shrink-0 items-center gap-3">
         <ModalIcon variant="neutral" icon={Unlink2} className="border border-border/60" />
         <p className="text-sm text-muted-foreground">You can reconnect at any time.</p>
       </div>
 
-      <div className="flex-1" aria-hidden="true" />
-
-      <ModalFooter className="mt-0 shrink-0">
+      <ModalFooter className="mt-8 shrink-0">
         <button
           ref={continueRef}
           onClick={onContinue}
@@ -435,6 +441,6 @@ function SuccessBody({ continueRef, onContinue }) {
           Continue
         </button>
       </ModalFooter>
-    </>
+    </div>
   );
 }
