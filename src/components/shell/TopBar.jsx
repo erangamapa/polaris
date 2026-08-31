@@ -8,7 +8,7 @@ import { LogoMark } from "@/components/shell/LogoMark";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
-import { useCasinoBalance, BALANCE_STATUS } from "@/lib/casinoBalance";
+import { useCasinoBalance } from "@/lib/casinoBalance";
 import { getTopBarMode, HEADER_CENTER_VARIANT, getHeaderCenterVariant } from "@/lib/topBarState";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "@/lib/profileState";
 import { setDevMockState } from "@/lib/devMock";
@@ -62,10 +62,10 @@ import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 // utility section instead (see MobileFullScreenMenu) — reusing that
 // existing full-screen surface rather than adding a second mobile account
 // sheet (see OVERLAY BEHAVIOR: "do not stack it with the mobile menu").
-export function TopBar({ onBurger, burgerLabel = "Toggle menu", arena = "casino", onAccount, onManageWallet, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
+export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onManageWallet, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
   const wallet = useDevAwareWallet();
   const {
-    isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, sportsBalance, sportsSymbol, disconnect,
+    isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, disconnect,
     loggedInNoWallet, sessionExpired, wrongNetworkOverride, authStatus,
   } = wallet;
   // Same underlying dev-aware wallet hook (react-query dedupes the actual
@@ -74,21 +74,15 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", arena = "casino"
   // — one balance model, not a second store).
   const { status: casinoBalanceStatus } = useCasinoBalance();
 
-  // ONE primary balance in the nav, arena-aware where the data cleanly
-  // supports it (see WALLET UX AUDIT §6/§7): Sports arena shows the Sports
-  // stake token, everything else (Casino, Predictions — which has no real
-  // chain of its own) shows Casino ETH. Sports has no loading/error signal
-  // in useWallet.js today (only Casino's balance is tracked through
-  // resolveBalanceStatus) — extending that would be wallet-logic scope this
-  // task explicitly excludes, so the Sports primary balance is presented as
-  // always-ready; documented as a known limitation, not silently papered
-  // over.
-  const primaryIsSports = arena === "sports";
-  const primaryBalance = primaryIsSports ? sportsBalance : casinoBalance;
-  const primarySymbol = primaryIsSports ? sportsSymbol : casinoSymbol;
-  const primaryLoading = primaryIsSports ? false : casinoBalanceLoading;
-  const primaryError = primaryIsSports ? false : casinoBalanceError;
-  const primaryStatus = primaryIsSports ? BALANCE_STATUS.READY : casinoBalanceStatus;
+  // ONE primary balance in the nav: Casino ETH. The MVP is Casino only —
+  // Sports/Predictions have no real product surface yet, so the wallet
+  // never shows them (see WALLET MVP REDESIGN: "design for the MVP, not
+  // for the repository").
+  const primaryBalance = casinoBalance;
+  const primarySymbol = casinoSymbol;
+  const primaryLoading = casinoBalanceLoading;
+  const primaryError = casinoBalanceError;
+  const primaryStatus = casinoBalanceStatus;
 
   // Triple-tap the logo toggles the Developer Panel on touch devices, where
   // Shift+D isn't practical (see lib/useDevPanelLogoTap.js).

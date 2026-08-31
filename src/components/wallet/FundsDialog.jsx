@@ -1,25 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, LogOut } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { WalletAvatar } from "@/components/wallet/WalletAvatar";
-import { baseSepolia, polygonAmoy } from "@shared/chains";
-import { BRAND_NAME } from "@/lib/brand";
+import { baseSepolia } from "@shared/chains";
 
 // The one Tribet wallet popup — every wallet entry point in the app opens
 // this (see WALLET UX AUDIT §1/§7: "AppKit owns connection only, Tribet
 // owns the entire connected-wallet experience"). One screen, no tabs, no
-// nested dialogs — non-custodial: this only ever shows the player's own
-// on-chain balances and links out to faucets, never a deposit/withdraw flow.
+// nested pages. Designed for the MVP (Casino only, one playable balance) —
+// not for the repo's future Sports/Predictions support, which stays out of
+// this popup entirely until it's real product surface (see WALLET MVP
+// REDESIGN: "the UI must never expose roadmap complexity").
 export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const {
-    address, connectorName, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
+    isConnected, address, connectorName, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, disconnect,
   } = useWallet();
+
+  // This is the CONNECTED-wallet popup — it has nothing honest to show once
+  // disconnected (no fake address/avatar/balance). Reachable disconnected
+  // either via a stale `?modal=funds` deep link or a real external
+  // disconnect while the dialog is open; both self-close rather than keep
+  // showing a stale "Connected" state (see WALLET MVP REDESIGN QA: "wallet
+  // reconnect", "wallet disconnected externally").
+  useEffect(() => {
+    if (open && !isConnected) onClose();
+  }, [open, isConnected, onClose]);
 
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
   const [copied, setCopied] = useState(false);
+  const isZero = !casinoBalanceLoading && !casinoBalanceError && casinoBalance === 0;
+
+  if (!isConnected) return null;
 
   const copy = async () => {
     try {
@@ -33,15 +48,13 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent className="sm:max-w-sm" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Wallet</DialogTitle>
-          <DialogDescription className="sr-only">
-            Your connected wallet — {BRAND_NAME} never holds your funds.
-          </DialogDescription>
+          <DialogDescription className="sr-only">Your connected wallet.</DialogDescription>
         </DialogHeader>
 
-        {/* CONNECTED IDENTITY */}
+        {/* CONNECTED */}
         <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5">
           <WalletAvatar address={address} size={32} />
           <div className="min-w-0 flex-1">
@@ -58,7 +71,7 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
               onClick={copy}
               aria-label="Copy address"
               data-test-id="wallet-copy"
-              className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {copied ? <Check className="size-4 text-[var(--success)]" /> : <Copy className="size-4" />}
             </button>
@@ -67,74 +80,46 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
               target="_blank"
               rel="noreferrer"
               aria-label="View on explorer"
-              className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ExternalLink className="size-4" />
             </a>
           </div>
         </div>
 
-        {/* BALANCES */}
-        <div className="space-y-2">
-          <div className="rounded-lg border bg-card px-3 py-2.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <div>
-                <div className="text-sm font-medium">Casino</div>
-                <div className="text-xs text-muted-foreground">{baseSepolia.name}</div>
-              </div>
-              <div className="font-mono text-lg font-semibold tabular-nums">
-                {casinoBalance.toFixed(5)} <span className="text-xs font-semibold text-muted-foreground">{casinoSymbol}</span>
-              </div>
+        {/* BALANCE — the one number this popup exists to show. Everything
+            else in the dialog is deliberately smaller/quieter than this
+            (see WALLET MVP REDESIGN — "technical metadata should never
+            compete with the playable balance"). */}
+        <div className="flex flex-col items-center gap-1 py-6 text-center">
+          {casinoBalanceLoading ? (
+            <Skeleton className="h-10 w-40" />
+          ) : casinoBalanceError ? (
+            <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
+          ) : (
+            <div className="font-mono text-4xl font-bold tabular-nums">
+              {casinoBalance.toFixed(3)} <span className="text-2xl font-semibold text-muted-foreground">{casinoSymbol}</span>
             </div>
-          </div>
+          )}
+          <div className="text-xs text-muted-foreground">{baseSepolia.name} Testnet</div>
 
-          <div className="rounded-lg border bg-card px-3 py-2.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <div>
-                <div className="text-sm font-medium">Sportsbook</div>
-                <div className="text-xs text-muted-foreground">{polygonAmoy.name}</div>
-              </div>
-              <div className="font-mono text-lg font-semibold tabular-nums">
-                {sportsBalance.toFixed(2)} <span className="text-xs font-semibold text-muted-foreground">{sportsSymbol}</span>
-              </div>
-            </div>
-            {/* Gas is real information, not a peer balance — kept small and
-                muted so the playable stake above stays the one number that
-                reads as "money" (see WALLET UX REDESIGN §5 — "gas must be
-                visually secondary"). */}
-            <div className="mt-1.5 font-mono text-[11px] text-muted-foreground">
-              Gas: {sportsGas.toFixed(4)} {sportsGasSymbol}
-            </div>
-          </div>
-
-          {/* Predictions has no wallet-backed balance yet — an honest
-              "Coming soon" row, never a fabricated number (see WALLET UX
-              REDESIGN §5 — "do not invent a fake Predictions balance"). */}
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed px-3 py-2.5 text-muted-foreground">
-            <div className="text-sm font-medium">Predictions</div>
-            <div className="text-xs">Coming soon</div>
-          </div>
+          {isZero && (
+            <a
+              href="https://portal.cdp.coinbase.com/products/faucet"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              No balance available. Get testnet ETH →
+            </a>
+          )}
         </div>
-
-        {/* TESTNET SUPPORT — a developer/testnet convenience, not core
-            wallet information, so it stays a single muted line rather than
-            a promo box (see WALLET UX REDESIGN §5). */}
-        <p className="text-xs text-muted-foreground">
-          Need testnet funds?{" "}
-          <a href="https://portal.cdp.coinbase.com/products/faucet" target="_blank" rel="noreferrer" className="font-medium text-[var(--global-cta-hover)] hover:underline">
-            Casino faucet
-          </a>
-          {" · "}
-          <a href="https://faucet.polygon.technology/" target="_blank" rel="noreferrer" className="font-medium text-[var(--global-cta-hover)] hover:underline">
-            Sports faucet
-          </a>
-        </p>
 
         {/* FOOTER */}
         <button
           onClick={() => { disconnect(); onClose(); }}
           data-test-id="disconnect"
-          className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] hover:bg-secondary"
+          className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="size-4" /> Disconnect Wallet
         </button>

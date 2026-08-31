@@ -1423,7 +1423,6 @@ export default function App() {
       <TopBar
         onBurger={toggleSidebar}
         burgerLabel={sidebarLabel}
-        arena={product}
         onAccount={openAccount}
         onManageWallet={openFunds}
         onActivity={openHistory}
