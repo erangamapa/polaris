@@ -53,7 +53,7 @@ const GameInfoPanel = lazy(() => import("./components/casino/GameInfoPanel").the
 import { useSportsDesktopBetslipUi, useIsDesktopBetslipLayout } from "./lib/sportsDesktopBetslipUi";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
 import { ArenaPageColumn } from "./components/shell/ArenaPageColumn";
-import { nowLabel } from "./lib/walletData";
+import { nowLabel } from "./lib/format";
 import { PRED_CATEGORIES } from "./lib/predictionsData";
 import { MVP_SPORTS } from "./lib/sportsModel";
 import { getSportsInventory } from "./lib/sportsDemo";
@@ -1425,7 +1425,6 @@ export default function App() {
         burgerLabel={sidebarLabel}
         onAccount={openAccount}
         onManageWallet={openFunds}
-        onFund={openFunds}
         onActivity={openHistory}
         onResponsibleGambling={openRg}
         onSupport={openSupport}
@@ -1502,6 +1501,7 @@ export default function App() {
                     onLaunchProvider={launchGame}
                     isFav={effectiveIsFav}
                     onFav={toggleFav}
+                    onManageWallet={openFunds}
                     recentIds={effectiveRecentIds}
                     onBrowseGames={() => selectCasinoCategory("Lobby")}
                     onSelectCategory={selectCasinoCategory}
@@ -1723,7 +1723,7 @@ export default function App() {
 // "provider" are standalone destinations with their own hero (rendered by
 // CasinoCatalog's own page components) and get a bare search bar instead —
 // no promo cards, no chip rail, per the spec's own chrome table.
-function CasinoLobby({ category, view, providerSlug, onLaunchOnchain, onLaunchProvider, isFav, onFav, recentIds, onBrowseGames, onSelectCategory, onSelectHomeFilter, onSelectProvider, expandedRails, onExpandRail }) {
+function CasinoLobby({ category, view, providerSlug, onLaunchOnchain, onLaunchProvider, isFav, onFav, onManageWallet, recentIds, onBrowseGames, onSelectCategory, onSelectHomeFilter, onSelectProvider, expandedRails, onExpandRail }) {
   const [query, setQuery] = useState("");
   const browseAll = () => { setQuery(""); onBrowseGames?.(); };
   const selectCategory = (c) => { setQuery(""); onSelectCategory?.(c); };
@@ -1772,7 +1772,7 @@ function CasinoLobby({ category, view, providerSlug, onLaunchOnchain, onLaunchPr
            ArenaPageColumn's full `space-y-8` since this whole group is now
            ONE of its two children instead of two of its three. */
         <div className="space-y-4">
-          <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} />
+          <PromoStrip query={query} onQuery={setQuery} searchPanelProps={searchPanelProps} onManageWallet={onManageWallet} />
           {mobileOverlay}
           <CategoryNav selected={category} activeView={view} onSelectHomeFilter={selectHomeFilter} onPillActivated={onPillActivated} />
         </div>

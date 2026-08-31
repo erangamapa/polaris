@@ -178,7 +178,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       // the illustration; this broad wash stays right here, static.
       //
       // CLICKABLE CARD PASS: onActivate is the SAME handler the state's
-      // own visible CTA below already calls (connect/switchTo/openAccount
+      // own visible CTA below already calls (connect/switchTo/onManageWallet
       // — see PlayerTile) — never a separate/new action, so "the card and
       // its CTA trigger the same action" holds by construction. Deliberately
       // a plain <div> with role="button" (not a real <button> or <a>
@@ -586,11 +586,11 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
 // Exported: this is the one shared "Tribet infrastructure" tile reused as the
 // first card on Casino, Sports and Predictions (see ArenaTileRow). It has no
 // arena-specific content by design — same wallet, same CTA, everywhere.
-export function PlayerTile() {
+export function PlayerTile({ onManageWallet }) {
   const {
     address, isConnected, status, onCasinoChain, isSwitching,
     casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, refetchCasinoBalance,
-    connect, openAccount, switchTo,
+    connect, switchTo,
   } = useWallet();
 
   const connecting = !isConnected && (status === "connecting" || status === "reconnecting");
@@ -687,7 +687,7 @@ export function PlayerTile() {
   };
 
   return (
-    <WalletCard onActivate={openAccount} activateLabel="View wallet">
+    <WalletCard onActivate={onManageWallet} activateLabel="View wallet">
       <div className="min-w-0">
         <MicroLabel className="inline-flex items-center gap-1.5">
           <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" />
@@ -727,11 +727,11 @@ export function PlayerTile() {
       <div className="flex items-center gap-2">
         {/* SECONDARY CTA PASS: promo-outline — this card's own explicit
             "View wallet" entry in the approved list. */}
-        <Button size="sm" variant="promo-outline" onClick={stopAnd(openAccount)} data-test-id="wallet-tile-view" className="w-fit">
+        <Button size="sm" variant="promo-outline" onClick={stopAnd(onManageWallet)} data-test-id="wallet-tile-view" className="w-fit">
           View wallet
         </Button>
         {/* CLICKABLE CARD PASS: this is the one control that must NEVER
-            trigger the card's own onActivate (openAccount) — copying the
+            trigger the card's own onActivate (onManageWallet) — copying the
             address is a distinct, self-contained action, not "view
             wallet". stopAnd still runs copyAddress itself; it only stops
             the click from also bubbling up to the card. */}
@@ -1053,12 +1053,12 @@ export function ScopedSearch({
 // (grid-cols-3, i.e. repeat(3, minmax(0,1fr))) — no card gets a wider
 // grid track than another. Any visual "importance" a card carries now
 // comes only from its own copy/artwork, never from a larger column span.
-export function PromoStrip({ query, onQuery, searchPanelProps }) {
+export function PromoStrip({ query, onQuery, searchPanelProps, onManageWallet }) {
   const [p1, p2] = PROMOS;
   return (
     <div className="casino-content-column w-full space-y-4">
       <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
-        <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile /></div>
+        <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile onManageWallet={onManageWallet} /></div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
           <WelcomeOfferCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} />
         </div>

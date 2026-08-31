@@ -1,102 +1,129 @@
-import { Copy, ExternalLink, LogOut, Droplets } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Copy, ExternalLink, LogOut } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useWallet, shortAddress } from "@/web3/useWallet";
+import { WalletAvatar } from "@/components/wallet/WalletAvatar";
 import { baseSepolia } from "@shared/chains";
-import { toast } from "@/lib/toast";
-import { BRAND_NAME } from "@/lib/brand";
 
-// Non-custodial Funds panel: shows the player's own on-chain balances across the
-// two chains (casino = Base Sepolia, sports = Polygon Amoy) and links to faucets.
-// Tribet never holds funds — no deposit-to-us.
+// The one Tribet wallet popup — every wallet entry point in the app opens
+// this (see WALLET UX AUDIT §1/§7: "AppKit owns connection only, Tribet
+// owns the entire connected-wallet experience"). One screen, no tabs, no
+// nested pages. Designed for the MVP (Casino only, one playable balance) —
+// not for the repo's future Sports/Predictions support, which stays out of
+// this popup entirely until it's real product surface (see WALLET MVP
+// REDESIGN: "the UI must never expose roadmap complexity").
 export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const {
-    address, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
+    isConnected, address, connectorName, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, disconnect,
   } = useWallet();
 
+  // This is the CONNECTED-wallet popup — it has nothing honest to show once
+  // disconnected (no fake address/avatar/balance). Reachable disconnected
+  // either via a stale `?modal=funds` deep link or a real external
+  // disconnect while the dialog is open; both self-close rather than keep
+  // showing a stale "Connected" state (see WALLET MVP REDESIGN QA: "wallet
+  // reconnect", "wallet disconnected externally").
+  useEffect(() => {
+    if (open && !isConnected) onClose();
+  }, [open, isConnected, onClose]);
+
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
+  const [copied, setCopied] = useState(false);
+  const isZero = !casinoBalanceLoading && !casinoBalanceError && casinoBalance === 0;
+
+  if (!isConnected) return null;
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(address);
-      toast.success("Address copied");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
-      toast.error("Copy failed");
+      /* clipboard may be blocked — icon simply doesn't confirm */
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent className="sm:max-w-sm" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
-          <DialogTitle>Funds</DialogTitle>
-          <DialogDescription>
-            Your funds stay in your own wallet. {BRAND_NAME} is non-custodial — play settles on-chain.
-          </DialogDescription>
+          <DialogTitle>Wallet</DialogTitle>
+          <DialogDescription className="sr-only">Your connected wallet.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
-          <span className="font-mono text-sm">{shortAddress(address)}</span>
-          <div className="flex items-center gap-1">
-            <button onClick={copy} aria-label="Copy address" className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
-              <Copy className="size-4" />
+        {/* CONNECTED */}
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5">
+          <WalletAvatar address={address} size={32} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-sm font-semibold">{shortAddress(address)}</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--success)]">
+                <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" /> Connected
+              </span>
+            </div>
+            {connectorName && <div className="truncate text-xs text-muted-foreground">{connectorName}</div>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={copy}
+              aria-label="Copy address"
+              data-test-id="wallet-copy"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {copied ? <Check className="size-4 text-[var(--success)]" /> : <Copy className="size-4" />}
             </button>
-            <a href={explorer} target="_blank" rel="noreferrer" aria-label="View on explorer" className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
+            <a
+              href={explorer}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View on explorer"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <ExternalLink className="size-4" />
             </a>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <BalanceRow label="Casino (Base Sepolia)" symbol={casinoSymbol} amount={casinoBalance} decimals={5} note="native — bets + gas" />
-          <BalanceRow label="Sports (Polygon Amoy)" symbol={sportsSymbol} amount={sportsBalance} decimals={2} note="bet token — mint from Sports tab" />
-          <BalanceRow label="Sports gas" symbol={sportsGasSymbol} amount={sportsGas} decimals={4} note="Polygon Amoy native" />
+        {/* BALANCE — the one number this popup exists to show. Everything
+            else in the dialog is deliberately smaller/quieter than this
+            (see WALLET MVP REDESIGN — "technical metadata should never
+            compete with the playable balance"). */}
+        <div className="flex flex-col items-center gap-1 py-6 text-center">
+          {casinoBalanceLoading ? (
+            <Skeleton className="h-10 w-40" />
+          ) : casinoBalanceError ? (
+            <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
+          ) : (
+            <div className="font-mono text-4xl font-bold tabular-nums">
+              {casinoBalance.toFixed(3)} <span className="text-2xl font-semibold text-muted-foreground">{casinoSymbol}</span>
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground">{baseSepolia.name} Testnet</div>
+
+          {isZero && (
+            <a
+              href="https://portal.cdp.coinbase.com/products/faucet"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              No balance available. Get testnet ETH →
+            </a>
+          )}
         </div>
 
-        <div className="rounded-lg border border-dashed p-3 text-sm">
-          <div className="mb-2 flex items-center gap-2 font-medium">
-            <Droplets className="size-4 text-[var(--global-cta-hover)]" /> Get testnet funds
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <FaucetLink href="https://portal.cdp.coinbase.com/products/faucet" label="Casino: Base Sepolia ETH faucet (Coinbase)" />
-            <FaucetLink href="https://faucet.polygon.technology/" label="Sports: Polygon Amoy POL faucet (gas)" />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Get POL for gas on Amoy, then mint test USDT from the Sports tab. Both are testnets — funds have no real value.
-          </p>
-        </div>
-
+        {/* FOOTER */}
         <button
           onClick={() => { disconnect(); onClose(); }}
           data-test-id="disconnect"
-          className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <LogOut className="size-4" /> Disconnect
+          <LogOut className="size-4" /> Disconnect Wallet
         </button>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function BalanceRow({ label, symbol, amount, note, decimals = 5 }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5">
-      <div>
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">{note}</div>
-      </div>
-      <div className="font-mono text-sm font-semibold tabular-nums">
-        {amount.toFixed(decimals)} {symbol}
-      </div>
-    </div>
-  );
-}
-
-function FaucetLink({ href, label }) {
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[var(--global-cta-hover)] hover:underline">
-      <ExternalLink className="size-3.5" /> {label}
-    </a>
   );
 }
