@@ -200,7 +200,11 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-sm" onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent
+        className="sm:max-w-sm"
+        onCloseAutoFocus={onCloseAutoFocus}
+        showCloseButton={displayState === FLOW.WALLET}
+      >
         <div
           className={cn("flex flex-col", crossfadeClassName)}
           style={{ minHeight: SHELL_MIN_HEIGHT }}
