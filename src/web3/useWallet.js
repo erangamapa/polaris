@@ -18,7 +18,7 @@ export function useWallet() {
   // WALLET UX REDESIGN §5 — "provider name if reliably available").
   const { address, isConnected, status, connector } = useAccount();
   const chainId = useChainId();
-  const { disconnect } = useDisconnect();
+  const { disconnect, disconnectAsync } = useDisconnect();
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
   const { open } = useAppKit();
 
@@ -73,6 +73,7 @@ export function useWallet() {
     isSwitching,
     connect: () => open({ view: 'Connect' }),
     disconnect,
+    disconnectAsync,
     switchTo,
   };
 }
