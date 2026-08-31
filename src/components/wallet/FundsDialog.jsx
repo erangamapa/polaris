@@ -252,75 +252,87 @@ function WalletBody({
         <ModalDescription className="sr-only">Your connected wallet.</ModalDescription>
       </ModalHeader>
 
-      <div className="mt-4 space-y-4">
-        {/* CONNECTED */}
-        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5">
-          <WalletAvatar address={address} size={32} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-sm font-semibold">{shortAddress(address)}</span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--success)]">
-                <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" /> Connected
-              </span>
-            </div>
-            {connectorName && <div className="truncate text-xs text-muted-foreground">{connectorName}</div>}
+      {/* WALLET IDENTITY — the one boxed sub-surface in this modal (bg-card
+          is genuinely a darker inset tone than the modal's own bg-secondary,
+          not just a second copy of the same fill — see AGENTS.md's Modal
+          system note on surface hierarchy). The balance below is
+          deliberately NOT boxed the same way: contrast between "grouped
+          identity" and "open balance" is what reads as hierarchy, not
+          wrapping everything in an identical card. */}
+      <div className="mt-3 flex items-center gap-3 rounded-lg border bg-card px-3 py-2">
+        <WalletAvatar address={address} size={28} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-sm font-semibold">{shortAddress(address)}</span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--success)]">
+              <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" /> Connected
+            </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              onClick={onCopy}
-              aria-label="Copy address"
-              data-test-id="wallet-copy"
-              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {copied ? <Check className="size-4 text-[var(--success)]" /> : <Copy className="size-4" />}
-            </button>
-            <a
-              href={explorer}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="View on explorer"
-              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <ExternalLink className="size-4" />
-            </a>
-          </div>
+          {connectorName && <div className="truncate text-xs text-muted-foreground">{connectorName}</div>}
         </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={onCopy}
+            aria-label="Copy address"
+            data-test-id="wallet-copy"
+            className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {copied ? <Check className="size-4 text-[var(--success)]" /> : <Copy className="size-4" />}
+          </button>
+          <a
+            href={explorer}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View on explorer"
+            className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ExternalLink className="size-4" />
+          </a>
+        </div>
+      </div>
 
-        {/* BALANCE — the one number this popup exists to show. */}
-        <div className="rounded-lg border bg-card px-4 py-5 text-center">
-          {casinoBalanceLoading ? (
-            <Skeleton className="mx-auto h-9 w-36" />
-          ) : casinoBalanceError ? (
-            <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
-          ) : (
-            <div className="font-mono text-3xl font-bold tabular-nums">
-              {casinoBalance.toFixed(3)} <span className="text-xl font-semibold text-muted-foreground">{casinoSymbol}</span>
-            </div>
-          )}
-          <div className="mt-1 text-xs text-muted-foreground">{baseSepolia.name} Testnet</div>
+      {/* BALANCE — the visual focal point of the modal. Floats directly on
+          the modal surface (no card), with the numeric value clearly
+          dominant over the symbol next to it. */}
+      <div className="mt-4 text-center">
+        {casinoBalanceLoading ? (
+          <Skeleton className="mx-auto h-8 w-32" />
+        ) : casinoBalanceError ? (
+          <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
+        ) : (
+          <div className="flex items-baseline justify-center gap-1">
+            <span className="font-mono text-3xl font-bold tabular-nums">{casinoBalance.toFixed(3)}</span>
+            <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
+          </div>
+        )}
+        <div className="mt-1 text-xs text-muted-foreground">{baseSepolia.name} Testnet</div>
 
-          {isZero && (
+        {isZero && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
               target="_blank"
               rel="noreferrer"
-              className="mt-2 inline-block text-xs text-muted-foreground hover:text-foreground hover:underline"
+              className="font-medium text-[var(--global-cta-hover)] hover:underline"
             >
-              No balance available. Get testnet ETH →
+              Get testnet ETH →
             </a>
-          )}
-        </div>
+          </p>
+        )}
       </div>
 
-      <ModalFooter>
+      {/* FOOTER — a real divider, not just a gap, so the destructive action
+          reads as belonging to its own zone. */}
+      <div className="mt-3 border-t pt-2">
         <button
           onClick={onDisconnectRequest}
           data-test-id="disconnect"
-          className="flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-transparent py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:border-[var(--danger)]/40 hover:bg-[var(--danger-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="size-4" /> Disconnect Wallet
         </button>
-      </ModalFooter>
+      </div>
     </>
   );
 }
