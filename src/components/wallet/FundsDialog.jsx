@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 // one root swaps, never a second modal stacked on top of it. This is also
 // the reference implementation for Tribet's shared Modal system (see
 // components/ui/modal.jsx) — every state uses the SAME fixed
-// `transactional` shell (~560x400) so the frame never resizes moving
+// `transactional` shell (~470x440) so the frame never resizes moving
 // between them; only `dismissible` (the X) varies per state.
 const FLOW = {
   WALLET: "wallet",
@@ -218,7 +218,7 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
   return (
     <Modal open={open} onOpenChange={handleOpenChange}>
-      <ModalContent size="transactional" dismissible={DISMISSIBLE[displayState]} onCloseAutoFocus={onCloseAutoFocus}>
+      <ModalContent size="transactional" dismissible={DISMISSIBLE[displayState]} onCloseAutoFocus={onCloseAutoFocus} className="py-6">
         <div className={cn("flex flex-1 flex-col", crossfadeClassName)}>
           {displayState === FLOW.WALLET && (
             <WalletBody
@@ -270,7 +270,7 @@ function WalletBody({
           not just a second copy of the same fill — see AGENTS.md's Modal
           system note on surface hierarchy). Fixed height (~72-84px, per
           the compact-portrait shell), sits right under the header. */}
-      <div className="mt-3 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-3">
+      <div className="mt-4 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-3">
         <WalletAvatar address={address} size={32} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -318,10 +318,10 @@ function WalletBody({
             <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
           </div>
         )}
-        <div className="mt-1 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
+        <div className="mt-2 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
 
         {isZero && (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
@@ -338,7 +338,7 @@ function WalletBody({
       {/* FOOTER — a real divider, not just a gap, so the destructive action
           reads as belonging to its own zone. Fixed height, pinned to the
           bottom of the shell. */}
-      <div className="shrink-0 border-t pt-4">
+      <div className="shrink-0 border-t pt-5">
         <button
           onClick={onDisconnectRequest}
           data-test-id="disconnect"
