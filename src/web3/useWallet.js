@@ -13,7 +13,10 @@ import { azuro, CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from '@shared/chains';
 const fmt = (bal) => (bal ? Number(formatUnits(bal.value, bal.decimals)) : 0);
 
 export function useWallet() {
-  const { address, isConnected, status } = useAccount();
+  // `connector` is wagmi's own already-reactive record of which provider is
+  // active — reading its name is display-only, not new wallet logic (see
+  // WALLET UX REDESIGN §5 — "provider name if reliably available").
+  const { address, isConnected, status, connector } = useAccount();
   const chainId = useChainId();
   const { disconnect } = useDisconnect();
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
@@ -53,6 +56,7 @@ export function useWallet() {
     address,
     isConnected,
     status,
+    connectorName: connector?.name,
     chainId,
     onCasinoChain: chainId === CASINO_CHAIN_ID,
     onSportsChain: chainId === SPORTS_CHAIN_ID,
@@ -68,7 +72,6 @@ export function useWallet() {
     sportsGasSymbol: sportsGasBal?.symbol ?? 'POL',
     isSwitching,
     connect: () => open({ view: 'Connect' }),
-    openAccount: () => open({ view: 'Account' }),
     disconnect,
     switchTo,
   };

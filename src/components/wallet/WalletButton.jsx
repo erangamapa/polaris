@@ -1,18 +1,16 @@
-import { Wallet } from "lucide-react";
-import { useWallet, shortAddress } from "@/web3/useWallet";
-import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from "@shared/chains";
+import { AlertTriangle, Wallet } from "lucide-react";
+import { shortAddress } from "@/web3/useWallet";
+import { WalletAvatar } from "@/components/wallet/WalletAvatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
-const NETWORK = {
-  [CASINO_CHAIN_ID]: { label: "Base Sepolia", dot: "#0052ff" },
-  [SPORTS_CHAIN_ID]: { label: "Polygon Amoy", dot: "#8247e5" },
-};
-
-// Replaces Login/Register. Disconnected -> Connect Wallet; connected -> a pill
-// showing the active network (casino=Base Sepolia, sports=Amoy) + address.
-// The correct chain is selected automatically at bet time, so no forced CTA here.
-export function WalletButton({ onManage }) {
-  const { address, isConnected, chainId } = useWallet();
-
+// Mobile's one wallet control — same architecture as the desktop
+// BalanceControl (identity + primary balance, single tap opens FundsDialog
+// directly, no separate mobile-only experience). All state is passed in
+// from TopBar (the one place that resolves dev-mock overrides and the
+// arena-aware primary balance), so this stays purely presentational rather
+// than re-deriving wallet state a second way.
+export function WalletButton({ onManage, isConnected, address, primaryBalance, primarySymbol, primaryLoading, primaryError, wrongNetwork }) {
   if (!isConnected) {
     return (
       <button
@@ -26,17 +24,27 @@ export function WalletButton({ onManage }) {
     );
   }
 
-  const net = NETWORK[chainId] ?? { label: "Unknown", dot: "#a1a1aa" };
-
   return (
     <button
       onClick={onManage}
+      aria-label={`Wallet, ${primaryLoading ? "loading" : `${primaryBalance.toFixed(4)} ${primarySymbol}`}${wrongNetwork ? ", wrong network" : ""}`}
       data-test-id="wallet-pill"
-      className="flex items-center gap-2 rounded-lg bg-zinc-800/80 px-3 py-1.5 ring-1 ring-white/5 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 ring-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        wrongNetwork ? "bg-[var(--warning)]/10 ring-[var(--warning)]/40" : "bg-zinc-800/80 ring-white/5 hover:bg-zinc-800"
+      )}
     >
-      <span className="inline-block size-2 rounded-full" style={{ background: net.dot }} aria-hidden />
-      <span className="hidden text-xs font-medium text-zinc-300 sm:inline">{net.label}</span>
-      <span className="font-mono text-xs text-white">{shortAddress(address)}</span>
+      <WalletAvatar address={address} size={18} />
+      {primaryLoading ? (
+        <Skeleton className="h-3.5 w-12" />
+      ) : primaryError ? (
+        <AlertTriangle className="size-3.5 shrink-0 text-[var(--warning)]" aria-hidden="true" />
+      ) : (
+        <span className="truncate font-mono text-xs font-semibold tabular-nums text-white">
+          {primaryBalance.toFixed(4)} {primarySymbol}
+        </span>
+      )}
+      <span className="truncate font-mono text-xs text-zinc-400">{shortAddress(address)}</span>
     </button>
   );
 }

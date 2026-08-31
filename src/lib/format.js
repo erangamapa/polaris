@@ -11,3 +11,8 @@ export const fmtPct = (p) => `${Math.round(p * 100)}%`;
 
 // Price in cents, e.g. 0.62 -> "62¢"
 export const fmtCents = (p) => `${Math.round(p * 100)}¢`;
+
+// Current time for activity feed entries, e.g. "Jun 28, 14:02".
+export function nowLabel() {
+  return new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}

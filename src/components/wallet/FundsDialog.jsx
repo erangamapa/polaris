@@ -1,28 +1,33 @@
-import { Copy, ExternalLink, LogOut, Droplets } from "lucide-react";
+import { useState } from "react";
+import { Check, Copy, ExternalLink, LogOut } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { useWallet, shortAddress } from "@/web3/useWallet";
-import { baseSepolia } from "@shared/chains";
-import { toast } from "@/lib/toast";
+import { WalletAvatar } from "@/components/wallet/WalletAvatar";
+import { baseSepolia, polygonAmoy } from "@shared/chains";
 import { BRAND_NAME } from "@/lib/brand";
 
-// Non-custodial Funds panel: shows the player's own on-chain balances across the
-// two chains (casino = Base Sepolia, sports = Polygon Amoy) and links to faucets.
-// Tribet never holds funds — no deposit-to-us.
+// The one Tribet wallet popup — every wallet entry point in the app opens
+// this (see WALLET UX AUDIT §1/§7: "AppKit owns connection only, Tribet
+// owns the entire connected-wallet experience"). One screen, no tabs, no
+// nested dialogs — non-custodial: this only ever shows the player's own
+// on-chain balances and links out to faucets, never a deposit/withdraw flow.
 export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const {
-    address, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
+    address, connectorName, casinoBalance, casinoSymbol, sportsBalance, sportsSymbol, sportsGas, sportsGasSymbol, disconnect,
   } = useWallet();
 
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
+  const [copied, setCopied] = useState(false);
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(address);
-      toast.success("Address copied");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
-      toast.error("Copy failed");
+      /* clipboard may be blocked — icon simply doesn't confirm */
     }
   };
 
@@ -30,73 +35,110 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
-          <DialogTitle>Funds</DialogTitle>
-          <DialogDescription>
-            Your funds stay in your own wallet. {BRAND_NAME} is non-custodial — play settles on-chain.
+          <DialogTitle>Wallet</DialogTitle>
+          <DialogDescription className="sr-only">
+            Your connected wallet — {BRAND_NAME} never holds your funds.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
-          <span className="font-mono text-sm">{shortAddress(address)}</span>
-          <div className="flex items-center gap-1">
-            <button onClick={copy} aria-label="Copy address" className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
-              <Copy className="size-4" />
+        {/* CONNECTED IDENTITY */}
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5">
+          <WalletAvatar address={address} size={32} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-sm font-semibold">{shortAddress(address)}</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--success)]">
+                <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" /> Connected
+              </span>
+            </div>
+            {connectorName && <div className="truncate text-xs text-muted-foreground">{connectorName}</div>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={copy}
+              aria-label="Copy address"
+              data-test-id="wallet-copy"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              {copied ? <Check className="size-4 text-[var(--success)]" /> : <Copy className="size-4" />}
             </button>
-            <a href={explorer} target="_blank" rel="noreferrer" aria-label="View on explorer" className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
+            <a
+              href={explorer}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View on explorer"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
               <ExternalLink className="size-4" />
             </a>
           </div>
         </div>
 
+        {/* BALANCES */}
         <div className="space-y-2">
-          <BalanceRow label="Casino (Base Sepolia)" symbol={casinoSymbol} amount={casinoBalance} decimals={5} note="native — bets + gas" />
-          <BalanceRow label="Sports (Polygon Amoy)" symbol={sportsSymbol} amount={sportsBalance} decimals={2} note="bet token — mint from Sports tab" />
-          <BalanceRow label="Sports gas" symbol={sportsGasSymbol} amount={sportsGas} decimals={4} note="Polygon Amoy native" />
+          <div className="rounded-lg border bg-card px-3 py-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <div>
+                <div className="text-sm font-medium">Casino</div>
+                <div className="text-xs text-muted-foreground">{baseSepolia.name}</div>
+              </div>
+              <div className="font-mono text-lg font-semibold tabular-nums">
+                {casinoBalance.toFixed(5)} <span className="text-xs font-semibold text-muted-foreground">{casinoSymbol}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-card px-3 py-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <div>
+                <div className="text-sm font-medium">Sportsbook</div>
+                <div className="text-xs text-muted-foreground">{polygonAmoy.name}</div>
+              </div>
+              <div className="font-mono text-lg font-semibold tabular-nums">
+                {sportsBalance.toFixed(2)} <span className="text-xs font-semibold text-muted-foreground">{sportsSymbol}</span>
+              </div>
+            </div>
+            {/* Gas is real information, not a peer balance — kept small and
+                muted so the playable stake above stays the one number that
+                reads as "money" (see WALLET UX REDESIGN §5 — "gas must be
+                visually secondary"). */}
+            <div className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+              Gas: {sportsGas.toFixed(4)} {sportsGasSymbol}
+            </div>
+          </div>
+
+          {/* Predictions has no wallet-backed balance yet — an honest
+              "Coming soon" row, never a fabricated number (see WALLET UX
+              REDESIGN §5 — "do not invent a fake Predictions balance"). */}
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed px-3 py-2.5 text-muted-foreground">
+            <div className="text-sm font-medium">Predictions</div>
+            <div className="text-xs">Coming soon</div>
+          </div>
         </div>
 
-        <div className="rounded-lg border border-dashed p-3 text-sm">
-          <div className="mb-2 flex items-center gap-2 font-medium">
-            <Droplets className="size-4 text-[var(--global-cta-hover)]" /> Get testnet funds
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <FaucetLink href="https://portal.cdp.coinbase.com/products/faucet" label="Casino: Base Sepolia ETH faucet (Coinbase)" />
-            <FaucetLink href="https://faucet.polygon.technology/" label="Sports: Polygon Amoy POL faucet (gas)" />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Get POL for gas on Amoy, then mint test USDT from the Sports tab. Both are testnets — funds have no real value.
-          </p>
-        </div>
+        {/* TESTNET SUPPORT — a developer/testnet convenience, not core
+            wallet information, so it stays a single muted line rather than
+            a promo box (see WALLET UX REDESIGN §5). */}
+        <p className="text-xs text-muted-foreground">
+          Need testnet funds?{" "}
+          <a href="https://portal.cdp.coinbase.com/products/faucet" target="_blank" rel="noreferrer" className="font-medium text-[var(--global-cta-hover)] hover:underline">
+            Casino faucet
+          </a>
+          {" · "}
+          <a href="https://faucet.polygon.technology/" target="_blank" rel="noreferrer" className="font-medium text-[var(--global-cta-hover)] hover:underline">
+            Sports faucet
+          </a>
+        </p>
 
+        {/* FOOTER */}
         <button
           onClick={() => { disconnect(); onClose(); }}
           data-test-id="disconnect"
-          className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] hover:bg-secondary"
         >
-          <LogOut className="size-4" /> Disconnect
+          <LogOut className="size-4" /> Disconnect Wallet
         </button>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function BalanceRow({ label, symbol, amount, note, decimals = 5 }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5">
-      <div>
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">{note}</div>
-      </div>
-      <div className="font-mono text-sm font-semibold tabular-nums">
-        {amount.toFixed(decimals)} {symbol}
-      </div>
-    </div>
-  );
-}
-
-function FaucetLink({ href, label }) {
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[var(--global-cta-hover)] hover:underline">
-      <ExternalLink className="size-3.5" /> {label}
-    </a>
   );
 }

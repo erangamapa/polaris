@@ -8,7 +8,7 @@ import { LogoMark } from "@/components/shell/LogoMark";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
-import { useCasinoBalance } from "@/lib/casinoBalance";
+import { useCasinoBalance, BALANCE_STATUS } from "@/lib/casinoBalance";
 import { getTopBarMode, HEADER_CENTER_VARIANT, getHeaderCenterVariant } from "@/lib/topBarState";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "@/lib/profileState";
 import { setDevMockState } from "@/lib/devMock";
@@ -44,11 +44,11 @@ import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 // (e.g. "logged in" + "wrong network" shows a normal logged-in Profile menu
 // alongside a wrong-network HUD), which is exactly the point.
 //
-// activePopover is the ONE piece of state this component owns: which of
-// the two lightweight header popovers (Balance, Profile) is open. Both are
-// controlled from here specifically so they can never both be open at once
-// (see OVERLAY OWNERSHIP) — real account/wallet data all still comes
-// straight from useWallet(), never duplicated here.
+// profileMenuOpen is the ONE piece of state this component owns: whether
+// the Profile dropdown is open. The nav wallet control used to be a second
+// Popover here too, but it now opens FundsDialog directly with no
+// intermediate popover (see WALLET UX REDESIGN) — real account/wallet data
+// all still comes straight from useWallet(), never duplicated here.
 //
 // The burger is desktop-only (≥768px, matching the sidebar rail's own
 // breakpoint) — mobile navigation lives entirely in the bottom nav's Menu
@@ -62,7 +62,7 @@ import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 // utility section instead (see MobileFullScreenMenu) — reusing that
 // existing full-screen surface rather than adding a second mobile account
 // sheet (see OVERLAY BEHAVIOR: "do not stack it with the mobile menu").
-export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onManageWallet, onFund, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
+export function TopBar({ onBurger, burgerLabel = "Toggle menu", arena = "casino", onAccount, onManageWallet, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
   const wallet = useDevAwareWallet();
   const {
     isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, sportsBalance, sportsSymbol, disconnect,
@@ -70,15 +70,31 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
   } = wallet;
   // Same underlying dev-aware wallet hook (react-query dedupes the actual
   // network request under the hood) — this just adds the shared
-  // status/refresh layer on top for BalanceControl (see lib/casinoBalance.js
+  // status layer on top for the nav wallet control (see lib/casinoBalance.js
   // — one balance model, not a second store).
-  const { status: casinoBalanceStatus, refreshBalance } = useCasinoBalance();
+  const { status: casinoBalanceStatus } = useCasinoBalance();
+
+  // ONE primary balance in the nav, arena-aware where the data cleanly
+  // supports it (see WALLET UX AUDIT §6/§7): Sports arena shows the Sports
+  // stake token, everything else (Casino, Predictions — which has no real
+  // chain of its own) shows Casino ETH. Sports has no loading/error signal
+  // in useWallet.js today (only Casino's balance is tracked through
+  // resolveBalanceStatus) — extending that would be wallet-logic scope this
+  // task explicitly excludes, so the Sports primary balance is presented as
+  // always-ready; documented as a known limitation, not silently papered
+  // over.
+  const primaryIsSports = arena === "sports";
+  const primaryBalance = primaryIsSports ? sportsBalance : casinoBalance;
+  const primarySymbol = primaryIsSports ? sportsSymbol : casinoSymbol;
+  const primaryLoading = primaryIsSports ? false : casinoBalanceLoading;
+  const primaryError = primaryIsSports ? false : casinoBalanceError;
+  const primaryStatus = primaryIsSports ? BALANCE_STATUS.READY : casinoBalanceStatus;
 
   // Triple-tap the logo toggles the Developer Panel on touch devices, where
   // Shift+D isn't practical (see lib/useDevPanelLogoTap.js).
   const onLogoTap = useDevPanelLogoTap();
 
-  const [activePopover, setActivePopover] = useState(null); // null | "balance" | "profile"
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   // Dev Panel's own wallet mock is derived from the REAL wallet App.jsx
   // computed `wrongNetwork` from, so it can't see it — prefer the mock's
@@ -102,7 +118,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
     } else {
       disconnect();
     }
-    setActivePopover(null);
+    setProfileMenuOpen(false);
   };
 
   return (
@@ -186,38 +202,31 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
             Connect Wallet
           </button>
         ) : (
-          <div className="flex h-11 shrink-0 items-stretch">
+          // ONE combined identity+balance control, no Popover in between
+          // (see WALLET UX AUDIT §2/§6/§7 — "click -> wallet popup", never
+          // "click -> popover -> Manage wallet -> dialog"). Clicking it
+          // opens FundsDialog directly. Wrong-network keeps its own
+          // standing "Switch network" action glued beside it — that flow
+          // is explicitly unchanged, not part of this redesign.
+          <div className="flex h-11 shrink-0 items-stretch gap-1.5">
             <BalanceControl
-              open={activePopover === "balance"}
-              onOpenChange={(next) => setActivePopover(next ? "balance" : null)}
-              casinoBalance={casinoBalance}
-              casinoSymbol={casinoSymbol}
-              casinoLoading={casinoBalanceLoading}
-              casinoBalanceError={casinoBalanceError}
-              casinoStatus={casinoBalanceStatus}
-              onRefreshBalance={() => refreshBalance({ reason: "manual-retry" })}
-              sportsBalance={sportsBalance}
-              sportsSymbol={sportsSymbol}
+              address={address}
+              primaryBalance={primaryBalance}
+              primarySymbol={primarySymbol}
+              primaryLoading={primaryLoading}
+              primaryError={primaryError}
+              primaryStatus={primaryStatus}
               wrongNetwork={centerVariant === HEADER_CENTER_VARIANT.WRONG_NETWORK}
               onManageWallet={onManageWallet}
             />
 
-            {centerVariant === HEADER_CENTER_VARIANT.WRONG_NETWORK ? (
+            {centerVariant === HEADER_CENTER_VARIANT.WRONG_NETWORK && (
               <button
                 onClick={onSwitchNetwork}
                 data-test-id="switch-network"
-                className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-e-lg border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-3.5 text-sm font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/20 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-3.5 text-sm font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/20 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Switch network
-              </button>
-            ) : (
-              <button
-                onClick={onManageWallet}
-                aria-label="Wallet"
-                data-test-id="wallet-hud-action"
-                className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-e-lg bg-[var(--global-cta)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                Wallet
               </button>
             )}
           </div>
@@ -258,8 +267,8 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
           )}
 
           <ProfileMenu
-            open={activePopover === "profile"}
-            onOpenChange={(next) => setActivePopover(next ? "profile" : null)}
+            open={profileMenuOpen}
+            onOpenChange={setProfileMenuOpen}
             variant={profileVariant}
             address={address}
             isConnected={isConnected}
@@ -275,28 +284,32 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
         {/* Mobile authenticated cluster (<768px) — the wallet pill always
             reflects real wallet connection regardless of profileVariant
             (see SESSION-EXPIRED: "preserve wallet connection state
-            separately"); Fund/Activity are authenticated-account actions,
-            so they're gated the same way Activity is on desktop. */}
+            separately"); Activity is an authenticated-account action, gated
+            the same way it is on desktop. The standalone "Fund" button that
+            used to sit here was removed — it opened the exact same
+            FundsDialog as the wallet pill beside it (see WALLET UX AUDIT
+            §4 — "duplicate of #4"), so tapping the pill is now the one way
+            in, matching desktop's single combined control. */}
         <div className="flex items-center gap-2 md:hidden">
           {profileVariant === PROFILE_VARIANT.LOGGED_IN && (
-            <>
-              <button
-                onClick={onFund}
-                aria-label="Fund"
-                className="hidden rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:block"
-              >
-                Fund
-              </button>
-              <button
-                onClick={onActivity}
-                aria-label="Activity"
-                className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <ReceiptText className="size-5" />
-              </button>
-            </>
+            <button
+              onClick={onActivity}
+              aria-label="Activity"
+              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ReceiptText className="size-5" />
+            </button>
           )}
-          <WalletButton onManage={onManageWallet} />
+          <WalletButton
+            onManage={onManageWallet}
+            isConnected={isConnected}
+            address={address}
+            primaryBalance={primaryBalance}
+            primarySymbol={primarySymbol}
+            primaryLoading={primaryLoading}
+            primaryError={primaryError}
+            wrongNetwork={effectiveWrongNetwork}
+          />
         </div>
       </div>
     </header>
