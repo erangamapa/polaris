@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, ExternalLink, LogOut } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -32,6 +32,8 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
   const [copied, setCopied] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const cancelRef = useRef(null);
   const isZero = !casinoBalanceLoading && !casinoBalanceError && casinoBalance === 0;
 
   if (!isConnected) return null;
@@ -117,13 +119,50 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
         {/* FOOTER */}
         <button
-          onClick={() => { disconnect(); onClose(); }}
+          onClick={() => setConfirmOpen(true)}
           data-test-id="disconnect"
           className="flex items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="size-4" /> Disconnect Wallet
         </button>
       </DialogContent>
+
+      {/* Disconnect confirmation — a second, stacked Dialog rather than a
+          new primitive (see WALLET UX: "follow Tribet's existing modal
+          language"). Cancel and Disconnect are styled as equal-weight quiet
+          buttons (same outline treatment as everything else in this popup)
+          — Disconnect is distinguished only by --danger text color, never a
+          filled red button, so neither reads as "the" primary action. */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent
+          className="sm:max-w-xs"
+          onOpenAutoFocus={(e) => { e.preventDefault(); cancelRef.current?.focus(); }}
+        >
+          <DialogHeader>
+            <DialogTitle>Disconnect Wallet?</DialogTitle>
+            <DialogDescription>
+              Your wallet will be disconnected from Tribet. You&rsquo;ll need to reconnect it before playing again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <button
+              ref={cancelRef}
+              onClick={() => setConfirmOpen(false)}
+              data-test-id="disconnect-cancel"
+              className="flex-1 rounded-lg border py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { disconnect(); setConfirmOpen(false); onClose(); }}
+              data-test-id="disconnect-confirm"
+              className="flex-1 rounded-lg border py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Disconnect
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
