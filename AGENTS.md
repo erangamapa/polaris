@@ -103,6 +103,73 @@ CasinoCatalog (src/components/casino/CasinoCatalog.jsx)
 
 ---
 
+## Modal / Dialog System
+
+`src/components/ui/modal.jsx` is the one convention every popup should compose
+— wallet, deposits/withdrawals, confirmations, success/error/warning states,
+game info, reports, account settings, session states. It wraps
+`src/components/ui/dialog.jsx` (Radix Dialog primitives: surface, backdrop,
+radius, shadow, focus trap are already correct there — see its own tokens)
+rather than reimplementing chrome. `src/components/wallet/FundsDialog.jsx` is
+the reference implementation — read it before building a new popup.
+
+**Anatomy:** `ModalHeader` (`ModalTitle` + optional `ModalDescription`) →
+body content → `ModalFooter` (actions). No forced height — content
+determines it; `DialogContent` already caps at `max-h-[86vh]` with internal
+scrolling for anything genuinely long. Never build a fixed-height shell that
+several states share — a compact confirmation and a content-heavy detail
+view should NOT be the same height just because they're both dialogs.
+
+**Sizes** (`ModalContent`'s `size` prop, mapped onto Tailwind's existing
+`max-w-*` scale, not new pixel tokens):
+| size | width | use for |
+|---|---|---|
+| `sm` | `sm:max-w-md` (~448px) | confirmation / success / warning / error |
+| `md` | `sm:max-w-xl` (~576px) | forms / small account flows |
+| `lg` | `sm:max-w-2xl` (~672px) | content-heavy detail views (wallet, reports) |
+
+**Semantic variants** (`ModalIcon`'s `variant` prop: `neutral` / `success` /
+`warning` / `destructive` / `error`) tint only a small icon chip via
+`--success` / `--warning` / `--danger`. **The modal surface itself never
+changes color** — no tinted backgrounds, no colored borders on the shell.
+
+**Close button (`dismissible` prop):** show the X only when the dialog has
+no explicit decision control of its own. A confirmation with Cancel/Confirm,
+or a success screen with Continue, passes `dismissible={false}` — the
+explicit action is the exit path, not a redundant X. A freely-dismissible
+detail view (the main Wallet screen) keeps it.
+
+**Two-button destructive confirmations:** equal-width, equal-height buttons
+(`ModalFooter className="grid grid-cols-2"`), neutral secondary style on
+Cancel, `text-[var(--danger)]` (never a filled red button, never
+`--favorite-heart` — that coral is a different semantic concept) on the
+destructive action. Filled red is reserved for exceptionally strong
+emphasis, which nothing here has needed yet.
+
+**Success states:** a small circular tinted icon chip (`ModalIcon
+variant="success"`) next to short supporting copy, same title size as any
+other modal of that size — never a large illustration, never a bigger
+headline than a same-size confirmation gets.
+
+**Escape/backdrop/X** all route through one `onOpenChange` handler on the
+Dialog root — keep them behaving identically to whichever exit action they
+map to (Cancel-equivalent for a confirmation, Continue-equivalent for
+success), never silently bypassing a flow that has an explicit completion
+action.
+
+**Responsive:** mobile-first by default (`w-full` below `sm:`, capped
+`max-w-*` above) — no separate mobile-only modal pattern. Two-button
+footers may need to stack vertically below the width where equal columns
+get cramped; keep the neutral action first, destructive second.
+
+**Migrating an existing dialog:** don't do it reflexively. `ComplianceBlockDialog`
+and `SupportDialog` are already close (single message/`sm`, link list/`md`)
+and are good near-term candidates. `AccountDialog`, `ResponsibleGamblingDialog`,
+`BetHistoryDialog`/`ActivityDialog` are tabbed or list-heavy and need real
+review, not a mechanical swap. `AzuroBetSlip`/`DemoBetSlip`/`PositionTicket`
+have their own interaction model (stake input, live odds) — treat those as a
+separate design pass, not a drop-in.
+
 ## Per-player settings (persisted per wallet)
 
 There is **no login screen and no password** — the connected wallet is the
