@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 //   lg ~672px — content-heavy / detail views (reports, account settings)
 //
 // `transactional` is the ODD one out and deliberately NOT content-driven:
-// it's a fixed width AND height (~520x580 — compact portrait, a focused
+// it's a fixed width AND height (~420x400 — compact portrait, a focused
 // utility object, not a landscape dashboard panel — gutter/height-clamped
 // below that on small viewports), for a multi-step STATE MACHINE where
 // several screens share one mounted Dialog (wallet -> confirm -> success,
@@ -43,7 +43,7 @@ export const MODAL_SIZE = {
   // silently overrides the intended fixed height on any viewport where
   // 86vh < 580px (any window under ~674px tall) — confirmed via a real
   // measurement, not assumed.
-  transactional: "w-full sm:w-[470px] sm:max-w-[calc(100vw-2rem)] h-[min(440px,calc(100dvh-2rem))] max-h-[min(440px,calc(100dvh-2rem))]",
+  transactional: "w-full sm:w-[420px] sm:max-w-[calc(100vw-2rem)] h-[min(400px,calc(100dvh-2rem))] max-h-[min(400px,calc(100dvh-2rem))]",
   sm: "sm:max-w-md",
   md: "sm:max-w-xl",
   lg: "sm:max-w-2xl",
