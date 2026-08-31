@@ -270,7 +270,7 @@ function WalletBody({
           not just a second copy of the same fill — see AGENTS.md's Modal
           system note on surface hierarchy). Fixed height (~72-84px, per
           the compact-portrait shell), sits right under the header. */}
-      <div className="mt-4 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-4">
+      <div className="mt-3 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-3">
         <WalletAvatar address={address} size={32} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -338,7 +338,7 @@ function WalletBody({
       {/* FOOTER — a real divider, not just a gap, so the destructive action
           reads as belonging to its own zone. Fixed height, pinned to the
           bottom of the shell. */}
-      <div className="shrink-0 border-t pt-5">
+      <div className="shrink-0 border-t pt-4">
         <button
           onClick={onDisconnectRequest}
           data-test-id="disconnect"
@@ -418,7 +418,7 @@ function SuccessBody({ continueRef, onContinue }) {
           horizontal row, left-aligned to the same content edge as the
           title above — a centered stacked block here is exactly what made
           this state read as disconnected from the rest of the flow. */}
-      <div className="mt-8 flex shrink-0 items-center gap-3">
+      <div className="mt-6 flex shrink-0 items-center gap-3">
         <ModalIcon variant="neutral" icon={Unlink2} className="border border-border/60" />
         <p className="text-sm text-muted-foreground">You can reconnect at any time.</p>
       </div>
