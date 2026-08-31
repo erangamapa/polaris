@@ -114,19 +114,24 @@ rather than reimplementing chrome. `src/components/wallet/FundsDialog.jsx` is
 the reference implementation — read it before building a new popup.
 
 **Anatomy:** `ModalHeader` (`ModalTitle` + optional `ModalDescription`) →
-body content → `ModalFooter` (actions). No forced height — content
-determines it; `DialogContent` already caps at `max-h-[86vh]` with internal
-scrolling for anything genuinely long. Never build a fixed-height shell that
-several states share — a compact confirmation and a content-heavy detail
-view should NOT be the same height just because they're both dialogs.
+body content → `ModalFooter` (actions).
 
-**Sizes** (`ModalContent`'s `size` prop, mapped onto Tailwind's existing
-`max-w-*` scale, not new pixel tokens):
-| size | width | use for |
-|---|---|---|
-| `sm` | `sm:max-w-md` (~448px) | confirmation / success / warning / error |
-| `md` | `sm:max-w-xl` (~576px) | forms / small account flows |
-| `lg` | `sm:max-w-2xl` (~672px) | content-heavy detail views (wallet, reports) |
+**Sizes** (`ModalContent`'s `size` prop):
+| size | dimensions | height | use for |
+|---|---|---|---|
+| `transactional` | `sm:w-[520px]` | fixed `~580px` (viewport-clamped) | a multi-step STATE MACHINE where several screens share one mounted Dialog — wallet, deposit/withdraw flows, any confirm→success/error sequence. **Default for this shape of flow.** Compact portrait proportions (narrower than tall), not a landscape panel. |
+| `sm` | `sm:max-w-md` (~448px) | content-driven | a single one-shot confirmation/success/warning/error with no sibling states |
+| `md` | `sm:max-w-xl` (~576px) | content-driven | forms / small account flows |
+| `lg` | `sm:max-w-2xl` (~672px) | content-driven | content-heavy detail views (reports, account settings) |
+
+`transactional` is the one deliberately fixed-height size — every state in
+that flow composes its content with `flex-1`/`justify-center` to fill the
+shell intentionally (see `FundsDialog.jsx`'s three bodies) rather than
+top-pinning content over dead space. `sm`/`md`/`lg` stay content-driven
+(`DialogContent` caps at `max-h-[86vh]` with internal scroll for anything
+long) — reach for one of those only when a dialog's own content genuinely
+needs more room, not because a flow's tallest step made a shared
+`transactional` shell feel cramped.
 
 **Semantic variants** (`ModalIcon`'s `variant` prop: `neutral` / `success` /
 `warning` / `destructive` / `error`) tint only a small icon chip via

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, LogOut, Unlink2 } from "lucide-react";
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, ModalIcon } from "@/components/ui/modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWallet, shortAddress } from "@/web3/useWallet";
@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 // whole wallet/disconnect interaction; each state below is CONTENT this
 // one root swaps, never a second modal stacked on top of it. This is also
 // the reference implementation for Tribet's shared Modal system (see
-// components/ui/modal.jsx) — size/variant/dismissible per state, content-
-// driven height, no forced fixed shell.
+// components/ui/modal.jsx) — every state uses the SAME fixed
+// `transactional` shell (~560x400) so the frame never resizes moving
+// between them; only `dismissible` (the X) varies per state.
 const FLOW = {
   WALLET: "wallet",
   CONFIRM_DISCONNECT: "confirmDisconnect",
@@ -23,20 +24,34 @@ const FLOW = {
   DISCONNECT_ERROR: "disconnectError",
 };
 
-// Which Modal size/dismissibility each state uses — see MODAL SIZE SYSTEM
-// ("lg: content-heavy detail views" fits the Wallet screen; "sm: simple
-// confirmation/success/warning" fits the rest) and CLOSE BUTTON
-// CONVENTION (X only where there's no explicit decision control already
-// defining the exit path).
-const STATE_CHROME = {
-  [FLOW.WALLET]: { size: "lg", dismissible: true },
-  [FLOW.CONFIRM_DISCONNECT]: { size: "sm", dismissible: false },
-  [FLOW.DISCONNECTING]: { size: "sm", dismissible: false },
-  [FLOW.DISCONNECT_ERROR]: { size: "sm", dismissible: false },
-  [FLOW.DISCONNECT_SUCCESS]: { size: "sm", dismissible: false },
+// Only dismissibility (the X) varies per state — see CLOSE BUTTON
+// CONVENTION: X only where there's no explicit decision control already
+// defining the exit path. Size is constant (`transactional`) for all of
+// them; see MODAL_SIZE in components/ui/modal.jsx for why.
+const DISMISSIBLE = {
+  [FLOW.WALLET]: true,
+  [FLOW.CONFIRM_DISCONNECT]: false,
+  [FLOW.DISCONNECTING]: false,
+  [FLOW.DISCONNECT_ERROR]: false,
+  [FLOW.DISCONNECT_SUCCESS]: false,
 };
 
 const LEAVE_MS = 200;
+
+// Shared typography for this flow's ModalHeader — bigger/more considered
+// than the app-wide dialog-title default (18px, sized for smaller utility
+// dialogs like Support/KYC) since this title is the visual anchor players
+// actually pause on. No existing token sits in the 26-28px range, so this
+// is a deliberate arbitrary value rather than a reused one — defined once
+// here and reused by all three states instead of repeated per body (see
+// TYPOGRAPHY task: "one consistent typography hierarchy for all Wallet
+// modal states"). Always left-aligned, overriding ModalHeader's default
+// `text-center` on mobile — the title never centers in this flow.
+const TITLE_CLASS = "text-left text-[26px] font-semibold leading-[1.2]";
+// Supporting body copy: text-base (16px, an existing Tailwind token) +
+// leading-normal (1.5, the closest existing token to the requested 1.45)
+// + max-w-sm (384px, closest existing token to the requested 360-400px).
+const BODY_TEXT_CLASS = "text-left text-base leading-normal text-muted-foreground max-w-sm";
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -201,12 +216,10 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   // with isConnected === false (that's the whole point of it).
   if (flowState === FLOW.WALLET && !isConnected) return null;
 
-  const chrome = STATE_CHROME[displayState];
-
   return (
     <Modal open={open} onOpenChange={handleOpenChange}>
-      <ModalContent size={chrome.size} dismissible={chrome.dismissible} onCloseAutoFocus={onCloseAutoFocus}>
-        <div className={crossfadeClassName}>
+      <ModalContent size="transactional" dismissible={DISMISSIBLE[displayState]} onCloseAutoFocus={onCloseAutoFocus}>
+        <div className={cn("flex flex-1 flex-col", crossfadeClassName)}>
           {displayState === FLOW.WALLET && (
             <WalletBody
               address={address}
@@ -247,20 +260,18 @@ function WalletBody({
 }) {
   return (
     <>
-      <ModalHeader>
-        <ModalTitle>Wallet</ModalTitle>
+      <ModalHeader className="text-left">
+        <ModalTitle className={TITLE_CLASS}>Wallet</ModalTitle>
         <ModalDescription className="sr-only">Your connected wallet.</ModalDescription>
       </ModalHeader>
 
       {/* WALLET IDENTITY — the one boxed sub-surface in this modal (bg-card
           is genuinely a darker inset tone than the modal's own bg-secondary,
           not just a second copy of the same fill — see AGENTS.md's Modal
-          system note on surface hierarchy). The balance below is
-          deliberately NOT boxed the same way: contrast between "grouped
-          identity" and "open balance" is what reads as hierarchy, not
-          wrapping everything in an identical card. */}
-      <div className="mt-3 flex items-center gap-3 rounded-lg border bg-card px-3 py-2">
-        <WalletAvatar address={address} size={28} />
+          system note on surface hierarchy). Fixed height (~72-84px, per
+          the compact-portrait shell), sits right under the header. */}
+      <div className="mt-4 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-4">
+        <WalletAvatar address={address} size={32} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-sm font-semibold">{shortAddress(address)}</span>
@@ -268,7 +279,7 @@ function WalletBody({
               <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" /> Connected
             </span>
           </div>
-          {connectorName && <div className="truncate text-xs text-muted-foreground">{connectorName}</div>}
+          {connectorName && <div className="truncate text-sm text-muted-foreground">{connectorName}</div>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
@@ -292,9 +303,11 @@ function WalletBody({
       </div>
 
       {/* BALANCE — the visual focal point of the modal. Floats directly on
-          the modal surface (no card), with the numeric value clearly
-          dominant over the symbol next to it. */}
-      <div className="mt-4 text-center">
+          the modal surface (no card), and fills the remaining space
+          between the identity card and the footer (flex-1 + centered) so
+          the fixed shell never reads as top-pinned content over dead
+          space. */}
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
         {casinoBalanceLoading ? (
           <Skeleton className="mx-auto h-8 w-32" />
         ) : casinoBalanceError ? (
@@ -305,10 +318,10 @@ function WalletBody({
             <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
           </div>
         )}
-        <div className="mt-1 text-xs text-muted-foreground">{baseSepolia.name} Testnet</div>
+        <div className="mt-1 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
 
         {isZero && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
@@ -323,8 +336,9 @@ function WalletBody({
       </div>
 
       {/* FOOTER — a real divider, not just a gap, so the destructive action
-          reads as belonging to its own zone. */}
-      <div className="mt-3 border-t pt-2">
+          reads as belonging to its own zone. Fixed height, pinned to the
+          bottom of the shell. */}
+      <div className="shrink-0 border-t pt-5">
         <button
           onClick={onDisconnectRequest}
           data-test-id="disconnect"
@@ -343,20 +357,26 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
 
   return (
     <>
-      <ModalHeader>
-        <ModalTitle>Disconnect Wallet?</ModalTitle>
-        <ModalDescription>
+      <ModalHeader className="gap-4 text-left">
+        <ModalTitle className={TITLE_CLASS}>Disconnect Wallet?</ModalTitle>
+        <ModalDescription className={BODY_TEXT_CLASS}>
           Your wallet will be disconnected from Tribet. You&rsquo;ll need to reconnect it before playing again.
         </ModalDescription>
       </ModalHeader>
 
-      {isError && (
-        <p className="mt-3 text-sm font-medium text-[var(--danger)]" role="alert">
-          Couldn&rsquo;t disconnect the wallet. Please try again.
-        </p>
-      )}
+      {/* Fills the remaining space so the buttons stay anchored to the
+          shell's footer zone instead of sitting right under the
+          description — same fixed shell as Wallet/Success. Left-aligned
+          to the same content edge as the title/description above it. */}
+      <div className="flex flex-1 flex-col justify-center">
+        {isError && (
+          <p className="text-sm font-medium text-[var(--danger)]" role="alert">
+            Couldn&rsquo;t disconnect the wallet. Please try again.
+          </p>
+        )}
+      </div>
 
-      <ModalFooter className="grid grid-cols-2">
+      <ModalFooter className="mt-0 grid shrink-0 grid-cols-2">
         <button
           ref={cancelRef}
           onClick={onCancel}
@@ -386,17 +406,26 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
 function SuccessBody({ continueRef, onContinue }) {
   return (
     <>
-      <ModalHeader>
-        <ModalTitle>Wallet Disconnected</ModalTitle>
+      <ModalHeader className="text-left">
+        <ModalTitle className={TITLE_CLASS}>Wallet Disconnected</ModalTitle>
         <ModalDescription className="sr-only">You can reconnect at any time.</ModalDescription>
       </ModalHeader>
 
-      <div className="mt-3 flex items-center gap-3">
-        <ModalIcon variant="success" icon={Check} className="animate-in fade-in-0 zoom-in-95 duration-200 motion-reduce:animate-none" />
+      {/* Disconnected is a neutral system-state, not a completed positive
+          outcome — no green check (see SEMANTIC CONVENTION: green is for
+          genuinely positive completed outcomes only; disconnected/signed-
+          out is the neutral-light-gray case). Icon + message form ONE
+          horizontal row, left-aligned to the same content edge as the
+          title above — a centered stacked block here is exactly what made
+          this state read as disconnected from the rest of the flow. */}
+      <div className="mt-8 flex shrink-0 items-center gap-3">
+        <ModalIcon variant="neutral" icon={Unlink2} className="border border-border/60" />
         <p className="text-sm text-muted-foreground">You can reconnect at any time.</p>
       </div>
 
-      <ModalFooter>
+      <div className="flex-1" aria-hidden="true" />
+
+      <ModalFooter className="mt-0 shrink-0">
         <button
           ref={continueRef}
           onClick={onContinue}
