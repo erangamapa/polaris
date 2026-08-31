@@ -119,7 +119,7 @@ body content → `ModalFooter` (actions).
 **Sizes** (`ModalContent`'s `size` prop):
 | size | dimensions | height | use for |
 |---|---|---|---|
-| `transactional` | `sm:w-[480px]` | fixed `~520px` (viewport-clamped) | a multi-step STATE MACHINE where several screens share one mounted Dialog — wallet, deposit/withdraw flows, any confirm→success/error sequence. **Default for this shape of flow.** Compact portrait proportions (narrower than tall), not a landscape panel. |
+| `transactional` | `sm:w-[470px]` | fixed `~440px` (viewport-clamped) | a multi-step STATE MACHINE where several screens share one mounted Dialog — wallet, deposit/withdraw flows, any confirm→success/error sequence. **Default for this shape of flow.** Compact portrait proportions (narrower than tall), not a landscape panel. |
 | `sm` | `sm:max-w-md` (~448px) | content-driven | a single one-shot confirmation/success/warning/error with no sibling states |
 | `md` | `sm:max-w-xl` (~576px) | content-driven | forms / small account flows |
 | `lg` | `sm:max-w-2xl` (~672px) | content-driven | content-heavy detail views (reports, account settings) |

@@ -43,7 +43,7 @@ export const MODAL_SIZE = {
   // silently overrides the intended fixed height on any viewport where
   // 86vh < 580px (any window under ~674px tall) — confirmed via a real
   // measurement, not assumed.
-  transactional: "w-full sm:w-[480px] sm:max-w-[calc(100vw-2rem)] h-[min(520px,calc(100dvh-2rem))] max-h-[min(520px,calc(100dvh-2rem))]",
+  transactional: "w-full sm:w-[470px] sm:max-w-[calc(100vw-2rem)] h-[min(440px,calc(100dvh-2rem))] max-h-[min(440px,calc(100dvh-2rem))]",
   sm: "sm:max-w-md",
   md: "sm:max-w-xl",
   lg: "sm:max-w-2xl",
