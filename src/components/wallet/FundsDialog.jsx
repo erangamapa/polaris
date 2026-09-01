@@ -373,7 +373,7 @@ function WalletBody({
               crypto balance above it — clearly secondary (muted, no blue)
               but not tiny. */}
           {!casinoBalanceLoading && !casinoBalanceError && (
-            <p className="mt-2 text-lg font-medium text-muted-foreground">
+            <p className="mt-1.5 text-lg leading-tight font-medium text-muted-foreground">
               <span aria-hidden="true">
                 ≈ {usdValue != null ? fmtUsd(usdValue) : "—"} USD
                 {isTestnet && (
@@ -395,7 +395,7 @@ function WalletBody({
         </div>
 
         {showTestnetHelper && (
-          <p className="pb-1 text-center text-sm text-muted-foreground">
+          <p className="pb-7 text-center text-sm text-muted-foreground">
             No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
