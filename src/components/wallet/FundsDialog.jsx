@@ -361,18 +361,16 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
   const isError = flowState === FLOW.DISCONNECT_ERROR;
 
   return (
-    // This state's own content (title/copy/buttons) is short relative to
-    // Wallet's — pinning header-to-top and footer-to-bottom the way
-    // Wallet/Success do would leave one huge dead gap sitting between the
-    // copy and the buttons (measured and confirmed: ~230px of pure blank
-    // space at the 420x400 shell size). Centering the whole block as a
-    // group instead moves that same slack to symmetric, unremarkable
-    // padding above the title and below the buttons — a "controlled" gap
-    // (a small fixed margin, not a `flex-1` void) between copy and
-    // actions, per WALLET MODAL SHELL REDUCTION task's explicit "remove
-    // the large empty center... do not add decorative content simply to
-    // fill space."
-    <div className="flex flex-1 flex-col justify-center">
+    // Same three-zone grid as WalletBody (header top-left, content flex-1,
+    // footer bottom) — a wrapping "center the whole group" div here is
+    // exactly what pulled this state's title away from Wallet's own
+    // top-left title position (see WALLET SUBSTATE COMPOSITION task's CORE
+    // LAYOUT RULE: "all three Wallet states must share the same internal
+    // vertical structure... do not vertically center an entire substate").
+    // ModalHeader is a direct child of the shared crossfade flex column
+    // again, same as Wallet's, so its rendered x/y is identical across
+    // states by construction, not by matching numbers.
+    <>
       <ModalHeader className="gap-4 text-left">
         <ModalTitle className={TITLE_CLASS}>Disconnect Wallet?</ModalTitle>
         <ModalDescription className={BODY_TEXT_CLASS}>
@@ -380,13 +378,18 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
         </ModalDescription>
       </ModalHeader>
 
-      {isError && (
-        <p className="mt-4 text-sm font-medium text-[var(--danger)]" role="alert">
-          Couldn&rsquo;t disconnect the wallet. Please try again.
-        </p>
-      )}
+      {/* Flexible space lives BETWEEN the copy and the footer, not around
+          the whole group — the error message (when present) stays glued
+          to the copy above it, never floating mid-modal. */}
+      <div className="flex flex-1 flex-col">
+        {isError && (
+          <p className="mt-4 text-sm font-medium text-[var(--danger)]" role="alert">
+            Couldn&rsquo;t disconnect the wallet. Please try again.
+          </p>
+        )}
+      </div>
 
-      <ModalFooter className="mt-8 grid shrink-0 grid-cols-2">
+      <ModalFooter className="mt-0 grid shrink-0 grid-cols-2">
         <button
           ref={cancelRef}
           onClick={onCancel}
@@ -409,16 +412,17 @@ function ConfirmBody({ flowState, cancelRef, onCancel, onDisconnect }) {
           ) : isError ? "Try Again" : "Disconnect"}
         </button>
       </ModalFooter>
-    </div>
+    </>
   );
 }
 
 function SuccessBody({ continueRef, onContinue }) {
   return (
-    // Same reasoning as ConfirmBody: this state's content (title + one icon
-    // row) is too short to pin header-to-top/footer-to-bottom without a
-    // large dead gap above Continue — center the block as a group instead.
-    <div className="flex flex-1 flex-col justify-center">
+    // Same three-zone grid as WalletBody/ConfirmBody — see CORE LAYOUT RULE.
+    // ModalHeader is a direct child of the shared crossfade flex column
+    // again, giving this title the identical top-left position as the
+    // other two states by construction.
+    <>
       <ModalHeader className="text-left">
         <ModalTitle className={TITLE_CLASS}>Wallet Disconnected</ModalTitle>
         <ModalDescription className="sr-only">You can reconnect at any time.</ModalDescription>
@@ -431,12 +435,17 @@ function SuccessBody({ continueRef, onContinue }) {
           horizontal row, left-aligned to the same content edge as the
           title above — a centered stacked block here is exactly what made
           this state read as disconnected from the rest of the flow. */}
-      <div className="mt-4 flex shrink-0 items-center gap-3">
+      <div className="mt-6 flex shrink-0 items-center gap-3">
         <ModalIcon variant="neutral" icon={Unlink2} className="border border-border/60" />
         <p className="text-sm text-muted-foreground">You can reconnect at any time.</p>
       </div>
 
-      <ModalFooter className="mt-8 shrink-0">
+      {/* Flexible space between the status row and the footer, same
+          pattern as ConfirmBody — never a wrapper centering the whole
+          state as a group. */}
+      <div className="flex-1" aria-hidden="true" />
+
+      <ModalFooter className="mt-0 shrink-0">
         <button
           ref={continueRef}
           onClick={onContinue}
@@ -446,6 +455,6 @@ function SuccessBody({ continueRef, onContinue }) {
           Continue
         </button>
       </ModalFooter>
-    </div>
+    </>
   );
 }
