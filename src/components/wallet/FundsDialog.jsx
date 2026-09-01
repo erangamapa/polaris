@@ -307,27 +307,32 @@ function WalletBody({
           between the identity card and the footer (flex-1 + centered) so
           the fixed shell never reads as top-pinned content over dead
           space. */}
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
+      {/* pb-7 biases the centered content upward within this flex-1 zone
+          (~14px, per MICRO-POLISH task's "balance section feels slightly
+          too low") without touching the shell's own height — padding-
+          bottom-only shrinks the centering box from the bottom edge only,
+          shifting the visual midpoint up by half the padding. */}
+      <div className="flex flex-1 flex-col items-center justify-center pb-7 text-center">
         {casinoBalanceLoading ? (
           <Skeleton className="mx-auto h-8 w-32" />
         ) : casinoBalanceError ? (
           <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
         ) : (
           <div className="flex items-baseline justify-center gap-1">
-            <span className="font-mono text-3xl font-bold tabular-nums">{casinoBalance.toFixed(3)}</span>
+            <span className="font-mono text-[33px] font-bold tabular-nums">{casinoBalance.toFixed(3)}</span>
             <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
           </div>
         )}
-        <div className="mt-1.5 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
+        <div className="mt-2 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
 
         {isZero && (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2.5 text-sm text-muted-foreground">
             No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-[var(--global-cta-hover)] hover:underline"
+              className="font-semibold text-[var(--global-cta-hover)] hover:underline"
             >
               Get testnet ETH →
             </a>
@@ -342,7 +347,7 @@ function WalletBody({
         <button
           onClick={onDisconnectRequest}
           data-test-id="disconnect"
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-transparent py-2 text-sm font-medium text-[var(--danger)] transition-colors hover:border-[var(--danger)]/40 hover:bg-[var(--danger-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-[var(--danger)] transition-colors hover:bg-[var(--danger-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="size-4" /> Disconnect Wallet
         </button>
