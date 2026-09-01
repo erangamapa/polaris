@@ -373,7 +373,7 @@ function WalletBody({
               crypto balance above it — clearly secondary (muted, no blue)
               but not tiny. */}
           {!casinoBalanceLoading && !casinoBalanceError && (
-            <p className="mt-1.5 text-lg leading-tight font-medium text-muted-foreground">
+            <p className="mt-1 text-[16.5px] leading-tight font-medium text-muted-foreground">
               <span aria-hidden="true">
                 ≈ {usdValue != null ? fmtUsd(usdValue) : "—"} USD
                 {isTestnet && (
