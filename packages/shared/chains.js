@@ -19,6 +19,11 @@ export const SPORTS_CHAIN_ID = POLYGON_AMOY_ID;
 export const baseSepolia = {
   id: BASE_SEPOLIA_ID,
   name: 'Base Sepolia',
+  // Full player-facing label (used by the Wallet modal's identity card) —
+  // deliberately its own field rather than synthesized from `.name` +
+  // "Testnet", since that suffix rule wouldn't hold for every future chain
+  // (a mainnet's display name won't always want "Mainnet" appended either).
+  displayName: 'Base Sepolia Testnet',
   network: 'base-sepolia',
   nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
@@ -38,6 +43,7 @@ export const baseSepolia = {
 export const polygonAmoy = {
   id: POLYGON_AMOY_ID,
   name: 'Polygon Amoy',
+  displayName: 'Polygon Amoy Testnet',
   network: 'polygon-amoy',
   nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
   rpcUrls: { default: { http: ['https://rpc-amoy.polygon.technology'] } },
@@ -45,6 +51,17 @@ export const polygonAmoy = {
     default: { name: 'PolygonScan', url: 'https://amoy.polygonscan.com', apiUrl: 'https://api-amoy.polygonscan.com/api' },
   },
   testnet: true,
+};
+
+// chainId -> chain object, for surfaces that need to resolve "whatever
+// network the wallet is actually on right now" generically (see Wallet
+// modal identity card: "do not hardcode 'Base Sepolia Testnet' except
+// where the current network genuinely is Base Sepolia... Ethereum Mainnet,
+// Base, Solana, etc. should work automatically"). Add a chain here and its
+// display name / testnet-ness resolve everywhere for free.
+export const CHAINS_BY_ID = {
+  [BASE_SEPOLIA_ID]: baseSepolia,
+  [POLYGON_AMOY_ID]: polygonAmoy,
 };
 
 // Explorer lookup by chain id (bet/tx links are chain-aware now).

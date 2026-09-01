@@ -57,6 +57,11 @@ export function useWallet() {
     isConnected,
     status,
     connectorName: connector?.name,
+    // Data-URI icon the connector/AppKit already carries for itself, when
+    // one is available — the first-choice wallet-icon source (see Wallet
+    // modal identity card: "1. use reliable wallet metadata/icon already
+    // exposed by the connection library"), display-only same as the name.
+    connectorIcon: connector?.icon,
     chainId,
     onCasinoChain: chainId === CASINO_CHAIN_ID,
     onSportsChain: chainId === SPORTS_CHAIN_ID,

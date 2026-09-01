@@ -3,10 +3,10 @@ import { Check, Copy, ExternalLink, Loader2, LogOut, Unlink2 } from "lucide-reac
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, ModalIcon } from "@/components/ui/modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWallet, shortAddress } from "@/web3/useWallet";
-import { WalletAvatar } from "@/components/wallet/WalletAvatar";
+import { WalletProviderIcon } from "@/components/wallet/WalletProviderIcon";
 import { useAssetPrice } from "@/lib/useAssetPrice";
 import { fmtUsd, fmtUsdSpoken } from "@/lib/format";
-import { baseSepolia } from "@shared/chains";
+import { baseSepolia, CHAINS_BY_ID } from "@shared/chains";
 import { cn } from "@/lib/utils";
 
 // The one Tribet wallet popup — every wallet entry point in the app opens
@@ -116,8 +116,8 @@ function useCrossfade(flowState) {
 
 export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const {
-    isConnected, address, connectorName, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError,
-    disconnectAsync,
+    isConnected, address, connectorName, connectorIcon, chainId, casinoBalance, casinoSymbol,
+    casinoBalanceLoading, casinoBalanceError, disconnectAsync,
   } = useWallet();
 
   const [flowState, setFlowState] = useState(FLOW.WALLET);
@@ -186,6 +186,15 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   };
 
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
+  // Resolved from the ACTUAL connected chain, not hardcoded to Base Sepolia
+  // — see NETWORK NAME: "do not hardcode 'Base Sepolia Testnet' except
+  // where the current network genuinely is Base Sepolia... Ethereum
+  // Mainnet, Base, Solana, etc. should work automatically." An unrecognized
+  // chainId (wallet manually switched elsewhere) falls back to a plain
+  // "Chain <id>" label rather than lying about which network it is.
+  const chain = CHAINS_BY_ID[chainId];
+  const networkName = chain?.displayName ?? `Chain ${chainId}`;
+  const isTestnet = Boolean(chain?.testnet);
   const isZero = !casinoBalanceLoading && !casinoBalanceError && casinoBalance === 0;
   // From the raw numeric balance, never the `.toFixed(3)`-rounded display
   // string — see NUMBER CALCULATION: "do not round the crypto balance
@@ -240,13 +249,15 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
             <WalletBody
               address={address}
               connectorName={connectorName}
+              connectorIcon={connectorIcon}
+              networkName={networkName}
               casinoBalance={casinoBalance}
               casinoSymbol={casinoSymbol}
               casinoBalanceLoading={casinoBalanceLoading}
               casinoBalanceError={casinoBalanceError}
               isZero={isZero}
               usdValue={usdValue}
-              isTestnet={baseSepolia.testnet}
+              isTestnet={isTestnet}
               explorer={explorer}
               copied={copied}
               onCopy={copy}
@@ -273,9 +284,15 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 }
 
 function WalletBody({
-  address, connectorName, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError,
+  address, connectorName, connectorIcon, networkName, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError,
   isZero, usdValue, isTestnet, explorer, copied, onCopy, onDisconnectRequest,
 }) {
+  // Only ever offer the faucet helper where it's actually true — testnet
+  // AND genuinely empty — see DEV-ONLY / TESTNET-ONLY LOGIC: "do NOT show
+  // 'Get testnet ETH' on production mainnet... do not bake development UI
+  // into the real production wallet state."
+  const showTestnetHelper = isTestnet && isZero;
+
   return (
     <>
       <ModalHeader className="text-left">
@@ -286,10 +303,16 @@ function WalletBody({
       {/* WALLET IDENTITY — the one boxed sub-surface in this modal (bg-card
           is genuinely a darker inset tone than the modal's own bg-secondary,
           not just a second copy of the same fill — see AGENTS.md's Modal
-          system note on surface hierarchy). Fixed height (~72-84px, per
-          the compact-portrait shell), sits right under the header. */}
+          system note on surface hierarchy). Sits right under the header.
+          Three-part row (icon / address+network, flexible / fixed utility
+          actions) — see WALLET IDENTITY REWORK's IDENTITY BLOCK ALIGNMENT.
+          Provider name is no longer its own text row (see REMOVE PROVIDER
+          LABEL FROM THE UI) — it's carried by the icon's accessible name
+          instead, and network now lives here instead of under the balance
+          (see NETWORK NAME: "there must be only one network label in the
+          modal"). */}
       <div className="mt-3 flex shrink-0 items-center gap-3 rounded-lg border bg-card px-4 py-3">
-        <WalletAvatar address={address} size={32} />
+        <WalletProviderIcon key={connectorName} connectorName={connectorName} connectorIcon={connectorIcon} size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-sm font-semibold">{shortAddress(address)}</span>
@@ -297,84 +320,82 @@ function WalletBody({
               <span className="size-1.5 rounded-full bg-[var(--success)]" aria-hidden="true" /> Connected
             </span>
           </div>
-          {connectorName && <div className="truncate text-sm text-muted-foreground">{connectorName}</div>}
+          <div className="truncate text-sm text-muted-foreground">{networkName}</div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={onCopy}
-            aria-label="Copy address"
+            aria-label="Copy wallet address"
             data-test-id="wallet-copy"
-            className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="grid size-9 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {copied ? <Check className="size-4 text-[var(--success)]" /> : <Copy className="size-4" />}
+            {copied ? <Check className="size-4.5 text-[var(--success)]" /> : <Copy className="size-4.5" />}
           </button>
           <a
             href={explorer}
             target="_blank"
             rel="noreferrer"
-            aria-label="View on explorer"
-            className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="View address on block explorer"
+            className="grid size-9 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <ExternalLink className="size-4" />
+            <ExternalLink className="size-4.5" />
           </a>
         </div>
       </div>
 
-      {/* BALANCE — the visual focal point of the modal. Floats directly on
-          the modal surface (no card), and fills the remaining space
-          between the identity card and the footer (flex-1 + centered) so
-          the fixed shell never reads as top-pinned content over dead
-          space. */}
-      {/* pb-7 biases the centered content upward within this flex-1 zone
-          (~14px, per MICRO-POLISH task's "balance section feels slightly
-          too low") without touching the shell's own height — padding-
-          bottom-only shrinks the centering box from the bottom edge only,
-          shifting the visual midpoint up by half the padding. */}
-      <div className="flex flex-1 flex-col items-center justify-center pb-7 text-center">
-        {casinoBalanceLoading ? (
-          <Skeleton className="mx-auto h-8 w-32" />
-        ) : casinoBalanceError ? (
-          <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
-        ) : (
-          <div className="flex items-baseline justify-center gap-1">
-            <span className="font-mono text-[33px] font-bold tabular-nums">{casinoBalance.toFixed(3)}</span>
-            <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
-          </div>
-        )}
+      {/* CONTENT — two independently-positioned pieces per WALLET IDENTITY
+          REWORK's target composition: the ETH+USD cluster centers in
+          whatever space sits ABOVE the testnet helper (nested flex-1, no
+          magic-number gap needed), and the helper itself sits low, near
+          the footer, read as contextual/dev assistance rather than part of
+          the balance (see MOVE DEV / TESTNET HELPER DOWN). Network no
+          longer renders here at all — it moved into the identity card
+          above (see NETWORK NAME: "only one network label in the modal"). */}
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          {casinoBalanceLoading ? (
+            <Skeleton className="mx-auto h-9 w-36" />
+          ) : casinoBalanceError ? (
+            <div className="text-sm font-medium text-muted-foreground">Balance unavailable</div>
+          ) : (
+            <div className="flex items-baseline justify-center gap-1.5">
+              <span className="font-mono text-[36px] font-bold tabular-nums">{casinoBalance.toFixed(3)}</span>
+              <span className="text-base font-medium text-muted-foreground">{casinoSymbol}</span>
+            </div>
+          )}
 
-        {/* USD ESTIMATE — secondary/informational only, never the balance's
-            source of truth (see USD CONVERSION task's IMPORTANT
-            ARCHITECTURE). Always rendered, even before a price has loaded
-            ("≈ — USD"), so this line's own height is reserved up front and
-            nothing shifts when the real value arrives. Visually between the
-            crypto balance and the network label per that task's hierarchy
-            (same text-sm/font-medium recipe as the ETH ticker, one notch
-            above the plain network label below it). */}
-        {!casinoBalanceLoading && !casinoBalanceError && (
-          <p className="mt-2 text-sm font-medium text-muted-foreground">
-            <span aria-hidden="true">
-              ≈ {usdValue != null ? fmtUsd(usdValue) : "—"} USD
-              {isTestnet && (
-                <abbr
-                  title="Market-rate estimate only. Testnet ETH has no real monetary value."
-                  className="cursor-help no-underline"
-                >
-                  *
-                </abbr>
-              )}
-            </span>
-            <span className="sr-only">
-              {usdValue != null
-                ? `Approximate value: ${fmtUsdSpoken(usdValue)} USD.${isTestnet ? " Market-rate estimate only — testnet ETH has no real monetary value." : ""}`
-                : "Approximate USD value unavailable."}
-            </span>
-          </p>
-        )}
+          {/* USD ESTIMATE — secondary/informational only, never the
+              balance's source of truth (see USD CONVERSION task's
+              IMPORTANT ARCHITECTURE). Always rendered once the balance
+              itself has loaded, even before a price has ("≈ — USD"), so
+              this line's own height is reserved up front and nothing
+              shifts when the real value arrives. One cluster with the
+              crypto balance above it — clearly secondary (muted, no blue)
+              but not tiny. */}
+          {!casinoBalanceLoading && !casinoBalanceError && (
+            <p className="mt-2 text-lg font-medium text-muted-foreground">
+              <span aria-hidden="true">
+                ≈ {usdValue != null ? fmtUsd(usdValue) : "—"} USD
+                {isTestnet && (
+                  <abbr
+                    title="Market-rate estimate only. Testnet ETH has no real monetary value."
+                    className="cursor-help no-underline"
+                  >
+                    *
+                  </abbr>
+                )}
+              </span>
+              <span className="sr-only">
+                {usdValue != null
+                  ? `Approximate value: ${fmtUsdSpoken(usdValue)} USD.${isTestnet ? " Market-rate estimate only — testnet ETH has no real monetary value." : ""}`
+                  : "Approximate USD value unavailable."}
+              </span>
+            </p>
+          )}
+        </div>
 
-        <div className="mt-2 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
-
-        {isZero && (
-          <p className="mt-2.5 text-sm text-muted-foreground">
+        {showTestnetHelper && (
+          <p className="pb-1 text-center text-sm text-muted-foreground">
             No balance available.{" "}
             <a
               href="https://portal.cdp.coinbase.com/products/faucet"
