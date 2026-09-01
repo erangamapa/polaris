@@ -4,6 +4,8 @@ import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFo
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { WalletAvatar } from "@/components/wallet/WalletAvatar";
+import { useAssetPrice } from "@/lib/useAssetPrice";
+import { fmtUsd, fmtUsdSpoken } from "@/lib/format";
 import { baseSepolia } from "@shared/chains";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +127,14 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const continueRef = useRef(null);
   const { displayState, className: crossfadeClassName } = useCrossfade(flowState);
 
+  // Secondary, informational-only USD estimate — see USD CONVERSION task's
+  // IMPORTANT ARCHITECTURE: never the wallet balance's source of truth, and
+  // a price-service failure here can't touch isConnected/casinoBalance/
+  // anything above. `enabled: open` is the whole polling lifecycle: starts
+  // on open, silently refreshes at most once/60s, stops the instant the
+  // modal closes (see that hook for the full cache policy).
+  const { usd: assetUsdPrice } = useAssetPrice(casinoSymbol, { enabled: open });
+
   // Fresh open always starts at `wallet` (never mid-flow), and closing
   // clears any transient flow state so it can never survive a reopen.
   useEffect(() => {
@@ -177,6 +187,12 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
   const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
   const isZero = !casinoBalanceLoading && !casinoBalanceError && casinoBalance === 0;
+  // From the raw numeric balance, never the `.toFixed(3)`-rounded display
+  // string — see NUMBER CALCULATION: "do not round the crypto balance
+  // first and then calculate."
+  const usdValue = !casinoBalanceLoading && !casinoBalanceError && assetUsdPrice != null
+    ? casinoBalance * assetUsdPrice
+    : null;
 
   const copy = async () => {
     try {
@@ -229,6 +245,8 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
               casinoBalanceLoading={casinoBalanceLoading}
               casinoBalanceError={casinoBalanceError}
               isZero={isZero}
+              usdValue={usdValue}
+              isTestnet={baseSepolia.testnet}
               explorer={explorer}
               copied={copied}
               onCopy={copy}
@@ -256,7 +274,7 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
 
 function WalletBody({
   address, connectorName, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError,
-  isZero, explorer, copied, onCopy, onDisconnectRequest,
+  isZero, usdValue, isTestnet, explorer, copied, onCopy, onDisconnectRequest,
 }) {
   return (
     <>
@@ -323,6 +341,36 @@ function WalletBody({
             <span className="text-sm font-medium text-muted-foreground">{casinoSymbol}</span>
           </div>
         )}
+
+        {/* USD ESTIMATE — secondary/informational only, never the balance's
+            source of truth (see USD CONVERSION task's IMPORTANT
+            ARCHITECTURE). Always rendered, even before a price has loaded
+            ("≈ — USD"), so this line's own height is reserved up front and
+            nothing shifts when the real value arrives. Visually between the
+            crypto balance and the network label per that task's hierarchy
+            (same text-sm/font-medium recipe as the ETH ticker, one notch
+            above the plain network label below it). */}
+        {!casinoBalanceLoading && !casinoBalanceError && (
+          <p className="mt-2 text-sm font-medium text-muted-foreground">
+            <span aria-hidden="true">
+              ≈ {usdValue != null ? fmtUsd(usdValue) : "—"} USD
+              {isTestnet && (
+                <abbr
+                  title="Market-rate estimate only. Testnet ETH has no real monetary value."
+                  className="cursor-help no-underline"
+                >
+                  *
+                </abbr>
+              )}
+            </span>
+            <span className="sr-only">
+              {usdValue != null
+                ? `Approximate value: ${fmtUsdSpoken(usdValue)} USD.${isTestnet ? " Market-rate estimate only — testnet ETH has no real monetary value." : ""}`
+                : "Approximate USD value unavailable."}
+            </span>
+          </p>
+        )}
+
         <div className="mt-2 text-sm text-muted-foreground">{baseSepolia.name} Testnet</div>
 
         {isZero && (
