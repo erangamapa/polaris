@@ -1,4 +1,18 @@
 import { BRAND_NAME } from "@/lib/brand";
+import { CASINO_USE_MAINNET, CASINO_CHAIN } from "@shared/chains";
+
+// The money disclosure has to track the network the build actually bets on
+// (see VITE_USE_MAINNET in @shared/chains). On testnet the balances really are
+// simulated and saying so is correct; on mainnet the casino settles real funds
+// on-chain, and telling a player their money is fake while taking it would be
+// a lie with consequences. One flag drives both strings so they can never
+// contradict the chain the app is pointed at.
+const MONEY_NOTICE = CASINO_USE_MAINNET
+  ? `Real-money play — casino bets settle on-chain on ${CASINO_CHAIN.name}.`
+  : "Demo build — simulated balances, no real money.";
+const MONEY_SENTENCE = CASINO_USE_MAINNET
+  ? `${BRAND_NAME} settles casino bets with real funds on ${CASINO_CHAIN.name}. Only stake what you can afford to lose.`
+  : `${BRAND_NAME} is a prototype — simulated balances, no real money.`;
 
 const COLUMNS = [
   { title: "Casino", links: ["Lobby", "Slots", "Live Casino", "Game Shows", "Providers"] },
@@ -61,7 +75,7 @@ export function Footer({ onResponsibleGambling, onSupport }) {
             <button onClick={onResponsibleGambling} className="hover:text-foreground">Play responsibly.</button>
             <span>Gambling can be addictive.</span>
           </div>
-          <span className="text-muted-foreground/70">© {new Date().getFullYear()} {BRAND_NAME} · Demo build — simulated balances, no real money.</span>
+          <span className="text-muted-foreground/70">© {new Date().getFullYear()} {BRAND_NAME} · {MONEY_NOTICE}</span>
         </div>
         {/* No invented licensing claim, regulator name or named external
             helpline — none of those are real/approved for this prototype
@@ -71,7 +85,7 @@ export function Footer({ onResponsibleGambling, onSupport }) {
             only real, working help channel this app has is its own
             Support system. */}
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/60">
-          {BRAND_NAME} is a prototype — simulated balances, no real money. If gambling is affecting you or someone you know,{" "}
+          {MONEY_SENTENCE} If gambling is affecting you or someone you know,{" "}
           <button onClick={onSupport} className="underline hover:text-foreground">contact Support</button>.
         </p>
       </div>

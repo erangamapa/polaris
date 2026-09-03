@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AlertTriangle, ExternalLink, ShieldCheck } from "lucide-react";
 import { getGameDetails, resolveFairnessSummary, formatRtp, RTP_EXPLANATION } from "@/lib/casinoGameDetails";
 import { gameProviderName } from "./CasinoCatalog";
+import { CATEGORY_LABEL } from "@/lib/casinoCategories";
 import { MicroLabel } from "@/components/ui/micro-label";
 
 const STATUS_LABEL = { available: null, "coming-soon": "Coming soon", unavailable: "Unavailable" };
@@ -124,11 +125,13 @@ export function GameInfoPanel({ game, open, notFound, onClose, onResponsibleGami
               {/* 1. Identity + 3. status */}
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* ONE micro-label component for both badges — "Tribet
-                      Originals" uses the brand colour explicitly, same as
-                      everywhere else now (no per-arena tint to assume). */}
+                  {/* ONE micro-label component for both badges — the on-chain
+                      badge uses the brand colour explicitly, same as
+                      everywhere else now (no per-arena tint to assume). Reads
+                      from CATEGORY_LABEL rather than a literal so it can't
+                      drift from the rail heading these games sit under. */}
                   {game.kind === "onchain" && (
-                    <MicroLabel className="bg-[var(--global-cta-soft-bg)] text-[var(--global-cta-hover)]">Tribet Originals</MicroLabel>
+                    <MicroLabel className="bg-[var(--global-cta-soft-bg)] text-[var(--global-cta-hover)]">{CATEGORY_LABEL.Originals}</MicroLabel>
                   )}
                   {statusLabel && <MicroLabel>{statusLabel}</MicroLabel>}
                 </div>

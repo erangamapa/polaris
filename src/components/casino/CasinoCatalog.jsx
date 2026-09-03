@@ -18,22 +18,21 @@ import { createPlaceholderGames, notifyPlaceholderClicked, PLACEHOLDER_TITLE, PL
 import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
 // Onchain games carry no provider field of their own (BETSWIRL_GAMES has
-// none — see useBetSwirl.js) and are never a provider at all (nav spec
-// §6.6 — Tribet Originals is first-party content and a category, never a
-// provider). Provider-kind games resolve their display name via the real
-// `providerId` FK against CASINO_PROVIDERS (see ProviderGame.jsx/
-// casinoCategories.js) — not a repeated display-string match. Lives here
-// (not in casinoSearch.js, which already imports FROM this file) so both
-// CasinoGameCard and search can use the exact same label without a
-// circular import.
+// none — see useBetSwirl.js) and get their own category/rail rather than a
+// row in the Providers rail (nav spec §6.6). Provider-kind games resolve
+// their display name via the real `providerId` FK against CASINO_PROVIDERS
+// (see ProviderGame.jsx/casinoCategories.js) — not a repeated display-string
+// match. Lives here (not in casinoSearch.js, which already imports FROM this
+// file) so both CasinoGameCard and search can use the exact same label
+// without a circular import.
 //
-// FINAL QA fix: onchain games previously showed the internal SDK/vendor
-// name "BetSwirl" here — exactly the kind of exposed technical prototype
-// terminology the naming audit rules out. "Tribet Originals" is not
-// invented for this fix — it's the exact same label these games' own
-// Lobby rail already uses (see casinoCategories.js's CATEGORY_LABEL_OVERRIDE),
-// so this now agrees with, rather than contradicts, the section heading
-// these cards sit under.
+// These cards read "BetSwirl", not "Tribet Originals". An earlier naming pass
+// hid the vendor name as exposed prototype terminology, but the replacement
+// asserted Tribet authored Dice/Roulette/Keno, which is false — BetSwirl
+// builds and settles them, and Tribet's own games are the provider-kind ones
+// badged Tribet Studio. Attribution beats tidiness here. The label still comes
+// from CATEGORY_LABEL rather than a literal, so these cards and the section
+// heading they sit under can never disagree.
 export const gameProviderName = (game) =>
   game.kind === "onchain" ? CATEGORY_LABEL.Originals : (CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider");
 
@@ -859,7 +858,7 @@ export function CategoryNav({ selected, activeView, onSelectHomeFilter, onPillAc
 // CATEGORY_META row. `TAG_CATEGORY_DESCRIPTIONS` supplies the one missing
 // description (Originals) that CATEGORY_META doesn't carry, reusing the
 // exact subtitle its Lobby rail already shows so the two surfaces agree.
-const TAG_CATEGORY_DESCRIPTIONS = { Originals: "Games created by Tribet" };
+const TAG_CATEGORY_DESCRIPTIONS = { Originals: "On-chain games, provably fair and settled by BetSwirl" };
 function isTagCategory(category) {
   return category === "Originals" || Boolean(CATEGORY_META[category]);
 }
@@ -1499,7 +1498,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         visibleCount={expandedRails?.get("originals-rail")}
         onExpand={(total) => onExpandRail?.("originals-rail", total)}
         title={CATEGORY_LABEL.Originals}
-        subtitle="Games created by Tribet"
+        subtitle="On-chain games, provably fair and settled by BetSwirl"
         badge="Provably fair"
         tier="primary"
         tileScale="large"
