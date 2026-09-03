@@ -6,12 +6,14 @@
 // so we page in small chunks.
 import { createPublicClient, http, formatEther } from 'viem';
 import { casinoChainById, CASINO_GAME_ROLL_ABI } from '@betswirl/sdk-core';
-import { isAddress, json } from './_shared.js';
+import { isAddress, json, CASINO_CHAIN_ID, CASINO_RPC } from './_shared.js';
 
-const CHAIN_ID = 84532;
+// Contracts come from the SDK keyed on whichever casino chain is active, so
+// this endpoint follows VITE_USE_MAINNET along with the rest of the app.
+const CHAIN_ID = CASINO_CHAIN_ID;
 const chain = casinoChainById[CHAIN_ID].viemChain;
 const games = casinoChainById[CHAIN_ID].contracts.games;
-const client = createPublicClient({ chain, transport: http('https://sepolia.base.org') });
+const client = createPublicClient({ chain, transport: http(CASINO_RPC) });
 
 const PLAYABLE = ['dice', 'coin-toss', 'roulette', 'keno'];
 const LOOKBACK = 24_000n; // ~13h of Base Sepolia blocks

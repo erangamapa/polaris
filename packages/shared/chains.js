@@ -1,19 +1,54 @@
-// Pinned chain + protocol configuration for TriBet (testnet-only).
+// Pinned chain + protocol configuration for TriBet.
 // Populated from live Discovery (Phase 0.5, docs/architecture/23) against the
-// BetSwirl and Azuro SDKs on 2026-07-01. Both verticals co-locate on Base Sepolia.
+// BetSwirl and Azuro SDKs on 2026-07-01.
 //
-// Betting assets on Base Sepolia:
-//   - BetSwirl casino  -> native ETH (token address 0x0 = GAS_TOKEN)
-//   - Azuro sports     -> WETH (0x9e09...935f)
-// Both are ETH-denominated on one chain, so funding = ETH (+ wrap some to WETH).
+// The casino (BetSwirl) runs on either a testnet or a mainnet, selected at build
+// time by VITE_USE_MAINNET — see CASINO_USE_MAINNET below. Sports (Azuro) is
+// testnet-only for now and is unaffected by that flag.
+//
+// Betting assets:
+//   - BetSwirl casino  -> the chain's native gas token (address 0x0 = GAS_TOKEN)
+//   - Azuro sports     -> USDT on Polygon Amoy (6 decimals)
 
 export const BASE_SEPOLIA_ID = 84532;
 export const POLYGON_AMOY_ID = 80002;
+export const ARBITRUM_ID = 42161;
 
-// Two-chain split: casino (BetSwirl) on Base Sepolia, sports (Azuro) on Polygon
-// Amoy — Amoy's Azuro dev feed carries more live markets. The app auto-switches
+// Resolved from whichever runtime we're in: Vite inlines `import.meta.env` for
+// the browser bundle, while Vercel's serverless functions see the same
+// VITE_-prefixed variable on `process.env`. One variable, both sides.
+function readEnv(name) {
+  let viteEnv;
+  try {
+    viteEnv = import.meta.env;
+  } catch {
+    viteEnv = undefined;
+  }
+  const fromVite = viteEnv?.[name];
+  if (fromVite !== undefined) return fromVite;
+  if (typeof process !== 'undefined' && process.env) return process.env[name];
+  return undefined;
+}
+
+// Casino network selector. Only the exact string 'true' opts into mainnet —
+// anything else (unset, empty, 'false', a typo) stays on testnet. Real money is
+// strictly opt-in: a missing or malformed value must never silently promote the
+// app to a live-funds chain.
+export const CASINO_USE_MAINNET = String(readEnv('VITE_USE_MAINNET')).trim().toLowerCase() === 'true';
+
+// Casino mainnet target. BetSwirl is deployed on Arbitrum, Avalanche, BNB Chain,
+// Polygon and Base, but Base's bank returns isAllowed=false / maxBet=0 for the
+// native token, so it is not a viable target. Arbitrum is chosen because it has
+// the deepest usable bankroll of the ETH-denominated deployments, which keeps
+// the app's existing ETH labelling and USD pricing correct. To retarget, change
+// this one constant (and CASINO_MAINNET below).
+export const CASINO_MAINNET_ID = ARBITRUM_ID;
+
+// Casino (BetSwirl) follows the flag; sports (Azuro) stays on Polygon Amoy —
+// Amoy's Azuro dev feed carries more live markets, and mainnet Azuro needs a
+// different contract set, subgraph and settlement token. The app auto-switches
 // the wallet to the chain a given bet needs.
-export const CASINO_CHAIN_ID = BASE_SEPOLIA_ID;
+export const CASINO_CHAIN_ID = CASINO_USE_MAINNET ? CASINO_MAINNET_ID : BASE_SEPOLIA_ID;
 export const SPORTS_CHAIN_ID = POLYGON_AMOY_ID;
 
 export const baseSepolia = {
@@ -53,6 +88,22 @@ export const polygonAmoy = {
   testnet: true,
 };
 
+export const arbitrum = {
+  id: ARBITRUM_ID,
+  name: 'Arbitrum One',
+  displayName: 'Arbitrum One',
+  network: 'arbitrum',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://arb1.arbitrum.io/rpc'] },
+    fallback: { http: ['https://arbitrum-one-rpc.publicnode.com'] },
+  },
+  blockExplorers: {
+    default: { name: 'Arbiscan', url: 'https://arbiscan.io', apiUrl: 'https://api.arbiscan.io/api' },
+  },
+  testnet: false,
+};
+
 // chainId -> chain object, for surfaces that need to resolve "whatever
 // network the wallet is actually on right now" generically (see Wallet
 // modal identity card: "do not hardcode 'Base Sepolia Testnet' except
@@ -62,19 +113,35 @@ export const polygonAmoy = {
 export const CHAINS_BY_ID = {
   [BASE_SEPOLIA_ID]: baseSepolia,
   [POLYGON_AMOY_ID]: polygonAmoy,
+  [ARBITRUM_ID]: arbitrum,
 };
+
+// The casino chain currently in force. Prefer this over importing a named chain
+// directly — `baseSepolia` is no longer a safe stand-in for "the casino chain"
+// now that the network is switchable.
+export const CASINO_CHAIN = CHAINS_BY_ID[CASINO_CHAIN_ID];
 
 // Explorer lookup by chain id (bet/tx links are chain-aware now).
 export const EXPLORERS = {
   [BASE_SEPOLIA_ID]: baseSepolia.blockExplorers.default.url,
   [POLYGON_AMOY_ID]: polygonAmoy.blockExplorers.default.url,
+  [ARBITRUM_ID]: arbitrum.blockExplorers.default.url,
 };
+
+// Explorer for the active casino chain — what every casino tx/address link
+// should be built from.
+export const CASINO_EXPLORER = EXPLORERS[CASINO_CHAIN_ID];
 
 // Native gas token sentinel used by BetSwirl for ETH bets.
 export const GAS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // --- BetSwirl (casino) — @betswirl/sdk-core@0.1.27 -------------------------
-export const betswirl = {
+// Base Sepolia reference data captured during Discovery. These addresses are
+// NOT what the app bets against: useBetSwirl passes CASINO_CHAIN_ID to
+// initViemBetSwirlClient and the SDK resolves the right deployment itself, so
+// this block stays correct only for Base Sepolia and must not be treated as
+// "the casino contracts" now that the network is switchable.
+export const betswirlBaseSepolia = {
   chainId: BASE_SEPOLIA_ID,
   bank: '0x637D401554875a330264e910A3778DAf549F2021',
   leaderboard: '0xd60Fac02E78e2a4E37501053ab3E822E330dd970',
