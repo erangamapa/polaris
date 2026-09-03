@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, CheckCircle, Clock, ExternalLink, HelpCircle, RotateCcw, Slash, X } from "lucide-react";
 import { resolveRoundStatusConfig, formatEthAmount, ROUND_STATUS } from "@/lib/casinoRounds";
 import { resolveFairnessSummary, FAIRNESS_TYPE } from "@/lib/casinoGameDetails";
-import { baseSepolia } from "@shared/chains";
+import { CASINO_EXPLORER } from "@shared/chains";
 import { track } from "@/lib/telemetry";
 
 const STATUS_ICON = { clock: Clock, check: Check, x: X, "check-circle": CheckCircle, "rotate-ccw": RotateCcw, slash: Slash, "alert-triangle": AlertTriangle, "help-circle": HelpCircle };
@@ -158,7 +158,7 @@ export function CasinoRoundReceipt({ round, open, notFound, onClose, onPlayAgain
                         <code className="min-w-0 flex-1 truncate">{round.txHash.slice(0, 10)}…{round.txHash.slice(-6)}</code>
                       </div>
                       <a
-                        href={`${baseSepolia.blockExplorers.default.url}/tx/${round.txHash}`}
+                        href={`${CASINO_EXPLORER}/tx/${round.txHash}`}
                         target="_blank"
                         rel="noreferrer"
                         data-test-id="round-receipt-explorer-link"

@@ -2,12 +2,20 @@
 // Non-custodial: the backend holds no keys and can never move user funds. It only
 // reads on-chain data and enforces our affiliate address server-side.
 import { createPublicClient, http, erc20Abi, formatEther } from 'viem';
+import {
+  CASINO_CHAIN_ID as SHARED_CASINO_CHAIN_ID,
+  SPORTS_CHAIN_ID as SHARED_SPORTS_CHAIN_ID,
+  CASINO_CHAIN,
+  polygonAmoy as sharedPolygonAmoy,
+} from '../packages/shared/chains.js';
 
-// Casino = Base Sepolia (native ETH); sports = Polygon Amoy (USDT).
-export const CASINO_CHAIN_ID = 84532;
-export const SPORTS_CHAIN_ID = 80002;
-export const CASINO_RPC = 'https://sepolia.base.org';
-export const SPORTS_RPC = 'https://rpc-amoy.polygon.technology';
+// Casino chain follows VITE_USE_MAINNET (Vercel injects it into the function
+// runtime too, so client and server resolve the same network from one
+// variable); sports = Polygon Amoy (USDT) in both modes.
+export const CASINO_CHAIN_ID = SHARED_CASINO_CHAIN_ID;
+export const SPORTS_CHAIN_ID = SHARED_SPORTS_CHAIN_ID;
+export const CASINO_RPC = CASINO_CHAIN.rpcUrls.default.http[0];
+export const SPORTS_RPC = sharedPolygonAmoy.rpcUrls.default.http[0];
 export const USDT = '0xCf1b86ceD971b88C042C64A9c099377e2738073C';
 
 // Authoritative affiliate address — server-side env is the source of truth.
@@ -16,19 +24,8 @@ export const AFFILIATE = (process.env.AFFILIATE_ADDRESS || process.env.VITE_AFFI
 export const AZURO_BETS_SUBGRAPH =
   'https://thegraph.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-api-polygon-amoy-dev-v3';
 
-const baseSepolia = {
-  id: CASINO_CHAIN_ID, name: 'Base Sepolia',
-  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: [CASINO_RPC] } },
-};
-const polygonAmoy = {
-  id: SPORTS_CHAIN_ID, name: 'Polygon Amoy',
-  nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
-  rpcUrls: { default: { http: [SPORTS_RPC] } },
-};
-
-export const casinoClient = createPublicClient({ chain: baseSepolia, transport: http(CASINO_RPC) });
-export const sportsClient = createPublicClient({ chain: polygonAmoy, transport: http(SPORTS_RPC) });
+export const casinoClient = createPublicClient({ chain: CASINO_CHAIN, transport: http(CASINO_RPC) });
+export const sportsClient = createPublicClient({ chain: sharedPolygonAmoy, transport: http(SPORTS_RPC) });
 
 const fmtUsdt = (v) => (Number(v) / 1e6).toString();
 

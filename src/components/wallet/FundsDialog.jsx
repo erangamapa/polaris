@@ -6,7 +6,7 @@ import { useWallet, shortAddress } from "@/web3/useWallet";
 import { WalletProviderIcon } from "@/components/wallet/WalletProviderIcon";
 import { useAssetPrice } from "@/lib/useAssetPrice";
 import { fmtUsd, fmtUsdSpoken } from "@/lib/format";
-import { baseSepolia, CHAINS_BY_ID } from "@shared/chains";
+import { CASINO_EXPLORER, CHAINS_BY_ID } from "@shared/chains";
 import { cn } from "@/lib/utils";
 
 // The one Tribet wallet popup — every wallet entry point in the app opens
@@ -185,7 +185,6 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
     onClose();
   };
 
-  const explorer = `${baseSepolia.blockExplorers.default.url}/address/${address}`;
   // Resolved from the ACTUAL connected chain, not hardcoded to Base Sepolia
   // — see NETWORK NAME: "do not hardcode 'Base Sepolia Testnet' except
   // where the current network genuinely is Base Sepolia... Ethereum
@@ -195,6 +194,10 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   const chain = CHAINS_BY_ID[chainId];
   const networkName = chain?.displayName ?? `Chain ${chainId}`;
   const isTestnet = Boolean(chain?.testnet);
+  // Same rule as the network name: link to the explorer for the chain the
+  // wallet is actually on, falling back to the casino's own chain when the
+  // wallet has wandered somewhere we don't recognize.
+  const explorer = `${chain?.blockExplorers?.default?.url ?? CASINO_EXPLORER}/address/${address}`;
   const isZero = !casinoBalanceLoading && !casinoBalanceError && casinoBalance === 0;
   // From the raw numeric balance, never the `.toFixed(3)`-rounded display
   // string — see NUMBER CALCULATION: "do not round the crypto balance

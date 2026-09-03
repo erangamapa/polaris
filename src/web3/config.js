@@ -1,9 +1,10 @@
 // Reown AppKit + wagmi config. Single source of truth for wallet connection.
-// Testnet-only: Base Sepolia (both BetSwirl casino + Azuro sports live there).
+// The casino chain follows VITE_USE_MAINNET (see @shared/chains); sports stays
+// on Polygon Amoy either way, so the wallet is always offered both networks.
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { baseSepolia, polygonAmoy } from '@reown/appkit/networks';
-import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID } from '@shared/chains';
+import { arbitrum, baseSepolia, polygonAmoy } from '@reown/appkit/networks';
+import { CASINO_CHAIN_ID, SPORTS_CHAIN_ID, CASINO_USE_MAINNET } from '@shared/chains';
 import { BRAND_NAME } from '@/lib/brand';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
@@ -13,13 +14,14 @@ if (!projectId) {
   console.error('VITE_REOWN_PROJECT_ID is not set — wallet connect will not work.');
 }
 
-// Casino (BetSwirl) lives on Base Sepolia, sports (Azuro) on Polygon Amoy.
-export const CASINO_CHAIN = baseSepolia;
+// Casino (BetSwirl) is Arbitrum on mainnet / Base Sepolia on testnet; sports
+// (Azuro) is Polygon Amoy in both modes.
+export const CASINO_CHAIN = CASINO_USE_MAINNET ? arbitrum : baseSepolia;
 export const SPORTS_CHAIN = polygonAmoy;
 // Back-compat default used where a single "home" chain is assumed (casino).
-export const CHAIN = baseSepolia;
-export const networks = [baseSepolia, polygonAmoy];
-export { CASINO_CHAIN_ID, SPORTS_CHAIN_ID };
+export const CHAIN = CASINO_CHAIN;
+export const networks = [CASINO_CHAIN, polygonAmoy];
+export { CASINO_CHAIN_ID, SPORTS_CHAIN_ID, CASINO_USE_MAINNET };
 
 const wagmiAdapter = new WagmiAdapter({
   networks,
@@ -46,7 +48,7 @@ createAppKit({
   adapters: [wagmiAdapter],
   networks,
   projectId,
-  defaultNetwork: baseSepolia,
+  defaultNetwork: CASINO_CHAIN,
   metadata: {
     name: BRAND_NAME,
     description: `${BRAND_NAME} — on-chain casino, predictions & sports`,
