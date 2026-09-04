@@ -4,8 +4,7 @@ import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useDevMockState } from "@/lib/devMock";
-import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
-import { isArenaAllowed } from "@/lib/platformScope";
+import { isArenaAllowed, resolveEffectivePlatformScope } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
 import { SIDEBAR_SETTLE_MS, railVisuals } from "@/lib/sidebarTransition";
 
@@ -180,7 +179,7 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
   return (
     <div className="flex flex-col items-center gap-1 p-3">
       {PRODUCTS.map((p) => {
-        const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
+        const disabled = !isArenaAllowed(p.id, platformScope);
         return (
           <CompactButton
             key={p.id}
@@ -191,7 +190,7 @@ function CompactSidebarLayer({ product, setProduct, items, selected, onSelect, p
             ariaCurrent={product === p.id ? "page" : undefined}
             onClick={() => setProduct(p.id)}
             disabled={disabled}
-            disabledLabel={DEV_PANEL_ENABLED ? "Coming soon" : undefined}
+            disabledLabel="Coming soon"
             tooltipsEnabled={tooltipsEnabled}
           />
         );
@@ -288,7 +287,7 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
           {PRODUCTS.map((p) => {
             const Icon = p.icon;
             const active = product === p.id;
-            const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
+            const disabled = !isArenaAllowed(p.id, platformScope);
             const tile = (
               <button
                 key={p.id}
@@ -296,7 +295,7 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
                 onClick={disabled ? undefined : () => setProduct(p.id)}
                 aria-current={active ? "page" : undefined}
                 aria-disabled={disabled || undefined}
-                aria-label={DEV_PANEL_ENABLED && disabled ? `${p.label}, coming soon` : undefined}
+                aria-label={disabled ? `${p.label}, coming soon` : undefined}
                 style={!disabled && active ? ACTIVE_ACCENT.tab : undefined}
                 className={cn(
                   "relative flex h-[54px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent px-1 text-[11px] transition-[color,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -307,7 +306,7 @@ function ExpandedSidebarLayer({ product, setProduct, items, selected, onSelect, 
                 <span className={disabled ? "opacity-50" : undefined}>{p.label}</span>
               </button>
             );
-            if (DEV_PANEL_ENABLED && disabled) {
+            if (disabled) {
               return (
                 <Tooltip key={p.id}>
                   <TooltipTrigger asChild>{tile}</TooltipTrigger>
@@ -394,11 +393,13 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
   const settled = useSidebarSettled(desiredExpanded);
   const { widthExpanded, compactOpacity, expandedOpacity, compactInteractive, expandedInteractive, compactTiming, expandedTiming } = railVisuals(desiredExpanded, settled);
 
-  // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
-  // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
-  // off, same guarantee as every other devMock-driven override in this app.
+  // Developer Panel's Platform Scope mock (see lib/devMock.js), resolved
+  // via resolveEffectivePlatformScope (lib/platformScope.js) — the one
+  // shared resolver every surface that needs this calls, so it can never
+  // drift into a stale/hardcoded fallback the way this one previously had
+  // (see that function's own comment for the bug this fixes).
   const mock = useDevMockState();
-  const platformScope = DEV_PANEL_ENABLED ? mock.platformScope : "full";
+  const platformScope = resolveEffectivePlatformScope(mock);
 
   // Focus retention across the layer swap. Both layers use ids suffixed
   // `-compact`/`-expanded` for the SAME logical destination (two elements

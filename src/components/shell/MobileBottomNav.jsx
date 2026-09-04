@@ -1,8 +1,7 @@
 import { Menu as MenuIcon, Dices, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDevMockState } from "@/lib/devMock";
-import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
-import { isArenaAllowed } from "@/lib/platformScope";
+import { isArenaAllowed, resolveEffectivePlatformScope } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
 
 // Mobile-only icon choice — Trophy reads as a generic sports/competition
@@ -53,11 +52,11 @@ const INDICATOR = "pointer-events-none absolute top-0 left-1/2 h-[3px] w-[60%] -
 // IS still active) but its own indicator fades out, so the two states read
 // as "menu open, over Casino" rather than two equally loud signals.
 export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu }) {
-  // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
-  // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
-  // off, same guarantee as every other devMock-driven override in this app.
+  // Developer Panel's Platform Scope mock (see lib/devMock.js), resolved
+  // via resolveEffectivePlatformScope (lib/platformScope.js) — the one
+  // shared resolver every surface that needs this calls.
   const mock = useDevMockState();
-  const platformScope = DEV_PANEL_ENABLED ? mock.platformScope : "full";
+  const platformScope = resolveEffectivePlatformScope(mock);
 
   return (
     <nav
@@ -88,17 +87,14 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
         {PRODUCTS.map((p) => {
           const Icon = p.icon;
           const active = product === p.id;
-          // Gated on `DEV_PANEL_ENABLED` (devPanelFlag.js) — currently
-          // `true` in every build including production, same as every
-          // other devMock-driven override in this app.
-          const disabled = DEV_PANEL_ENABLED && !isArenaAllowed(p.id, platformScope);
+          const disabled = !isArenaAllowed(p.id, platformScope);
           return (
             <button
               key={p.id}
               onClick={disabled ? undefined : () => onSelectArena(p.id)}
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
-              aria-label={DEV_PANEL_ENABLED && disabled ? `${p.label}, coming soon` : undefined}
+              aria-label={disabled ? `${p.label}, coming soon` : undefined}
               style={!disabled && active ? { color: p.color } : undefined}
               className={cn(
                 "relative flex h-full min-h-11 flex-col items-center justify-center text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
@@ -116,7 +112,7 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
               />
               <Icon className={cn("size-5", disabled && "opacity-50")} aria-hidden="true" />
               <span className={cn("max-w-full truncate px-0.5", disabled && "opacity-60")}>{p.label}</span>
-              {DEV_PANEL_ENABLED && disabled && (
+              {disabled && (
                 <span
                   aria-hidden="true"
                   className="inline-flex h-[18px] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium leading-none text-foreground/50"

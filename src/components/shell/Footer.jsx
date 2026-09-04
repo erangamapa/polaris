@@ -1,5 +1,9 @@
+import { cn } from "@/lib/utils";
 import { BRAND_NAME } from "@/lib/brand";
 import { CASINO_USE_MAINNET, CASINO_CHAIN } from "@shared/chains";
+import { useDevMockState } from "@/lib/devMock";
+import { isArenaAllowed, resolveEffectivePlatformScope } from "@/lib/platformScope";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 // The money disclosure has to track the network the build actually bets on
 // (see VITE_USE_MAINNET in @shared/chains). On testnet the balances really are
@@ -14,13 +18,64 @@ const MONEY_SENTENCE = CASINO_USE_MAINNET
   ? `${BRAND_NAME} settles casino bets with real funds on ${CASINO_CHAIN.name}. Only stake what you can afford to lose.`
   : `${BRAND_NAME} is a prototype — simulated balances, no real money.`;
 
+// `arenaId` (null for columns with no arena of their own) is what INACTIVE
+// ARENA POLISH drives the whole column's disabled/muted treatment from —
+// isArenaAllowed("casino", ...) always returns true (see
+// lib/platformScope.js), so the Casino column is never affected by this;
+// only a column whose arenaId is currently unavailable (Sports, while
+// MVP-scoped) gets muted. One shared mechanism, not a Sports-specific
+// branch, so a future Predictions footer column (there isn't one today —
+// see the arenaId comment on FooterColumn below) would get the exact same
+// treatment for free.
 const COLUMNS = [
-  { title: "Casino", links: ["Lobby", "Slots", "Live Casino", "Game Shows", "Providers"] },
-  { title: "Sports", links: ["Sportsbook", "Live", "Soccer", "Basketball", "Tennis"] },
-  { title: "About", links: ["Terms of Service", "Privacy Policy", "AML Policy", "Licensing"] },
+  { title: "Casino", links: ["Lobby", "Slots", "Live Casino", "Game Shows", "Providers"], arenaId: "casino" },
+  { title: "Sports", links: ["Sportsbook", "Live", "Soccer", "Basketball", "Tennis"], arenaId: "sports" },
+  { title: "About", links: ["Terms of Service", "Privacy Policy", "AML Policy", "Licensing"], arenaId: null },
 ];
 
+// INACTIVE ARENA POLISH — every link in this footer is already a plain,
+// unwired <button> with no onClick (this footer is decorative/pre-launch
+// sitemap copy, not real navigation — see the file's own history), so
+// "does not navigate" is already true regardless of arena state. What this
+// component adds for a `disabled` column is purely the visual/AT-facing
+// signal: muted opacity in place of the normal hover-brightens-to-white
+// affordance, `aria-disabled`, and a "Coming soon" tooltip on hover/focus
+// (the shared Tooltip component — same one the arena selector uses, not a
+// second tooltip system) — never a second visible "Coming soon" label
+// repeated next to every item. The button stays a real, focusable,
+// disabled-attribute-free <button> throughout (never HTML `disabled`,
+// which would also remove it from the tab order and make the tooltip
+// keyboard-unreachable).
+function FooterLink({ label, disabled, onClick }) {
+  const link = (
+    <button
+      onClick={onClick}
+      aria-disabled={disabled || undefined}
+      className={cn(
+        "text-sm",
+        disabled
+          ? "cursor-not-allowed text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          : "text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      )}
+    >
+      {label}
+    </button>
+  );
+  if (!disabled) return link;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent>Coming soon</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function Footer({ onResponsibleGambling, onSupport }) {
+  // Same shared resolver the arena selector/mobile nav/search scope
+  // dropdown all use (see lib/platformScope.js) — one source of truth, not
+  // a footer-specific copy of the same condition.
+  const mock = useDevMockState();
+  const platformScope = resolveEffectivePlatformScope(mock);
   return (
     // VISUAL REFRESH: mt-12 -> mt-16 — a clearer, more deliberate break
     // from the game section above so the footer reads as intentional
@@ -39,18 +94,23 @@ export function Footer({ onResponsibleGambling, onSupport }) {
           sitting above it. */}
       <div className="w-full max-w-[var(--content-max-w)] px-4 py-8">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-          {COLUMNS.map((c) => (
-            <div key={c.title}>
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{c.title}</div>
-              <ul className="space-y-1.5">
-                {c.links.map((l) => (
-                  <li key={l}>
-                    <button className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{l}</button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {COLUMNS.map((c) => {
+            const disabled = c.arenaId ? !isArenaAllowed(c.arenaId, platformScope) : false;
+            return (
+              <div key={c.title}>
+                <div className={cn("mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground", disabled && "opacity-50")}>
+                  {c.title}
+                </div>
+                <ul className="space-y-1.5">
+                  {c.links.map((l) => (
+                    <li key={l}>
+                      <FooterLink label={l} disabled={disabled} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
           <div>
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Support</div>
             <ul className="space-y-1.5">

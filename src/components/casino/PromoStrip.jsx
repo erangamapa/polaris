@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { CARD_H } from "@/components/shell/PromoCard";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { useDevMockState } from "@/lib/devMock";
-import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
-import { isArenaAllowed } from "@/lib/platformScope";
+import { isArenaAllowed, resolveEffectivePlatformScope } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
 
 export { CARD_H };
@@ -923,14 +922,13 @@ export function ScopedSearch({
     onOpenChange?.(next);
   };
 
-  // Developer Panel's Platform Scope mock (see lib/devMock.js) — reads as
-  // "full" (unrestricted) at rest, and everywhere `DEV_PANEL_ENABLED` is
-  // off, same guarantee as every other devMock-driven override in this
-  // app. Casino is always selectable (see lib/platformScope.js's
-  // isArenaAllowed); Predictions/Sports are only disabled here while
-  // MVP-scoped.
+  // Developer Panel's Platform Scope mock (see lib/devMock.js), resolved
+  // via resolveEffectivePlatformScope (lib/platformScope.js) — the one
+  // shared resolver every surface that needs this calls. Casino is always
+  // selectable (see lib/platformScope.js's isArenaAllowed); Predictions/
+  // Sports are only disabled here while MVP-scoped.
   const mock = useDevMockState();
-  const platformScope = DEV_PANEL_ENABLED ? mock.platformScope : "full";
+  const platformScope = resolveEffectivePlatformScope(mock);
   // Mirrors App.jsx's "switching to MVP while inside a disabled arena
   // immediately redirects" effect: if scope somehow points at a
   // now-disallowed arena (e.g. Platform Scope flips to MVP live while
@@ -1070,15 +1068,26 @@ export function ScopedSearch({
                     onValueChange={(v) => { setScope(v); track("casino_search_scope_changed", { searchScope: v }); }}
                   >
                     {SEARCH_SCOPES.map((s) => {
-                      const scopeDisabled = DEV_PANEL_ENABLED && !isArenaAllowed(s.id, platformScope);
+                      const scopeDisabled = !isArenaAllowed(s.id, platformScope);
                       const item = (
                         <DropdownMenuPrimitive.RadioItem
                           key={s.id}
                           value={s.id}
-                          disabled={scopeDisabled}
+                          aria-disabled={scopeDisabled || undefined}
+                          // Radix's own `disabled` prop would also drop this
+                          // item out of the menu's roving-tabindex arrow-key
+                          // sequence, making it (and its wrapping Tooltip)
+                          // keyboard-unreachable — same trap the arena nav
+                          // avoids with aria-disabled + a conditional
+                          // handler instead of the native `disabled`
+                          // attribute (see Sidebar.jsx). Blocking selection
+                          // via onSelect keeps the item focusable so
+                          // keyboard users still land on it and see "Coming
+                          // soon", they just can't activate it.
+                          onSelect={(e) => { if (scopeDisabled) e.preventDefault(); }}
                           className={cn(
                             "flex cursor-pointer items-center rounded-md px-2.5 py-1.5 text-sm outline-none transition-colors data-[highlighted]:bg-white/10",
-                            scopeDisabled && "cursor-not-allowed opacity-50 data-[highlighted]:bg-transparent"
+                            scopeDisabled && "cursor-not-allowed opacity-50"
                           )}
                         >
                           {s.label}
@@ -1088,7 +1097,7 @@ export function ScopedSearch({
                       // soon", hover/focus-only (never tap-triggered), no
                       // layout shift pattern as the main arena nav (see
                       // Sidebar.jsx).
-                      return DEV_PANEL_ENABLED && scopeDisabled ? (
+                      return scopeDisabled ? (
                         <Tooltip key={s.id}>
                           <TooltipTrigger asChild>{item}</TooltipTrigger>
                           <TooltipContent side="right">Coming soon</TooltipContent>

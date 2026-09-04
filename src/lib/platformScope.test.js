@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { isArenaAllowed, resolveScopedProduct } from "./platformScope";
 
 // This task's own scenarios are mostly rendering/routing behavior that needs
@@ -43,5 +43,44 @@ describe("resolveScopedProduct", () => {
   it("redirects a disallowed product to casino", () => {
     expect(resolveScopedProduct("sports", "mvp")).toBe("casino");
     expect(resolveScopedProduct("predictions", "mvp")).toBe("casino");
+  });
+});
+
+// INACTIVE-ARENA POLISH PASS — resolveEffectivePlatformScope resolved once
+// at module load from VITE_ENABLE_DEV_PANEL/VITE_APP_MODE (via
+// devPanelFlag.js/@shared/chains), so every case re-imports the module
+// with a fresh env, same pattern as chains.test.js/devPanelFlag.test.js.
+// The scenario this pins: previously, Sidebar.jsx/MobileBottomNav.jsx/
+// PromoStrip.jsx each independently fell back to a hardcoded "full" here
+// instead of the real APP_MODE whenever the Dev Panel was off — silently
+// making Predictions/Sports look available in production. This must never
+// regress back to that.
+async function loadResolver(enableDevPanel, appMode) {
+  vi.resetModules();
+  vi.stubEnv("VITE_ENABLE_DEV_PANEL", enableDevPanel ?? "");
+  vi.stubEnv("VITE_APP_MODE", appMode ?? "");
+  return import("./platformScope.js");
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.resetModules();
+});
+
+describe("resolveEffectivePlatformScope", () => {
+  it("falls back to the real APP_MODE (not a hardcoded value) when the Dev Panel is off", async () => {
+    const m = await loadResolver("false", "mvp");
+    expect(m.resolveEffectivePlatformScope({ platformScope: "full" })).toBe("mvp");
+  });
+
+  it("still falls back to mvp (never a hardcoded 'full') when APP_MODE is also unset", async () => {
+    const m = await loadResolver("false", undefined);
+    expect(m.resolveEffectivePlatformScope({ platformScope: "full" })).toBe("mvp");
+  });
+
+  it("reads the live devMock toggle when the Dev Panel is on", async () => {
+    const m = await loadResolver("true", "mvp");
+    expect(m.resolveEffectivePlatformScope({ platformScope: "full" })).toBe("full");
+    expect(m.resolveEffectivePlatformScope({ platformScope: "mvp" })).toBe("mvp");
   });
 });

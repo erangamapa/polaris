@@ -29,8 +29,8 @@ import { useWallet } from "./web3/useWallet";
 import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
-import { isArenaAllowed, resolveScopedProduct } from "./lib/platformScope";
-import { APP_MODE, CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
+import { isArenaAllowed, resolveScopedProduct, resolveEffectivePlatformScope } from "./lib/platformScope";
+import { CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 // PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
 // React.lazy rather than statically imported, so their code (and, for
 // Sports/Predictions, their SDK dependencies — @azuro-org/sdk,
@@ -193,14 +193,13 @@ export default function App() {
   const geo = useGeoCheck();
 
   // Seed navigation from the URL so deep links work. Resolved against the
-  // Developer Panel's Platform Scope mock (see lib/platformScope.js) so a
-  // deep link straight into /sports or /predictions while in MVP mode lands
-  // on Casino instead — falls back to the real APP_MODE (@shared/chains,
-  // VITE_APP_MODE) everywhere `DEV_PANEL_ENABLED` is off (devPanelFlag.js),
-  // never a hardcoded "full" — disabling the Dev Panel must never silently
-  // promote the product to Full mode.
+  // Developer Panel's Platform Scope mock (see lib/platformScope.js's
+  // resolveEffectivePlatformScope — the one shared resolver every surface
+  // that needs "the platformScope in effect right now" calls, instead of
+  // each independently re-deriving it) so a deep link straight into
+  // /sports or /predictions while in MVP mode lands on Casino instead.
   const initialNav = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
-  const initialPlatformScope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : APP_MODE;
+  const initialPlatformScope = resolveEffectivePlatformScope(getDevMockState());
   const [product, setProduct] = useState(resolveScopedProduct(initialNav.product, initialPlatformScope));
 
   // NAV SPEC §4.3 — "Every overlay owns a `modal` query param value...
@@ -423,7 +422,7 @@ export default function App() {
   const onPopRef = useRef(null);
   onPopRef.current = () => {
     const nav = parsePath(window.location.pathname);
-    const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : APP_MODE;
+    const scope = resolveEffectivePlatformScope(getDevMockState());
     setProduct(resolveScopedProduct(nav.product, scope));
     setCasinoCategory(nav.casinoCategory);
     setCasinoView(nav.casinoView);
@@ -488,14 +487,13 @@ export default function App() {
   // favorites/recently played/game state are wired here (App.jsx), not
   // deeper inside CasinoLobby/CasinoCatalog, so those components stay
   // untouched. `platformScope` is the one exception to "default = inert":
-  // its resting value is the real APP_MODE (@shared/chains, VITE_APP_MODE)
-  // rather than "default" (see devMock.js's DEFAULT_DEV_MOCK_STATE), and
-  // every read of it below is explicitly gated on `DEV_PANEL_ENABLED` so it
-  // falls back to that same APP_MODE wherever the flag is off — the two
-  // paths can never disagree, so disabling the Dev Panel can never silently
-  // promote the product to Full mode.
+  // resolved via resolveEffectivePlatformScope (lib/platformScope.js) — the
+  // one shared resolver Sidebar.jsx/MobileBottomNav.jsx/PromoStrip.jsx/
+  // Footer.jsx also call, instead of each independently re-deriving it —
+  // so disabling the Dev Panel can never silently promote the product to
+  // Full mode anywhere in the app, not just here.
   const devMock = useDevMockState();
-  const platformScope = DEV_PANEL_ENABLED ? devMock.platformScope : APP_MODE;
+  const platformScope = resolveEffectivePlatformScope(devMock);
   // "Switching to MVP while inside Sports or Predictions immediately
   // redirects to Casino" — also the safety net for the initial-load/popstate
   // resolution above (resolveScopedProduct), in case of any other path that
