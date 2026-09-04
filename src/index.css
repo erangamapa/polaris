@@ -630,6 +630,23 @@ html {
 @media (min-width: 1280px) {
   .promo-card__content { max-width: 52%; }
 }
+/* INFORMATIONAL CARDS (About Tribet/Transparent Play — `.promo-card--static`,
+   see the hover-neutralizing rules above) are never clickable, so unlike the
+   CTA-having promo cards above, there is no click-through to read copy the
+   2-line clamp truncated — full sentences must always render in full,
+   wrapping to as many lines as they need (see `.promo-card__title`/
+   `.promo-card__body`'s own clamp-removal below). Widened here (and the
+   artwork zone narrowed to match — see PromoStrip.jsx's InfoCard) so real
+   approved copy lands within ~2-3 lines on desktop / up to ~3-4 on the
+   narrower sm-1280px band instead of merely "not truncating" at an
+   unreadably narrow column — sized against the real approved copy the same
+   way the clamp() floors above were tuned, not a guess. */
+@media (min-width: 640px) {
+  .promo-card--static .promo-card__content { max-width: 72%; }
+}
+@media (min-width: 1280px) {
+  .promo-card--static .promo-card__content { max-width: 68%; }
+}
 /* text-wrap:balance is the actual fix for "avoid `200% up to 1,000` /
    `USDT`"-style orphan breaks — it's the browser's own line-breaking
    algorithm for exactly this ("distribute a short heading evenly across the
@@ -654,6 +671,17 @@ html {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* Never clamp/truncate on the non-clickable informational cards — see the
+   `.promo-card--static .promo-card__content` widening above for why this
+   pairs with a wider column rather than shrinking type further. `unset`
+   (not a larger clamp number) removes the `-webkit-box`/vertical-orient
+   display entirely so the browser's plain block wrapping takes over and
+   `overflow: visible` stops anything left from being clipped by it. */
+.promo-card--static .promo-card__title,
+.promo-card--static .promo-card__body {
+  -webkit-line-clamp: unset;
+  overflow: visible;
 }
 
 /* LOBBY HIERARCHY PASS — game card hover lift. Same split as .promo-card

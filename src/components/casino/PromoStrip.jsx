@@ -677,7 +677,13 @@ function InfoCard({ eyebrow, title, body, artwork }) {
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
       </div>
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[40%] overflow-hidden sm:block lg:w-[44%] xl:w-[46%]">
+      {/* Narrower than Wallet/Welcome/Weekly's own 40-46% artwork zone
+          (COPY MUST NEVER TRUNCATE pass) — the wider .promo-card__content
+          column above (index.css) needs the matching space back from
+          somewhere, and shrinking this abstract placeholder art is exactly
+          what this task's own priority order calls for before ever growing
+          the card's height. */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[22%] overflow-hidden sm:block lg:w-[26%] xl:w-[28%]">
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
         <div className="relative z-10 h-full w-full">{artwork}</div>
       </div>
