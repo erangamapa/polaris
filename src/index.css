@@ -635,27 +635,20 @@ html {
    CTA-having promo cards above, there is no click-through to read copy the
    2-line clamp truncated — full sentences must always render in full,
    wrapping to as many lines as they need (see `.promo-card__title`/
-   `.promo-card__body`'s own clamp-removal below). Widened here (and the
-   artwork zone narrowed to match at the same 1280px breakpoint — see
-   PromoStrip.jsx's InfoCard) so real approved copy lands within ~3 balanced
-   lines on desktop / up to ~3-4 on the narrower sm-1280px band instead of
-   merely "not truncating" at an unreadably narrow column.
-   ORPHAN-FREE 3-LINE PASS: an earlier version of this rule targeted a
-   ~58-62%/38-42% copy/artwork split at >=1280px (this task's own original
-   number) — with the real approved copy and the ~11%-larger body type (see
-   .promo-card--static .promo-card__body below), that split reliably wrapped
-   to a clean, non-orphaned 4 lines, not the requested "roughly 3." Verified
-   empirically (not guessed) that hitting 3 balanced lines for the actual
-   approved copy needs the column pushed to 80% — this is a deliberate,
-   measured override of the earlier 58-62% guidance in favor of the more
-   specific "aim for roughly 3 lines" ask that came after it; the artwork
-   zone shrinks to match (16% at xl:, see PromoStrip.jsx's InfoCard) so the
-   two never overlap — verified via getBoundingClientRect, not assumed. */
+   `.promo-card__body`'s own clamp-removal below).
+   FINAL ARTWORK PASS: earlier revisions of this rule pushed as high as 80%
+   to force the then-current (much longer) body copy onto ~3 balanced lines,
+   which left almost no room for artwork. The final approved copy for both
+   cards is short — under a line and a half even at these narrower widths —
+   so the column comes back down close to the CTA-card's own 52-58% range,
+   freeing the artwork zone to reach this task's explicit "comparable to the
+   Wallet card" ~38-44% desktop target (see PromoStrip.jsx's InfoCard) while
+   copy still never wraps to more than 2 lines. */
 @media (min-width: 640px) {
-  .promo-card--static .promo-card__content { max-width: 72%; }
+  .promo-card--static .promo-card__content { max-width: 62%; }
 }
 @media (min-width: 1280px) {
-  .promo-card--static .promo-card__content { max-width: 80%; }
+  .promo-card--static .promo-card__content { max-width: 54%; }
 }
 /* text-wrap:balance is the actual fix for "avoid `200% up to 1,000` /
    `USDT`"-style orphan breaks — it's the browser's own line-breaking

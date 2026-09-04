@@ -593,58 +593,41 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
 // WeeklyRaceCard exactly as before (see PromoStrip's own render below) with
 // no other change — these are independent, additive, not a replacement.
 
-// TEMPORARY PLACEHOLDER ART — no final artwork exists for either card yet.
-// Abstract "one wallet, three arenas" motif: three small outer nodes
-// (Casino/Sports/Predictions) connected by thin lines to one central node.
-// Restrained --global-cta blue/indigo only (the app's own brand tokens, not
-// invented colors), no baked text, no bonus/tournament/gift/trophy imagery.
-// Swap this function's return for a real <img> (matching WalletArtwork/
-// WelcomeOfferArtwork's own shape above) when real artwork ships — nothing
-// in AboutTribetCard below needs to change.
-function AboutTribetPlaceholderArt() {
+// FINAL HERO ARTWORK — same public/heroes/ convention and <img> shape as
+// WalletArtwork/WelcomeOfferArtwork/WeeklyRaceArtwork above (plain
+// public-path string, not a bundled ES import — this file's own established
+// pattern for every hero image, all of which live in public/heroes/ as
+// static assets rather than Vite-processed src/assets imports). Replaces
+// the temporary SVG/CSS node-diagram and linked-block placeholders this
+// task's own artwork retires. object-contain + object-right (not a fixed
+// size) is what lets each asset's own native aspect ratio (850x700 here)
+// fill the shared `.promo-card__visual` zone in InfoCard below without
+// cropping its focal object — same technique already proven on three
+// differently-shaped assets in this file.
+function AboutTribetArtwork() {
   return (
-    <svg viewBox="0 0 200 200" className="h-full w-full object-contain object-right" aria-hidden="true">
-      <defs>
-        <radialGradient id="about-tribet-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="var(--global-cta)" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="var(--global-cta)" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <circle cx="100" cy="100" r="72" fill="url(#about-tribet-glow)" />
-      <line x1="100" y1="100" x2="100" y2="42" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
-      <line x1="100" y1="100" x2="54" y2="127" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
-      <line x1="100" y1="100" x2="146" y2="127" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
-      <circle cx="100" cy="42" r="10" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
-      <circle cx="54" cy="127" r="10" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
-      <circle cx="146" cy="127" r="10" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
-      <circle cx="100" cy="100" r="18" fill="var(--global-cta)" fillOpacity="0.15" stroke="var(--global-cta)" strokeWidth="2" />
-      <circle cx="100" cy="100" r="5" fill="var(--global-cta-hover)" />
-    </svg>
+    <img
+      src="/heroes/about-tribet-hero.png"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      fetchPriority="low"
+      className="promo-card__illustration h-full w-full object-contain object-right"
+    />
   );
 }
 
-// TEMPORARY PLACEHOLDER ART — verification/settlement motif: three small
-// linked blocks (a minimal chain), a checkmark on the last one standing in
-// for "independently verifiable." Same restrained blue/indigo palette as
-// AboutTribetPlaceholderArt, no fake transaction data, no logos. Swap for
-// real artwork the same way — TransparentPlayCard below doesn't change.
-function TransparentPlayPlaceholderArt() {
+// Same convention as AboutTribetArtwork above (980x640 native).
+function TransparentPlayArtwork() {
   return (
-    <svg viewBox="0 0 200 200" className="h-full w-full object-contain object-right" aria-hidden="true">
-      <defs>
-        <radialGradient id="transparent-play-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="var(--global-cta)" stopOpacity="0.32" />
-          <stop offset="100%" stopColor="var(--global-cta)" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <circle cx="100" cy="100" r="74" fill="url(#transparent-play-glow)" />
-      <line x1="63" y1="112" x2="98" y2="97" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
-      <line x1="102" y1="97" x2="137" y2="112" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
-      <rect x="42" y="99" width="27" height="27" rx="4" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
-      <rect x="87" y="83" width="27" height="27" rx="4" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
-      <rect x="131" y="99" width="27" height="27" rx="4" fill="var(--global-cta)" fillOpacity="0.15" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
-      <path d="M139 112 L144.5 118 L154 105.5" fill="none" stroke="var(--global-cta-hover)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <img
+      src="/heroes/transparent-play-hero.png"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      fetchPriority="low"
+      className="promo-card__illustration h-full w-full object-contain object-right"
+    />
   );
 }
 
@@ -677,17 +660,18 @@ function InfoCard({ eyebrow, title, body, artwork }) {
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
       </div>
-      {/* TYPOGRAPHY/WRAPPING PASS — narrower than Wallet/Welcome/Weekly's own
-          40-46% artwork zone at every breakpoint: the About Tribet body copy
-          only lands on ~3 balanced lines (no orphans) once
-          .promo-card__content (index.css) is widened to 80% at >=1280px,
-          which leaves just ~20% for this zone — artwork yields to
-          typography, never the other way around, per this task's own
-          explicit rule. Kept in sync with .promo-card__content's own
-          breakpoints/values so the two never overlap (verified: content's
-          right edge sits inside this zone's left edge at every tested
-          width, not just close to it). */}
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[22%] overflow-hidden sm:block xl:w-[16%]">
+      {/* FINAL ARTWORK PASS — now that the approved copy is short (both
+          bodies fit in 1-2 lines even at this narrower content column — see
+          .promo-card--static .promo-card__content in index.css), the
+          artwork zone comes back up to Wallet/Welcome/Weekly's own ~40-46%
+          desktop range (this task's explicit "comparable visual weight to
+          the Wallet card" target: ~42% at xl:), narrowing only slightly at
+          the sm-1280px tier rather than collapsing the way it had to while
+          the long interim copy needed the room instead. Kept in sync with
+          .promo-card__content's own breakpoints so the two never overlap —
+          verified via getBoundingClientRect at every tested width, not
+          assumed. */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[34%] overflow-hidden sm:block xl:w-[42%]">
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
         <div className="relative z-10 h-full w-full">{artwork}</div>
       </div>
@@ -700,8 +684,8 @@ function AboutTribetCard() {
     <InfoCard
       eyebrow="ABOUT TRIBET"
       title="One wallet. Three arenas."
-      body="Built by industry veterans and casino players to make betting simpler, sharper and more transparent."
-      artwork={<AboutTribetPlaceholderArt />}
+      body="Built by betting veterans and players."
+      artwork={<AboutTribetArtwork />}
     />
   );
 }
@@ -711,8 +695,8 @@ function TransparentPlayCard() {
     <InfoCard
       eyebrow="TRANSPARENT PLAY"
       title="Don't trust. Verify."
-      body="BetSwirl games settle on-chain, so every result can be independently verified — no blind trust required."
-      artwork={<TransparentPlayPlaceholderArt />}
+      body="Every BetSwirl result can be verified on-chain."
+      artwork={<TransparentPlayArtwork />}
     />
   );
 }
