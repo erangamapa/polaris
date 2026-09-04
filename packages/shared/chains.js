@@ -13,6 +13,14 @@ export const POLYGON_AMOY_ID = 80002;
 // Two-chain split: casino (BetSwirl) on Base Sepolia, sports (Azuro) on Polygon
 // Amoy — Amoy's Azuro dev feed carries more live markets. The app auto-switches
 // the wallet to the chain a given bet needs.
+//
+// NOT wired to BETSWIRL_ENV (see the BetSwirl section below): production
+// would need its own confirmed chain id/RPC/explorer plus AppKit network
+// entries in src/web3/config.js, and a handful of components still import
+// `baseSepolia` directly for explorer links (BetSwirlGame.jsx,
+// CasinoRoundReceipt.jsx, FundsDialog.jsx) rather than resolving via
+// CASINO_CHAIN_ID/EXPLORERS. None of that is safe to wire up without a real
+// production chain to point at — see BETSWIRL_PRODUCTION_MISSING_FIELDS.
 export const CASINO_CHAIN_ID = BASE_SEPOLIA_ID;
 export const SPORTS_CHAIN_ID = POLYGON_AMOY_ID;
 
@@ -74,7 +82,23 @@ export const EXPLORERS = {
 export const GAS_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // --- BetSwirl (casino) — @betswirl/sdk-core@0.1.27 -------------------------
-export const betswirl = {
+//
+// BETSWIRL_ENV is the ONE centralized flag that decides which BetSwirl
+// deployment the app targets. Read via VITE_BETSWIRL_ENV (Vite exposes only
+// VITE_-prefixed vars to the client bundle) so it can be set per Vercel
+// environment (Production vs Preview/Development) with no extra plumbing —
+// leave it unset in Preview/Development to default to staging, set it only
+// on Production when BetSwirl production is intentionally ready.
+const rawBetswirlEnv = String(
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BETSWIRL_ENV) || 'staging',
+).toLowerCase();
+export const BETSWIRL_ENV = rawBetswirlEnv === 'production' ? 'production' : 'staging';
+export const IS_BETSWIRL_PRODUCTION = BETSWIRL_ENV === 'production';
+
+// Current, working config — Base Sepolia testnet. This is what the app has
+// run on since Phase 4 and is exactly what ships when BETSWIRL_ENV=staging
+// (the default).
+const BETSWIRL_STAGING_CONFIG = {
   chainId: BASE_SEPOLIA_ID,
   bank: '0x637D401554875a330264e910A3778DAf549F2021',
   leaderboard: '0xd60Fac02E78e2a4E37501053ab3E822E330dd970',
@@ -94,6 +118,64 @@ export const betswirl = {
   subgraph: 'https://api.studio.thegraph.com/query/80936/betswirl-base-sepolia-v2/v0.1.3',
   sdkDefaultAffiliate: '0x057BcBF736DADD774A8A45A185c1697F4cF7517D',
 };
+
+// Production config — intentionally EMPTY. Every field here is a real value
+// BetSwirl or our own ops team has to hand over before production traffic can
+// go live (production chain id, deployed bank/leaderboard/game contract
+// addresses, production subgraph endpoint, production default affiliate).
+// None of these exist in this repo, env, or prior history as of this change
+// — do not fill them with guesses. Populate this object once confirmed, then
+// set VITE_BETSWIRL_ENV=production (Production environment only).
+const BETSWIRL_PRODUCTION_CONFIG = {
+  chainId: undefined,
+  bank: undefined,
+  leaderboard: undefined,
+  games: {
+    dice: undefined,
+    'coin-toss': undefined,
+    roulette: undefined,
+    keno: undefined,
+    wheel: undefined,
+    plinko: undefined,
+  },
+  bettingToken: undefined,
+  subgraph: undefined,
+  sdkDefaultAffiliate: undefined,
+};
+
+function findMissingBetswirlProductionFields(config) {
+  const missing = [];
+  for (const key of ['chainId', 'bank', 'leaderboard', 'bettingToken', 'subgraph', 'sdkDefaultAffiliate']) {
+    if (!config[key]) missing.push(key);
+  }
+  for (const [game, address] of Object.entries(config.games)) {
+    if (!address) missing.push(`games.${game}`);
+  }
+  return missing;
+}
+
+// Non-empty only once BETSWIRL_PRODUCTION_CONFIG above is actually filled in.
+export const BETSWIRL_PRODUCTION_MISSING_FIELDS = findMissingBetswirlProductionFields(BETSWIRL_PRODUCTION_CONFIG);
+
+function resolveBetswirlConfig() {
+  if (BETSWIRL_ENV !== 'production') return BETSWIRL_STAGING_CONFIG;
+  if (BETSWIRL_PRODUCTION_MISSING_FIELDS.length) {
+    // Fail loudly but not fatally — falling back to staging keeps the app
+    // (including unrelated Sports/Predictions, which import this same
+    // module) functional rather than crashing on a misconfigured flag.
+    console.error(
+      `[BetSwirl] VITE_BETSWIRL_ENV=production but BETSWIRL_PRODUCTION_CONFIG in ` +
+      `packages/shared/chains.js is missing: ${BETSWIRL_PRODUCTION_MISSING_FIELDS.join(', ')}. ` +
+      'Falling back to BetSwirl staging (Base Sepolia) until these are populated.',
+    );
+    return BETSWIRL_STAGING_CONFIG;
+  }
+  return BETSWIRL_PRODUCTION_CONFIG;
+}
+
+// Single resolved config every consumer should read — never branch on
+// BETSWIRL_ENV outside this file.
+export const betswirl = resolveBetswirlConfig();
 
 // --- Azuro (sports/predictions) — @azuro-org/sdk@7.4.1 / toolkit@6.3.1 -------
 // On Polygon Amoy (PolygonAmoyUSDT env) — more live markets than Base Sepolia.
