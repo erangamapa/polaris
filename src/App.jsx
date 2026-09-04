@@ -1226,9 +1226,22 @@ export default function App() {
       // whose count changes whether the click is worth it (Favorites,
       // Recently Played), hidden entirely at zero, never on a GAMES-band
       // row.
+      //
+      // Counts only ids that still resolve to a VISIBLE game (findGameByFavId
+      // reads CasinoCatalog.jsx's content-mode-filtered ALL_GAMES) — a stale
+      // persisted favorite/recently-played id for a game the active content
+      // mode hides (e.g. a local provider game while CASINO_CONTENT_MODE is
+      // 'betswirl') stays in storage but must not count toward, or appear
+      // in, what the player sees here.
       const personalCount = (id) => {
-        if (id === "Favorites") return favs.size > 0 ? favs.size : undefined;
-        if (id === "Recently Played") return effectiveRecentIds.length > 0 ? effectiveRecentIds.length : undefined;
+        if (id === "Favorites") {
+          const visible = [...favs].filter((favId) => findGameByFavId(favId)).length;
+          return visible > 0 ? visible : undefined;
+        }
+        if (id === "Recently Played") {
+          const visible = effectiveRecentIds.filter((favId) => findGameByFavId(favId)).length;
+          return visible > 0 ? visible : undefined;
+        }
         return undefined;
       };
       const personalItems = CASINO_PERSONAL_DESTINATIONS.map((d) =>

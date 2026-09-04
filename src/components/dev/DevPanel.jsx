@@ -5,7 +5,7 @@ import { toast } from "@/lib/toast";
 import { useDevMockState, setDevMockState, resetDevMockState, closeDevPanel } from "@/lib/devMock";
 import { useDevPanelShortcut } from "@/lib/useDevPanelShortcut";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
-import { BETSWIRL_ENV } from "@shared/chains";
+import { BETSWIRL_ENV, CASINO_CONTENT_MODE } from "@shared/chains";
 
 // Developer Panel — Shift+D toggles it (see useDevPanelShortcut). Gated end
 // to end on `DEV_PANEL_ENABLED` (devPanelFlag.js), currently `true` in every
@@ -157,6 +157,19 @@ export function DevPanel() {
                 {BETSWIRL_ENV}
               </span>
               <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_BETSWIRL_ENV)</span>
+            </div>
+          </Field>
+          <Field label="Content mode">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
+              <span
+                className={cn(
+                  "font-mono text-xs font-bold uppercase tracking-wide",
+                  CASINO_CONTENT_MODE === "mixed" ? "text-[var(--danger)]" : "text-[var(--success)]"
+                )}
+              >
+                {CASINO_CONTENT_MODE}
+              </span>
+              <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_CASINO_CONTENT_MODE)</span>
             </div>
           </Field>
           <Field label="Favorites">

@@ -1,4 +1,5 @@
 import { LayoutGrid, Sparkles, Flame, Rocket, Radio, Tv, Cherry, Spade, Building2, Heart, History } from "lucide-react";
+import { CASINO_CONTENT_MODE } from "@shared/chains";
 
 // Casino taxonomy — the one shared source every Casino navigation surface
 // (in-page CategoryNav, Sidebar/mobile menu, Casino search's category and
@@ -84,7 +85,18 @@ const ALL_CASINO_CATEGORIES = [
   // destination. Superseded now that three real providers exist (see
   // CASINO_PROVIDERS below) — a genuine multi-provider Lobby row, sidebar
   // item, top pill, and search grouping all make sense again.
-  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail", sectionId: "casino-section-providers", icon: Building2, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 8 },
+  //
+  // CONTENT MODE: the Providers rail/category is, by construction, exclusively
+  // vendored local content (see CASINO_PROVIDERS' own comment — the on-chain
+  // BetSwirl games get their own "Originals" category, never a row here), so
+  // it carries zero real inventory whenever CASINO_CONTENT_MODE is
+  // 'betswirl' — `enabled` reflects that directly rather than needing a live
+  // game count (which this file deliberately doesn't import — see top-of-file
+  // note). This hides the nav pill/sidebar item/search grouping; the
+  // underlying route still resolves (see routing.js) and shows an empty
+  // state rather than leaking games — see CasinoCatalog.jsx's
+  // HAS_VISIBLE_PROVIDER_GAMES.
+  { id: "Providers", label: "Providers", kind: "rail", railTarget: "providers-rail", sectionId: "casino-section-providers", icon: Building2, enabled: CASINO_CONTENT_MODE !== "betswirl", showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 8 },
 ].sort((a, b) => a.order - b.order);
 
 // Nav-visible categories only — every enabled entry, in order. This is what

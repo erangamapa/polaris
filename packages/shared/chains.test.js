@@ -6,10 +6,12 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 // exactly 'true' (unset, empty, 'false', a typo, a truthy-looking '1') must
 // leave the app on testnet. Getting this backwards would silently point players
 // at real funds, so it is pinned here rather than left to the implementation.
-async function loadChains(flag) {
+async function loadChains(flag, contentMode) {
   vi.resetModules();
   if (flag === undefined) vi.stubEnv('VITE_USE_MAINNET', '');
   else vi.stubEnv('VITE_USE_MAINNET', flag);
+  if (contentMode === undefined) vi.stubEnv('VITE_CASINO_CONTENT_MODE', '');
+  else vi.stubEnv('VITE_CASINO_CONTENT_MODE', contentMode);
   return import('./chains.js');
 }
 
@@ -62,4 +64,29 @@ describe('casino network selection', () => {
       expect(m.CASINO_EXPLORER).toMatch(/^https:\/\//);
     }
   });
+});
+
+describe('casino content mode selection', () => {
+  it('defaults to betswirl-only when the flag is unset', async () => {
+    const m = await loadChains(undefined, undefined);
+    expect(m.CASINO_CONTENT_MODE).toBe('betswirl');
+  });
+
+  it("switches to the combined catalog only for exactly 'mixed'", async () => {
+    const m = await loadChains(undefined, 'mixed');
+    expect(m.CASINO_CONTENT_MODE).toBe('mixed');
+  });
+
+  it.each(['MIXED', 'Mixed', '  mixed  '])('accepts %s (case/whitespace tolerant)', async (mode) => {
+    const m = await loadChains(undefined, mode);
+    expect(m.CASINO_CONTENT_MODE).toBe('mixed');
+  });
+
+  it.each(['betswirl', 'BETSWIRL', '', 'all', 'tribet', 'undefined'])(
+    'stays betswirl-only for %s',
+    async (mode) => {
+      const m = await loadChains(undefined, mode);
+      expect(m.CASINO_CONTENT_MODE).toBe('betswirl');
+    },
+  );
 });

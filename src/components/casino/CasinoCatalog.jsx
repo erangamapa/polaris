@@ -8,6 +8,7 @@ import { track } from "@/lib/telemetry";
 // PERFORMANCE task: "Lobby cards do not import full game implementations").
 import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
 import { PROVIDER_GAMES } from "./ProviderGame";
+import { CASINO_CONTENT_MODE } from "@shared/chains";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { takeUnclaimed } from "@/lib/casinoDedup";
@@ -46,10 +47,35 @@ export function useBrokenImage() {
 }
 
 // Games carry a namespaced favId so the on-chain "dice" and the provider "dice"
-// never collide in the favorites set.
-const ONCHAIN = BETSWIRL_GAMES.map((g) => ({ ...g, favId: `casino:${g.key}`, kind: "onchain" }));
-const PROVIDER = PROVIDER_GAMES.map((g) => ({ ...g, favId: `provider:${g.key}`, kind: "provider" }));
-export const ALL_GAMES = [...ONCHAIN, ...PROVIDER];
+// never collide in the favorites set. `source` is explicit and set once here,
+// never inferred downstream from title/provider/image/route — it is what the
+// content-mode filter below (and only that filter) branches on.
+const ONCHAIN = BETSWIRL_GAMES.map((g) => ({ ...g, favId: `casino:${g.key}`, kind: "onchain", source: "betswirl" }));
+const PROVIDER = PROVIDER_GAMES.map((g) => ({ ...g, favId: `provider:${g.key}`, kind: "provider", source: "local" }));
+
+// MASTER_GAMES is the full, unfiltered catalog (BetSwirl + vendored local
+// PROVIDER_GAMES) — deliberately not exported. Every rail, search index,
+// Favorites/Recently Played resolver, category/See-All page and Providers
+// page must read ALL_GAMES below instead, so CASINO_CONTENT_MODE is enforced
+// at this one chokepoint rather than re-filtered per call site (see
+// packages/shared/chains.js). In 'betswirl' mode (the default) this drops
+// every PROVIDER_GAMES entry; the six BetSwirl games (including
+// playable:false Wheel/Plinko, which stay visible as "Coming soon" tiles —
+// see the `playable` handling in CasinoGameCard below) always remain. In
+// 'mixed' mode this is a no-op and the full combined catalog is visible,
+// same as before this flag existed.
+const MASTER_GAMES = [...ONCHAIN, ...PROVIDER];
+export const ALL_GAMES = CASINO_CONTENT_MODE === "betswirl"
+  ? MASTER_GAMES.filter((g) => g.source === "betswirl")
+  : MASTER_GAMES;
+
+// Whether any vendored/local provider game is currently visible — used to
+// hide the Providers rail/nav destination entirely rather than rendering a
+// row of "0 games" tiles when content mode excludes them (see ProviderTiles
+// and casinoCategories.js's CASINO_CATEGORIES, which reads the content mode
+// directly since Providers is, by construction, exclusively non-BetSwirl
+// content — see that file's own comment).
+const HAS_VISIBLE_PROVIDER_GAMES = ALL_GAMES.some((g) => g.kind === "provider");
 
 // Deep-link helper: build/read the `?play=<favId>` query param a tile's
 // href points to, so a plain URL (new tab, reload, shared link) can open
@@ -1040,6 +1066,13 @@ function CategoryHomeGrid({ category, tileProps }) {
 // rather than a fabricated brand mark (same rule this catalog already
 // applies everywhere else real asset data doesn't exist).
 function ProvidersIndexPage({ onSelectProvider }) {
+  // Reachable only via a direct/bookmarked URL once content mode hides this
+  // destination from nav (see casinoCategories.js) — still must not leak
+  // provider games, so render the same EmptyState the rail uses rather than
+  // a grid of "0 games" tiles for providers that carry no visible content.
+  if (!HAS_VISIBLE_PROVIDER_GAMES) {
+    return <EmptyState icon={<Building2 className="size-5 text-zinc-500" aria-hidden="true" />} title="No providers available" />;
+  }
   return (
     <section>
       <h1 className="text-lg font-bold">Providers</h1>
@@ -1287,10 +1320,16 @@ const PROVIDER_TILE = "w-[220px] shrink-0";
 // a fake name) — it shows the same kind of toast PlaceholderGameCard does,
 // via `data-placeholder="true"` marking it for tests exactly like a
 // placeholder game tile.
-function ProviderTiles({ onSelectProvider, placeholdersEnabled }) {
+function ProviderTiles({ onSelectProvider, placeholdersEnabled, className }) {
   const placeholderProviders = placeholdersEnabled ? createPlaceholderProviders() : [];
+  // Self-hides (no rail, no "0 games" tiles) once every provider game is
+  // filtered out of ALL_GAMES — see HAS_VISIBLE_PROVIDER_GAMES above. A
+  // dev-only placeholder rail can still render with the flag on, matching
+  // every other rail's "placeholders are independent of real inventory"
+  // behavior.
+  if (!HAS_VISIBLE_PROVIDER_GAMES && !placeholderProviders.length) return null;
   return (
-    <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers">
+    <section id="casino-section-providers" data-test-id="providers-rail" aria-label="Providers" className={className}>
       <div className="mb-4 flex items-center gap-2">
         <h2 className={SECTION_TITLE_CLASS}>Providers</h2>
       </div>
@@ -1394,7 +1433,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
     "originals",
     popularRow.length > 0 && "popular",
     newReleasesRow.length > 0 && "new-releases",
-    !q && "providers",
+    !q && (HAS_VISIBLE_PROVIDER_GAMES || placeholdersEnabled) && "providers",
     liveCasinoRow.length > 0 && "live-casino",
     gameShowsRow.length > 0 && "game-shows",
   ].filter(Boolean).join(",");
@@ -1536,9 +1575,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         context="home"
         onSeeAll={newReleasesHasMore ? seeAll("New") : undefined}
       />
-      <div className={GAP_REGULAR}>
-        <ProviderTiles onSelectProvider={onSelectProvider} placeholdersEnabled={placeholdersEnabled} />
-      </div>
+      <ProviderTiles onSelectProvider={onSelectProvider} placeholdersEnabled={placeholdersEnabled} className={GAP_REGULAR} />
       <CasinoGameRail
         sectionId="casino-section-live-casino"
         testId="live-casino-rail"

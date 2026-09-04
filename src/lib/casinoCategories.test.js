@@ -20,8 +20,16 @@ import { CASINO_CATEGORIES, CATEGORY_LABEL, ROUTED_CATEGORIES, CASINO_PROVIDERS,
 //  7.  A disabled category's route still resolves its real label            -> unit test (CATEGORY_LABEL.Slots)
 
 describe("CASINO_CATEGORIES", () => {
-  it("has exactly seven nav-visible entries, in the target sidebar/pill order", () => {
-    expect(CASINO_CATEGORIES).toHaveLength(7);
+  // CASINO CONTENT MODE — the process env in this test file has no
+  // VITE_CASINO_CONTENT_MODE set, so the static import above resolves under
+  // the real default: 'betswirl'. Providers carries zero content in that
+  // mode (it's exclusively vendored local games — see casinoCategories.js's
+  // own comment on the entry) and is hidden from nav accordingly; six
+  // entries, not seven. The 'mixed'-mode case (Providers re-enabled) is
+  // covered separately below via a fresh module load with the env stubbed,
+  // mirroring packages/shared/chains.test.js's pattern.
+  it("has exactly six nav-visible entries in betswirl content mode (Providers hidden — no visible content), in the target sidebar/pill order", () => {
+    expect(CASINO_CATEGORIES).toHaveLength(6);
     expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
       "Lobby",
       "Originals",
@@ -29,7 +37,6 @@ describe("CASINO_CATEGORIES", () => {
       "New",
       "Live Casino",
       "Game Shows",
-      "Providers",
     ]);
   });
 
@@ -38,13 +45,8 @@ describe("CASINO_CATEGORIES", () => {
     expect(CASINO_CATEGORIES.some((c) => c.id === "Table Games")).toBe(false);
   });
 
-  it("re-enables Providers now that three real providers exist (supersedes the prior FINAL QA disable)", () => {
-    const providers = CASINO_CATEGORIES.find((c) => c.id === "Providers");
-    expect(providers).toBeTruthy();
-    expect(providers.enabled).toBe(true);
-    expect(providers.showInSidebar).toBe(true);
-    expect(providers.showInTopNav).toBe(true);
-    expect(providers.showAsLobbyRow).toBe(true);
+  it("disables Providers by default (betswirl content mode has zero provider-game inventory)", () => {
+    expect(CASINO_CATEGORIES.some((c) => c.id === "Providers")).toBe(false);
   });
 
   it("still resolves a disabled category's real label (Slots stays a working direct link)", () => {
@@ -95,6 +97,30 @@ describe("CASINO_CATEGORIES", () => {
     // module's own comment on why this is NOT filtered by `enabled`.
     expect(ROUTED_CATEGORIES).toContain("Slots");
     expect(ROUTED_CATEGORIES).toEqual(["Popular", "New", "Live Casino", "Game Shows", "Slots"]);
+  });
+});
+
+// Fresh module load with VITE_CASINO_CONTENT_MODE stubbed to 'mixed' — the
+// only way to exercise the combined-catalog branch, since CASINO_CATEGORIES
+// above resolves the content mode once at module load (see chains.js).
+describe("CASINO_CATEGORIES in mixed content mode", () => {
+  async function loadCasinoCategories(contentMode) {
+    vi.resetModules();
+    vi.stubEnv("VITE_CASINO_CONTENT_MODE", contentMode);
+    return import("./casinoCategories");
+  }
+
+  it("re-enables Providers now that three real providers exist (supersedes the prior FINAL QA disable)", async () => {
+    const m = await loadCasinoCategories("mixed");
+    const providers = m.CASINO_CATEGORIES.find((c) => c.id === "Providers");
+    expect(providers).toBeTruthy();
+    expect(providers.enabled).toBe(true);
+    expect(providers.showInSidebar).toBe(true);
+    expect(providers.showInTopNav).toBe(true);
+    expect(providers.showAsLobbyRow).toBe(true);
+    expect(m.CASINO_CATEGORIES).toHaveLength(7);
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });
 

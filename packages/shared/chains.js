@@ -51,6 +51,20 @@ export const CASINO_MAINNET_ID = ARBITRUM_ID;
 export const CASINO_CHAIN_ID = CASINO_USE_MAINNET ? CASINO_MAINNET_ID : BASE_SEPOLIA_ID;
 export const SPORTS_CHAIN_ID = POLYGON_AMOY_ID;
 
+// Casino CONTENT source selector — separate from the chain/env flags above.
+// This decides whether the Casino catalog (CasinoCatalog.jsx's ALL_GAMES,
+// the one collection every rail/search/favorites/recently-played/category
+// surface reads from) includes the vendored local PROVIDER_GAMES catalog or
+// only BetSwirl's six on-chain games. Read via VITE_CASINO_CONTENT_MODE
+// (build-time, Vite-inlined — no runtime/player toggle exists or should be
+// added; see DevPanel.jsx's read-only indicator). Only the exact string
+// 'mixed' restores the combined catalog; anything else (unset, empty, a
+// typo) defaults to 'betswirl' — the smaller, fully-attributed catalog is
+// the safe default, and showing local/fixture content is the deliberate
+// opt-in, not the fallback.
+const rawCasinoContentMode = String(readEnv('VITE_CASINO_CONTENT_MODE') ?? '').trim().toLowerCase();
+export const CASINO_CONTENT_MODE = rawCasinoContentMode === 'mixed' ? 'mixed' : 'betswirl';
+
 export const baseSepolia = {
   id: BASE_SEPOLIA_ID,
   name: 'Base Sepolia',
