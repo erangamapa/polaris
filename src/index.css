@@ -636,16 +636,22 @@ html {
    2-line clamp truncated — full sentences must always render in full,
    wrapping to as many lines as they need (see `.promo-card__title`/
    `.promo-card__body`'s own clamp-removal below). Widened here (and the
-   artwork zone narrowed to match — see PromoStrip.jsx's InfoCard) so real
-   approved copy lands within ~2-3 lines on desktop / up to ~3-4 on the
-   narrower sm-1280px band instead of merely "not truncating" at an
-   unreadably narrow column — sized against the real approved copy the same
-   way the clamp() floors above were tuned, not a guess. */
+   artwork zone narrowed to match at the same 1280px breakpoint — see
+   PromoStrip.jsx's InfoCard) so real approved copy lands within ~3 balanced
+   lines on desktop / up to ~3-4 on the narrower sm-1280px band instead of
+   merely "not truncating" at an unreadably narrow column.
+   TYPOGRAPHY/WRAPPING PASS: desktop (>=1280px, where this task's QA widths
+   all land) targets this task's own "copy area ~58-62%, artwork ~38-42%"
+   split exactly (60%, the midpoint) — narrower than the sm-1280px tier
+   below on PURPOSE, per this task's "at narrower breakpoints let text
+   occupy more horizontal space" rule: desktop has more absolute pixel
+   width to spend even at a lower percentage, so artwork can afford real
+   visual presence there without the column going unreadably narrow. */
 @media (min-width: 640px) {
   .promo-card--static .promo-card__content { max-width: 72%; }
 }
 @media (min-width: 1280px) {
-  .promo-card--static .promo-card__content { max-width: 68%; }
+  .promo-card--static .promo-card__content { max-width: 60%; }
 }
 /* text-wrap:balance is the actual fix for "avoid `200% up to 1,000` /
    `USDT`"-style orphan breaks — it's the browser's own line-breaking
@@ -682,6 +688,25 @@ html {
 .promo-card--static .promo-card__body {
   -webkit-line-clamp: unset;
   overflow: visible;
+}
+/* TYPOGRAPHIC ORPHANS PASS — `text-wrap: pretty` (Chrome/Edge 117+; a no-op,
+   not a break, in browsers that don't support it yet — plain wrapping still
+   applies) is the browser's own line-breaking algorithm for exactly this
+   problem: it looks ahead across the whole paragraph and avoids leaving a
+   short/orphaned last line (the "...games. A / platform..." class of
+   break), the same way `text-wrap: balance` on the title above avoids
+   uneven heading lines. Deliberately NOT `balance` here — balance is
+   documented (and was empirically wrong here) for short headings, not
+   multi-line body copy; `pretty` is the value meant for paragraphs. Body
+   font-size/line-height bumped ~11% over the shared clamp() above (0.5625/
+   0.75rem -> 0.625/0.84rem, 5.75cqw -> 6.4cqw; 1.35 -> 1.45 line-height) —
+   scoped to these two cards only, the shared .promo-card__body clamp above
+   (Welcome Offer/Weekly Race) is untouched — per this task's "clearly
+   readable, confident... still subordinate to the title" target. */
+.promo-card--static .promo-card__body {
+  text-wrap: pretty;
+  font-size: clamp(0.625rem, 6.4cqw, 0.84rem);
+  line-height: 1.45;
 }
 
 /* LOBBY HIERARCHY PASS — game card hover lift. Same split as .promo-card

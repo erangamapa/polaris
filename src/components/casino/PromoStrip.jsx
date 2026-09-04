@@ -677,13 +677,16 @@ function InfoCard({ eyebrow, title, body, artwork }) {
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
       </div>
-      {/* Narrower than Wallet/Welcome/Weekly's own 40-46% artwork zone
-          (COPY MUST NEVER TRUNCATE pass) — the wider .promo-card__content
-          column above (index.css) needs the matching space back from
-          somewhere, and shrinking this abstract placeholder art is exactly
-          what this task's own priority order calls for before ever growing
-          the card's height. */}
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[22%] overflow-hidden sm:block lg:w-[26%] xl:w-[28%]">
+      {/* TYPOGRAPHY/WRAPPING PASS — narrower than Wallet/Welcome/Weekly's own
+          40-46% artwork zone below sm-1279px (the copy column needs that
+          room back there — see .promo-card--static .promo-card__content in
+          index.css), but widens back to ~40% at xl: (1280px+, this task's
+          own "artwork: ~38-42%" desktop target) once the desktop-tier copy
+          column settles at ~60% and there's genuinely enough absolute pixel
+          width for both. Artwork still yields to typography first at every
+          narrower breakpoint — see index.css's own comment on why the split
+          point is 1280px, matching .promo-card__content's own breakpoint. */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[22%] overflow-hidden sm:block xl:w-[40%]">
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
         <div className="relative z-10 h-full w-full">{artwork}</div>
       </div>
@@ -695,8 +698,8 @@ function AboutTribetCard() {
   return (
     <InfoCard
       eyebrow="ABOUT TRIBET"
-      title="Betting, rebuilt on-chain."
-      body="One wallet. Transparent games. A platform built around players, not black boxes."
+      title="One wallet. Three arenas."
+      body="Built by industry veterans and casino players who wanted betting to feel simpler, sharper and more transparent."
       artwork={<AboutTribetPlaceholderArt />}
     />
   );
@@ -707,7 +710,7 @@ function TransparentPlayCard() {
     <InfoCard
       eyebrow="TRANSPARENT PLAY"
       title="Don't trust. Verify."
-      body="BetSwirl games use on-chain infrastructure designed to make outcomes independently verifiable."
+      body="BetSwirl games settle on-chain, so every result can be independently verified — no blind trust required."
       artwork={<TransparentPlayPlaceholderArt />}
     />
   );
