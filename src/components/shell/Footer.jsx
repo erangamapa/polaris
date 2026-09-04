@@ -1,9 +1,6 @@
 import { cn } from "@/lib/utils";
 import { BRAND_NAME } from "@/lib/brand";
 import { CASINO_USE_MAINNET, CASINO_CHAIN } from "@shared/chains";
-import { useDevMockState } from "@/lib/devMock";
-import { isArenaAllowed, resolveEffectivePlatformScope } from "@/lib/platformScope";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 // The money disclosure has to track the network the build actually bets on
 // (see VITE_USE_MAINNET in @shared/chains). On testnet the balances really are
@@ -18,64 +15,102 @@ const MONEY_SENTENCE = CASINO_USE_MAINNET
   ? `${BRAND_NAME} settles casino bets with real funds on ${CASINO_CHAIN.name}. Only stake what you can afford to lose.`
   : `${BRAND_NAME} is a prototype — simulated balances, no real money.`;
 
-// `arenaId` (null for columns with no arena of their own) is what INACTIVE
-// ARENA POLISH drives the whole column's disabled/muted treatment from —
-// isArenaAllowed("casino", ...) always returns true (see
-// lib/platformScope.js), so the Casino column is never affected by this;
-// only a column whose arenaId is currently unavailable (Sports, while
-// MVP-scoped) gets muted. One shared mechanism, not a Sports-specific
-// branch, so a future Predictions footer column (there isn't one today —
-// see the arenaId comment on FooterColumn below) would get the exact same
-// treatment for free.
-const COLUMNS = [
-  { title: "Casino", links: ["Lobby", "Slots", "Live Casino", "Game Shows", "Providers"], arenaId: "casino" },
-  { title: "Sports", links: ["Sportsbook", "Live", "Soccer", "Basketball", "Tennis"], arenaId: "sports" },
-  { title: "About", links: ["Terms of Service", "Privacy Policy", "AML Policy", "Licensing"], arenaId: null },
+// FOOTER NAV MVP MUTE — none of these destinations are real, routed pages
+// yet (the whole footer has always been a decorative sitemap — every button
+// here was already onClick-less/no-op before this pass; see git history),
+// so unlike the top-level arena switcher (Sidebar.jsx/MobileBottomNav.jsx/
+// PromoStrip.jsx — driven by lib/platformScope.js's isArenaAllowed, which
+// tracks whether an ARENA is live) footer nav availability is its own,
+// per-ITEM concern, deliberately decoupled from arena state: Casino being
+// the one live arena doesn't mean "Slots" or "Providers" are real pages to
+// link to, so every item below carries its own explicit `enabled` flag
+// rather than inheriting a column-level or arena-level default. Flipping a
+// single item to `enabled: true` (once that destination is real) is the
+// entire re-enable step — no restructuring, no new component.
+// Support's two items keep an `action` key (not a real onClick — a lookup
+// key into ACTIONS below, built from the real onSupport/onResponsibleGambling
+// handlers) so the underlying "open the real dialog" wiring survives being
+// muted and is ready the moment `enabled` flips, matching every other
+// column's shape instead of a bespoke Support-only branch.
+const FOOTER_COLUMNS = [
+  {
+    title: "Casino",
+    items: [
+      { label: "Lobby", enabled: false },
+      { label: "Slots", enabled: false },
+      { label: "Live Casino", enabled: false },
+      { label: "Game Shows", enabled: false },
+      { label: "Providers", enabled: false },
+    ],
+  },
+  {
+    title: "Sports",
+    items: [
+      { label: "Sportsbook", enabled: false },
+      { label: "Live", enabled: false },
+      { label: "Soccer", enabled: false },
+      { label: "Basketball", enabled: false },
+      { label: "Tennis", enabled: false },
+    ],
+  },
+  {
+    title: "About",
+    items: [
+      { label: "Terms of Service", enabled: false },
+      { label: "Privacy Policy", enabled: false },
+      { label: "AML Policy", enabled: false },
+      { label: "Licensing", enabled: false },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { label: "Help Center", enabled: false, action: "support" },
+      { label: "Live Support", enabled: false, action: "support" },
+      // One link, one destination — the shared Responsible Gaming hub (see
+      // ResponsibleGamblingDialog.jsx). A separate "Self-Exclusion" item
+      // was removed: it opened this exact same dialog, which has no
+      // distinct self-exclusion action to offer (no real backend — see
+      // that file's own honesty note), so a second label implying a
+      // different destination would be misleading.
+      { label: "Responsible Gaming", enabled: false, action: "responsibleGambling", testId: "footer-responsible-gaming" },
+    ],
+  },
 ];
 
-// INACTIVE ARENA POLISH — every link in this footer is already a plain,
-// unwired <button> with no onClick (this footer is decorative/pre-launch
-// sitemap copy, not real navigation — see the file's own history), so
-// "does not navigate" is already true regardless of arena state. What this
-// component adds for a `disabled` column is purely the visual/AT-facing
-// signal: muted opacity in place of the normal hover-brightens-to-white
-// affordance, `aria-disabled`, and a "Coming soon" tooltip on hover/focus
-// (the shared Tooltip component — same one the arena selector uses, not a
-// second tooltip system) — never a second visible "Coming soon" label
-// repeated next to every item. The button stays a real, focusable,
-// disabled-attribute-free <button> throughout (never HTML `disabled`,
-// which would also remove it from the tab order and make the tooltip
-// keyboard-unreachable).
-function FooterLink({ label, disabled, onClick }) {
-  const link = (
+// FOOTER NAV MVP MUTE — a plain, focusable <button> throughout (never HTML
+// `disabled`, which would drop it from the tab order for no reason — there
+// is no tooltip here to keep reachable, but a muted-but-still-focusable
+// control is still the more honest a11y default than an invisible one).
+// No Tooltip: unlike the top-level arena buttons (one or two items,
+// "Coming soon" is useful signal there), wrapping all seventeen of these in
+// a tooltip would just be noise — the muted styling alone is the signal
+// here (see PRIMARY GOAL in the task this was built for).
+function FooterLink({ label, enabled, onClick, testId }) {
+  return (
     <button
-      onClick={onClick}
-      aria-disabled={disabled || undefined}
+      type="button"
+      onClick={enabled ? onClick : undefined}
+      aria-disabled={!enabled || undefined}
+      data-test-id={testId}
       className={cn(
         "text-sm",
-        disabled
-          ? "cursor-not-allowed text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          : "text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        enabled
+          ? "text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          : "cursor-default text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       )}
     >
       {label}
     </button>
   );
-  if (!disabled) return link;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent>Coming soon</TooltipContent>
-    </Tooltip>
-  );
 }
 
 export function Footer({ onResponsibleGambling, onSupport }) {
-  // Same shared resolver the arena selector/mobile nav/search scope
-  // dropdown all use (see lib/platformScope.js) — one source of truth, not
-  // a footer-specific copy of the same condition.
-  const mock = useDevMockState();
-  const platformScope = resolveEffectivePlatformScope(mock);
+  // Lookup table for the Support column's `action` keys (see
+  // FOOTER_COLUMNS above) — keeps the config data-only/serializable while
+  // still giving FooterLink a real handler to call once an item's `enabled`
+  // flips to true.
+  const ACTIONS = { support: onSupport, responsibleGambling: onResponsibleGambling };
   return (
     // VISUAL REFRESH: mt-12 -> mt-16 — a clearer, more deliberate break
     // from the game section above so the footer reads as intentional
@@ -94,39 +129,27 @@ export function Footer({ onResponsibleGambling, onSupport }) {
           sitting above it. */}
       <div className="w-full max-w-[var(--content-max-w)] px-4 py-8">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-          {COLUMNS.map((c) => {
-            const disabled = c.arenaId ? !isArenaAllowed(c.arenaId, platformScope) : false;
+          {FOOTER_COLUMNS.map((col) => {
+            // A column heading only reads as "fully unavailable" once every
+            // item under it is — so a future column with a mix of enabled/
+            // disabled items doesn't mute a heading that still has a live
+            // destination underneath it.
+            const columnMuted = col.items.every((it) => !it.enabled);
             return (
-              <div key={c.title}>
-                <div className={cn("mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground", disabled && "opacity-50")}>
-                  {c.title}
+              <div key={col.title}>
+                <div className={cn("mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground", columnMuted && "opacity-50")}>
+                  {col.title}
                 </div>
                 <ul className="space-y-1.5">
-                  {c.links.map((l) => (
-                    <li key={l}>
-                      <FooterLink label={l} disabled={disabled} />
+                  {col.items.map((it) => (
+                    <li key={it.label}>
+                      <FooterLink label={it.label} enabled={it.enabled} onClick={ACTIONS[it.action]} testId={it.testId} />
                     </li>
                   ))}
                 </ul>
               </div>
             );
           })}
-          <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Support</div>
-            <ul className="space-y-1.5">
-              <li><button onClick={onSupport} className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Help Center</button></li>
-              <li><button onClick={onSupport} className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Live Support</button></li>
-              {/* One link, one destination — the shared Responsible Gaming
-                  hub (see ResponsibleGamblingDialog.jsx). A separate
-                  "Self-Exclusion" link was removed: it opened this exact
-                  same dialog, which has no distinct self-exclusion action
-                  to offer (no real backend — see that file's own honesty
-                  note), so a second label implying a different destination
-                  would be misleading (see PRIMARY GOAL: "do not create
-                  duplicate dialogs"). */}
-              <li><button onClick={onResponsibleGambling} data-test-id="footer-responsible-gaming" className="text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Responsible Gaming</button></li>
-            </ul>
-          </div>
         </div>
 
         <div className="mt-8 flex flex-col gap-3 border-t pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
