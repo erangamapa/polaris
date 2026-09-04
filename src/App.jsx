@@ -30,7 +30,7 @@ import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { isArenaAllowed, resolveScopedProduct } from "./lib/platformScope";
-import { APP_MODE, CASINO_NAV_MODE } from "@shared/chains";
+import { APP_MODE, CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 // PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
 // React.lazy rather than statically imported, so their code (and, for
 // Sports/Predictions, their SDK dependencies — @azuro-org/sdk,
@@ -1790,6 +1790,23 @@ function CasinoLobby({ category, view, providerSlug, onLaunchOnchain, onLaunchPr
         <div className="space-y-4">
           <ScopedSearch query={query} onQuery={setQuery} {...searchPanelProps} />
           {mobileOverlay}
+        </div>
+      ) : CASINO_LAYOUT_MODE === "game-first" ? (
+        /* CASINO LAYOUT MODE (game-first) — the promo row (PromoStrip) is
+           skipped entirely rather than hidden with CSS; PromoStrip's own
+           code/assets/flags are untouched, classic mode below still renders
+           it normally. Search itself is the exact same ScopedSearch call
+           the isDestination branch above already uses bare (no promo
+           wrapper) — reusing that proven pattern, not a new composition.
+           CategoryNav still renders unconditionally here: it already
+           self-hides under CASINO_NAV_MODE=minimal (see CategoryNav in
+           CasinoCatalog.jsx) — layout mode and nav mode are deliberately
+           separate concerns, so a hypothetical game-first+full combination
+           would still show pills here without any change to this branch. */
+        <div className="space-y-4">
+          <ScopedSearch query={query} onQuery={setQuery} {...searchPanelProps} />
+          {mobileOverlay}
+          <CategoryNav selected={category} activeView={view} onSelectHomeFilter={selectHomeFilter} onPillActivated={onPillActivated} />
         </div>
       ) : (
         /* LOBBY HIERARCHY PASS: search + category pills read as one

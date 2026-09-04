@@ -80,6 +80,22 @@ export const CASINO_CONTENT_MODE = rawCasinoContentMode === 'mixed' ? 'mixed' : 
 const rawCasinoNavMode = String(readEnv('VITE_CASINO_NAV_MODE') ?? '').trim().toLowerCase();
 export const CASINO_NAV_MODE = rawCasinoNavMode === 'full' ? 'full' : 'minimal';
 
+// Casino LAYOUT/presentation mode — a second, alternate presentation of the
+// SAME Casino Lobby (same game data, search, Favorites/Recently Played,
+// content/nav-mode gating — see CASINO_CONTENT_MODE/CASINO_NAV_MODE above),
+// never a different data source or a fork of any business logic. Read via
+// VITE_CASINO_LAYOUT_MODE. 'classic' is the current, already-shipped Lobby
+// (3 promo cards, standard-size cards, discovery rails) and is the default
+// whenever this is unset — unlike CASINO_NAV_MODE/CASINO_CONTENT_MODE
+// above, the SAFE default here is the EXISTING behavior, not a narrower new
+// one, so restoring classic is always possible with zero Vercel config
+// (see GameFirstLobby/FEATURED_GRID in CasinoCatalog.jsx). Only the exact
+// string 'game-first' opts into the alternate presentation (no promo row,
+// the games as the immediate hero, larger game cards) built for the
+// current small BetSwirl-only catalog.
+const rawCasinoLayoutMode = String(readEnv('VITE_CASINO_LAYOUT_MODE') ?? '').trim().toLowerCase();
+export const CASINO_LAYOUT_MODE = rawCasinoLayoutMode === 'game-first' ? 'game-first' : 'classic';
+
 // Overall product/app mode — the existing MVP/Full platform-scope concept
 // (see lib/platformScope.js: Casino is always allowed, Sports/Predictions
 // are gated to "Coming soon" in 'mvp'), now resolved from a real build-time

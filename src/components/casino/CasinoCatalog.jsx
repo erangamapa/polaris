@@ -8,7 +8,7 @@ import { track } from "@/lib/telemetry";
 // PERFORMANCE task: "Lobby cards do not import full game implementations").
 import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
 import { PROVIDER_GAMES } from "./ProviderGame";
-import { CASINO_CONTENT_MODE, CASINO_NAV_MODE } from "@shared/chains";
+import { CASINO_CONTENT_MODE, CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { takeUnclaimed } from "@/lib/casinoDedup";
@@ -109,9 +109,16 @@ export const findGameByFavId = (favId) => ALL_GAMES.find((g) => g.favId === favI
 // Active-state coral (`--favorite-heart`) is shared by both variants so
 // "favorited" reads identically everywhere; only the surrounding chrome
 // differs.
-export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, variant = "chip", ...rest }) {
+// `size`: "default" (every existing surface — game-first mode's featured
+// cards are the one exception) or "large" (~1.2-1.3x the default chip/heart
+// footprint, used only by CasinoGameCard's size="featured" — see
+// CASINO_LAYOUT_MODE=game-first). Purely a visual-footprint switch — the
+// toggle handler, aria attributes, press-pulse animation and active-state
+// color are all untouched and identical at either size.
+export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, variant = "chip", size = "default", ...rest }) {
   const [pulse, setPulse] = useState(0);
   const isChip = variant === "chip";
+  const isLarge = size === "large";
 
   const handle = (e) => {
     e.preventDefault();
@@ -133,7 +140,7 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
       {...rest}
       className={cn(
         "group/fav grid cursor-pointer place-items-center outline-none transition",
-        isChip ? "size-10 rounded-lg" : "size-11 rounded-md",
+        isChip ? (isLarge ? "size-12 rounded-lg" : "size-10 rounded-lg") : "size-11 rounded-md",
         className
       )}
     >
@@ -144,7 +151,8 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
           pulse > 0 && "fav-chip-pop",
           isChip
             ? cn(
-                "size-9 rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
+                isLarge ? "size-11" : "size-9",
+                "rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[background-color,border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/fav:-translate-y-0.5 group-hover/fav:scale-[1.05]",
                 faved
                   ? "border-[var(--global-cta-soft-border)] bg-[rgba(15,20,38,0.5)] group-hover/fav:border-[color-mix(in_srgb,var(--global-cta)_60%,transparent)]"
                   : "border-white/10 bg-[rgba(12,16,30,0.42)] group-hover/fav:border-white/20 group-hover/fav:bg-[rgba(15,20,38,0.5)]"
@@ -154,7 +162,8 @@ export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMou
       >
         <Heart
           className={cn(
-            "size-4 transition-transform duration-200 group-hover/fav:scale-[1.08]",
+            isLarge ? "size-5" : "size-4",
+            "transition-transform duration-200 group-hover/fav:scale-[1.08]",
             faved ? "fill-[var(--favorite-heart)] text-[var(--favorite-heart)]" : isChip ? "text-[rgba(255,255,255,0.72)]" : "text-[var(--muted-foreground)]"
           )}
         />
@@ -211,7 +220,18 @@ const STATUS_LABEL = { "coming-soon": "Coming soon" };
 // launch's `source`, so casino_game_launch_requested/ready/failed can report
 // which section a launch came from (see useCasinoGameLaunch.js). Never
 // changes rendering.
-export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context }) {
+// `size`: "standard" (every existing surface — classic mode, every rail,
+// every fluid GRID) or "featured" (~1.4-1.5x title / ~1.25-1.35x provider /
+// ~1.2-1.3x favorite heart / ~1.15-1.25x badges — used only when
+// CASINO_LAYOUT_MODE is 'game-first', see GameFirstLobby/FEATURED_GRID
+// below). The card's own footprint (width/height) is NOT controlled here at
+// all — this component has no width of its own, only aspect-[3/4]; its
+// rendered size is entirely a function of the grid cell it's placed in
+// (FEATURED_GRID vs. GRID/RAIL_TILE) — `size` only scales the card's OWN
+// internal UI (favorite heart, Coming Soon badge, broken-image fallback
+// text), never the artwork, which stays dominant at either size per this
+// task's own "do not blindly scale every element" rule.
+export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context, size = "standard" }) {
   const faved = isFav?.(game);
   const onLaunch = game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider;
   // Only onchain games can be non-playable in this catalog (see STATUS_LABEL
@@ -221,6 +241,7 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
   const statusLabel = status ? STATUS_LABEL[status] ?? status : null;
   const { broken, onError } = useBrokenImage();
   const testKey = game.favId.replace(":", "-");
+  const isFeatured = size === "featured";
   // A11Y: the link's accessible NAME stays "Play {title}" (short, so tabbing
   // through a full grid of cards doesn't get verbose) — studio is reachable
   // to AT via aria-describedby instead, which (unlike descendant content) is
@@ -297,8 +318,8 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
             gradient is otherwise unchanged from before. */}
         {broken && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/43 to-transparent p-2 pt-6">
-            <div className="line-clamp-2 text-xs font-bold leading-snug text-white">{game.title}</div>
-            {showProvider && <div className="truncate text-[10px] leading-snug text-zinc-400">{gameProviderName(game)}</div>}
+            <div className={cn("line-clamp-2 font-bold leading-snug text-white", isFeatured ? "text-lg" : "text-xs")}>{game.title}</div>
+            {showProvider && <div className={cn("truncate leading-snug text-zinc-400", isFeatured ? "text-[13px]" : "text-[10px]")}>{gameProviderName(game)}</div>}
           </div>
         )}
       </a>
@@ -319,7 +340,10 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
           neutral card surface) — font/weight/size/tracking/radius/case
           still come from the one shared MicroLabel. */}
       {statusLabel && (
-        <MicroLabel aria-hidden="true" className="pointer-events-none absolute left-1.5 top-1.5 bg-black/80 text-white">
+        <MicroLabel
+          aria-hidden="true"
+          className={cn("pointer-events-none absolute left-1.5 top-1.5 bg-black/80 text-white", isFeatured && "text-xs px-3 py-1.5")}
+        >
           {statusLabel}
         </MicroLabel>
       )}
@@ -334,7 +358,7 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
       {showFavorite && onFav && playable && (
         <div className={cn(FAV_STAR_OVERLAY, "opacity-90 transition-opacity duration-200 group-hover:opacity-100")}>
           <span aria-hidden="true" className={FAV_VIGNETTE} />
-          <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} />
+          <FavStar faved={faved} onToggle={() => onFav(game)} title={game.title} size={isFeatured ? "large" : "default"} />
         </div>
       )}
     </div>
@@ -414,6 +438,34 @@ function PlaceholderGameCard({ game }) {
 // now add columns instead of enlarging cards; card size stays effectively
 // unchanged at today's common desktop widths.
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]";
+
+// GAME-FIRST MODE ONLY (CASINO_LAYOUT_MODE=game-first — see GameFirstLobby
+// below) — the featured/large game-card grid, used wherever a grid of full
+// cards renders in that mode (the Lobby's own BetSwirl section, plus
+// FavoritesPage/RecentlyPlayedPage for a consistent presentation). Classic
+// mode's GRID above is completely untouched by this addition.
+//
+// Floor is ~1.45x classic's own "large" RAIL tile (152x203px — tileScale=
+// "large" in TILE_SCALE_CLASS below, the size the Lobby's BetSwirl/
+// Originals rail already renders at): 152 * 1.45 ≈ 220px; aspect-[3/4] on
+// the card itself derives the ~293px height automatically, same as every
+// other grid in this file — no explicit height is ever set here.
+//
+// `auto-fit` (not `auto-fill`) at md:/2xl: so this catalog's few real cards
+// stretch to fill each row rather than leaving blank reserved tracks (see
+// this task's own "prefer grid, not a carousel built for hundreds of
+// games" framing) — mathematically overflow-safe at any width, since a
+// track that doesn't fit the floor is simply dropped rather than
+// squeezed. base/sm use an explicit 1/2-column count instead: the 220px
+// floor doesn't reliably clear two columns at the narrowest phone widths
+// this mode is tested at (390-430px) without crowding, so those tiers use
+// a smaller, deliberate column count rather than letting auto-fit round
+// awkwardly close to overflow. The 2xl: floor bump (280px) caps runaway
+// column growth on very wide desktops (1728-1920px) at the ~4-5 columns
+// this task calls for, rather than auto-fit quietly reaching 6+.
+const FEATURED_GRID =
+  "grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-6 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] md:gap-7 lg:gap-8 2xl:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]";
+
 // Fixed-width tile used by every horizontal Rail. Tailwind needs each
 // arbitrary-value class to appear literally in source (a class built by
 // interpolating a variable never gets generated), so tile-size variation is
@@ -1168,8 +1220,10 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
         )}
       </div>
       {favorites.length ? (
-        <div className={GRID}>
-          {favorites.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="favorites" />)}
+        <div className={CASINO_LAYOUT_MODE === "game-first" ? FEATURED_GRID : GRID}>
+          {favorites.map((game) => (
+            <CasinoGameCard key={game.favId} game={game} {...tileProps} context="favorites" size={CASINO_LAYOUT_MODE === "game-first" ? "featured" : "standard"} />
+          ))}
         </div>
       ) : q ? (
         <EmptyState
@@ -1213,8 +1267,10 @@ function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, p
         )}
       </div>
       {recentGames.length ? (
-        <div className={GRID}>
-          {recentGames.map((game) => <CasinoGameCard key={game.favId} game={game} {...tileProps} context="recent" />)}
+        <div className={CASINO_LAYOUT_MODE === "game-first" ? FEATURED_GRID : GRID}>
+          {recentGames.map((game) => (
+            <CasinoGameCard key={game.favId} game={game} {...tileProps} context="recent" size={CASINO_LAYOUT_MODE === "game-first" ? "featured" : "standard"} />
+          ))}
         </div>
       ) : q ? (
         <EmptyState
@@ -1295,6 +1351,16 @@ export function CasinoCatalog({ category, view = "dashboard", providerSlug, quer
   }
   if (isTagCategory(category)) {
     return <CategoryDestinationPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
+  }
+
+  // CASINO LAYOUT MODE (@shared/chains, VITE_CASINO_LAYOUT_MODE) — the one
+  // centralized branch point between the two Lobby presentations. Both read
+  // the exact same game data/search filtering computed above; only the
+  // composition differs (see GameFirstLobby vs. LobbyDashboard below).
+  // 'classic' (the default) is completely unchanged from before this flag
+  // existed.
+  if (CASINO_LAYOUT_MODE === "game-first") {
+    return <GameFirstLobby q={q} query={query} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
   return (
@@ -1380,6 +1446,58 @@ function ProviderTiles({ onSelectProvider, placeholdersEnabled, className }) {
             <span className="text-sm font-bold text-zinc-300">{provider.name}</span>
             <span className="text-[11px] text-zinc-600">UI Test Fixture</span>
           </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// GAME-FIRST LOBBY (CASINO_LAYOUT_MODE=game-first) — the alternate MVP
+// presentation for the current small BetSwirl-only catalog: no promo row
+// (that's handled one level up, in App.jsx's CasinoLobby, which skips
+// PromoStrip entirely in this mode), no discovery rails/Providers/Popular/
+// New Releases/Live Casino/Game Shows sections, just the BetSwirl games as
+// the immediate hero content in a large featured grid. Shares the exact
+// same game data (ONCHAIN), search filtering (matchesQuery) and card
+// component (CasinoGameCard, size="featured") as classic mode — only the
+// composition differs; no business logic is duplicated. RailHeader is
+// reused verbatim (not reimplemented) so the "BetSwirl · Provably fair·
+// On-chain games, provably fair and settled by BetSwirl" heading is
+// pixel-identical to classic mode's own Originals/BetSwirl rail heading.
+//
+// Deliberately simpler than LobbyDashboard: no dedup-against-other-rails
+// bookkeeping, no placeholder fixtures, no expandable rail paging — none of
+// that applies once there's exactly one section on the page. See
+// LobbyDashboard directly below for the unchanged classic dashboard this
+// replaces only when CASINO_LAYOUT_MODE is 'game-first'.
+function GameFirstLobby({ q, query, tileProps, onBrowseGames }) {
+  const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
+
+  useEffect(() => {
+    if (onchain.length) track("casino_lobby_section_viewed", { sections: ["originals"], layoutMode: "game-first" });
+  }, [q, onchain.length]);
+
+  if (q && !onchain.length) {
+    return (
+      <EmptyState
+        icon={<Gamepad2 className="size-5 text-zinc-500" aria-hidden="true" />}
+        title={`No games match "${query}"`}
+        cta={onBrowseGames ? <BrowseGamesButton onClick={onBrowseGames} /> : undefined}
+      />
+    );
+  }
+
+  return (
+    <section id="casino-section-originals" data-test-id="originals-grid">
+      <RailHeader
+        title={CATEGORY_LABEL.Originals}
+        subtitle="On-chain games, provably fair and settled by BetSwirl"
+        badge="Provably fair"
+        tier="primary"
+      />
+      <div className={FEATURED_GRID}>
+        {onchain.map((game) => (
+          <CasinoGameCard key={game.favId} game={game} {...tileProps} context="home" size="featured" />
         ))}
       </div>
     </section>

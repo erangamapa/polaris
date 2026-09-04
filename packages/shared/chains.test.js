@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 // exactly 'true' (unset, empty, 'false', a typo, a truthy-looking '1') must
 // leave the app on testnet. Getting this backwards would silently point players
 // at real funds, so it is pinned here rather than left to the implementation.
-async function loadChains(flag, contentMode, navMode, appMode) {
+async function loadChains(flag, contentMode, navMode, appMode, layoutMode) {
   vi.resetModules();
   if (flag === undefined) vi.stubEnv('VITE_USE_MAINNET', '');
   else vi.stubEnv('VITE_USE_MAINNET', flag);
@@ -16,6 +16,8 @@ async function loadChains(flag, contentMode, navMode, appMode) {
   else vi.stubEnv('VITE_CASINO_NAV_MODE', navMode);
   if (appMode === undefined) vi.stubEnv('VITE_APP_MODE', '');
   else vi.stubEnv('VITE_APP_MODE', appMode);
+  if (layoutMode === undefined) vi.stubEnv('VITE_CASINO_LAYOUT_MODE', '');
+  else vi.stubEnv('VITE_CASINO_LAYOUT_MODE', layoutMode);
   return import('./chains.js');
 }
 
@@ -141,6 +143,31 @@ describe('app mode selection', () => {
     async (mode) => {
       const m = await loadChains(undefined, undefined, undefined, mode);
       expect(m.APP_MODE).toBe('mvp');
+    },
+  );
+});
+
+describe('casino layout mode selection', () => {
+  it('defaults to classic when the flag is unset', async () => {
+    const m = await loadChains(undefined, undefined, undefined, undefined, undefined);
+    expect(m.CASINO_LAYOUT_MODE).toBe('classic');
+  });
+
+  it("switches to game-first only for exactly 'game-first'", async () => {
+    const m = await loadChains(undefined, undefined, undefined, undefined, 'game-first');
+    expect(m.CASINO_LAYOUT_MODE).toBe('game-first');
+  });
+
+  it.each(['GAME-FIRST', 'Game-First', '  game-first  '])('accepts %s (case/whitespace tolerant)', async (mode) => {
+    const m = await loadChains(undefined, undefined, undefined, undefined, mode);
+    expect(m.CASINO_LAYOUT_MODE).toBe('game-first');
+  });
+
+  it.each(['classic', 'CLASSIC', '', 'gamefirst', 'featured', 'undefined'])(
+    'stays classic for %s',
+    async (mode) => {
+      const m = await loadChains(undefined, undefined, undefined, undefined, mode);
+      expect(m.CASINO_LAYOUT_MODE).toBe('classic');
     },
   );
 });
