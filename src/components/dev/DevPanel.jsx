@@ -5,7 +5,7 @@ import { toast } from "@/lib/toast";
 import { useDevMockState, setDevMockState, resetDevMockState, closeDevPanel } from "@/lib/devMock";
 import { useDevPanelShortcut } from "@/lib/useDevPanelShortcut";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
-import { BETSWIRL_ENV, CASINO_CONTENT_MODE } from "@shared/chains";
+import { BETSWIRL_ENV, CASINO_CONTENT_MODE, CASINO_NAV_MODE, APP_MODE } from "@shared/chains";
 
 // Developer Panel — Shift+D toggles it (see useDevPanelShortcut). Gated end
 // to end on `DEV_PANEL_ENABLED` (devPanelFlag.js), currently `true` in every
@@ -129,6 +129,17 @@ export function DevPanel() {
         </Section>
 
         <Section title="Platform Scope">
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
+            <span
+              className={cn(
+                "font-mono text-xs font-bold uppercase tracking-wide",
+                APP_MODE === "full" ? "text-[var(--danger)]" : "text-[var(--success)]"
+              )}
+            >
+              {APP_MODE}
+            </span>
+            <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_APP_MODE)</span>
+          </div>
           <Segmented
             value={mock.platformScope}
             onChange={(v) => set({ platformScope: v })}
@@ -142,6 +153,7 @@ export function DevPanel() {
             {mock.platformScope === "mvp"
               ? "Casino only. Sports and Predictions are marked Coming soon."
               : "Casino, Predictions and Sports are available."}
+            {" "}This toggle previews the other state here only — it never changes VITE_APP_MODE itself.
           </p>
         </Section>
 
@@ -170,6 +182,19 @@ export function DevPanel() {
                 {CASINO_CONTENT_MODE}
               </span>
               <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_CASINO_CONTENT_MODE)</span>
+            </div>
+          </Field>
+          <Field label="Nav mode">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
+              <span
+                className={cn(
+                  "font-mono text-xs font-bold uppercase tracking-wide",
+                  CASINO_NAV_MODE === "full" ? "text-[var(--danger)]" : "text-[var(--success)]"
+                )}
+              >
+                {CASINO_NAV_MODE}
+              </span>
+              <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_CASINO_NAV_MODE)</span>
             </div>
           </Field>
           <Field label="Favorites">

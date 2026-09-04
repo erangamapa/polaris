@@ -65,6 +65,37 @@ export const SPORTS_CHAIN_ID = POLYGON_AMOY_ID;
 const rawCasinoContentMode = String(readEnv('VITE_CASINO_CONTENT_MODE') ?? '').trim().toLowerCase();
 export const CASINO_CONTENT_MODE = rawCasinoContentMode === 'mixed' ? 'mixed' : 'betswirl';
 
+// Casino NAVIGATION mode — separate again from the content filter above.
+// This decides how much of the Casino category taxonomy (the sidebar's
+// "Games" section, the horizontal CategoryNav pill row, Popular/New
+// Releases/Live Casino/Game Shows/Providers as reachable nav destinations)
+// actually renders. It does NOT touch CASINO_CATEGORIES/CASINO_PROVIDERS
+// themselves, the routes, or any component — those stay fully intact so
+// 'full' mode needs zero code changes to restore. Read via
+// VITE_CASINO_NAV_MODE. Only the exact string 'full' restores the richer
+// navigation; anything else (unset, empty, a typo) defaults to 'minimal' —
+// appropriate while the visible catalog is BetSwirl's six games (see
+// CASINO_CONTENT_MODE above), same "narrower is the default, wider is the
+// deliberate opt-in" pattern used throughout this file.
+const rawCasinoNavMode = String(readEnv('VITE_CASINO_NAV_MODE') ?? '').trim().toLowerCase();
+export const CASINO_NAV_MODE = rawCasinoNavMode === 'full' ? 'full' : 'minimal';
+
+// Overall product/app mode — the existing MVP/Full platform-scope concept
+// (see lib/platformScope.js: Casino is always allowed, Sports/Predictions
+// are gated to "Coming soon" in 'mvp'), now resolved from a real build-time
+// flag instead of only ever being reachable through the Developer Panel's
+// mock override. Read via VITE_APP_MODE. Only the exact string 'full'
+// enables Sports/Predictions; anything else (unset, empty, a typo) defaults
+// to 'mvp'. This is what App.jsx's platformScope resolution falls back to
+// whenever the Dev Panel is disabled (see devPanelFlag.js) AND is what
+// devMock.js's own resting default now derives from — so disabling the Dev
+// Panel can never silently promote the product to Full mode, and opening
+// the (developer-only) panel never silently changes what a real user with
+// no panel interaction would see either. The Dev Panel is a developer
+// control surface; APP_MODE is the actual product configuration.
+const rawAppMode = String(readEnv('VITE_APP_MODE') ?? '').trim().toLowerCase();
+export const APP_MODE = rawAppMode === 'full' ? 'full' : 'mvp';
+
 export const baseSepolia = {
   id: BASE_SEPOLIA_ID,
   name: 'Base Sepolia',

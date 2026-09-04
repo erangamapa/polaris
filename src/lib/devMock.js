@@ -27,6 +27,7 @@
 // distinction" the task asks for in place of a real auth rewrite.
 import { useSyncExternalStore } from "react";
 import { DEV_PANEL_ENABLED } from "./devPanelFlag";
+import { APP_MODE } from "@shared/chains";
 
 const STORAGE_KEY = "tribet-dev-panel-state";
 const STORAGE_VERSION = 2;
@@ -34,18 +35,21 @@ const STORAGE_VERSION = 2;
 // "default" means "don't override — use the real app's own state." Reset
 // is just "every field back to its default." `platformScope` is the one
 // exception: it isn't a "defer to real state" mock, it's a direct two-value
-// toggle (there's no independent real-app concept to defer to). Its resting
-// value is "full" (unrestricted) — matching what every real user actually
-// sees — not "mvp", since `DEV_PANEL_ENABLED` now leaves this default live
-// in production too; someone opening the panel can still switch it to
-// "mvp" to preview the MVP-scoped nav.
+// toggle (there's no independent real-app concept to defer to) — but its
+// resting value must still MATCH the real app's actual state, not
+// contradict it, so opening the (developer-only) Dev Panel without ever
+// touching this toggle never changes what a real user with no panel
+// interaction would see. That real state is APP_MODE (@shared/chains,
+// VITE_APP_MODE) — the same flag App.jsx's platformScope resolution falls
+// back to when DEV_PANEL_ENABLED is off (see devPanelFlag.js) — so the two
+// paths can never disagree.
 export const DEFAULT_DEV_MOCK_STATE = {
   version: STORAGE_VERSION,
   panelOpen: false,
   authStatus: "default", // default | logged-out | logged-in | session-expired
   walletStatus: "default", // default | disconnected | connecting | connected | wrong-network | error
   balancePreset: "default", // default | zero | normal | large | tiny | loading | syncing | stale | error
-  platformScope: "full", // mvp | full
+  platformScope: APP_MODE, // mvp | full
   favoritesPreset: "default", // default | empty | populated
   recentlyPlayedPreset: "default", // default | empty | populated
   gameStatus: "default", // default | loading | provider-error | maintenance | region-restricted | insufficient-balance

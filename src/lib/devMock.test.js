@@ -1,8 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  DEFAULT_DEV_MOCK_STATE, getDevMockState, setDevMockState, resetDevMockState,
-  subscribeDevMockState, toggleDevPanel, closeDevPanel,
-} from "./devMock";
+import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from "vitest";
 
 // This project's vitest setup runs in a plain Node environment (no jsdom —
 // see the project's existing testing-stack convention of pure-function
@@ -15,6 +11,28 @@ import {
 // see devMock.js) plus manually via Playwright in a real browser (closing
 // and reopening the panel preserved selections made a step earlier in the
 // same session — see the FINAL RESPONSE).
+//
+// Every devMock.js mutator no-ops when DEV_PANEL_ENABLED (devPanelFlag.js,
+// VITE_ENABLE_DEV_PANEL) is off — see devPanelFlag.test.js for that flag's
+// own coverage. This file is specifically exercising the mutators
+// themselves, so it needs the flag stubbed on before devMock.js's
+// module-level DEV_PANEL_ENABLED is ever read, hence the dynamic import
+// (a static top-of-file import would evaluate before any stub could apply).
+let DEFAULT_DEV_MOCK_STATE, getDevMockState, setDevMockState, resetDevMockState,
+  subscribeDevMockState, toggleDevPanel, closeDevPanel;
+
+beforeAll(async () => {
+  vi.stubEnv("VITE_ENABLE_DEV_PANEL", "true");
+  const m = await import("./devMock");
+  ({
+    DEFAULT_DEV_MOCK_STATE, getDevMockState, setDevMockState, resetDevMockState,
+    subscribeDevMockState, toggleDevPanel, closeDevPanel,
+  } = m);
+});
+
+afterAll(() => {
+  vi.unstubAllEnvs();
+});
 
 beforeEach(() => {
   // resetDevMockState() deliberately preserves panelOpen (see RESET

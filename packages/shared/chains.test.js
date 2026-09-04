@@ -6,12 +6,16 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 // exactly 'true' (unset, empty, 'false', a typo, a truthy-looking '1') must
 // leave the app on testnet. Getting this backwards would silently point players
 // at real funds, so it is pinned here rather than left to the implementation.
-async function loadChains(flag, contentMode) {
+async function loadChains(flag, contentMode, navMode, appMode) {
   vi.resetModules();
   if (flag === undefined) vi.stubEnv('VITE_USE_MAINNET', '');
   else vi.stubEnv('VITE_USE_MAINNET', flag);
   if (contentMode === undefined) vi.stubEnv('VITE_CASINO_CONTENT_MODE', '');
   else vi.stubEnv('VITE_CASINO_CONTENT_MODE', contentMode);
+  if (navMode === undefined) vi.stubEnv('VITE_CASINO_NAV_MODE', '');
+  else vi.stubEnv('VITE_CASINO_NAV_MODE', navMode);
+  if (appMode === undefined) vi.stubEnv('VITE_APP_MODE', '');
+  else vi.stubEnv('VITE_APP_MODE', appMode);
   return import('./chains.js');
 }
 
@@ -87,6 +91,56 @@ describe('casino content mode selection', () => {
     async (mode) => {
       const m = await loadChains(undefined, mode);
       expect(m.CASINO_CONTENT_MODE).toBe('betswirl');
+    },
+  );
+});
+
+describe('casino nav mode selection', () => {
+  it('defaults to minimal when the flag is unset', async () => {
+    const m = await loadChains(undefined, undefined, undefined);
+    expect(m.CASINO_NAV_MODE).toBe('minimal');
+  });
+
+  it("switches to the full nav only for exactly 'full'", async () => {
+    const m = await loadChains(undefined, undefined, 'full');
+    expect(m.CASINO_NAV_MODE).toBe('full');
+  });
+
+  it.each(['FULL', 'Full', '  full  '])('accepts %s (case/whitespace tolerant)', async (mode) => {
+    const m = await loadChains(undefined, undefined, mode);
+    expect(m.CASINO_NAV_MODE).toBe('full');
+  });
+
+  it.each(['minimal', 'MINIMAL', '', 'mvp', 'basic', 'undefined'])(
+    'stays minimal for %s',
+    async (mode) => {
+      const m = await loadChains(undefined, undefined, mode);
+      expect(m.CASINO_NAV_MODE).toBe('minimal');
+    },
+  );
+});
+
+describe('app mode selection', () => {
+  it('defaults to mvp when the flag is unset', async () => {
+    const m = await loadChains(undefined, undefined, undefined, undefined);
+    expect(m.APP_MODE).toBe('mvp');
+  });
+
+  it("switches to full only for exactly 'full'", async () => {
+    const m = await loadChains(undefined, undefined, undefined, 'full');
+    expect(m.APP_MODE).toBe('full');
+  });
+
+  it.each(['FULL', 'Full', '  full  '])('accepts %s (case/whitespace tolerant)', async (mode) => {
+    const m = await loadChains(undefined, undefined, undefined, mode);
+    expect(m.APP_MODE).toBe('full');
+  });
+
+  it.each(['mvp', 'MVP', '', 'minimal', 'basic', 'undefined'])(
+    'stays mvp for %s',
+    async (mode) => {
+      const m = await loadChains(undefined, undefined, undefined, mode);
+      expect(m.APP_MODE).toBe('mvp');
     },
   );
 });

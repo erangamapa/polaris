@@ -8,7 +8,7 @@ import { track } from "@/lib/telemetry";
 // PERFORMANCE task: "Lobby cards do not import full game implementations").
 import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
 import { PROVIDER_GAMES } from "./ProviderGame";
-import { CASINO_CONTENT_MODE } from "@shared/chains";
+import { CASINO_CONTENT_MODE, CASINO_NAV_MODE } from "@shared/chains";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { takeUnclaimed } from "@/lib/casinoDedup";
@@ -826,6 +826,15 @@ export function CategoryNav({ selected, activeView, onSelectHomeFilter, onPillAc
     onPillActivated?.(category);
     onSelectHomeFilter?.(category.id);
   };
+
+  // CASINO NAV MODE (@shared/chains, VITE_CASINO_NAV_MODE) — 'minimal' (the
+  // current MVP default) hides this whole pill row rather than filtering
+  // individual pills down to nothing, so a lone "Lobby" chip never renders
+  // by itself. CASINO_CATEGORIES itself, and every category's route, stay
+  // fully intact — 'full' mode needs zero code changes to bring this back.
+  // Placed after the hooks above so this stays a plain conditional return,
+  // never a conditional hook call.
+  if (CASINO_NAV_MODE !== "full") return null;
 
   return (
     <nav aria-label="Casino categories" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

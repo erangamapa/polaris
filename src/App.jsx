@@ -30,6 +30,7 @@ import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { isArenaAllowed, resolveScopedProduct } from "./lib/platformScope";
+import { APP_MODE, CASINO_NAV_MODE } from "@shared/chains";
 // PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
 // React.lazy rather than statically imported, so their code (and, for
 // Sports/Predictions, their SDK dependencies — @azuro-org/sdk,
@@ -194,10 +195,12 @@ export default function App() {
   // Seed navigation from the URL so deep links work. Resolved against the
   // Developer Panel's Platform Scope mock (see lib/platformScope.js) so a
   // deep link straight into /sports or /predictions while in MVP mode lands
-  // on Casino instead — reads as "full" at rest and everywhere
-  // `DEV_PANEL_ENABLED` is off (devPanelFlag.js).
+  // on Casino instead — falls back to the real APP_MODE (@shared/chains,
+  // VITE_APP_MODE) everywhere `DEV_PANEL_ENABLED` is off (devPanelFlag.js),
+  // never a hardcoded "full" — disabling the Dev Panel must never silently
+  // promote the product to Full mode.
   const initialNav = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
-  const initialPlatformScope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
+  const initialPlatformScope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : APP_MODE;
   const [product, setProduct] = useState(resolveScopedProduct(initialNav.product, initialPlatformScope));
 
   // NAV SPEC §4.3 — "Every overlay owns a `modal` query param value...
@@ -420,7 +423,7 @@ export default function App() {
   const onPopRef = useRef(null);
   onPopRef.current = () => {
     const nav = parsePath(window.location.pathname);
-    const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : "full";
+    const scope = DEV_PANEL_ENABLED ? getDevMockState().platformScope : APP_MODE;
     setProduct(resolveScopedProduct(nav.product, scope));
     setCasinoCategory(nav.casinoCategory);
     setCasinoView(nav.casinoView);
@@ -477,20 +480,22 @@ export default function App() {
   // wallet.isConnected can't see the mock (see TopBar.jsx, which already
   // reads this same hook for its own desktop ProfileMenu).
   const devWallet = useDevAwareWallet();
-  // Developer Panel (Shift+D) mock state — currently live in every build
-  // including production (see lib/devPanelFlag.js's DEV_PANEL_ENABLED), so
-  // every field below reflects whatever the panel has been set to, and
-  // reads as "default" (inert) until someone touches the panel. See
-  // INTEGRATION PRIORITY: Casino favorites/recently played/game state are
-  // wired here (App.jsx), not deeper inside CasinoLobby/CasinoCatalog, so
-  // those components stay untouched. `platformScope` is the one exception
-  // to "default = inert": its resting value is the literal "full"
-  // (unrestricted) rather than "default" (see devMock.js's
-  // DEFAULT_DEV_MOCK_STATE), and every read of it below is explicitly
-  // gated on `DEV_PANEL_ENABLED` so it falls back to "full" wherever the
-  // flag is off.
+  // Developer Panel (Shift+D) mock state — active only when
+  // VITE_ENABLE_DEV_PANEL is set (see lib/devPanelFlag.js's
+  // DEV_PANEL_ENABLED), so every field below reflects whatever the panel
+  // has been set to when it's on, and reads as "default" (inert) until
+  // someone touches the panel. See INTEGRATION PRIORITY: Casino
+  // favorites/recently played/game state are wired here (App.jsx), not
+  // deeper inside CasinoLobby/CasinoCatalog, so those components stay
+  // untouched. `platformScope` is the one exception to "default = inert":
+  // its resting value is the real APP_MODE (@shared/chains, VITE_APP_MODE)
+  // rather than "default" (see devMock.js's DEFAULT_DEV_MOCK_STATE), and
+  // every read of it below is explicitly gated on `DEV_PANEL_ENABLED` so it
+  // falls back to that same APP_MODE wherever the flag is off — the two
+  // paths can never disagree, so disabling the Dev Panel can never silently
+  // promote the product to Full mode.
   const devMock = useDevMockState();
-  const platformScope = DEV_PANEL_ENABLED ? devMock.platformScope : "full";
+  const platformScope = DEV_PANEL_ENABLED ? devMock.platformScope : APP_MODE;
   // "Switching to MVP while inside Sports or Predictions immediately
   // redirects to Casino" — also the safety net for the initial-load/popstate
   // resolution above (resolveScopedProduct), in case of any other path that
@@ -1220,8 +1225,16 @@ export default function App() {
       // builder only attaches the things that must be App-level closures
       // (Favorites' live count).
       const lobbyEntry = CASINO_CATEGORIES.find((c) => c.id === "Lobby");
-      const gamesItems = CASINO_CATEGORIES.filter((c) => c.kind !== "lobby")
-        .map((c) => ({ id: c.id, label: c.label, icon: c.icon }));
+      // CASINO NAV MODE (@shared/chains, VITE_CASINO_NAV_MODE) — 'minimal'
+      // (the current MVP default) drops the whole Games section rather than
+      // filtering it category-by-category: CASINO_CATEGORIES itself, the
+      // routes, and every category component stay fully intact, so 'full'
+      // mode needs zero code changes here to restore the richer nav. See
+      // CategoryNav in CasinoCatalog.jsx for the matching horizontal-pill-row
+      // gate — one flag, checked once each, not scattered per-category.
+      const gamesItems = CASINO_NAV_MODE === "full"
+        ? CASINO_CATEGORIES.filter((c) => c.kind !== "lobby").map((c) => ({ id: c.id, label: c.label, icon: c.icon }))
+        : [];
       // NAV SPEC §3.2.1 — count badges belong on every PERSONAL-band row
       // whose count changes whether the click is worth it (Favorites,
       // Recently Played), hidden entirely at zero, never on a GAMES-band
@@ -1272,8 +1285,10 @@ export default function App() {
           { id: "personal-divider", divider: true },
           { id: "personal-label", sectionLabel: "Personal" },
           ...personalItems,
-          { id: "games-divider", divider: true },
-          { id: "games-label", sectionLabel: "Games" },
+          // No divider/section label when there's nothing under it — an
+          // empty "Games" heading would be a dangling section, not a
+          // simplified nav.
+          ...(gamesItems.length ? [{ id: "games-divider", divider: true }, { id: "games-label", sectionLabel: "Games" }] : []),
           ...gamesItems,
         ],
       };
