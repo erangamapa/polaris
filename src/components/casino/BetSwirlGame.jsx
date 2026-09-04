@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { useBetSwirl } from "@/web3/useBetSwirl";
 import { useCasinoBalance, BALANCE_STATUS } from "@/lib/casinoBalance";
-import { baseSepolia } from "@shared/chains";
+import { CASINO_EXPLORER } from "@shared/chains";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/telemetry";
 import { CATEGORY_LABEL } from "@/lib/casinoCategories";
 import { MicroLabel } from "@/components/ui/micro-label";
 
-const txUrl = (hash) => `${baseSepolia.blockExplorers.default.url}/tx/${hash}`;
+const txUrl = (hash) => `${CASINO_EXPLORER}/tx/${hash}`;
 const ROULETTE_NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0..36
 
 // A real, on-chain BetSwirl game. Every play is a wallet transaction settled by

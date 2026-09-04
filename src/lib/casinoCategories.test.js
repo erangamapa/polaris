@@ -67,9 +67,19 @@ describe("CASINO_CATEGORIES", () => {
     for (const c of CASINO_CATEGORIES) expect(c.enabled).toBe(true);
   });
 
-  it("labels Originals as the customer-facing Tribet Originals everywhere", () => {
-    expect(CATEGORY_LABEL.Originals).toBe("Tribet Originals");
-    expect(CASINO_CATEGORIES.find((c) => c.id === "Originals").label).toBe("Tribet Originals");
+  // The "Originals" id is a legacy internal key holding the on-chain games,
+  // which are BetSwirl's. Labelling them as Tribet content misattributed a
+  // third party's games as first-party, so every player-facing surface reads
+  // "BetSwirl" and no surface may reintroduce the old wording.
+  it("labels the on-chain category as BetSwirl everywhere a player sees it", () => {
+    expect(CATEGORY_LABEL.Originals).toBe("BetSwirl");
+    expect(CASINO_CATEGORIES.find((c) => c.id === "Originals").label).toBe("BetSwirl");
+  });
+
+  it("never presents the on-chain games as Tribet-authored", () => {
+    const entry = CASINO_CATEGORIES.find((c) => c.id === "Originals");
+    expect(entry.label).not.toMatch(/tribet/i);
+    expect(CATEGORY_LABEL.Originals).not.toMatch(/original/i);
   });
 
   it("gives every rail-kind entry a railTarget, and no other kind one", () => {

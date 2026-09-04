@@ -28,11 +28,16 @@ export const CATEGORY_META = {
 
 // Display label for a category id where it differs from the routing/
 // sidebar id ("New" stays the URL slug; every place that shows it as text
-// reads "New Releases"). "Originals" reads as the customer-facing "Tribet
-// Originals" everywhere (nav pill, sidebar item, search result, Lobby rail
-// heading) — see CasinoCatalog.jsx's LobbyDashboard, which no longer
-// hardcodes this text itself, so no surface can drift out of sync.
-const CATEGORY_LABEL_OVERRIDE = { New: "New Releases", Originals: "Tribet Originals" };
+// reads "New Releases").
+//
+// The "Originals" id is a legacy internal key — it holds the on-chain games,
+// which come from BetSwirl and are NOT first-party Tribet content. It reads as
+// "BetSwirl" everywhere a player sees it (nav pill, sidebar item, search
+// result, Lobby rail heading). The id and its DOM/rail ids stay as-is because
+// they are internal routing/test selectors with no player-visible surface;
+// only the label changed. Every consumer reads this override rather than
+// hardcoding the text, so no surface can drift out of sync.
+const CATEGORY_LABEL_OVERRIDE = { New: "New Releases", Originals: "BetSwirl" };
 
 // THE one shared Casino category-navigation config, now enriched with the
 // fields every navigation surface needs (icon, visibility per-surface,
@@ -101,12 +106,13 @@ export const CATEGORY_LABEL = Object.fromEntries(ALL_CASINO_CATEGORIES.map((c) =
 // no route at all, so it can never appear here.
 export const ROUTED_CATEGORIES = Object.keys(CATEGORY_META);
 
-// NAV SPEC §6.1/§6.6 — Provider is a first-class entity, and Tribet
-// Originals is explicitly NOT one ("must never appear... in the Providers
-// rail... conflates 'who made this' with 'is this ours'"). Onchain/BetSwirl
-// games are first-party content and a category (Tribet Originals), not a
-// provider — removed from this array entirely rather than listed and
-// filtered out ad hoc at each call site. Three real providers now split the
+// NAV SPEC §6.1/§6.6 — Provider is a first-class entity. The on-chain games
+// are BetSwirl's, and they get their own category/rail rather than a row in
+// the Providers rail ("must never appear... in the Providers rail...
+// conflates 'who made this' with 'is this ours'") — removed from this array
+// entirely rather than listed and filtered out ad hoc at each call site.
+// They are deliberately NOT labelled as Tribet content: Tribet did not make
+// them. Three real providers now split the
 // vendored ProviderGame.jsx catalog (see that file's `providerId` FK
 // against this array's `id`, not a repeated display-string match — see
 // gameProviderName in CasinoCatalog.jsx). `railTarget` is kept for shape
