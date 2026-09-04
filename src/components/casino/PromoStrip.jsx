@@ -678,15 +678,16 @@ function InfoCard({ eyebrow, title, body, artwork }) {
         </div>
       </div>
       {/* TYPOGRAPHY/WRAPPING PASS — narrower than Wallet/Welcome/Weekly's own
-          40-46% artwork zone below sm-1279px (the copy column needs that
-          room back there — see .promo-card--static .promo-card__content in
-          index.css), but widens back to ~40% at xl: (1280px+, this task's
-          own "artwork: ~38-42%" desktop target) once the desktop-tier copy
-          column settles at ~60% and there's genuinely enough absolute pixel
-          width for both. Artwork still yields to typography first at every
-          narrower breakpoint — see index.css's own comment on why the split
-          point is 1280px, matching .promo-card__content's own breakpoint. */}
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[22%] overflow-hidden sm:block xl:w-[40%]">
+          40-46% artwork zone at every breakpoint: the About Tribet body copy
+          only lands on ~3 balanced lines (no orphans) once
+          .promo-card__content (index.css) is widened to 80% at >=1280px,
+          which leaves just ~20% for this zone — artwork yields to
+          typography, never the other way around, per this task's own
+          explicit rule. Kept in sync with .promo-card__content's own
+          breakpoints/values so the two never overlap (verified: content's
+          right edge sits inside this zone's left edge at every tested
+          width, not just close to it). */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[22%] overflow-hidden sm:block xl:w-[16%]">
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
         <div className="relative z-10 h-full w-full">{artwork}</div>
       </div>
@@ -699,7 +700,7 @@ function AboutTribetCard() {
     <InfoCard
       eyebrow="ABOUT TRIBET"
       title="One wallet. Three arenas."
-      body="Built by industry veterans and casino players who wanted betting to feel simpler, sharper and more transparent."
+      body="Built by industry veterans and casino players to make betting simpler, sharper and more transparent."
       artwork={<AboutTribetPlaceholderArt />}
     />
   );

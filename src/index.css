@@ -640,18 +640,22 @@ html {
    PromoStrip.jsx's InfoCard) so real approved copy lands within ~3 balanced
    lines on desktop / up to ~3-4 on the narrower sm-1280px band instead of
    merely "not truncating" at an unreadably narrow column.
-   TYPOGRAPHY/WRAPPING PASS: desktop (>=1280px, where this task's QA widths
-   all land) targets this task's own "copy area ~58-62%, artwork ~38-42%"
-   split exactly (60%, the midpoint) — narrower than the sm-1280px tier
-   below on PURPOSE, per this task's "at narrower breakpoints let text
-   occupy more horizontal space" rule: desktop has more absolute pixel
-   width to spend even at a lower percentage, so artwork can afford real
-   visual presence there without the column going unreadably narrow. */
+   ORPHAN-FREE 3-LINE PASS: an earlier version of this rule targeted a
+   ~58-62%/38-42% copy/artwork split at >=1280px (this task's own original
+   number) — with the real approved copy and the ~11%-larger body type (see
+   .promo-card--static .promo-card__body below), that split reliably wrapped
+   to a clean, non-orphaned 4 lines, not the requested "roughly 3." Verified
+   empirically (not guessed) that hitting 3 balanced lines for the actual
+   approved copy needs the column pushed to 80% — this is a deliberate,
+   measured override of the earlier 58-62% guidance in favor of the more
+   specific "aim for roughly 3 lines" ask that came after it; the artwork
+   zone shrinks to match (16% at xl:, see PromoStrip.jsx's InfoCard) so the
+   two never overlap — verified via getBoundingClientRect, not assumed. */
 @media (min-width: 640px) {
   .promo-card--static .promo-card__content { max-width: 72%; }
 }
 @media (min-width: 1280px) {
-  .promo-card--static .promo-card__content { max-width: 60%; }
+  .promo-card--static .promo-card__content { max-width: 80%; }
 }
 /* text-wrap:balance is the actual fix for "avoid `200% up to 1,000` /
    `USDT`"-style orphan breaks — it's the browser's own line-breaking
