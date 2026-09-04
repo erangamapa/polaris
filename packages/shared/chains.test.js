@@ -21,6 +21,15 @@ async function loadChains(flag, contentMode, navMode, appMode, layoutMode) {
   return import('./chains.js');
 }
 
+async function loadChainsWithPromoFlags(welcomeBonus, weeklyRace) {
+  vi.resetModules();
+  if (welcomeBonus === undefined) vi.stubEnv('VITE_ENABLE_WELCOME_BONUS', '');
+  else vi.stubEnv('VITE_ENABLE_WELCOME_BONUS', welcomeBonus);
+  if (weeklyRace === undefined) vi.stubEnv('VITE_ENABLE_WEEKLY_RACE', '');
+  else vi.stubEnv('VITE_ENABLE_WEEKLY_RACE', weeklyRace);
+  return import('./chains.js');
+}
+
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.resetModules();
@@ -170,4 +179,30 @@ describe('casino layout mode selection', () => {
       expect(m.CASINO_LAYOUT_MODE).toBe('classic');
     },
   );
+});
+
+describe('promo card feature flags', () => {
+  it('default to disabled (informational fallback cards) when unset', async () => {
+    const m = await loadChainsWithPromoFlags(undefined, undefined);
+    expect(m.ENABLE_WELCOME_BONUS).toBe(false);
+    expect(m.ENABLE_WEEKLY_RACE).toBe(false);
+  });
+
+  it("enable only for exactly 'true', independently of each other", async () => {
+    const m = await loadChainsWithPromoFlags('true', 'false');
+    expect(m.ENABLE_WELCOME_BONUS).toBe(true);
+    expect(m.ENABLE_WEEKLY_RACE).toBe(false);
+  });
+
+  it.each(['TRUE', 'True', '  true  '])('accepts %s (case/whitespace tolerant)', async (value) => {
+    const m = await loadChainsWithPromoFlags(value, value);
+    expect(m.ENABLE_WELCOME_BONUS).toBe(true);
+    expect(m.ENABLE_WEEKLY_RACE).toBe(true);
+  });
+
+  it.each(['false', 'FALSE', '', 'yes', '1', 'enabled', 'undefined'])('stays disabled for %s', async (value) => {
+    const m = await loadChainsWithPromoFlags(value, value);
+    expect(m.ENABLE_WELCOME_BONUS).toBe(false);
+    expect(m.ENABLE_WEEKLY_RACE).toBe(false);
+  });
 });

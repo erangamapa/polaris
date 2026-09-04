@@ -6,7 +6,7 @@ import { PROMOS } from "@/lib/mockData";
 import { useWallet, shortAddress } from "@/web3/useWallet";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/telemetry";
-import { CASINO_CHAIN_ID } from "@shared/chains";
+import { CASINO_CHAIN_ID, ENABLE_WELCOME_BONUS, ENABLE_WEEKLY_RACE } from "@shared/chains";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { CARD_H } from "@/components/shell/PromoCard";
@@ -583,6 +583,130 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
   );
 }
 
+// ============================================================================
+// INFORMATIONAL FALLBACK CARDS — About Tribet / Transparent Play
+// ============================================================================
+// These render in Card 2/Card 3's position whenever ENABLE_WELCOME_BONUS /
+// ENABLE_WEEKLY_RACE (@shared/chains) are off — the current MVP default, since
+// there's no live welcome offer or weekly race to point a real promo card at
+// yet. Flipping either flag back to 'true' restores WelcomeOfferCard/
+// WeeklyRaceCard exactly as before (see PromoStrip's own render below) with
+// no other change — these are independent, additive, not a replacement.
+
+// TEMPORARY PLACEHOLDER ART — no final artwork exists for either card yet.
+// Abstract "one wallet, three arenas" motif: three small outer nodes
+// (Casino/Sports/Predictions) connected by thin lines to one central node.
+// Restrained --global-cta blue/indigo only (the app's own brand tokens, not
+// invented colors), no baked text, no bonus/tournament/gift/trophy imagery.
+// Swap this function's return for a real <img> (matching WalletArtwork/
+// WelcomeOfferArtwork's own shape above) when real artwork ships — nothing
+// in AboutTribetCard below needs to change.
+function AboutTribetPlaceholderArt() {
+  return (
+    <svg viewBox="0 0 200 200" className="h-full w-full object-contain object-right" aria-hidden="true">
+      <defs>
+        <radialGradient id="about-tribet-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--global-cta)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--global-cta)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="100" cy="100" r="72" fill="url(#about-tribet-glow)" />
+      <line x1="100" y1="100" x2="100" y2="42" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
+      <line x1="100" y1="100" x2="54" y2="127" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
+      <line x1="100" y1="100" x2="146" y2="127" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
+      <circle cx="100" cy="42" r="10" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
+      <circle cx="54" cy="127" r="10" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
+      <circle cx="146" cy="127" r="10" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
+      <circle cx="100" cy="100" r="18" fill="var(--global-cta)" fillOpacity="0.15" stroke="var(--global-cta)" strokeWidth="2" />
+      <circle cx="100" cy="100" r="5" fill="var(--global-cta-hover)" />
+    </svg>
+  );
+}
+
+// TEMPORARY PLACEHOLDER ART — verification/settlement motif: three small
+// linked blocks (a minimal chain), a checkmark on the last one standing in
+// for "independently verifiable." Same restrained blue/indigo palette as
+// AboutTribetPlaceholderArt, no fake transaction data, no logos. Swap for
+// real artwork the same way — TransparentPlayCard below doesn't change.
+function TransparentPlayPlaceholderArt() {
+  return (
+    <svg viewBox="0 0 200 200" className="h-full w-full object-contain object-right" aria-hidden="true">
+      <defs>
+        <radialGradient id="transparent-play-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--global-cta)" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="var(--global-cta)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="100" cy="100" r="74" fill="url(#transparent-play-glow)" />
+      <line x1="63" y1="112" x2="98" y2="97" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
+      <line x1="102" y1="97" x2="137" y2="112" stroke="var(--global-cta)" strokeOpacity="0.4" strokeWidth="1.5" />
+      <rect x="42" y="99" width="27" height="27" rx="4" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
+      <rect x="87" y="83" width="27" height="27" rx="4" fill="none" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
+      <rect x="131" y="99" width="27" height="27" rx="4" fill="var(--global-cta)" fillOpacity="0.15" stroke="var(--global-cta-hover)" strokeWidth="1.75" />
+      <path d="M139 112 L144.5 118 L154 105.5" fill="none" stroke="var(--global-cta-hover)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Static, non-interactive card shell shared by AboutTribetCard/
+// TransparentPlayCard below — same CARD_H/radius/border/background/shadow
+// "card system" as the interactive Wallet/Welcome Offer/Weekly Race cards
+// above (same two-column text+artwork structure WelcomeOfferCard's own
+// comment explains), but genuinely never interactive: no role/tabIndex/
+// onClick/onKeyDown, no CTA button at all (not a hidden/disabled one).
+// `.promo-card--static` (index.css) additionally neutralizes the shell's
+// own hover/press lift and artwork zoom, so it never LOOKS clickable
+// either — see this task's own "prefer completely static interaction
+// behavior." `eyebrow`/`title`/`body`/`artwork` are plain props so a future
+// task can add an optional `href` here (see NAV SPEC's own "structure the
+// card definitions so adding links later is straightforward") without
+// touching AboutTribetCard/TransparentPlayCard themselves.
+function InfoCard({ eyebrow, title, body, artwork }) {
+  return (
+    <div
+      className={cn(
+        CARD_H,
+        "promo-card promo-card--static relative flex w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] text-left shadow-[var(--elevation-low)]"
+      )}
+      style={{ background: "var(--wallet-card-bg)" }}
+    >
+      <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4">
+        <div className="min-w-0">
+          <MicroLabel className="-ml-[9px]">{eyebrow}</MicroLabel>
+          <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">{title}</h3>
+          <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
+        </div>
+      </div>
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[40%] overflow-hidden sm:block lg:w-[44%] xl:w-[46%]">
+        <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
+        <div className="relative z-10 h-full w-full">{artwork}</div>
+      </div>
+    </div>
+  );
+}
+
+function AboutTribetCard() {
+  return (
+    <InfoCard
+      eyebrow="ABOUT TRIBET"
+      title="Betting, rebuilt on-chain."
+      body="One wallet. Transparent games. A platform built around players, not black boxes."
+      artwork={<AboutTribetPlaceholderArt />}
+    />
+  );
+}
+
+function TransparentPlayCard() {
+  return (
+    <InfoCard
+      eyebrow="TRANSPARENT PLAY"
+      title="Don't trust. Verify."
+      body="BetSwirl games use on-chain infrastructure designed to make outcomes independently verifiable."
+      artwork={<TransparentPlayPlaceholderArt />}
+    />
+  );
+}
+
 // Exported: this is the one shared "Tribet infrastructure" tile reused as the
 // first card on Casino, Sports and Predictions (see ArenaTileRow). It has no
 // arena-specific content by design — same wallet, same CTA, everywhere.
@@ -1059,11 +1183,23 @@ export function PromoStrip({ query, onQuery, searchPanelProps, onManageWallet })
     <div className="casino-content-column w-full space-y-4">
       <div className="top-card-grid -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
         <div className="w-[82%] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:shrink lg:col-span-1"><PlayerTile onManageWallet={onManageWallet} /></div>
+        {/* ENABLE_WELCOME_BONUS/ENABLE_WEEKLY_RACE (@shared/chains) — off by
+            default (current MVP), so Card 2/3 show the static informational
+            fallbacks. Flipping either to 'true' restores the real promo card
+            exactly as it was, with no other change. */}
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
-          <WelcomeOfferCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} />
+          {ENABLE_WELCOME_BONUS ? (
+            <WelcomeOfferCard eyebrow={p1.eyebrow} title={p1.title} metadata={p1.body} cta={p1.cta} />
+          ) : (
+            <AboutTribetCard />
+          )}
         </div>
         <div className="w-[82%] shrink-0 snap-start sm:w-auto sm:shrink">
-          <WeeklyRaceCard eyebrow={p2.eyebrow} title={p2.title} metadata={p2.body} cta={p2.cta} />
+          {ENABLE_WEEKLY_RACE ? (
+            <WeeklyRaceCard eyebrow={p2.eyebrow} title={p2.title} metadata={p2.body} cta={p2.cta} />
+          ) : (
+            <TransparentPlayCard />
+          )}
         </div>
       </div>
       <ScopedSearch

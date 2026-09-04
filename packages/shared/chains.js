@@ -96,6 +96,20 @@ export const CASINO_NAV_MODE = rawCasinoNavMode === 'full' ? 'full' : 'minimal';
 const rawCasinoLayoutMode = String(readEnv('VITE_CASINO_LAYOUT_MODE') ?? '').trim().toLowerCase();
 export const CASINO_LAYOUT_MODE = rawCasinoLayoutMode === 'game-first' ? 'game-first' : 'classic';
 
+// Real Welcome Bonus / Weekly Race promo cards (PromoStrip.jsx's
+// WelcomeOfferCard/WeeklyRaceCard) vs. the informational fallback cards
+// (AboutTribetCard/TransparentPlayCard) that render in their place while
+// there's no live promotion to point them at. Read via
+// VITE_ENABLE_WELCOME_BONUS / VITE_ENABLE_WEEKLY_RACE — only the exact
+// string 'true' enables the real promo card; anything else (unset, empty,
+// a typo) keeps the informational fallback, matching this file's "narrower/
+// safer is the default" pattern. Independent flags, independent of
+// CASINO_LAYOUT_MODE/CASINO_NAV_MODE/CASINO_CONTENT_MODE — flipping either
+// back to 'true' restores the original promo card with no other change,
+// once a real welcome offer / weekly race actually exists to link to.
+export const ENABLE_WELCOME_BONUS = String(readEnv('VITE_ENABLE_WELCOME_BONUS') ?? '').trim().toLowerCase() === 'true';
+export const ENABLE_WEEKLY_RACE = String(readEnv('VITE_ENABLE_WEEKLY_RACE') ?? '').trim().toLowerCase() === 'true';
+
 // Overall product/app mode — the existing MVP/Full platform-scope concept
 // (see lib/platformScope.js: Casino is always allowed, Sports/Predictions
 // are gated to "Coming soon" in 'mvp'), now resolved from a real build-time
