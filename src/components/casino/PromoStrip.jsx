@@ -281,28 +281,26 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
           above, one level down). Still no mask — see WalletArtwork's own
           comment. */}
       <div
-        // MOBILE ARTWORK VISIBILITY FIX: was `hidden ... sm:block` — written
-        // for an old 3-across mobile grid (~110px-wide cards, per this
-        // card's own stale comment above) that no longer exists; mobile now
-        // renders one ~82%-viewport-width card at a time (PromoStrip's own
-        // snap carousel), plenty of room for a smaller artwork zone. A
-        // narrower base-tier width — not `hidden` — is the "reduce artwork
-        // scale first" fix; sm:/lg:/xl: tiers below are the exact unchanged
+        // MOBILE ARTWORK VISIBILITY FIX (was `hidden ... sm:block`, then a
+        // 17% base tier) — sm:/lg:/xl: tiers below are the exact unchanged
         // values from before, so tablet/desktop rendering is untouched.
         //
-        // 17%, not 30%: `--illustration-base-scale` below applies its 1.6005
-        // zoom to THIS box (transform-origin right-center, so it grows
-        // leftward from the fixed right edge — see index.css's
-        // `.promo-card__visual`) — the box's effective RENDERED width is
-        // this Tailwind width times that scale, not the width alone. At 30%
-        // that's ~48% effective, which measurably overlapped
-        // `.promo-card__content`'s own 68% mobile max-width (index.css) —
-        // verified via getBoundingClientRect, not assumed. 17% * 1.6005 ≈
-        // 27% effective, leaving content its full 68% plus a real buffer.
-        // sm:/lg:/xl: don't need this correction: --illustration-base-scale
-        // is constant at every breakpoint, and 40/44/46% were already the
-        // proven-working sizes before this task touched anything.
-        className="promo-card__visual pointer-events-none absolute top-4 bottom-4 right-0 w-[17%] overflow-hidden sm:w-[40%] lg:w-[44%] xl:w-[46%]"
+        // MOBILE ARTWORK SIZE-UP: 22%, not 17%. `--illustration-base-scale`
+        // below applies its 1.6005 zoom to THIS box (transform-origin
+        // right-center, so it grows leftward from the fixed right edge —
+        // see index.css's `.promo-card__visual`) — the box's EFFECTIVE
+        // rendered width is this Tailwind width times that scale, not the
+        // width alone: 22% * 1.6005 ≈ 35% effective (this task's own
+        // "~35-45% of the card" target, at the lower end since this card
+        // also has to leave room for a CTA button the two info cards don't
+        // have) — up from the previous 17% * 1.6005 ≈ 27% effective, a real
+        // +29% (within this task's requested +25-35%), verified against
+        // `.promo-card__content`'s own reduced 62% mobile max-width
+        // (index.css) via live getBoundingClientRect — no overlap, real
+        // buffer. sm:/lg:/xl: don't need this correction:
+        // --illustration-base-scale is constant at every breakpoint, and
+        // 40/44/46% were already the proven-working sizes, untouched.
+        className="promo-card__visual pointer-events-none absolute top-4 bottom-4 right-0 w-[22%] overflow-hidden sm:w-[40%] lg:w-[44%] xl:w-[46%]"
         style={{ "--illustration-base-scale": 1.6005 }}
       >
         {tone !== "warning" && (
@@ -694,16 +692,25 @@ function InfoCard({ eyebrow, title, body, artwork }) {
           .promo-card__content's own breakpoints so the two never overlap —
           verified via getBoundingClientRect at every tested width, not
           assumed. */}
-      {/* MOBILE ARTWORK VISIBILITY FIX: same fix as WalletCard's own
-          `.promo-card__visual` above — was `hidden ... sm:block`, stale
-          leftover from a 3-col mobile grid that no longer exists. Base
-          tier (26%, narrower than sm's 34%) keeps mobile's artwork zone
-          smaller — "reduce artwork scale first" when the card itself is
-          narrow — while sm:/xl: stay the exact unchanged values, so
-          tablet/desktop is untouched. `.promo-card--static
-          .promo-card__content`'s own mobile max-width (index.css) matches
-          so text never runs under the artwork. */}
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 w-[26%] overflow-hidden sm:w-[34%] xl:w-[42%]">
+      {/* MOBILE ARTWORK VISIBILITY FIX, then SIZE-UP: same fix as
+          WalletCard's own `.promo-card__visual` above — was
+          `hidden ... sm:block`, stale leftover from a 3-col mobile grid
+          that no longer exists; sm:/xl: stay the exact unchanged values,
+          so tablet/desktop is untouched. Base tier is now 34% (up from an
+          initial 26%, +30.8% — this task's own "~35-45% of the card" /
+          "+25-35%" targets, and this card has no CTA competing for room
+          the way Wallet's does, so it can sit near the top of that range —
+          "enlarge more aggressively" per this task). Matched exactly to
+          sm:'s own 34% (not pushed past it) so there's no size step at the
+          640px handoff — mobile grows up to meet the existing tablet size
+          rather than briefly overshooting it. No
+          --illustration-base-scale here (InfoCard never sets it, defaults
+          to 1 — see index.css), so this width IS the effective rendered
+          size, unlike WalletCard's scaled box. `.promo-card--static
+          .promo-card__content`'s own reduced mobile max-width (index.css)
+          matches so text never runs under the artwork — verified via live
+          getBoundingClientRect, not assumed. */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 w-[34%] overflow-hidden sm:w-[34%] xl:w-[42%]">
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
         <div className="relative z-10 h-full w-full">{artwork}</div>
       </div>

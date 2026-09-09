@@ -1411,7 +1411,24 @@ export default function App() {
               : []),
             { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
             { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
-            { id: "account-signout", label: "Sign out", icon: LogOut, action: signOut },
+            // MOBILE MENU DESTRUCTIVE ACTION LAYOUT: this used to be a
+            // neutral "Sign out" row here PLUS a separate, differently-
+            // aligned (centered) "Disconnect Wallet" footer button in
+            // MobileFullScreenMenu.jsx — two destructive-looking controls in
+            // one menu, one of which didn't even match the list's own row
+            // geometry. Sign out (an account/session action, still reachable
+            // from the desktop Account popover — see ProfileMenu.jsx,
+            // untouched by this) has no real mobile equivalent action of its
+            // own once this app has no separate auth from wallet connection
+            // in practice (see `signOut`'s own comment above); the ONE real
+            // destructive action mobile needs is Disconnect Wallet, now a
+            // normal row in this same list — same MenuRow component, same
+            // icon/label alignment as Support/Account above, just flagged
+            // `destructive` for DESTRUCTIVE_ACTION_CLASS styling (see
+            // MobileFullScreenMenu.jsx's MenuRow). `openDisconnectWallet`
+            // (not `signOut`) opens the real Wallet-modal confirm-disconnect
+            // flow — see FundsDialog's `startAtDisconnectConfirm`.
+            { id: "account-disconnect-wallet", label: "Disconnect Wallet", icon: LogOut, action: openDisconnectWallet, destructive: true },
           ]
         : [
             // Account stays reachable even logged-out (see LOGGED-OUT
@@ -1677,7 +1694,6 @@ export default function App() {
         primaryItems={mobileMenu.primary}
         utilityItems={mobileMenu.utility}
         accountItems={accountItems}
-        onDisconnectWallet={profileVariant === PROFILE_VARIANT.LOGGED_IN ? openDisconnectWallet : undefined}
         selected={sidebar.selected}
         onSelect={handleMobileMenuSelect}
         onClose={closeMobileMenu}

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { X, LogOut } from "lucide-react";
+import { X } from "lucide-react";
 import { cn, DESTRUCTIVE_ACTION_CLASS } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -24,7 +24,7 @@ import { CLOSE_TRIGGER, focusIntentForCloseTrigger } from "@/lib/mobileMenuFocus
 //
 // Covers the viewport (100dvh, not 100vh, so browser address-bar expand/
 // collapse never clips the header or bottom nav) at --z-fullscreen-menu.
-export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, accountItems, onDisconnectWallet, selected, onSelect, onClose, product, onSelectArena, onToggleMenu, onFocusMainContent }) {
+export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, accountItems, selected, onSelect, onClose, product, onSelectArena, onToggleMenu, onFocusMainContent }) {
   const navRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -160,14 +160,22 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
             ))}
 
             {/* Account — the mobile "menu layer" entry point for
-                Wallet/Activity/Responsible Gaming/Support/Sign out (see
-                PLAYER PROFILE / ACCOUNT MENU: "reuse the current mobile
+                Wallet/Activity/Responsible Gaming/Support/Disconnect Wallet
+                (see PLAYER PROFILE / ACCOUNT MENU: "reuse the current mobile
                 account trigger or place it in the mobile account/menu
                 layer"). A visually separate group (its own divider + label)
                 from the arena-specific utility items above — global account
                 actions, not tied to whichever arena tab is active — never
                 stacked as a second overlay: this is the SAME full-screen
-                surface/focus trap the arena menu already is. */}
+                surface/focus trap the arena menu already is.
+                MOBILE MENU DESTRUCTIVE ACTION LAYOUT: Disconnect Wallet
+                (App.jsx's accountItems, flagged `destructive: true`) is now
+                a normal row in THIS list — same MenuRow, same left-aligned
+                icon/label geometry as every row above it — not a second,
+                separately-styled, centered footer button below a second
+                divider. One destructive action, one place, one geometry;
+                see MenuRow's own `destructive` handling below for the
+                red styling. */}
             {accountItems?.length > 0 && (
               <>
                 <div className="my-3 border-t" aria-hidden="true" />
@@ -177,33 +185,6 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
                     <MenuRow key={item.id} item={item} active={false} onClick={() => handleItemClick(item)} />
                   ))}
                 </ul>
-              </>
-            )}
-
-            {/* Disconnect Wallet — its own footer zone below Account, not
-                one more row in that list: a real divider (same convention
-                as every other section break above) keeps it from reading as
-                just another neutral nav destination. Same destructive
-                color/hover treatment as the Wallet modal's own Disconnect
-                Wallet button (DESTRUCTIVE_ACTION_CLASS, lib/utils.js) and
-                the Account popover's Sign out (ProfileMenu.jsx) — one
-                design system, not three bespoke reds. Routed through
-                handleItemClick (not a bare onClick) so it gets the same
-                close + focus-restoration behavior every other action here
-                does. */}
-            {onDisconnectWallet && (
-              <>
-                <div className="my-3 border-t" aria-hidden="true" />
-                <button
-                  onClick={() => handleItemClick({ action: onDisconnectWallet })}
-                  data-test-id="mobile-menu-disconnect-wallet"
-                  className={cn(
-                    "flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    DESTRUCTIVE_ACTION_CLASS
-                  )}
-                >
-                  <LogOut className="size-4" aria-hidden="true" /> Disconnect Wallet
-                </button>
               </>
             )}
           </nav>
@@ -252,6 +233,17 @@ function segmentUtilityItems(items) {
 }
 
 function MenuRow({ item, active, onClick }) {
+  // MOBILE MENU DESTRUCTIVE ACTION LAYOUT: `item.destructive` (currently
+  // only Disconnect Wallet — see App.jsx's accountItems) swaps the
+  // neutral/active color treatment for the shared DESTRUCTIVE_ACTION_CLASS
+  // (lib/utils.js — same red the Wallet modal's own Disconnect Wallet
+  // button and the desktop Account popover's Sign out use), but keeps
+  // every structural class (min-h-[64px], px-2.5, gap-3, icon/label
+  // layout) identical to every other row — same left-aligned geometry as
+  // Support/Account/Wallet, red is the only difference. A destructive row
+  // is never simultaneously `active` (it doesn't represent "the current
+  // section"), so the active-indicator bar below is skipped for it.
+  const destructive = item.destructive;
   return (
     <li>
       <button
@@ -266,10 +258,14 @@ function MenuRow({ item, active, onClick }) {
           // Selecting a different arena/section while this menu is open
           // was the one path that could trigger it live.
           "relative flex min-h-[64px] w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          active ? "bg-secondary/80 font-semibold text-foreground" : "text-muted-foreground active:bg-secondary/40 active:text-foreground"
+          destructive
+            ? cn(DESTRUCTIVE_ACTION_CLASS, "font-medium")
+            : active
+              ? "bg-secondary/80 font-semibold text-foreground"
+              : "text-muted-foreground active:bg-secondary/40 active:text-foreground"
         )}
       >
-        {active && (
+        {active && !destructive && (
           <span
             aria-hidden="true"
             className="absolute inset-y-2.5 start-0 w-[2px] rounded-full"

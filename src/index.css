@@ -619,19 +619,19 @@ html {
 .promo-card__content {
   container-type: inline-size;
 }
-/* MOBILE ARTWORK VISIBILITY FIX: this used to have no width cap below
-   640px, because the artwork itself was `hidden` there (see PromoStrip.jsx
-   — that was a leftover from a 3-col mobile grid that no longer exists).
-   Now that the artwork is visible at every width (a narrower 26-30% zone
-   below 640px, vs 34-40% at sm+ — see PromoStrip.jsx's WalletCard/InfoCard
-   `.promo-card__visual`), the content column needs a matching mobile cap
-   so text never runs underneath it. 68% leaves a clear buffer past the
-   artwork's 30% (WalletCard's widest mobile tier) without needlessly
-   narrowing the column the way the sm+/1280+ tiers below do (those exist
-   for a different reason — see their own comment). Unprefixed (mobile-
-   first): the min-width queries below override it at their breakpoints via
-   normal source-order cascade, same specificity. */
-.promo-card__content { max-width: 68%; }
+/* MOBILE ARTWORK VISIBILITY FIX, then SIZE-UP: this used to have no width
+   cap below 640px, because the artwork itself was `hidden` there (see
+   PromoStrip.jsx — a leftover from a 3-col mobile grid that no longer
+   exists). Now that the artwork is visible AND sized up (WalletCard's mobile
+   zone is 22% * the 1.6005 illustration scale ≈ 35% effective — see
+   PromoStrip.jsx's WalletCard `.promo-card__visual`), the content column
+   needs a correspondingly tighter mobile cap so text never runs underneath
+   it — was 68% (paired with a smaller ~27% effective artwork), now 62%,
+   verified against the new artwork size via live getBoundingClientRect (a
+   real buffer, no overlap). Unprefixed (mobile-first): the min-width
+   queries below override it at their breakpoints via normal source-order
+   cascade, same specificity. */
+.promo-card__content { max-width: 62%; }
 @media (min-width: 640px) {
   .promo-card__content { max-width: 58%; }
 }
@@ -652,13 +652,16 @@ html {
    freeing the artwork zone to reach this task's explicit "comparable to the
    Wallet card" ~38-44% desktop target (see PromoStrip.jsx's InfoCard) while
    copy still never wraps to more than 2 lines.
-   MOBILE ARTWORK VISIBILITY FIX: 72% base (mobile-first, below 640px) is
-   the same matching-cap move as the non-static rule above — InfoCard's
-   mobile artwork zone is narrower (26%) than WalletCard's (30%), so this
-   column can afford to stay a little wider. Body/title never truncate here
-   regardless (see the clamp-removal below), so this is purely about
-   leaving the artwork its own clear space, not about fitting more text. */
-.promo-card--static .promo-card__content { max-width: 72%; }
+   MOBILE ARTWORK VISIBILITY FIX, then SIZE-UP: base (mobile-first, below
+   640px) is the same matching-cap move as the non-static rule above —
+   was 72% (paired with InfoCard's initial 26% artwork zone), now 63% to
+   match its sized-up 34% artwork (no illustration scale on InfoCard, so
+   34% IS the effective size — see PromoStrip.jsx's InfoCard
+   `.promo-card__visual`), verified via live getBoundingClientRect for a
+   real buffer. Body/title never truncate here regardless (see the
+   clamp-removal below), so this is purely about leaving the artwork its
+   own clear space, not about fitting more text. */
+.promo-card--static .promo-card__content { max-width: 63%; }
 @media (min-width: 640px) {
   .promo-card--static .promo-card__content { max-width: 62%; }
 }
