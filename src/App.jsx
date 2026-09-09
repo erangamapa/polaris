@@ -29,7 +29,7 @@ import { useWallet } from "./web3/useWallet";
 import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
-import { isArenaAllowed, resolveScopedProduct, resolveEffectivePlatformScope } from "./lib/platformScope";
+import { isArenaAllowed, resolveScopedProduct, resolveEffectivePlatformScope, isFullPlatformFeatureEnabled } from "./lib/platformScope";
 import { CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 // PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
 // React.lazy rather than statically imported, so their code (and, for
@@ -639,6 +639,16 @@ export default function App() {
   // without new evidence it's actually broken wasn't worth the risk here.
   const gameInfoTriggerRef = useRef(null);
 
+  // Whether the NEXT Funds/Wallet dialog open should land straight on its
+  // own confirm-disconnect screen instead of the plain wallet view — set
+  // just before opening (see openDisconnectWallet below), read once by
+  // FundsDialog's `startAtDisconnectConfirm` prop. Not modal-param-backed
+  // like `modal` itself: this only decides which of FundsDialog's OWN
+  // internal states it opens on, not a distinct dialog/URL of its own (see
+  // DISCONNECT WALLET WIRING task: reuse the existing confirm flow, don't
+  // fork a second modal for it).
+  const [fundsStartAtDisconnectConfirm, setFundsStartAtDisconnectConfirm] = useState(false);
+
   // Each derived straight from the one URL-backed `modal` value above —
   // only one of these is ever true at a time, since only one modal name can
   // occupy the param.
@@ -746,7 +756,17 @@ export default function App() {
 
   // Only one overlay owns focus/scroll-lock at a time — any dialog opening
   // closes the mobile drawer first so they never stack.
-  const openFunds = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; openModal("funds"); };
+  const openFunds = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setFundsStartAtDisconnectConfirm(false); openModal("funds"); };
+  // The mobile menu's "Disconnect Wallet" — opens the SAME FundsDialog
+  // every other wallet entry point does, just pre-set to land on its own
+  // "Disconnect Wallet?" confirm screen (FundsDialog's
+  // startAtDisconnectConfirm prop) instead of the plain wallet view. This
+  // is the real wallet-disconnect flow (runDisconnect/disconnectAsync,
+  // loading/error/success states, the Cancel/Disconnect confirmation) —
+  // never signOut, which is a separate account/session action (see MOBILE
+  // MENU ACCOUNT ACTIONS: "Disconnect Wallet and Sign out ... must NOT
+  // share behavior").
+  const openDisconnectWallet = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; setFundsStartAtDisconnectConfirm(true); openModal("funds"); };
   const openHistory = () => { setMobileMenuOpen(false); if (!ensureAuth()) return; openModal("history"); };
   // Not wallet-gated — Responsible Gambling/Support are reachable whether
   // or not a wallet is connected. Hoisted out of Footer's own inline
@@ -1382,7 +1402,13 @@ export default function App() {
         ? [
             { id: "account-settings", label: "Account", icon: Settings, action: openAccount },
             { id: "account-wallet", label: devWallet.isConnected ? "Wallet" : "Connect wallet", icon: Wallet, action: openFunds },
-            { id: "account-activity", label: "Activity", icon: ReceiptText, action: openHistory },
+            // CASINO-ONLY MVP AUDIT: Activity (bet history) isn't part of
+            // the current MVP scope — hidden via the same platformScope
+            // flag Sports/Predictions use, not a bespoke mobile check (see
+            // isFullPlatformFeatureEnabled in lib/platformScope.js).
+            ...(isFullPlatformFeatureEnabled(platformScope)
+              ? [{ id: "account-activity", label: "Activity", icon: ReceiptText, action: openHistory }]
+              : []),
             { id: "account-rg", label: "Responsible Gaming", icon: ShieldCheck, action: openRg },
             { id: "account-support", label: "Support", icon: LifeBuoy, action: openSupport },
             { id: "account-signout", label: "Sign out", icon: LogOut, action: signOut },
@@ -1452,6 +1478,7 @@ export default function App() {
         onAccount={openAccount}
         onManageWallet={openFunds}
         onActivity={openHistory}
+        mobileActivityEnabled={isFullPlatformFeatureEnabled(platformScope)}
         onResponsibleGambling={openRg}
         onSupport={openSupport}
         wrongNetwork={wrongNetwork}
@@ -1650,6 +1677,7 @@ export default function App() {
         primaryItems={mobileMenu.primary}
         utilityItems={mobileMenu.utility}
         accountItems={accountItems}
+        onDisconnectWallet={profileVariant === PROFILE_VARIANT.LOGGED_IN ? openDisconnectWallet : undefined}
         selected={sidebar.selected}
         onSelect={handleMobileMenuSelect}
         onClose={closeMobileMenu}
@@ -1736,7 +1764,7 @@ export default function App() {
       )}
       {fundsMounted && (
         <Suspense fallback={DIALOG_SUSPENSE_FALLBACK}>
-          <FundsDialog open={fundsOpen} onClose={closeModal} onCloseAutoFocus={restoreFocus} />
+          <FundsDialog open={fundsOpen} onClose={closeModal} onCloseAutoFocus={restoreFocus} startAtDisconnectConfirm={fundsStartAtDisconnectConfirm} />
         </Suspense>
       )}
     </div>

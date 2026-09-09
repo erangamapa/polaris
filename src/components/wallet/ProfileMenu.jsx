@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { User, ChevronDown, Wallet as WalletIcon, ShieldCheck, ShieldAlert, LifeBuoy, LogOut, LogIn, ReceiptText, Settings } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
-import { cn } from "@/lib/utils";
+import { cn, DESTRUCTIVE_ACTION_CLASS } from "@/lib/utils";
 import { shortAddress } from "@/web3/useWallet";
 import { PROFILE_VARIANT } from "@/lib/profileState";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
@@ -113,7 +113,7 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
               <MenuItem icon={ShieldCheck} label="Responsible Gaming" onSelect={onResponsibleGambling} />
               <MenuItem icon={LifeBuoy} label="Support" onSelect={onSupport} />
               <DropdownMenuPrimitive.Separator className="my-1 border-t" />
-              <MenuItem icon={LogOut} label="Sign out" onSelect={onSignOut} testId="profile-signout" />
+              <MenuItem icon={LogOut} label="Sign out" onSelect={onSignOut} testId="profile-signout" destructive />
             </>
           ) : (
             <>
@@ -138,7 +138,7 @@ export function ProfileMenu({ open, onOpenChange, variant, address, isConnected,
   );
 }
 
-function MenuItem({ icon: Icon, label, onSelect, testId }) {
+function MenuItem({ icon: Icon, label, onSelect, testId, destructive }) {
   return (
     <DropdownMenuPrimitive.Item
       onSelect={onSelect}
@@ -150,8 +150,15 @@ function MenuItem({ icon: Icon, label, onSelect, testId }) {
       // `focus-visible:ring` (same pattern BalanceControl's menu items
       // already use) is what actually makes keyboard focus visible (see
       // FOCUS VISIBILITY: "avoid focus styles that rely only on subtle
-      // color changes").
-      className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      // color changes"). `destructive` (Sign out only) swaps the neutral
+      // hover/text pair for DESTRUCTIVE_ACTION_CLASS — the same red +
+      // red-tinted hover the Wallet modal's Disconnect Wallet button and
+      // the mobile menu's Disconnect Wallet use (lib/utils.js) — every
+      // other row stays fully neutral (see DO NOT OVERUSE RED).
+      className={cn(
+        "flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+        destructive ? cn(DESTRUCTIVE_ACTION_CLASS, "font-medium") : "text-muted-foreground hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground"
+      )}
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" /> {label}
     </DropdownMenuPrimitive.Item>

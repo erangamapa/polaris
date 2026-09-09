@@ -62,7 +62,7 @@ import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
 // utility section instead (see MobileFullScreenMenu) — reusing that
 // existing full-screen surface rather than adding a second mobile account
 // sheet (see OVERLAY BEHAVIOR: "do not stack it with the mobile menu").
-export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onManageWallet, onActivity, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
+export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onManageWallet, onActivity, mobileActivityEnabled = true, onResponsibleGambling, onSupport, wrongNetwork, onSwitchNetwork, openPositionsCount = 0 }) {
   const wallet = useDevAwareWallet();
   const {
     isConnected, address, casinoBalance, casinoSymbol, casinoBalanceLoading, casinoBalanceError, disconnect,
@@ -279,13 +279,18 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
             reflects real wallet connection regardless of profileVariant
             (see SESSION-EXPIRED: "preserve wallet connection state
             separately"); Activity is an authenticated-account action, gated
-            the same way it is on desktop. The standalone "Fund" button that
+            the same way it is on desktop, PLUS `mobileActivityEnabled` —
+            App.jsx passes the same platformScope-derived MVP flag it uses
+            for the mobile burger menu's Activity row (see
+            lib/platformScope.js's isFullPlatformFeatureEnabled), so this
+            standalone icon can't outlive that row as a leftover Activity
+            entry point (see CASINO-ONLY MVP AUDIT). The standalone "Fund" button that
             used to sit here was removed — it opened the exact same
             FundsDialog as the wallet pill beside it (see WALLET UX AUDIT
             §4 — "duplicate of #4"), so tapping the pill is now the one way
             in, matching desktop's single combined control. */}
         <div className="flex items-center gap-2 md:hidden">
-          {profileVariant === PROFILE_VARIANT.LOGGED_IN && (
+          {profileVariant === PROFILE_VARIANT.LOGGED_IN && mobileActivityEnabled && (
             <button
               onClick={onActivity}
               aria-label="Activity"

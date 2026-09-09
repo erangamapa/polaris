@@ -49,3 +49,15 @@ export function resolveScopedProduct(product, platformScope) {
 export function resolveEffectivePlatformScope(mockState) {
   return DEV_PANEL_ENABLED ? mockState.platformScope : APP_MODE;
 }
+
+// CASINO-ONLY MVP AUDIT: gate for platform features that aren't tied to one
+// specific arena the way isArenaAllowed's Sports/Predictions check is —
+// Activity (bet-history, spans every arena) and the sportsbook Betslip
+// (Sports/Predictions-only, but not itself an "arena" in ARENAS) both belong
+// to the same "full platform" surface as Sports/Predictions do, so they
+// share this one flag rather than each inventing its own. Restoring the
+// full platform (flipping APP_MODE/the Dev Panel's Platform Scope mock to
+// "full") brings these back automatically, same as Sports/Predictions.
+export function isFullPlatformFeatureEnabled(platformScope) {
+  return platformScope === "full";
+}

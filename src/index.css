@@ -619,11 +619,19 @@ html {
 .promo-card__content {
   container-type: inline-size;
 }
-/* No width cap below 640px, matching the mobile carousel this replaces
-   (the original Tailwind classes were `sm:max-w-[...]` — gated the same
-   way): artwork is `hidden` below `sm:` (see PromoStrip.jsx), so the
-   content column already has the whole card to itself there and forcing
-   58% early would just waste the space the hidden artwork isn't using. */
+/* MOBILE ARTWORK VISIBILITY FIX: this used to have no width cap below
+   640px, because the artwork itself was `hidden` there (see PromoStrip.jsx
+   — that was a leftover from a 3-col mobile grid that no longer exists).
+   Now that the artwork is visible at every width (a narrower 26-30% zone
+   below 640px, vs 34-40% at sm+ — see PromoStrip.jsx's WalletCard/InfoCard
+   `.promo-card__visual`), the content column needs a matching mobile cap
+   so text never runs underneath it. 68% leaves a clear buffer past the
+   artwork's 30% (WalletCard's widest mobile tier) without needlessly
+   narrowing the column the way the sm+/1280+ tiers below do (those exist
+   for a different reason — see their own comment). Unprefixed (mobile-
+   first): the min-width queries below override it at their breakpoints via
+   normal source-order cascade, same specificity. */
+.promo-card__content { max-width: 68%; }
 @media (min-width: 640px) {
   .promo-card__content { max-width: 58%; }
 }
@@ -643,7 +651,14 @@ html {
    so the column comes back down close to the CTA-card's own 52-58% range,
    freeing the artwork zone to reach this task's explicit "comparable to the
    Wallet card" ~38-44% desktop target (see PromoStrip.jsx's InfoCard) while
-   copy still never wraps to more than 2 lines. */
+   copy still never wraps to more than 2 lines.
+   MOBILE ARTWORK VISIBILITY FIX: 72% base (mobile-first, below 640px) is
+   the same matching-cap move as the non-static rule above — InfoCard's
+   mobile artwork zone is narrower (26%) than WalletCard's (30%), so this
+   column can afford to stay a little wider. Body/title never truncate here
+   regardless (see the clamp-removal below), so this is purely about
+   leaving the artwork its own clear space, not about fitting more text. */
+.promo-card--static .promo-card__content { max-width: 72%; }
 @media (min-width: 640px) {
   .promo-card--static .promo-card__content { max-width: 62%; }
 }

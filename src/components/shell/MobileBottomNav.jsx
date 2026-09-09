@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useDevMockState } from "@/lib/devMock";
 import { isArenaAllowed, resolveEffectivePlatformScope } from "@/lib/platformScope";
 import { ARENAS } from "@/lib/arenas";
+import { toast } from "@/lib/toast";
 
 // Mobile-only icon choice — Trophy reads as a generic sports/competition
 // symbol rather than implying one specific sport (the previous Volleyball
@@ -91,18 +92,28 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
           return (
             <button
               key={p.id}
-              onClick={disabled ? undefined : () => onSelectArena(p.id)}
+              // Disabled arenas stay fully tappable/focusable — never
+              // pointer-events:none — so the "Coming soon" toast is always
+              // reachable, including via keyboard Enter/Space (native
+              // button activation), not just pointer taps. Navigation
+              // itself is what's prevented, at the source: onSelectArena is
+              // simply never called for a disabled arena.
+              onClick={disabled ? () => toast.info("Coming soon") : () => onSelectArena(p.id)}
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled || undefined}
               aria-label={disabled ? `${p.label}, coming soon` : undefined}
               style={!disabled && active ? { color: p.color } : undefined}
               className={cn(
-                "relative flex h-full min-h-11 flex-col items-center justify-center text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                // Disabled tiles fit a third row (icon/label/Soon pill) into
-                // the same fixed tile height, so only they get the tighter
-                // gap — enabled tiles (including Casino) keep their
-                // original two-line spacing untouched.
-                disabled ? "cursor-default gap-0.5" : active ? "gap-1 font-semibold" : "gap-1 font-medium text-muted-foreground"
+                // GEOMETRY UNIFICATION: identical layout for all four rail
+                // items (Menu/Casino/Predictions/Sports) — same gap, same
+                // flex-col/justify-center centering, same min-h-11 tile. A
+                // disabled arena used to grow a third "Soon" row that
+                // squeezed its own gap and pushed icon+label upward relative
+                // to Casino/Menu (see MOBILE RAIL POLISH); the badge is gone
+                // and disabled no longer forks the gap — availability is
+                // now color/opacity-only, never a geometry change.
+                "relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                disabled ? "cursor-default font-medium text-muted-foreground" : active ? "font-semibold" : "font-medium text-muted-foreground"
               )}
             >
               <span
@@ -111,16 +122,7 @@ export function MobileBottomNav({ product, onSelectArena, menuOpen, onToggleMenu
                 style={{ background: p.barColor }}
               />
               <Icon className={cn("size-5", disabled && "opacity-50")} aria-hidden="true" />
-              <span className={cn("max-w-full truncate px-0.5", disabled && "opacity-60")}>{p.label}</span>
-              {disabled && (
-                <span
-                  aria-hidden="true"
-                  className="inline-flex h-[18px] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium leading-none text-foreground/50"
-                  style={{ background: "var(--badge-muted-bg)", borderColor: "var(--badge-muted-border)" }}
-                >
-                  Soon
-                </span>
-              )}
+              <span className={cn("max-w-full truncate px-0.5", disabled && "opacity-50")}>{p.label}</span>
             </button>
           );
         })}

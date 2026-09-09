@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, LogOut } from "lucide-react";
+import { cn, DESTRUCTIVE_ACTION_CLASS } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { CLOSE_TRIGGER, focusIntentForCloseTrigger } from "@/lib/mobileMenuFocus";
@@ -24,7 +24,7 @@ import { CLOSE_TRIGGER, focusIntentForCloseTrigger } from "@/lib/mobileMenuFocus
 //
 // Covers the viewport (100dvh, not 100vh, so browser address-bar expand/
 // collapse never clips the header or bottom nav) at --z-fullscreen-menu.
-export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, accountItems, selected, onSelect, onClose, product, onSelectArena, onToggleMenu, onFocusMainContent }) {
+export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, accountItems, onDisconnectWallet, selected, onSelect, onClose, product, onSelectArena, onToggleMenu, onFocusMainContent }) {
   const navRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -177,6 +177,33 @@ export function MobileFullScreenMenu({ open, title, primaryItems, utilityItems, 
                     <MenuRow key={item.id} item={item} active={false} onClick={() => handleItemClick(item)} />
                   ))}
                 </ul>
+              </>
+            )}
+
+            {/* Disconnect Wallet — its own footer zone below Account, not
+                one more row in that list: a real divider (same convention
+                as every other section break above) keeps it from reading as
+                just another neutral nav destination. Same destructive
+                color/hover treatment as the Wallet modal's own Disconnect
+                Wallet button (DESTRUCTIVE_ACTION_CLASS, lib/utils.js) and
+                the Account popover's Sign out (ProfileMenu.jsx) — one
+                design system, not three bespoke reds. Routed through
+                handleItemClick (not a bare onClick) so it gets the same
+                close + focus-restoration behavior every other action here
+                does. */}
+            {onDisconnectWallet && (
+              <>
+                <div className="my-3 border-t" aria-hidden="true" />
+                <button
+                  onClick={() => handleItemClick({ action: onDisconnectWallet })}
+                  data-test-id="mobile-menu-disconnect-wallet"
+                  className={cn(
+                    "flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    DESTRUCTIVE_ACTION_CLASS
+                  )}
+                >
+                  <LogOut className="size-4" aria-hidden="true" /> Disconnect Wallet
+                </button>
               </>
             )}
           </nav>

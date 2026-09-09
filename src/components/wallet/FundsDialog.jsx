@@ -114,13 +114,19 @@ function useCrossfade(flowState) {
   return { displayState, className };
 }
 
-export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
+export function FundsDialog({ open, onClose, onCloseAutoFocus, startAtDisconnectConfirm = false }) {
   const {
     isConnected, address, connectorName, connectorIcon, chainId, casinoBalance, casinoSymbol,
     casinoBalanceLoading, casinoBalanceError, disconnectAsync,
   } = useWallet();
 
-  const [flowState, setFlowState] = useState(FLOW.WALLET);
+  // Lazily mounted once (see App.jsx's useLazyMount) and left mounted for
+  // the rest of the session — this initial value only matters for the
+  // very first time it's ever opened; every later open is handled by the
+  // effect below. Matching it to `startAtDisconnectConfirm` here means a
+  // first-ever "Disconnect Wallet" tap lands on the confirm screen
+  // immediately, with no leftover flash of the plain wallet view.
+  const [flowState, setFlowState] = useState(startAtDisconnectConfirm ? FLOW.CONFIRM_DISCONNECT : FLOW.WALLET);
   const [copied, setCopied] = useState(false);
   const disconnectingRef = useRef(false); // rapid-interaction guard
   const cancelRef = useRef(null);
@@ -135,13 +141,21 @@ export function FundsDialog({ open, onClose, onCloseAutoFocus }) {
   // modal closes (see that hook for the full cache policy).
   const { usd: assetUsdPrice } = useAssetPrice(casinoSymbol, { enabled: open });
 
-  // Fresh open always starts at `wallet` (never mid-flow), and closing
-  // clears any transient flow state so it can never survive a reopen.
+  // Fresh open always starts at `wallet` (never mid-flow) UNLESS the caller
+  // explicitly asked to land straight on the confirm-disconnect screen (the
+  // mobile menu's "Disconnect Wallet" entry point — see App.jsx's
+  // openDisconnectWallet). Same dialog, same ConfirmBody/runDisconnect/
+  // error/success states either way — this only changes which screen is
+  // showing the instant it opens, never a second disconnect implementation.
+  // Closing still clears any transient flow state so it can never survive a
+  // reopen, and a later plain "Wallet" open (startAtDisconnectConfirm
+  // false) always lands back on `wallet` as before.
   useEffect(() => {
     if (open) {
-      setFlowState(FLOW.WALLET);
+      setFlowState(startAtDisconnectConfirm ? FLOW.CONFIRM_DISCONNECT : FLOW.WALLET);
       disconnectingRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Reactive to real wallet state, not just our own flow: if the wallet

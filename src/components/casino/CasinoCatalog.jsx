@@ -523,6 +523,21 @@ const RAIL_TRACK =
   "flex gap-3 overflow-x-auto p-1 pr-4 snap-x snap-proximity [scrollbar-width:none] [&::-webkit-scrollbar]:hidden " +
   "md:grid md:grid-cols-4 md:overflow-visible md:snap-none xl:grid-cols-8";
 
+// MOBILE CASINO CATALOG REDESIGN (BetSwirl/Originals rail only — every
+// other rail above keeps RAIL_TRACK's horizontal-scroll mobile presentation
+// untouched, per that task's explicit scope). At the current MVP's catalog
+// size (~8 games), a partially-scrollable carousel makes no sense on
+// mobile — this is a real 2-column CSS grid below `md:` instead: no
+// overflow-x, no scroll-snap, no peeking next card, no separate inset (the
+// grid fills the exact same content width Search/promo cards/the section
+// heading already use — see PromoStrip.jsx/CasinoCatalog's shared page
+// gutter, never a bespoke margin here). gap-x-3/gap-y-4 (12/16px) are this
+// task's target spacing. `md:` and up are copied VERBATIM from RAIL_TRACK
+// (same 4/8-column grid, same uniform gap-3, same p-1/pr-4 breathing room)
+// so desktop stays pixel-identical to every other rail — only the sub-md
+// tier differs.
+const BETSWIRL_TRACK = "grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-4 md:gap-3 md:p-1 md:pr-4 xl:grid-cols-8";
+
 // TITLE TYPOGRAPHY FIX: every Casino Lobby section title (Recently Played,
 // Favorites, Tribet Originals, Popular, New Releases, Providers, Live
 // Casino, Game Shows) now shares ONE size/weight — previously
@@ -612,7 +627,7 @@ function RailHeader({ icon, title, subtitle, badge, tier, testId, onSeeAll }) {
 // independent of both — the hierarchy pass calls out different sections
 // for each (e.g. Popular keeps standard-size cards — a "dense standard
 // carousel" per the brief — despite having the same title size as Originals).
-export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", className, visibleCount, onExpand }) {
+export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps, onSeeAll, testId, sectionId, emptyState, context, isLoading, tier = "secondary", tileScale = "standard", mobileLayout = "rail", className, visibleCount, onExpand }) {
   // HOTFIX (page size) — every rail shows at most RAIL_PAGE_SIZE items to
   // start; Load More reveals the next RAIL_PAGE_SIZE, capped at the real
   // total. `visibleCount` is lifted to App.jsx's `expandedRails` (same
@@ -665,9 +680,13 @@ export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps,
         testId={testId}
         onSeeAll={onSeeAll}
       />
-      <div aria-label={`${title} carousel`} className={RAIL_TRACK}>
+      {/* mobileLayout="grid" (BetSwirl/Originals only — see BETSWIRL_TRACK
+          above) is a real grid at every breakpoint, never a scrollable
+          track, so it gets no "carousel" label; every other rail keeps its
+          existing aria-label unchanged. */}
+      <div aria-label={mobileLayout === "grid" ? undefined : `${title} carousel`} className={mobileLayout === "grid" ? BETSWIRL_TRACK : RAIL_TRACK}>
         {shown.map((game) => (
-          <div key={game.favId} className={cn(tileClass, "snap-start md:w-full")}>
+          <div key={game.favId} className={mobileLayout === "grid" ? "w-full" : cn(tileClass, "snap-start md:w-full")}>
             {game.isPlaceholder ? <PlaceholderGameCard game={game} /> : <CasinoGameCard game={game} {...tileProps} context={context} />}
           </div>
         ))}
@@ -1668,6 +1687,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         badge="Provably fair"
         tier="primary"
         tileScale="large"
+        mobileLayout="grid"
         className={GAP_MAJOR}
         games={withPlaceholders(onchain, "originals")}
         tileProps={tileProps}

@@ -154,9 +154,12 @@ function WalletArtwork() {
 // own dedicated tokens, see below, everything else still matches) — a bare
 // <button> is inline-block
 // and won't stretch on its own, which is why the outer div (not the button)
-// owns `w-full`. Illustration hidden below `sm:`: at the ~110px mobile card
-// width fixed by the existing 3-col grid there isn't room for a legible
-// illustration alongside readable text and a tappable CTA.
+// owns `w-full`. Illustration visible at every width (see MOBILE ARTWORK
+// VISIBILITY FIX below, on `.promo-card__visual`) — this comment used to
+// say it was hidden below `sm:` for a ~110px 3-col mobile grid; that grid
+// no longer exists (mobile is one ~82%-viewport-width card in a snap
+// carousel — see PromoStrip's own render), so there's real room for a
+// smaller artwork zone alongside text and the CTA.
 function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
   return (
     <div
@@ -278,7 +281,28 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
           above, one level down). Still no mask — see WalletArtwork's own
           comment. */}
       <div
-        className="promo-card__visual pointer-events-none absolute top-4 bottom-4 right-0 hidden w-[40%] overflow-hidden sm:block lg:w-[44%] xl:w-[46%]"
+        // MOBILE ARTWORK VISIBILITY FIX: was `hidden ... sm:block` — written
+        // for an old 3-across mobile grid (~110px-wide cards, per this
+        // card's own stale comment above) that no longer exists; mobile now
+        // renders one ~82%-viewport-width card at a time (PromoStrip's own
+        // snap carousel), plenty of room for a smaller artwork zone. A
+        // narrower base-tier width — not `hidden` — is the "reduce artwork
+        // scale first" fix; sm:/lg:/xl: tiers below are the exact unchanged
+        // values from before, so tablet/desktop rendering is untouched.
+        //
+        // 17%, not 30%: `--illustration-base-scale` below applies its 1.6005
+        // zoom to THIS box (transform-origin right-center, so it grows
+        // leftward from the fixed right edge — see index.css's
+        // `.promo-card__visual`) — the box's effective RENDERED width is
+        // this Tailwind width times that scale, not the width alone. At 30%
+        // that's ~48% effective, which measurably overlapped
+        // `.promo-card__content`'s own 68% mobile max-width (index.css) —
+        // verified via getBoundingClientRect, not assumed. 17% * 1.6005 ≈
+        // 27% effective, leaving content its full 68% plus a real buffer.
+        // sm:/lg:/xl: don't need this correction: --illustration-base-scale
+        // is constant at every breakpoint, and 40/44/46% were already the
+        // proven-working sizes before this task touched anything.
+        className="promo-card__visual pointer-events-none absolute top-4 bottom-4 right-0 w-[17%] overflow-hidden sm:w-[40%] lg:w-[44%] xl:w-[46%]"
         style={{ "--illustration-base-scale": 1.6005 }}
       >
         {tone !== "warning" && (
@@ -670,7 +694,16 @@ function InfoCard({ eyebrow, title, body, artwork }) {
           .promo-card__content's own breakpoints so the two never overlap —
           verified via getBoundingClientRect at every tested width, not
           assumed. */}
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 hidden w-[34%] overflow-hidden sm:block xl:w-[42%]">
+      {/* MOBILE ARTWORK VISIBILITY FIX: same fix as WalletCard's own
+          `.promo-card__visual` above — was `hidden ... sm:block`, stale
+          leftover from a 3-col mobile grid that no longer exists. Base
+          tier (26%, narrower than sm's 34%) keeps mobile's artwork zone
+          smaller — "reduce artwork scale first" when the card itself is
+          narrow — while sm:/xl: stay the exact unchanged values, so
+          tablet/desktop is untouched. `.promo-card--static
+          .promo-card__content`'s own mobile max-width (index.css) matches
+          so text never runs under the artwork. */}
+      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 w-[26%] overflow-hidden sm:w-[34%] xl:w-[42%]">
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
         <div className="relative z-10 h-full w-full">{artwork}</div>
       </div>
@@ -912,6 +945,15 @@ export function ScopedSearch({
   mobileMode = "inline", onMobileFocus,
 }) {
   const [scope, setScope] = useState(defaultScope);
+  // The scope-select menu (Casino/Predictions/Sports) is its own separate
+  // Radix DropdownMenu.Root from the results-panel `open`/`internalOpen`
+  // state above — this is the whole menu that pops open when the "Casino"
+  // scope pill is tapped, not the search results below the input. Lifted
+  // to controlled state so a disabled-arena tap can close it explicitly
+  // (see the RadioItem onSelect below) rather than relying on Radix's
+  // default close-on-select, which we also intercept to keep an unavailable
+  // arena from becoming selected.
+  const [scopeMenuOpen, setScopeMenuOpen] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlledOpen = openProp !== undefined;
   const open = isControlledOpen ? openProp : internalOpen;
@@ -1045,7 +1087,7 @@ export function ScopedSearch({
                 need a real (Radix) menu instead. Casino is never disabled
                 (see lib/platformScope.js's isArenaAllowed); Predictions/
                 Sports gate the same way the main arena nav does. */}
-            <DropdownMenuPrimitive.Root>
+            <DropdownMenuPrimitive.Root open={scopeMenuOpen} onOpenChange={setScopeMenuOpen}>
               <DropdownMenuPrimitive.Trigger asChild>
                 <button
                   type="button"
@@ -1065,7 +1107,20 @@ export function ScopedSearch({
                 >
                   <DropdownMenuPrimitive.RadioGroup
                     value={scope}
-                    onValueChange={(v) => { setScope(v); track("casino_search_scope_changed", { searchScope: v }); }}
+                    // Defense in depth: the disabled RadioItem's own
+                    // onSelect below already calls preventDefault() to stop
+                    // a disabled arena from being selected, but that alone
+                    // turned out NOT to reliably stop Radix from still
+                    // invoking this onValueChange for it (verified live —
+                    // scope actually flipped to "predictions" with only the
+                    // onSelect guard in place). The real source of truth is
+                    // here: never accept a value isArenaAllowed rejects,
+                    // regardless of how Radix got here.
+                    onValueChange={(v) => {
+                      if (!isArenaAllowed(v, platformScope)) return;
+                      setScope(v);
+                      track("casino_search_scope_changed", { searchScope: v });
+                    }}
                   >
                     {SEARCH_SCOPES.map((s) => {
                       const scopeDisabled = !isArenaAllowed(s.id, platformScope);
@@ -1081,13 +1136,38 @@ export function ScopedSearch({
                           // avoids with aria-disabled + a conditional
                           // handler instead of the native `disabled`
                           // attribute (see Sidebar.jsx). Blocking selection
-                          // via onSelect keeps the item focusable so
-                          // keyboard users still land on it and see "Coming
-                          // soon", they just can't activate it.
-                          onSelect={(e) => { if (scopeDisabled) e.preventDefault(); }}
+                          // via onSelect (preventDefault stops Radix's
+                          // default select-and-close for this item) keeps
+                          // the item focusable so keyboard users still land
+                          // on it — Enter/Space fires this same onSelect,
+                          // same as a pointer tap — and both get the SAME
+                          // "Coming soon" toast the mobile bottom rail's
+                          // disabled arena tabs already use (see
+                          // MobileBottomNav.jsx), not a second bespoke
+                          // feedback mechanism. Then close the menu
+                          // ourselves (scope never changes, so there's
+                          // nothing left for an open menu to reflect — see
+                          // SEARCH ARENA AVAILABILITY task).
+                          onSelect={(e) => {
+                            if (!scopeDisabled) return;
+                            e.preventDefault();
+                            toast.info("Coming soon");
+                            setScopeMenuOpen(false);
+                          }}
                           className={cn(
-                            "flex cursor-pointer items-center rounded-md px-2.5 py-1.5 text-sm outline-none transition-colors data-[highlighted]:bg-white/10",
-                            scopeDisabled && "cursor-not-allowed opacity-50"
+                            // `data-[highlighted]:bg-white/10` (Radix's one
+                            // combined hover+keyboard-focus signal) is the
+                            // "this is a normal selectable option" look —
+                            // reserved for enabled items only. Disabled
+                            // items still need a REAL, always-visible focus
+                            // ring for keyboard users (`:focus-visible` is a
+                            // genuine CSS pseudo-class, independent of
+                            // Radix's data-highlighted, so it only lights up
+                            // for actual keyboard focus, never a mouse
+                            // hover) — same ring token every other focusable
+                            // control in the app uses, not a bespoke color.
+                            "flex cursor-pointer items-center rounded-md px-2.5 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                            scopeDisabled ? "cursor-not-allowed opacity-50" : "data-[highlighted]:bg-white/10"
                           )}
                         >
                           {s.label}
