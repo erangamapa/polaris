@@ -150,10 +150,11 @@ Ask which they want:
 - **Deployed:** <https://playtribet.vercel.app>
 - **Local:** `npm install && npm run dev` → <http://localhost:5173>
 
-**The deployed site is behind a shared password** (`SITE_PASSWORD`, see
-`middleware.js`) — the browser shows a native "Restricted Area" prompt on first
-load. If they do not have that password, they cannot use the deployed URL; send
-them local instead. Do not let them sit guessing at a password box.
+**The deployed site is public.** The shared-password gate is opt-in
+(`SITE_PASSWORD_ENABLED`, see `middleware.js`) and is off in production. If a
+native "Restricted Area" prompt does appear, the gate has been switched back on:
+get the password, or send them local instead — do not let them sit guessing at a
+password box.
 
 Then:
 
@@ -177,7 +178,7 @@ Confirm they actually see their balance in the header before calling it done.
 | Faucet says sent, balance still 0 | Queued, or sent to a different chain | Wait 1–2 min, re-run; confirm the faucet was set to the right network |
 | Faucet refuses | Rate limit or mainnet-balance requirement | Try the next faucet in the list |
 | Bet fails with gas error | Enough stake, not enough gas | Get more Base Sepolia ETH |
-| Native password prompt on the deployed site | `SITE_PASSWORD` gate | Get the password, or run locally |
+| Native password prompt on the deployed site | The `SITE_PASSWORD_ENABLED` gate is switched on | Get the password, or run locally |
 
 ## Reference
 

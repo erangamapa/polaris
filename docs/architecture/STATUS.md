@@ -44,13 +44,14 @@ token feasible. If a protocol's testnet is down → switch to Polygon Amoy (both
 ## Project
 - **Repo:** `erangamapa/polaris` (codename **polaris**; player-visible brand **TriBet** via
   `src/lib/brand.js` `BRAND_NAME`). Local dir may still be `.../boyzcasino`.
-- **Live (prototype):** https://tribet-app.vercel.app — Basic-Auth gated (user: any, pass: `TriBet2026`,
-  env `SITE_PASSWORD`, `middleware.js`). Vercel project `tribet` (scope `erangamapas-projects`), CLI-deployed.
+- **Live (prototype):** https://tribet-app.vercel.app — public; the shared-password gate is opt-in and
+  currently off (`SITE_PASSWORD_ENABLED=false`; set it to `true` alongside `SITE_PASSWORD` to gate the
+  site again — `middleware.js`). Vercel project `tribet` (scope `erangamapas-projects`), CLI-deployed.
 
 ## Where we are
 - **Phase: BUILD ~COMPLETE (testnet).** Done + committed: **0.5 Discovery · 0/1 provision · 2 wallet
   connect · 4 BetSwirl casino · 3 Azuro sports · 5–8 backend/history/unified-balance/RG · 9 hardening.**
-- **Deployed to production:** https://tribet-app.vercel.app (Basic-Auth gated; `/api/*` live —
+- **Deployed to production:** https://tribet-app.vercel.app (public; `/api/*` live —
   balance/history/geo + **forged-affiliate→403** verified in prod).
 - **Casino on-chain E2E: PASSED** (5+ dice bets settled via VRF, affiliate=house every time). **Sports:**
   integration proven to relayer acceptance; on-chain settlement waits on transient testnet game data (`23`).

@@ -1,7 +1,14 @@
 // Edge Middleware: shared-password gate (HTTP Basic Auth) for the pre-launch site.
-// Protects the site when SITE_PASSWORD is set (works on all Vercel plans, unlike
-// native Vercel password protection which needs a paid plan).
-// Unset SITE_PASSWORD to make the site public again.
+// Protects the site when the gate is switched on (works on all Vercel plans,
+// unlike native Vercel password protection which needs a paid plan).
+//
+// The gate is OPT-IN, via SITE_PASSWORD_ENABLED. It runs only when that flag is
+// exactly 'true' AND SITE_PASSWORD holds a password; anything else — flag unset,
+// 'false', a typo — serves the site publicly. Public is the safe default now
+// that the site is launched: a leftover SITE_PASSWORD must never be able to lock
+// real players out, and turning the gate back on is a one-word env change.
+// (Same asymmetry, opposite direction, as CASINO_USE_MAINNET in
+// packages/shared/chains.js: the risky state is the one you must spell out.)
 //
 // `/api/*` IS DELIBERATELY EXCLUDED. This gate is a human gate on the pages, and
 // a browser only reuses Basic credentials for navigations — a `fetch()` that
@@ -17,9 +24,15 @@
 // reads of public on-chain data that hold no secrets.
 export const config = { matcher: "/((?!api/).*)" };
 
+export function isGateEnabled(env) {
+  return String(env.SITE_PASSWORD_ENABLED).trim().toLowerCase() === "true";
+}
+
 export default function middleware(request) {
+  if (!isGateEnabled(process.env)) return; // gate switched off -> public
+
   const password = process.env.SITE_PASSWORD;
-  if (!password) return; // no gate configured -> public
+  if (!password) return; // no password configured -> public
 
   const auth = request.headers.get("authorization");
   if (auth) {
