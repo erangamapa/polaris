@@ -9,6 +9,7 @@ import mime from 'mime-types'
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 const publicDir = path.join(rootDir, 'public')
+const landingDir = path.join(rootDir, 'landing')
 
 // Vite's publicDir watcher can miss newly-added folders on Windows, so
 // /games/* and /img/games/* fall through to the SPA shell. Serve those
@@ -39,8 +40,52 @@ function servePublicGames() {
   }
 }
 
+// In production the site root is the static landing page, not the app: the
+// build moves the SPA shell to /app.html and Vercel serves dist/index.html
+// (the landing) at `/` (see scripts/build-landing.mjs, vercel.json). Vite's
+// dev server knows nothing about that, so without this plugin `/` would show
+// the app locally and the marketing page would only ever exist in a
+// production build - the classic "worked in dev" trap. Mirrors the routing
+// here so local and deployed agree: the app lives under /casino, /sports and
+// /predictions in both.
+const LANDING_FILES = new Set([
+  '/',
+  '/index.html',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/logo.svg',
+  '/favicon.svg',
+  '/lobby-preview.png',
+])
+
+function serveLanding() {
+  return {
+    name: 'serve-landing',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+        const urlPath = decodeURIComponent((req.url || '').split('?')[0])
+        const isLandingAsset = urlPath.startsWith('/css/') || urlPath.startsWith('/js/')
+        if (!isLandingAsset && !LANDING_FILES.has(urlPath)) return next()
+
+        const filePath = path.normalize(path.join(landingDir, urlPath === '/' ? 'index.html' : urlPath.slice(1)))
+        if (!filePath.startsWith(landingDir + path.sep)) return next()
+        if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return next()
+
+        res.statusCode = 200
+        res.setHeader('Content-Type', mime.lookup(filePath) || 'application/octet-stream')
+        if (req.method === 'HEAD') {
+          res.end()
+          return
+        }
+        fs.createReadStream(filePath).pipe(res)
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [servePublicGames(), react(), tailwindcss()],
+  plugins: [serveLanding(), servePublicGames(), react(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
