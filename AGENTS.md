@@ -238,11 +238,21 @@ Live: https://playtribet.vercel.app (Vercel project `polaris`, scope `boyzz`).
 `/` serves a **static** marketing page; the SPA answers under `/casino`,
 `/sports` and `/predictions`. Both ship from this one repo and one deployment.
 
-- `landing/` is the marketing page, kept byte-identical to what tribet.gg
-  serves. It is plain HTML/CSS/JS with hand-tuned SEO (canonical, Open Graph,
+- `landing/` IS tribet.gg's root page — the source of truth, not a copy of
+  anything. Plain HTML/CSS/JS with hand-tuned SEO (canonical, Open Graph,
   JSON-LD Organization/WebSite/WebPage/FAQPage). **Do not** rebuild it in React,
   add a bundler to it, or "fix" its markup casually — its value is that it is
   static and crawlable.
+- Its FAQ is marked up as FAQPage JSON-LD. Google requires structured data to
+  match what a visitor can actually read, so if you change a question or answer
+  in the visible `<details>` list you MUST change the JSON-LD to match, and vice
+  versa. They drifted apart once already.
+- Player-visible copy says **BetSwirl** for the on-chain games, never "Tribet
+  Originals" — Tribet did not build Dice/Coin Toss/Roulette/Keno (see f399558).
+  The `#originals` anchor ids are internal routing keys and stay as they are.
+- Do not advertise a promotion the product is not running. The welcome-bonus
+  and weekly-race copy was removed because `ENABLE_WELCOME_BONUS` /
+  `ENABLE_WEEKLY_RACE` are off in production.
 - Vercel resolves `/` to `dist/index.html` from the filesystem *before* any
   rewrite runs, so whoever owns that filename owns the root. Vite always builds
   the app shell there, so `scripts/build-landing.mjs` moves the shell to
@@ -258,3 +268,10 @@ Live: https://playtribet.vercel.app (Vercel project `polaris`, scope `boyzz`).
   those names will collide.
 - `X-Frame-Options` must stay `SAMEORIGIN`, never `DENY`: provider games run in
   same-origin iframes off `/games/*/index.html`, and `DENY` blocks those too.
+- Only `tribet.gg` is indexable. Every `*.vercel.app` host serves the same
+  content and gets `X-Robots-Tag: noindex, nofollow` from a host-scoped rule in
+  `vercel.json`; canonicals always name `tribet.gg` (`src/lib/seo.js`). If you
+  add a host, decide which side of that line it is on.
+- App routes get their title/description/canonical from `src/lib/seo.js`, applied
+  on every navigation. Add a route and it inherits the Lobby's copy until you
+  give it its own — one shell serves them all, so nothing is per-page by default.

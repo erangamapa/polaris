@@ -9,8 +9,9 @@
 // (/casino/lobby and friends) to app.html, where the SPA router reads the
 // original URL and renders normally.
 //
-// landing/ is a verbatim mirror of what is served at tribet.gg — do not edit
-// files there to fix a build problem; fix it here.
+// landing/ is the source of truth for tribet.gg's root page — it is not
+// generated from anything, and nothing regenerates it. Do not edit files there
+// to work around a build problem; fix it here.
 import { cp, rename, access, readdir, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import path from 'node:path';
