@@ -4,7 +4,6 @@ import { WalletButton } from "@/components/wallet/WalletButton";
 import { BalanceControl } from "@/components/wallet/BalanceControl";
 import { ProfileMenu } from "@/components/wallet/ProfileMenu";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { LogoMark } from "@/components/shell/LogoMark";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BRAND_NAME } from "@/lib/brand";
 import { useDevAwareWallet } from "@/lib/useDevAwareWallet";
@@ -125,10 +124,9 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
     // shell surrounding a slightly-lighter page, instead of the header
     // silently tracking whatever the page background happens to be.
     <header className="relative z-40 flex min-h-14 shrink-0 items-center gap-3 border-b bg-sidebar px-3 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:grid md:grid-cols-[1fr_auto_1fr] md:gap-3">
-      {/* LEFT ZONE: menu toggle + logo. LOGO TILE REFINEMENT: the tile's
-          own visual treatment (dark tile + bottom accent stripe -> one
-          solid brand-colour tile, see LogoMark.jsx) was explicitly
-          revised by that pass — the mobile triple-tap dev-panel trigger
+      {/* LEFT ZONE: menu toggle + logo. Logo is now the full brand wordmark
+          image (public/img/brand/logo.png), replacing the LogoMark tile +
+          text pairing — the mobile triple-tap dev-panel trigger
           (`onLogoTap` below) is unrelated interaction logic and is still
           untouched. */}
       <div className="flex min-w-0 shrink-0 items-center gap-2 md:justify-self-start">
@@ -141,11 +139,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
         </button>
 
         <div className="flex shrink-0 select-none items-center gap-2" onClick={onLogoTap}>
-          <LogoMark />
-          <span className="text-sm font-bold tracking-tight">
-            <span className="sr-only">{BRAND_NAME} — </span>
-            {BRAND_NAME}
-          </span>
+          <img src="/img/brand/logo.png" alt={BRAND_NAME} className="h-6 w-auto" />
         </div>
       </div>
 
