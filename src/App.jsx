@@ -29,6 +29,7 @@ import { useWallet } from "./web3/useWallet";
 import { useDevAwareWallet } from "./lib/useDevAwareWallet";
 import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
+import { applyRouteMetadata } from "./lib/seo";
 import { isArenaAllowed, resolveScopedProduct, resolveEffectivePlatformScope, isFullPlatformFeatureEnabled } from "./lib/platformScope";
 import { CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 // PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
@@ -398,8 +399,14 @@ export default function App() {
 
   // Keep the URL in sync with navigation, and restore state on back/forward.
   useEffect(() => {
-    const path = pathFor({ product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId });
+    const nav = { product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId };
+    const path = pathFor(nav);
     if (window.location.pathname !== path) window.history.pushState({}, "", path);
+    // Title/description/canonical follow the same resolved route the URL
+    // does. Driven off `path` rather than window.location so a deep link
+    // that got scoped elsewhere (e.g. /sports in MVP mode lands on Casino)
+    // canonicalises to where the user actually is, not where they aimed.
+    applyRouteMetadata(path, nav);
   }, [product, casinoCategory, casinoView, casinoProviderSlug, predSection, sportsView, sportsSport, sportsCountry, sportsLeague, sportsEventId]);
   // FINAL QA fix: this listener is attached once ([] deps — re-adding it
   // every render would be wasteful, and every setter below is already

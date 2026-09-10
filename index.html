@@ -7,7 +7,29 @@
          different mark. One origin, two documents, two icons. -->
     <link rel="icon" type="image/svg+xml" href="/app-favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>TriBet — Casino · Predictions · Sports</title>
+    <!-- These are the DEFAULTS a crawler sees before the bundle runs. src/lib/seo.js
+         replaces title/description/canonical/og per route on every navigation, so
+         what is here is the fallback for the app's most-linked entry point, the
+         Casino Lobby. Player-visible copy is "Tribet", never "TriBet" (lib/brand.js). -->
+    <title>Casino Lobby | Tribet</title>
+    <meta
+      name="description"
+      content="Play provably fair on-chain casino games on Tribet. Connect a wallet — no account, no deposit hold."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0A0B0D" />
+    <link rel="canonical" href="https://tribet.gg/casino/lobby" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tribet" />
+    <meta property="og:url" content="https://tribet.gg/casino/lobby" />
+    <meta property="og:title" content="Casino Lobby | Tribet" />
+    <meta
+      property="og:description"
+      content="Play provably fair on-chain casino games on Tribet. Connect a wallet — no account, no deposit hold."
+    />
+    <meta property="og:image" content="https://tribet.gg/lobby-preview.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://tribet.gg/lobby-preview.png" />
     <!-- RESKIN (Ultimate Reskin Specification v1, "Tribet Reskin Guide
          (2).md") — status: Authoritative, overrides all prior visual
          guidance including the previous pass's Barlow/Barlow Condensed/
