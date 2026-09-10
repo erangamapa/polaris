@@ -228,6 +228,33 @@ npm run lint      # must pass (exit 0)
 ```
 - Push straight to `main` (see Golden rules — no PRs/branches).
 - When committing, always use a single-line `git commit -m "message"` (no heredocs, no multi-line messages via `$(cat <<EOF...)`).
-- Deploy is CLI: `vercel --prod` (project "tribet").
+- Deploy is automatic: pushing to `main` ships to **production** via the Vercel
+  Git integration. `vercel --prod` still works, but you rarely need it — assume
+  a push is a release.
 
-Live: https://tribet-app.vercel.app (Vercel project `tribet`, scope `erangamapas-projects`).
+Live: https://playtribet.vercel.app (Vercel project `polaris`, scope `boyzz`).
+
+## Site root is the landing page, not the app
+`/` serves a **static** marketing page; the SPA answers under `/casino`,
+`/sports` and `/predictions`. Both ship from this one repo and one deployment.
+
+- `landing/` is the marketing page, kept byte-identical to what tribet.gg
+  serves. It is plain HTML/CSS/JS with hand-tuned SEO (canonical, Open Graph,
+  JSON-LD Organization/WebSite/WebPage/FAQPage). **Do not** rebuild it in React,
+  add a bundler to it, or "fix" its markup casually — its value is that it is
+  static and crawlable.
+- Vercel resolves `/` to `dist/index.html` from the filesystem *before* any
+  rewrite runs, so whoever owns that filename owns the root. Vite always builds
+  the app shell there, so `scripts/build-landing.mjs` moves the shell to
+  `/app.html` post-build and copies `landing/` over it. `vercel.json`'s
+  catch-all rewrite sends every non-file path to `app.html`.
+- Therefore: `npm run build` is `vite build` **plus** that script. Never bypass
+  it, and never add a route at `/` — the app can no longer be reached there.
+- `vite.config.js`'s `serveLanding` plugin mirrors this in dev, so `/` shows
+  the landing locally too. Local and deployed agree.
+- The landing owns `/favicon.svg`, `/css/*`, `/js/*`, `/logo.svg`,
+  `/lobby-preview.png`, `/robots.txt`, `/sitemap.xml` at the output root. The
+  app shell's icon is `/app-favicon.svg`. Adding a `public/` file with one of
+  those names will collide.
+- `X-Frame-Options` must stay `SAMEORIGIN`, never `DENY`: provider games run in
+  same-origin iframes off `/games/*/index.html`, and `DENY` blocks those too.
