@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Two pages, both linked from the homepage, so Google would find them by
+  crawling regardless — this exists so discovery does not depend on that.
+
+  <lastmod> is the only hint Google actually uses here; it ignores
+  <changefreq> and <priority> entirely, which is why neither appears.
+  A lastmod that is wrong is worse than none, because Google stops trusting
+  the signal — so update these dates when the page content genuinely
+  changes, and leave them alone for unrelated deploys.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://tribet.gg/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-09-11</lastmod>
   </url>
   <url>
     <loc>https://tribet.gg/casino/lobby</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <lastmod>2026-09-11</lastmod>
   </url>
 </urlset>

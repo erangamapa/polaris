@@ -250,6 +250,10 @@ Live: https://playtribet.vercel.app (Vercel project `polaris`, scope `boyzz`).
 - Player-visible copy says **BetSwirl** for the on-chain games, never "Tribet
   Originals" — Tribet did not build Dice/Coin Toss/Roulette/Keno (see f399558).
   The `#originals` anchor ids are internal routing keys and stay as they are.
+- `landing/sitemap.xml` carries `<lastmod>` and deliberately omits
+  `<changefreq>`/`<priority>` (Google ignores both). Bump a `lastmod` when that
+  page's content actually changes — not on every deploy. A lastmod that claims
+  a change that did not happen teaches Google to ignore the field.
 - Do not advertise a promotion the product is not running. The welcome-bonus
   and weekly-race copy was removed because `ENABLE_WELCOME_BONUS` /
   `ENABLE_WEEKLY_RACE` are off in production.
