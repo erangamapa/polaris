@@ -734,7 +734,7 @@ function TransparentPlayCard() {
     <InfoCard
       eyebrow="TRANSPARENT PLAY"
       title="Don't trust. Verify."
-      body="Every BetSwirl result can be verified on-chain."
+      body="Every result can be verified on-chain."
       artwork={<TransparentPlayArtwork />}
     />
   );

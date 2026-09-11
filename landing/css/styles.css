@@ -8,8 +8,14 @@
   --pink: #e56ba8;
   --line: rgba(255, 255, 255, 0.08);
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-  --font-display: "Syne", system-ui, sans-serif;
-  --font-body: "Outfit", system-ui, sans-serif;
+  /* One typeface for the whole site. Onest is what the app loads (see
+     index.html) and what the reskin spec names as the stand-in for the
+     licensed Söhne, so the landing and the lobby now read as one product
+     instead of two. Hierarchy comes from weight and size, not from a second
+     family - which is why the display and body vars point at the same stack
+     rather than being collapsed into one: the split still marks intent. */
+  --font-display: "Onest", system-ui, sans-serif;
+  --font-body: "Onest", system-ui, sans-serif;
   --radius: 14px;
   --header-h: 72px;
 }
@@ -93,7 +99,7 @@ a {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.15rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .nav {
@@ -200,7 +206,7 @@ a {
   font-family: var(--font-display);
   font-size: clamp(2.8rem, 9vw, 5.5rem);
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
   line-height: 0.95;
   background: linear-gradient(135deg, #ffffff 20%, var(--teal) 120%);
   -webkit-background-clip: text;
@@ -214,7 +220,7 @@ a {
   font-family: var(--font-display);
   font-size: clamp(1.85rem, 4.8vw, 3.15rem);
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
   line-height: 1.08;
 }
 

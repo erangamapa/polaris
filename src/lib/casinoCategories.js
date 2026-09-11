@@ -38,7 +38,7 @@ export const CATEGORY_META = {
 // they are internal routing/test selectors with no player-visible surface;
 // only the label changed. Every consumer reads this override rather than
 // hardcoding the text, so no surface can drift out of sync.
-const CATEGORY_LABEL_OVERRIDE = { New: "New Releases", Originals: "BetSwirl" };
+const CATEGORY_LABEL_OVERRIDE = { New: "New Releases", Originals: "On-chain" };
 
 // THE one shared Casino category-navigation config, now enriched with the
 // fields every navigation surface needs (icon, visibility per-surface,

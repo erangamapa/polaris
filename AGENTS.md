@@ -247,9 +247,15 @@ Live: https://playtribet.vercel.app (Vercel project `polaris`, scope `boyzz`).
   match what a visitor can actually read, so if you change a question or answer
   in the visible `<details>` list you MUST change the JSON-LD to match, and vice
   versa. They drifted apart once already.
-- Player-visible copy says **BetSwirl** for the on-chain games, never "Tribet
-  Originals" — Tribet did not build Dice/Coin Toss/Roulette/Keno (see f399558).
-  The `#originals` anchor ids are internal routing keys and stay as they are.
+- Player-visible copy calls the on-chain games exactly that — **"on-chain
+  games"**. It must not say "Tribet Originals" (Tribet did not build Dice, Coin
+  Toss, Roulette or Keno — see f399558) and no longer names the vendor either.
+  Neutral wording is the point: assert no author, ours or anyone's. The
+  `#originals` anchor ids and the `Originals` category id are internal routing
+  keys and stay as they are.
+- The landing and the app share one typeface, **Onest** — the reskin spec's
+  stand-in for the licensed Söhne. Hierarchy comes from weight and size, not a
+  second family. Never Inter.
 - `landing/sitemap.xml` carries `<lastmod>` and deliberately omits
   `<changefreq>`/`<priority>` (Google ignores both). Bump a `lastmod` when that
   page's content actually changes — not on every deploy. A lastmod that claims

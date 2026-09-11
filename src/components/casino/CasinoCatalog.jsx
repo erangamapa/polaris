@@ -964,7 +964,7 @@ export function CategoryNav({ selected, activeView, onSelectHomeFilter, onPillAc
 // CATEGORY_META row. `TAG_CATEGORY_DESCRIPTIONS` supplies the one missing
 // description (Originals) that CATEGORY_META doesn't carry, reusing the
 // exact subtitle its Lobby rail already shows so the two surfaces agree.
-const TAG_CATEGORY_DESCRIPTIONS = { Originals: "On-chain games, provably fair and settled by BetSwirl" };
+const TAG_CATEGORY_DESCRIPTIONS = { Originals: "On-chain games, provably fair and verifiable" };
 function isTagCategory(category) {
   return category === "Originals" || Boolean(CATEGORY_META[category]);
 }
@@ -1510,7 +1510,7 @@ function GameFirstLobby({ q, query, tileProps, onBrowseGames }) {
     <section id="casino-section-originals" data-test-id="originals-grid">
       <RailHeader
         title={CATEGORY_LABEL.Originals}
-        subtitle="On-chain games, provably fair and settled by BetSwirl"
+        subtitle="On-chain games, provably fair and verifiable"
         badge="Provably fair"
         tier="primary"
       />
@@ -1683,7 +1683,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         visibleCount={expandedRails?.get("originals-rail")}
         onExpand={(total) => onExpandRail?.("originals-rail", total)}
         title={CATEGORY_LABEL.Originals}
-        subtitle="On-chain games, provably fair and settled by BetSwirl"
+        subtitle="On-chain games, provably fair and verifiable"
         badge="Provably fair"
         tier="primary"
         tileScale="large"

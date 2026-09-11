@@ -28,10 +28,10 @@ describe('metadataFor', () => {
   });
 
   it('uses the display label, not the internal id', () => {
-    // "New" renders as "New Releases", "Originals" as "BetSwirl" - the id is
+    // "New" renders as "New Releases", "Originals" as "On-chain" - the id is
     // a routing key and must never surface in a search result.
     expect(metadataFor(casino({ casinoCategory: 'New', casinoView: 'category' })).title).toBe('New Releases Games | Tribet');
-    expect(metadataFor(casino({ casinoCategory: 'Originals', casinoView: 'category' })).title).toBe('BetSwirl Games | Tribet');
+    expect(metadataFor(casino({ casinoCategory: 'Originals', casinoView: 'category' })).title).toBe('On-chain Games | Tribet');
   });
 
   it.each([

@@ -73,9 +73,12 @@ describe("CASINO_CATEGORIES", () => {
   // which are BetSwirl's. Labelling them as Tribet content misattributed a
   // third party's games as first-party, so every player-facing surface reads
   // "BetSwirl" and no surface may reintroduce the old wording.
-  it("labels the on-chain category as BetSwirl everywhere a player sees it", () => {
-    expect(CATEGORY_LABEL.Originals).toBe("BetSwirl");
-    expect(CASINO_CATEGORIES.find((c) => c.id === "Originals").label).toBe("BetSwirl");
+  it("labels the on-chain category as On-chain everywhere a player sees it", () => {
+    // The internal id stays "Originals" (routing key, test selector); the
+    // player-visible label must never assert who authored the games - not
+    // Tribet, which did not build them, and no vendor name either.
+    expect(CATEGORY_LABEL.Originals).toBe("On-chain");
+    expect(CASINO_CATEGORIES.find((c) => c.id === "Originals").label).toBe("On-chain");
   });
 
   it("never presents the on-chain games as Tribet-authored", () => {
