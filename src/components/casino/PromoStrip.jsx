@@ -42,106 +42,52 @@ const stopAnd = (fn) => (e) => {
   fn?.(e);
 };
 
-// WALLET PROMO ARTWORK — replaces the previous inline SVG (WalletMark) with
-// the supplied wallet illustration (public/heroes/wallet-promo.webp).
-// SIZE-UP PASS: the first cut of this asset kept the source's original
-// framing (1536x1024, wallet occupying only the right ~52% of its own
-// canvas, the rest genuinely-transparent dead space to its left). Under
-// object-fit:contain, that dead space renders too — it doesn't disappear,
-// it just becomes part of the "fitted" box — so the wallet itself came out
-// reading like a small icon floating in a mostly-empty zone. Fixed at the
-// source: re-cropped tight around the actual opaque wallet+coin bounding
-// box (found by alpha-density sampling, not eyeballing) plus a deliberate
-// margin for the glow/light-trail bleed the direction calls for, then
-// re-exported at 900x935 WebP (alpha re-verified intact post-crop). Same
-// fix applies to every card that reuses this file — it's a property of
-// the asset, not the layout.
+// SHARED PROMO ILLUSTRATION SYSTEM — one wrapper for all three Casino promo
+// cards' decorative artwork (Wallet/About Tribet/Transparent Play). Replaces
+// the previous three DIVERGENT per-card sizing systems (WalletCard's own
+// scale-1.6005 zoom + 22/40/44/46% width tiers with top-4/bottom-4 insets vs
+// InfoCard's plain 34/34/42% tiers with inset-y-0) with exactly one rule set:
+// absolute, vertically centered (top-1/2 + -translate-y-1/2, not an inset-y-0
+// full-bleed or a fixed top/bottom px pair), right-aligned with a small fixed
+// inset (not flush-zero), object-contain (never crops, always preserves
+// aspect ratio), sized to ~40-42% of the card's width and ~82% of its height
+// — comfortably inside this task's 38-44%/80-85%/16-24px-inset targets at
+// both CARD_H breakpoints (144px/176px) without needing separate tuning per
+// size, since percentages scale with the card automatically.
 //
-// object-contain + object-right: the crop's real content still touches
-// its own right edge with no dead margin, so anchoring right keeps the
-// wallet flush with the zone's right edge (matching the other two cards'
-// artwork). No CSS mask (unlike WelcomeArtwork/RaceArtwork's hand-drawn
-// SVGs below) — the asset's own alpha already handles the fade, a mask on
-// top would be a no-op.
+// Deliberately NO transform:scale baseline (the old WalletCard's 1.6005 —
+// see git history if that number's own long comment trail is ever needed
+// again) — that hack existed only to compensate for a specific badly-cropped
+// asset that didn't fill its own frame; a properly-supplied transparent
+// asset needs no per-card fudge factor, which is the entire point of "one
+// shared system instead of arbitrary per-card sizing." The `.promo-card__visual`
+// class name is kept so the existing shared hover/press micro-zoom (see
+// index.css — a small, deliberate 1.03-1.05x scale, unrelated to the old
+// per-card baseline hack) still applies uniformly to all three cards.
 //
-// SLIGHT SIZE-UP PASS: scale-[1.265] origin-right is a deliberate, small
-// supplement on top of the zone's own (now-maximized) dimensions below —
-// not the primary sizing mechanism. Why it's needed: with CARD_H fixed
-// (untouchable) and this crop's aspect ratio narrower than the zone's,
-// object-contain is height-bound — the zone's own content-box height is a
-// hard ceiling that widening the zone further can't push past. Growing
-// the zone to its practical max only got partway to the requested size
-// increase; this closes the remaining gap. origin-right keeps the growth
-// pushing left/vertically-centered (into the zone's own unused slack),
-// never rightward past the already-correct right-edge inset — combined
-// with the zone's own overflow-hidden below, any excess clips at the
-// text/artwork boundary rather than ever touching the copy column.
-// +10% PASS: 1.265 = 1.15 * 1.10 — this task asked for "the current
-// illustration" (already at 1.15) enlarged by exactly 10% more, not for
-// the scale value itself to become 1.10 (that would be a decrease).
-// Zone dimensions, vertical centering and right-edge alignment below are
-// all untouched — only this multiplier changed.
-//
-// CLIP FIX (asset, not CSS): scale-[1.265] (at the time) with a
-// vertically-centered origin always magnifies the SAME proportional
-// fraction of the source image's own height off both its top and bottom
-// — (s-1)/(2s) — regardless of how big the zone/box is. Widening the
-// zone can't fix that (confirmed by measurement: doing so only grows the
-// absolute clip amount in lockstep, since the fraction is fixed by the
-// scale value alone). The +10% pass pushed that fraction past the coin's
-// real position in the previous crop. Re-cropped public/heroes/
-// wallet-promo.webp from the original source with the full available
-// natural top/bottom margin, plus a modest amount of added transparent
-// canvas (padding, not stretching — verified alpha=0 in the added rows)
-// to push both margins safely past the clip line.
-//
-// +15% PASS: 1.455 = 1.265 * 1.15 — same reading as the prior +10% pass:
-// "increase the [current, already-enlarged] illustration by 15%," not
-// "set the scale value to 1.15" (which would shrink it from 1.265). A
-// bigger scale means a bigger clip fraction too — (s-1)/(2s) grows from
-// ~10.5% at s=1.265 to ~15.6% at s=1.455 — which would have eaten back
-// into the coin again with the previous asset's margins (recomputed: top
-// margin was only ~4.6 rows short at this new fraction, i.e. right on the
-// edge). Added another 60px of transparent top padding to
-// wallet-promo.webp (same padding-not-stretching technique, alpha=0
-// verified in the added rows) to restore real buffer at the new scale —
-// this is the asset, not this component, growing again; the CSS below is
-// otherwise unchanged from the prior pass.
-//
-// +10% PASS (again): 1.6005 = 1.455 * 1.10, same "grow the current size"
-// reading as every prior +N% pass. This task's own preference — grow the
-// wrapper's dimensions instead of a transform, since a transform "may
-// cause blur or unexpected overflow" — was checked first: the wrapper
-// (WalletCard's zone below, top-4/bottom-4) is already sized to the
-// maximum available space under a fixed CARD_H and fixed card padding
-// (both explicitly off-limits this task, as every task before it) — there
-// is no more room to give it. transform:scale remains the only lever left
-// that doesn't touch either. It's a pure CSS matrix scale on a raster
-// image already exported at a resolution well above its rendered size, so
-// it doesn't blur in practice, and "unexpected overflow" is exactly what
-// the asset-margin work below (and every prior +N% pass) exists to
-// prevent by design, not leave to chance. Clip fraction at s=1.6005 is
-// (s-1)/(2s)≈18.76%; added another 60px of transparent padding to BOTH
-// top and bottom of wallet-promo.webp this time (previous margins were
-// only ~5-7px from the new clip line at this fraction — real risk, not
-// just "in principle") to restore ~42-44px of buffer on both sides.
-// HOVER/PRESS ZOOM PASS: origin-right + scale-[1.6005] (this card's own
-// baseline size, built up over several prior passes) live on the
-// `.promo-card__visual` wrapper in WalletCard below, not this <img>
-// directly — see ONE-LAYER PASS: the illustration and its glow now scale
-// together as a single visual unit, so the scale/origin machinery moved
-// up to whatever wraps both of them. object-contain/object-right (the
-// actual image-fit behavior) stay right here on the image itself.
-function WalletArtwork() {
+// No wrapper background and no mask/blend-mode/filter here or anywhere else
+// in this file: the card's own --wallet-card-bg supplies the surface, this
+// wrapper's only decoration is the existing small `.promo-card__ambient`
+// radial glow (--wallet-card-glow) — the artwork itself must be a genuinely
+// transparent PNG/WebP for this to read as "embedded in the card" rather
+// than "a rectangle pasted on top." `glow` defaults on; WalletCard's
+// wrong-network state passes `glow={false}` to match its previous behavior
+// (that tone never got the ambient bloom, only the flat warning surface).
+function PromoIllustration({ src, glow = true }) {
   return (
-    <img
-      src="/heroes/wallet-promo.webp"
-      alt=""
-      loading="lazy"
-      decoding="async"
-      fetchPriority="low"
-      className="promo-card__illustration h-full w-full object-contain object-right"
-    />
+    <div className="promo-card__visual pointer-events-none absolute top-1/2 right-4 h-[82%] w-[40%] -translate-y-1/2 overflow-hidden lg:right-5 lg:w-[42%]">
+      {glow && (
+        <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
+      )}
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        fetchPriority="low"
+        className="promo-card__illustration relative z-10 h-full w-full object-contain object-right"
+      />
+    </div>
   );
 }
 
@@ -240,76 +186,10 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       <div className="promo-card__content relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between p-4">
         {children}
       </div>
-      {/* WALLET PROMO ARTWORK — FLUSH RIGHT-EDGE PASS: absolutely
-          positioned against this card's own (now unpadded) box instead of
-          being an in-flow flex sibling, specifically so `right-0` lands
-          on the card's true inner-right edge with zero gap, per the
-          asset itself having zero transparent margin on its own right
-          edge (verified by alpha-sampling the exported WebP's last
-          column — content is opaque there, nothing being hidden).
-          top-4/bottom-4 (not inset-y-0) is deliberate: it reproduces the
-          exact same box height as the old p-4-bounded flex zone
-          (CARD_H minus 32px), not the card's full height, so the
-          artwork's own height and vertical position are byte-for-byte
-          unchanged from the prior pass — only the positioning mechanism
-          and horizontal placement changed. Width tiers (40/44/46%) also
-          unchanged; the containing block is now the card's border box
-          rather than its old content-box, but the render stays
-          height-bound either way (confirmed empirically — the extra
-          width is unused slack, not extra rendered size). Same
-          overflow-hidden + scale-[1.15] safety pairing as before.
-          pointer-events-none so this decorative layer can never
-          intercept clicks. `promo-card` on the outer element above is
-          what the hover/press zoom (index.css's `.promo-card:hover` /
-          `:active`) actually keys off of — the whole card is the
-          interaction target, not just this zone.
-
-          ONE-LAYER PASS: this div is `promo-card__visual` — the scaling
-          wrapper itself (see index.css) — with the LOCALIZED glow
-          (`.promo-card__ambient`, --wallet-card-glow only — the small
-          radial bloom immediately around the asset, not the card's broad
-          background wash above) as its first child and the illustration
-          as its second, so the illustration and its immediate glow scale
-          together as one unit. --illustration-base-scale is set here (not
-          on WalletArtwork's own <img> anymore) since the WRAPPER is what
-          scales now. Ambient is only rendered for the non-warning tone,
-          matching the card's own background conditional above exactly
-          (the warning/wrong-network state never had a glow, only the flat
-          --card fill). The inner `relative z-10` div around WalletArtwork
-          keeps the illustration painting above the ambient glow (same
-          z-index:auto/positioned-sibling reasoning as promo-card__content
-          above, one level down). Still no mask — see WalletArtwork's own
-          comment. */}
-      <div
-        // MOBILE ARTWORK VISIBILITY FIX (was `hidden ... sm:block`, then a
-        // 17% base tier) — sm:/lg:/xl: tiers below are the exact unchanged
-        // values from before, so tablet/desktop rendering is untouched.
-        //
-        // MOBILE ARTWORK SIZE-UP: 22%, not 17%. `--illustration-base-scale`
-        // below applies its 1.6005 zoom to THIS box (transform-origin
-        // right-center, so it grows leftward from the fixed right edge —
-        // see index.css's `.promo-card__visual`) — the box's EFFECTIVE
-        // rendered width is this Tailwind width times that scale, not the
-        // width alone: 22% * 1.6005 ≈ 35% effective (this task's own
-        // "~35-45% of the card" target, at the lower end since this card
-        // also has to leave room for a CTA button the two info cards don't
-        // have) — up from the previous 17% * 1.6005 ≈ 27% effective, a real
-        // +29% (within this task's requested +25-35%), verified against
-        // `.promo-card__content`'s own reduced 62% mobile max-width
-        // (index.css) via live getBoundingClientRect — no overlap, real
-        // buffer. sm:/lg:/xl: don't need this correction:
-        // --illustration-base-scale is constant at every breakpoint, and
-        // 40/44/46% were already the proven-working sizes, untouched.
-        className="promo-card__visual pointer-events-none absolute top-4 bottom-4 right-0 w-[22%] overflow-hidden sm:w-[40%] lg:w-[44%] xl:w-[46%]"
-        style={{ "--illustration-base-scale": 1.6005 }}
-      >
-        {tone !== "warning" && (
-          <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
-        )}
-        <div className="relative z-10 h-full w-full">
-          <WalletArtwork />
-        </div>
-      </div>
+      {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
+          `glow` off for the wrong-network tone only, matching that tone's
+          previous behavior (flat warning surface, no ambient bloom). */}
+      <PromoIllustration src="/heroes/wallet-promo.webp" glow={tone !== "warning"} />
     </div>
   );
 }
@@ -614,44 +494,6 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
 // WeeklyRaceCard exactly as before (see PromoStrip's own render below) with
 // no other change — these are independent, additive, not a replacement.
 
-// FINAL HERO ARTWORK — same public/heroes/ convention and <img> shape as
-// WalletArtwork/WelcomeOfferArtwork/WeeklyRaceArtwork above (plain
-// public-path string, not a bundled ES import — this file's own established
-// pattern for every hero image, all of which live in public/heroes/ as
-// static assets rather than Vite-processed src/assets imports). Replaces
-// the temporary SVG/CSS node-diagram and linked-block placeholders this
-// task's own artwork retires. object-contain + object-right (not a fixed
-// size) is what lets each asset's own native aspect ratio (850x700 here)
-// fill the shared `.promo-card__visual` zone in InfoCard below without
-// cropping its focal object — same technique already proven on three
-// differently-shaped assets in this file.
-function AboutTribetArtwork() {
-  return (
-    <img
-      src="/heroes/about-tribet-hero.png"
-      alt=""
-      loading="lazy"
-      decoding="async"
-      fetchPriority="low"
-      className="promo-card__illustration h-full w-full object-contain object-right"
-    />
-  );
-}
-
-// Same convention as AboutTribetArtwork above (980x640 native).
-function TransparentPlayArtwork() {
-  return (
-    <img
-      src="/heroes/transparent-play-hero.png"
-      alt=""
-      loading="lazy"
-      decoding="async"
-      fetchPriority="low"
-      className="promo-card__illustration h-full w-full object-contain object-right"
-    />
-  );
-}
-
 // Static, non-interactive card shell shared by AboutTribetCard/
 // TransparentPlayCard below — same CARD_H/radius/border/background/shadow
 // "card system" as the interactive Wallet/Welcome Offer/Weekly Race cards
@@ -660,12 +502,13 @@ function TransparentPlayArtwork() {
 // onClick/onKeyDown, no CTA button at all (not a hidden/disabled one).
 // `.promo-card--static` (index.css) additionally neutralizes the shell's
 // own hover/press lift and artwork zoom, so it never LOOKS clickable
-// either — see this task's own "prefer completely static interaction
-// behavior." `eyebrow`/`title`/`body`/`artwork` are plain props so a future
-// task can add an optional `href` here (see NAV SPEC's own "structure the
-// card definitions so adding links later is straightforward") without
-// touching AboutTribetCard/TransparentPlayCard themselves.
-function InfoCard({ eyebrow, title, body, artwork }) {
+// either. `eyebrow`/`title`/`body`/`artworkSrc` are plain props so a future
+// task can add an optional `href` here without touching AboutTribetCard/
+// TransparentPlayCard themselves. `artworkSrc` is a plain public/heroes/
+// path string (not a ReactNode) — both cards' artwork now renders through
+// the same shared PromoIllustration component WalletCard uses above, rather
+// than each card owning its own <img>-wrapping component.
+function InfoCard({ eyebrow, title, body, artworkSrc }) {
   return (
     <div
       className={cn(
@@ -681,39 +524,7 @@ function InfoCard({ eyebrow, title, body, artwork }) {
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
       </div>
-      {/* FINAL ARTWORK PASS — now that the approved copy is short (both
-          bodies fit in 1-2 lines even at this narrower content column — see
-          .promo-card--static .promo-card__content in index.css), the
-          artwork zone comes back up to Wallet/Welcome/Weekly's own ~40-46%
-          desktop range (this task's explicit "comparable visual weight to
-          the Wallet card" target: ~42% at xl:), narrowing only slightly at
-          the sm-1280px tier rather than collapsing the way it had to while
-          the long interim copy needed the room instead. Kept in sync with
-          .promo-card__content's own breakpoints so the two never overlap —
-          verified via getBoundingClientRect at every tested width, not
-          assumed. */}
-      {/* MOBILE ARTWORK VISIBILITY FIX, then SIZE-UP: same fix as
-          WalletCard's own `.promo-card__visual` above — was
-          `hidden ... sm:block`, stale leftover from a 3-col mobile grid
-          that no longer exists; sm:/xl: stay the exact unchanged values,
-          so tablet/desktop is untouched. Base tier is now 34% (up from an
-          initial 26%, +30.8% — this task's own "~35-45% of the card" /
-          "+25-35%" targets, and this card has no CTA competing for room
-          the way Wallet's does, so it can sit near the top of that range —
-          "enlarge more aggressively" per this task). Matched exactly to
-          sm:'s own 34% (not pushed past it) so there's no size step at the
-          640px handoff — mobile grows up to meet the existing tablet size
-          rather than briefly overshooting it. No
-          --illustration-base-scale here (InfoCard never sets it, defaults
-          to 1 — see index.css), so this width IS the effective rendered
-          size, unlike WalletCard's scaled box. `.promo-card--static
-          .promo-card__content`'s own reduced mobile max-width (index.css)
-          matches so text never runs under the artwork — verified via live
-          getBoundingClientRect, not assumed. */}
-      <div className="promo-card__visual pointer-events-none absolute inset-y-0 right-0 w-[34%] overflow-hidden sm:w-[34%] xl:w-[42%]">
-        <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
-        <div className="relative z-10 h-full w-full">{artwork}</div>
-      </div>
+      <PromoIllustration src={artworkSrc} />
     </div>
   );
 }
@@ -724,7 +535,7 @@ function AboutTribetCard() {
       eyebrow="ABOUT TRIBET"
       title="One wallet. Three arenas."
       body="Built by betting veterans and players."
-      artwork={<AboutTribetArtwork />}
+      artworkSrc="/heroes/about-tribet-hero.png"
     />
   );
 }
@@ -735,7 +546,7 @@ function TransparentPlayCard() {
       eyebrow="TRANSPARENT PLAY"
       title="Don't trust. Verify."
       body="Every result can be verified on-chain."
-      artwork={<TransparentPlayArtwork />}
+      artworkSrc="/heroes/transparent-play-hero.png"
     />
   );
 }
