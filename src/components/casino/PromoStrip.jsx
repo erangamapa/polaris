@@ -189,7 +189,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
           `glow` off for the wrong-network tone only, matching that tone's
           previous behavior (flat warning surface, no ambient bloom). */}
-      <PromoIllustration src="/heroes/wallet-promo.webp" glow={tone !== "warning"} />
+      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} />
     </div>
   );
 }
@@ -535,7 +535,7 @@ function AboutTribetCard() {
       eyebrow="ABOUT TRIBET"
       title="One wallet. Three arenas."
       body="Built by betting veterans and players."
-      artworkSrc="/heroes/about-tribet-hero.png"
+      artworkSrc="/heroes/promo-three-arenas.png"
     />
   );
 }
@@ -546,7 +546,7 @@ function TransparentPlayCard() {
       eyebrow="TRANSPARENT PLAY"
       title="Don't trust. Verify."
       body="Every result can be verified on-chain."
-      artworkSrc="/heroes/transparent-play-hero.png"
+      artworkSrc="/heroes/promo-verify.png"
     />
   );
 }
