@@ -851,6 +851,49 @@ html {
   --global-cta-focus-ring: rgba(61, 109, 255, 0.22);
   --global-cta-glow: rgba(61, 109, 255, 0.55);
 
+  /* TRIBET LOGO GRADIENT CTA: primary buttons app-wide (Connect Wallet,
+     Bet, Try again, Reconnect, etc. — every `default`-variant Button plus
+     the handful of hand-rolled buttons that duplicate its recipe instead
+     of using the shared component) move from a flat --global-cta fill to
+     the same purple->blue->cyan gradient as the TRIBET wordmark
+     (public/img/brand/logo.png). Stops are NOT hand-picked — they're a
+     linear regression fit of R/G/B against x-position over every opaque
+     logo pixel (see the task's own sampling), so this is the logo's own
+     gradient, not an approximation: #926BFF at 0%, #49A1F8 at 50%,
+     #00D7F2 at 100%. Kept as three separate stop tokens (not just one
+     `--global-cta-gradient` shorthand) so hover/active below can restate
+     the same three colors through color-mix without re-deriving them.
+     --global-cta/-hover/-active (flat colors, above) are UNCHANGED and
+     stay in use everywhere else a flat brand fill still applies (borders,
+     focus rings, icon tints, chip/toggle selected-state fills like
+     BetSwirlGame's face/number pickers) — this gradient is scoped to
+     PRIMARY ACTION button fills only, never introduced elsewhere. */
+  --global-cta-gradient-start: #926BFF;
+  --global-cta-gradient-mid: #49A1F8;
+  --global-cta-gradient-end: #00D7F2;
+  --global-cta-gradient: linear-gradient(
+    90deg,
+    var(--global-cta-gradient-start) 0%,
+    var(--global-cta-gradient-mid) 50%,
+    var(--global-cta-gradient-end) 100%
+  );
+  /* Hover: "slightly brighter," not a glow or animation — each stop mixed
+     10% toward white, same color-mix technique --brand-logo-hover already
+     uses for its own subtle hover brighten. */
+  --global-cta-gradient-hover: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--global-cta-gradient-start) 90%, white 10%) 0%,
+    color-mix(in srgb, var(--global-cta-gradient-mid) 90%, white 10%) 50%,
+    color-mix(in srgb, var(--global-cta-gradient-end) 90%, white 10%) 100%
+  );
+  /* Pressed: "slightly darker" — same three stops mixed 15% toward black. */
+  --global-cta-gradient-active: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--global-cta-gradient-start) 85%, black 15%) 0%,
+    color-mix(in srgb, var(--global-cta-gradient-mid) 85%, black 15%) 50%,
+    color-mix(in srgb, var(--global-cta-gradient-end) 85%, black 15%) 100%
+  );
+
   /* Favorites heart redesign: the one control in the app where "active"
      reads as coral rather than the brand blue (blue is reused instead for
      the chip's active border, so the two accents divide the state clearly:

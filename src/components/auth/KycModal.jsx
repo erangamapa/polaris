@@ -68,7 +68,7 @@ export function KycModal({ open, onClose, onVerified }) {
               <Upload className="size-4" /> Upload ID document (demo — no file needed)
             </div>
             {error && <p className="text-[11px] text-[var(--danger)]">{error}</p>}
-            <Button className="w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={submit}>
+            <Button className="w-full font-bold" onClick={submit}>
               Submit for verification
             </Button>
             <p className="text-[10px] text-muted-foreground">Demo — no documents are stored or checked.</p>

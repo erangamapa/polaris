@@ -40,7 +40,7 @@ export function SupportDialog({ open, onClose, onCloseAutoFocus }) {
             <span>Case <span className="font-mono font-medium text-[var(--success)]">{caseId}</span> opened — we'll reply by email.</span>
           </div>
         ) : (
-          <Button className="w-full bg-[var(--global-cta)] font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]" onClick={contact}>
+          <Button className="w-full font-bold" onClick={contact}>
             Contact support
           </Button>
         )}

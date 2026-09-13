@@ -16,7 +16,7 @@ export function WalletButton({ onManage, isConnected, address, primaryBalance, p
       <button
         onClick={onManage}
         data-test-id="connect-wallet"
-        className="flex shrink-0 items-center gap-2 rounded-lg bg-[var(--global-cta)] px-3 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
+        className="flex shrink-0 items-center gap-2 rounded-lg [background-image:var(--global-cta-gradient)] px-3 py-1.5 text-sm font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
       >
         <Wallet className="size-4" />
         Connect<span className="hidden sm:inline"> Wallet</span>

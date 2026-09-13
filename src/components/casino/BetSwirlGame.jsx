@@ -276,7 +276,7 @@ export function BetSwirlGame({ game, onRound, onRoundPending, onBusyChange }) {
                 so this is Casino Action Purple, not Mint — reverses an
                 earlier pass's call before this system existed. */}
             <button onClick={play_} disabled={insufficient || busy || !ready || balanceUnknown || phase === "uncertain"} data-test-id="betswirl-play"
-              className="h-[44px] rounded-lg bg-[var(--global-cta)] px-8 font-bold text-[var(--global-cta-text)] transition-colors hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500">
+              className="h-[44px] rounded-lg [background-image:var(--global-cta-gradient)] px-8 font-bold text-[var(--global-cta-text)] transition-colors hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500 disabled:[background-image:none]">
               {busy ? "…" : insufficient ? "Low balance" : "Bet"}
             </button>
           </div>

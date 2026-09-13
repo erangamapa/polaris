@@ -29,7 +29,21 @@ const buttonVariants = cva(
         // (see index.css's Core Brand block) — the one Prediction Markets
         // exception (Buy Yes/Buy No) uses the `success`/`destructive`
         // variants below directly at the call site instead.
-        default: "bg-[var(--global-cta)] text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] active:bg-[var(--global-cta-active)]",
+        //
+        // TRIBET LOGO GRADIENT PASS: flat --global-cta fill replaced with
+        // the --global-cta-gradient family (index.css) — the same
+        // purple->blue->cyan gradient sampled from the TRIBET wordmark.
+        // background-image (not background-color) so text/icon color is
+        // never touched by this — `text-[var(--global-cta-text)]` below is
+        // unchanged. disabled: explicitly resets to the flat, pre-gradient
+        // --global-cta fill (background-image:none) rather than a dimmed
+        // gradient — "keep the existing disabled styling" per spec; the
+        // shared base classlist's `disabled:opacity-40` still does the
+        // actual dimming on top of that flat color, exactly as before this
+        // pass. focus-visible ring is the shared base classlist's own
+        // ring, untouched here.
+        default:
+          "[background-image:var(--global-cta-gradient)] text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] disabled:bg-[var(--global-cta)] disabled:[background-image:none]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         // Prediction Markets semantic exception (YES) — see index.css.

@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="rounded-lg bg-[var(--global-cta)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)]"
+              className="rounded-lg [background-image:var(--global-cta-gradient)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)]"
             >
               Reload
             </button>

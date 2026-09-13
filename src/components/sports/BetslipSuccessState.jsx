@@ -46,7 +46,7 @@ export function BetslipSuccessState({ subtitle, eventLabel, marketLabel, outcome
         <button
           onClick={onContinueBetting}
           data-test-id="betslip-continue-betting"
-          className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--global-cta)] text-base font-semibold text-[var(--global-cta-text)] hover:bg-[var(--global-cta-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="flex min-h-[52px] w-full items-center justify-center rounded-lg [background-image:var(--global-cta-gradient)] text-base font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Continue betting
         </button>
