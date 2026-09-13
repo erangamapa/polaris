@@ -115,7 +115,7 @@ export function Footer({ onResponsibleGambling, onSupport }) {
     // VISUAL REFRESH: mt-12 -> mt-16 — a clearer, more deliberate break
     // from the game section above so the footer reads as intentional
     // rather than attached directly to the last row of cards.
-    <footer className="mt-16 border-t">
+    <footer className="mt-8 border-t sm:mt-16">
       {/* LAYOUT STABILITY: was mx-auto max-w-6xl — the Footer is the same
           component on every arena, but centering via mx-auto still reacts
           to <main>'s CURRENT width, which genuinely differs on Sports (the
@@ -127,7 +127,7 @@ export function Footer({ onResponsibleGambling, onSupport }) {
           var(--content-max-w) ArenaPageColumn uses (see index.css), so the
           footer can never end up narrower or wider than the page content
           sitting above it. */}
-      <div className="w-full max-w-[var(--content-max-w)] px-4 py-8">
+      <div className="w-full max-w-[var(--content-max-w)] px-4 py-6 sm:py-8">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {FOOTER_COLUMNS.map((col) => {
             // A column heading only reads as "fully unavailable" once every

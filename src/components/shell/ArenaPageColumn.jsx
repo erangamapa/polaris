@@ -33,9 +33,14 @@ import { cn } from "@/lib/utils";
 // category nav, game catalog), matching the same space-y-8 CasinoCatalog.jsx
 // already uses between its own rail sections — one consistent scale rather
 // than two different gap sizes stacked on top of each other.
+//
+// That rhythm was set against a desktop mockup and stays there from sm up. On
+// a 390px phone the same 32px between every block spent most of the first
+// screen on empty space before a single game was visible, so mobile steps it
+// down to 20px. Same scale, one notch tighter where the viewport is scarce.
 export function ArenaPageColumn({ children, className }) {
   return (
-    <div data-test-id="arena-page-column" className={cn("w-full max-w-[var(--content-max-w)] space-y-8", className)}>
+    <div data-test-id="arena-page-column" className={cn("w-full max-w-[var(--content-max-w)] space-y-5 sm:space-y-8", className)}>
       {children}
     </div>
   );
