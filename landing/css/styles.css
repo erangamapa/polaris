@@ -865,31 +865,97 @@ a {
   margin-bottom: var(--space-block);
 }
 
+/* ON-CHAIN GAMES REBUILD — same <ul>/<li> markup and the exact same six
+   label strings as before (a flat text list); this only changes how each
+   <li> is presented. Real artwork for the three games that have it
+   (Dice/Coin Toss/Roulette — real <img>s, not CSS background-image, so
+   loading="lazy"/explicit width+height/empty alt all mean something);
+   Keno/Wheel/Plinko have no art asset (Wheel and Plinko don't exist as
+   games yet at all), so they get a plain --card surface with the label
+   set in the display face instead — no invented icons, no placeholder
+   image, no new copy. */
 .game-list {
   list-style: none;
   margin: 0 0 1.75rem;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem 1.5rem;
-  font-family: var(--font-display);
-  font-size: clamp(1.35rem, 3vw, 1.85rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
 }
 
-/* CONTRAST FIX — the old rgba(154,163,168,.55) sat around 2.6:1 on --bg,
-   below AA. color-mix against transparent (not a flatter gray) keeps the
-   "de-emphasised" read while landing comfortably past 4.5:1; the actual
-   soon/live distinction gets reinforced by real chrome (opacity + the
-   non-interactive card treatment in the On-chain Games rebuild below), not
-   by making the text itself hard to read. */
+.game-list li {
+  position: relative;
+  /* Without this, `position:relative` alone doesn't establish a stacking
+     context (needs a non-auto z-index for that), so `.game-list__art`'s
+     z-index:-1 below escaped to a distant ancestor's context and painted
+     behind the page's own background — confirmed live: the image loaded
+     fine (naturalWidth correct) but never became visible until this was
+     added. `isolation: isolate` scopes that z-index to just this li. */
+  isolation: isolate;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+/* Real artwork already has its own baked-in title lettering (see the hero
+   fan above) — showing the <li>'s own text a second time on top of the
+   same word would just be a redundant caption, not a real label. The text
+   stays in the DOM (still the item's real accessible name — nothing here
+   is aria-hidden) but is pushed off-canvas visually, the classic
+   image-replacement technique, not display:none/visibility:hidden (which
+   would also remove it from the accessibility tree). */
+.game-list li.has-art {
+  color: transparent;
+  text-indent: -9999px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.game-list__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+/* Keno/Wheel/Plinko: no artwork, so the label is the only content — set
+   visibly, in the display face, bottom-aligned like a card title. */
+.game-list li:not(.has-art) {
+  display: flex;
+  align-items: flex-end;
+  padding: 0.85rem 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .game-list li:not(.muted):hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+}
+
+/* "Soon" cards: ~60% opacity (verified this still clears 4.5:1 AA against
+   --bg — the --ink text alone, before any opacity, starts well above that
+   floor) and genuinely non-interactive, not just visually muted. */
 .game-list .muted {
-  color: color-mix(in srgb, var(--muted) 85%, transparent);
-  font-weight: 600;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: var(--space-block);
   color: var(--accent);
   font-weight: 600;
 }
@@ -897,6 +963,17 @@ a {
 .text-link:hover {
   text-decoration: underline;
   text-underline-offset: 0.2em;
+}
+
+.text-link__arrow {
+  display: inline-block;
+  transition: transform var(--dur) var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .text-link:hover .text-link__arrow {
+    transform: translateX(3px);
+  }
 }
 
 .offer {
@@ -1021,7 +1098,9 @@ a {
   .nav a,
   .menu-toggle__line,
   .mobile-nav,
-  .pillars li {
+  .pillars li,
+  .game-list li,
+  .text-link__arrow {
     transition: none;
   }
 
