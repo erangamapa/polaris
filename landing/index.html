@@ -55,8 +55,15 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- POLISH PASS — trimmed from six weights to the ones actually
+         requested anywhere in styles.css. That set is 400/500/600/700/800,
+         not 400/500/700/800: font-weight:600 is load-bearing (skip-link,
+         hero-eyebrow, .eyebrow, every .btn including the primary/outline
+         CTAs, .text-link, .offer-copy strong) — dropping it would force a
+         browser-synthesized bold on all of those, a real rendering
+         regression, not a trim. 300 is the one weight genuinely unused. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/styles.css" />
