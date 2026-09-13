@@ -55,21 +55,28 @@ const stopAnd = (fn) => (e) => {
 // both CARD_H breakpoints (144px/176px) without needing separate tuning per
 // size, since percentages scale with the card automatically.
 //
-// PER-ASSET OPTICAL SCALE PASS: `scale` (default 1) sets
-// --illustration-base-scale, the same CSS variable index.css's
-// `.promo-card__visual` rule already reads (`scale: var(--illustration-base-scale, 1)`,
-// composed with the existing shared hover/press micro-zoom on top — see that
-// rule). This replaced an earlier "deliberately no per-card scale" stance:
-// once the artwork PNGs were normalized onto identical 1024x1024 canvases,
-// each icon's own internal padding (a nearly-square wallet vs. a wide,
-// short arenas/verify cluster) leaves a different fraction of the shared
-// box actually covered by visible pixels under object-contain — same box,
-// different OPTICAL weight. This scale corrects that per asset without
-// touching the box's own width/height/inset (still one shared rule for all
-// three) or the PNGs themselves. transform-origin stays right-center (set
-// on `.promo-card__visual` in index.css), so scaling only ever grows the
-// artwork left and vertically-symmetric — right edge and vertical center
-// never move.
+// WIDTH/HEIGHT SIZING PASS (replaces a `scale()`-based system that clipped
+// content): `width`/`height` (per-asset, percentages of the card) size the
+// wrapper directly — never a transform. This was a real, verified bug, not
+// a hypothetical: the old `scale: var(--illustration-base-scale)` applied
+// to a `w-[40%] h-[82%]` box with `object-contain`+`object-right` inside
+// visibly sliced off the right side of the Wallet artwork (confirmed live —
+// setting scale back to 1 made the identical PNG render with zero cropping,
+// full clasp and coins intact; setting it back to 1.28 reproduced the cut
+// every time, independent of every overflow:hidden in the ancestor chain,
+// which were tested and ruled out one at a time). Root cause aside, the
+// fix is to never again reach for scale to make this artwork bigger — only
+// literal width/height. `scale: 1` is set inline (not just omitting
+// `--illustration-base-scale`) specifically to WIN the cascade over
+// index.css's `.promo-card:hover .promo-card__visual { scale: ... }` rule
+// (inline declarations beat any non-!important selector, hover included) —
+// that shared rule is still used by the dormant WelcomeOfferCard/
+// WeeklyRaceCard below and is deliberately left untouched there; this just
+// opts these three cards out of it permanently rather than risk the same
+// clip reappearing on hover at a smaller magnitude. No overflow-hidden on
+// the wrapper either — object-contain already guarantees the full PNG
+// canvas is always visible within its own box, so a clip boundary here
+// was always a no-op at best and is removed for clarity.
 //
 // No wrapper background and no mask/blend-mode/filter here or anywhere else
 // in this file: the card's own --wallet-card-bg supplies the surface, this
@@ -79,11 +86,11 @@ const stopAnd = (fn) => (e) => {
 // than "a rectangle pasted on top." `glow` defaults on; WalletCard's
 // wrong-network state passes `glow={false}` to match its previous behavior
 // (that tone never got the ambient bloom, only the flat warning surface).
-function PromoIllustration({ src, glow = true, scale = 1 }) {
+function PromoIllustration({ src, glow = true, width = "40%", height = "82%" }) {
   return (
     <div
-      className="promo-card__visual pointer-events-none absolute top-1/2 right-4 h-[82%] w-[40%] -translate-y-1/2 overflow-hidden lg:right-5 lg:w-[42%]"
-      style={{ "--illustration-base-scale": scale }}
+      className="promo-card__visual pointer-events-none absolute top-1/2 right-[18px] -translate-y-1/2"
+      style={{ width, height, scale: 1 }}
     >
       {glow && (
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
@@ -198,7 +205,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
           `glow` off for the wrong-network tone only, matching that tone's
           previous behavior (flat warning surface, no ambient bloom). */}
-      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} scale={1.28} />
+      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} width="44%" height="90%" />
     </div>
   );
 }
@@ -517,7 +524,7 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
 // path string (not a ReactNode) — both cards' artwork now renders through
 // the same shared PromoIllustration component WalletCard uses above, rather
 // than each card owning its own <img>-wrapping component.
-function InfoCard({ eyebrow, title, body, artworkSrc, artworkScale }) {
+function InfoCard({ eyebrow, title, body, artworkSrc, artworkWidth, artworkHeight }) {
   return (
     <div
       className={cn(
@@ -533,7 +540,7 @@ function InfoCard({ eyebrow, title, body, artworkSrc, artworkScale }) {
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
       </div>
-      <PromoIllustration src={artworkSrc} scale={artworkScale} />
+      <PromoIllustration src={artworkSrc} width={artworkWidth} height={artworkHeight} />
     </div>
   );
 }
@@ -545,7 +552,8 @@ function AboutTribetCard() {
       title="One wallet. Three arenas."
       body="Built by betting veterans and players."
       artworkSrc="/heroes/promo-three-arenas.png"
-      artworkScale={1.37}
+      artworkWidth="43%"
+      artworkHeight="85%"
     />
   );
 }
@@ -557,7 +565,8 @@ function TransparentPlayCard() {
       title="Don't trust. Verify."
       body="Every result can be verified on-chain."
       artworkSrc="/heroes/promo-verify.png"
-      artworkScale={1.26}
+      artworkWidth="41%"
+      artworkHeight="81%"
     />
   );
 }
