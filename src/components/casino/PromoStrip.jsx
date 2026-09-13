@@ -50,10 +50,13 @@ const stopAnd = (fn) => (e) => {
 // absolute, vertically centered (top-1/2 + -translate-y-1/2, not an inset-y-0
 // full-bleed or a fixed top/bottom px pair), right-aligned with a small fixed
 // inset (not flush-zero), object-contain (never crops, always preserves
-// aspect ratio), sized to ~40-42% of the card's width and ~82% of its height
-// — comfortably inside this task's 38-44%/80-85%/16-24px-inset targets at
-// both CARD_H breakpoints (144px/176px) without needing separate tuning per
-// size, since percentages scale with the card automatically.
+// aspect ratio). width/height are per-asset (see each call site) — tuned so
+// the VISIBLE (non-transparent) artwork, not the padded PNG canvas, lands
+// ~4-8px from the card's right edge and reads as comparable visual weight
+// across Wallet/Arenas/Verify despite their different natural aspect ratios
+// and internal whitespace (OPTICAL NORMALIZATION PASS — see the three PNGs'
+// own trim, which now carries only ~5px of right-side transparent padding so
+// this inset isn't fighting leftover canvas margin).
 //
 // WIDTH/HEIGHT SIZING PASS (replaces a `scale()`-based system that clipped
 // content): `width`/`height` (per-asset, percentages of the card) size the
@@ -89,7 +92,7 @@ const stopAnd = (fn) => (e) => {
 function PromoIllustration({ src, glow = true, width = "40%", height = "82%" }) {
   return (
     <div
-      className="promo-card__visual pointer-events-none absolute top-1/2 right-[18px] -translate-y-1/2"
+      className="promo-card__visual pointer-events-none absolute top-1/2 right-[4px] -translate-y-1/2"
       style={{ width, height, scale: 1 }}
     >
       {glow && (
@@ -552,7 +555,7 @@ function AboutTribetCard() {
       title="One wallet. Three arenas."
       body="Built by betting veterans and players."
       artworkSrc="/heroes/promo-three-arenas.png"
-      artworkWidth="43%"
+      artworkWidth="46%"
       artworkHeight="85%"
     />
   );
@@ -566,7 +569,7 @@ function TransparentPlayCard() {
       body="Every result can be verified on-chain."
       artworkSrc="/heroes/promo-verify.png"
       artworkWidth="44%"
-      artworkHeight="81%"
+      artworkHeight="86%"
     />
   );
 }
