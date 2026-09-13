@@ -1,13 +1,39 @@
 :root {
-  --bg: #07080a;
-  --bg-elevated: #101218;
-  --ink: #f4f7f6;
-  --muted: #9aa3a8;
+  /* FOUNDATION REBUILD (Phase 1) — these four are ported byte-for-byte from
+     the Casino app's own dark-theme tokens (src/index.css), not reinvented:
+     --bg/--ink/--muted/--line below match the app's --background/
+     --foreground/--muted-foreground(neutral-500)/--border exactly, so the
+     landing page and /casino/lobby now share one literal foundation instead
+     of two independently-tuned dark palettes that happened to both be dark. */
+  --bg: #0D0E16;
+  --card: #0B0F1D;
+  --ink: #DEE4F2;
+  --muted: #838FAB;
+  --line: color-mix(in srgb, #1B2342 82%, transparent);
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+
+  /* LEGACY (pre-Phase-1) tokens — deliberately still defined, not deleted.
+     Every section below `.section` (Casino/Sports/Predictions split,
+     On-chain Games, Rewards, FAQ, footer) is explicitly OUT OF SCOPE this
+     phase and still reads --teal/--pink directly (.btn-teal, .eyebrow,
+     .pillars bullet, .text-link, the FAQ +/- marker). Deleting these here
+     would silently break every one of those rules instead of leaving them
+     "functionally intact" as instructed — they get removed for real only
+     when those sections are rebuilt in a later phase. Nothing in the new
+     header/hero below reads any of the three. */
   --teal: #2ee6c5;
   --teal-deep: #1bb89c;
   --pink: #e56ba8;
-  --line: rgba(255, 255, 255, 0.08);
-  --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+
+  /* AUTHORITATIVE TRIBET GRADIENT — copied literally from src/index.css's
+     --global-cta-gradient stop colors (#926BFF / #49A1F8 / #00D7F2), which
+     were themselves fitted directly from the logo's own pixels (a linear
+     regression across every opaque logo pixel, not a hand-picked
+     approximation). This is the one gradient on the page: primary CTA
+     fills, the "Every game." headline accent, and nothing else — never a
+     background wash, a glow, or a per-icon treatment. */
+  --gradient-brand: linear-gradient(90deg, #926BFF 0%, #49A1F8 50%, #00D7F2 100%);
+
   /* One typeface for the whole site. Onest is what the app loads (see
      index.html) and what the reskin spec names as the stand-in for the
      licensed Söhne, so the landing and the lobby now read as one product
@@ -16,7 +42,8 @@
      rather than being collapsed into one: the split still marks intent. */
   --font-display: "Onest", system-ui, sans-serif;
   --font-body: "Onest", system-ui, sans-serif;
-  --radius: 14px;
+  --radius: 12px;
+  --radius-sm: 10px;
   --header-h: 72px;
 }
 
@@ -34,10 +61,13 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(46, 230, 197, 0.12), transparent 55%),
-    radial-gradient(900px 500px at -10% 30%, rgba(229, 107, 168, 0.08), transparent 50%),
-    var(--bg);
+  /* Flat foundation color only — no page-wide radial glow. The old teal/
+     pink ambient wash is gone and deliberately NOT replaced with a new
+     ambient effect anywhere on the page (ambient glow is one of this
+     phase's explicit "do not add" items); any color on the page now comes
+     from real content (the gradient CTA, the hero artwork), never from a
+     decorative haze behind it. */
+  background: var(--bg);
   font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.55;
@@ -60,8 +90,8 @@ a {
   left: 1rem;
   top: -100px;
   z-index: 100;
-  background: var(--teal);
-  color: #0a0b0d;
+  background: var(--gradient-brand);
+  color: #ffffff;
   padding: 0.65rem 1rem;
   border-radius: 999px;
   font-weight: 600;
@@ -71,6 +101,14 @@ a {
   top: 1rem;
 }
 
+/* HEADER REBUILD — flat, opaque navy at all times (no gradient-to-
+   transparent fade, no backdrop-filter blur: the old header was designed to
+   float over a full-bleed photo and fade as you scrolled past it; the new
+   hero has no photo to float over, so a glassy floating treatment has
+   nothing left to justify it). `.is-scrolled` (still toggled by the exact
+   same main.js scroll listener as before — simplified in meaning, not
+   removed) now only reveals the bottom hairline border, a quiet "you've
+   left the top of the page" cue instead of a whole background transition. */
 .site-header {
   position: fixed;
   inset: 0 0 auto;
@@ -81,25 +119,28 @@ a {
   justify-content: space-between;
   gap: 1rem;
   padding: 0 clamp(1.25rem, 4vw, 3rem);
-  background: linear-gradient(to bottom, rgba(7, 8, 10, 0.92), rgba(7, 8, 10, 0.55), transparent);
-  backdrop-filter: blur(10px);
-  transition: background 0.25s ease, border-color 0.25s ease;
+  background: var(--bg);
   border-bottom: 1px solid transparent;
+  transition: border-color 0.25s ease;
 }
 
 .site-header.is-scrolled {
-  background: rgba(7, 8, 10, 0.88);
   border-bottom-color: var(--line);
 }
 
+/* The logo is now the TRIBET wordmark image itself (public/img/brand/
+   logo.png — already includes the brand name, gradient and all), not an
+   icon+text pairing, so `.brand` is just an inline-flex wrapper for
+   positioning/hit-area, no font/letter-spacing of its own left to style. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: -0.01em;
+}
+
+.brand img {
+  display: block;
+  height: 28px;
+  width: auto;
 }
 
 .nav {
@@ -114,18 +155,109 @@ a {
   color: var(--ink);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* MOBILE HEADER FIX — the old page simply hid `.nav` below 760px with no
+   replacement, an actual lost feature (FAQ/On-chain became unreachable
+   from the header on mobile), not just a style gap. `.menu-toggle` is
+   hidden on desktop; `.header-actions .btn-primary` (the header's own
+   inline CTA) is hidden on mobile instead, so the collapsed bar is just
+   logo + one hamburger, never both a full CTA and a toggle competing for
+   the same cramped row — "Enter lobby" still gets a clear, one-tap path,
+   just inside `.mobile-nav` (below) rather than the collapsed bar itself. */
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.menu-toggle:hover {
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+/* `[hidden]` is a real HTML attribute here (toggled by main.js), not a
+   class — one less piece of state to keep in sync between the DOM and a
+   stylesheet, and it degrades safely (panel is simply absent) if JS fails
+   to load at all. */
+.mobile-nav[hidden] {
+  display: none;
+}
+
+.mobile-nav {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  z-index: 49;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem clamp(1.25rem, 4vw, 3rem) 1.5rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-nav a:not(.btn) {
+  padding: 0.75rem 0;
+  color: var(--muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-nav a:not(.btn):last-of-type {
+  border-bottom: 0;
+}
+
+.mobile-nav a:hover,
+.mobile-nav a:focus-visible {
+  color: var(--ink);
+}
+
+.mobile-nav .btn {
+  margin-top: 0.85rem;
+  justify-content: center;
+}
+
+@media (min-width: 760px) {
+  .menu-toggle,
+  .mobile-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .header-actions .btn-primary {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 0.7rem 1.15rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, filter 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .btn:hover {
@@ -145,6 +277,49 @@ a {
   background: #5ff0d4;
 }
 
+/* PRIMARY CTA — the one Tribet gradient, white text, ported directly from
+   the app's own button.jsx `default` variant recipe (background-image, not
+   background-color, so nothing else about the button shape/size/text is
+   coupled to this treatment). Hover/active brighten and darken the SAME
+   three stops via color-mix, matching the app's own
+   --global-cta-gradient-hover/-active exactly rather than inventing a new
+   feel. No glow, no scale, no animation beyond the shared 150-250ms
+   color/transform transition every other `.btn` already uses. */
+.btn-primary {
+  background-image: var(--gradient-brand);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, #926BFF 90%, white 10%) 0%,
+    color-mix(in srgb, #49A1F8 90%, white 10%) 50%,
+    color-mix(in srgb, #00D7F2 90%, white 10%) 100%
+  );
+}
+
+.btn-primary:active {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, #926BFF 85%, black 15%) 0%,
+    color-mix(in srgb, #49A1F8 85%, black 15%) 50%,
+    color-mix(in srgb, #00D7F2 85%, black 15%) 100%
+  );
+}
+
+/* SECONDARY CTA — restrained outline, deliberately never bright: the
+   primary gradient button must be the only "loud" thing in the CTA row. */
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.btn-outline:hover {
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--ink);
@@ -161,82 +336,147 @@ a {
   font-size: 1.02rem;
 }
 
+/* HERO REBUILD — a clean editorial two-column layout that sits directly on
+   the page background (no card, no full-bleed image, no 100vh/100dvh lock).
+   Height is now purely a function of padding + content, so on a normal
+   laptop viewport the next section's edge is visible or nearly so, instead
+   of the old hero consuming the entire first screen. */
 .hero {
-  position: relative;
-  min-height: 100vh;
-  min-height: 100dvh;
+  padding: calc(var(--header-h) + clamp(2.25rem, 6vw, 4rem)) 0 clamp(3rem, 7vw, 4.5rem);
+}
+
+.hero-inner {
+  width: min(1180px, calc(100% - 2.5rem));
+  margin: 0 auto;
   display: grid;
-  align-items: end;
-  overflow: hidden;
-  isolation: isolate;
+  gap: clamp(2.25rem, 6vw, 3.5rem);
+  align-items: center;
 }
 
-.hero-media {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
+.hero-copy {
+  max-width: 46ch;
 }
 
-.hero-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  transform: scale(1.04);
-  animation: drift 18s ease-in-out infinite alternate;
+/* Restrained on purpose — a small uppercase label, not a second
+   oversized brand-mark competing with the H1 for attention (the old
+   `.brand-mark` at clamp(2.8rem,9vw,5.5rem) was literally larger than the
+   H1 itself; this replaces it entirely rather than just recoloring it). */
+.hero-eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.hero-veil {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(180deg, rgba(7, 8, 10, 0.35) 0%, rgba(7, 8, 10, 0.55) 35%, rgba(7, 8, 10, 0.92) 72%, #07080a 100%),
-    linear-gradient(90deg, rgba(7, 8, 10, 0.75) 0%, rgba(7, 8, 10, 0.25) 55%, rgba(7, 8, 10, 0.55) 100%);
-}
-
-.hero-content {
-  width: min(720px, calc(100% - 2.5rem));
-  margin: 0 auto 12vh;
-  padding-top: calc(var(--header-h) + 2rem);
-}
-
-.brand-mark {
-  margin: 0 0 0.85rem;
+.hero h1 {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.8rem, 9vw, 5.5rem);
+  font-size: clamp(2.4rem, 5vw, 3.75rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 0.95;
-  background: linear-gradient(135deg, #ffffff 20%, var(--teal) 120%);
+  line-height: 1.08;
+}
+
+/* The one gradient accent this task asks for on the headline — background-
+   clip:text, same technique the old `.brand-mark` used, just pointed at the
+   real Tribet gradient instead of a teal-to-white fade. No text-shadow, no
+   glow, no animation. */
+.hero h1 .accent {
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.hero h1 {
-  margin: 0;
-  max-width: 14ch;
-  font-family: var(--font-display);
-  font-size: clamp(1.85rem, 4.8vw, 3.15rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
-}
-
-.lede {
-  margin: 1.1rem 0 0;
-  max-width: 38ch;
+.hero-lede {
+  margin: 1.25rem 0 0;
+  max-width: 42ch;
   color: var(--muted);
-  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
-  font-weight: 300;
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
 }
 
-.cta-row {
+.hero .cta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1.75rem;
+  margin-top: 2rem;
+}
+
+/* HERO VISUAL — a controlled, hand-placed composition of real product
+   assets (the wallet illustration + three real game covers), never a
+   screenshot of /casino/lobby (the user is one click from the real thing;
+   showing it here would be redundant) and never a generic decorative
+   scene. Square aspect ratio keeps the composition predictable across
+   breakpoints; percentages inside are of THIS box, not the viewport, so
+   the whole group scales as one unit. `aria-hidden` + empty `alt` on every
+   child — this is a decorative brand moment, the actual product
+   information lives in the copy to its left. */
+.hero-visual {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  aspect-ratio: 1 / 1;
+  justify-self: center;
+}
+
+.hero-visual__game {
+  position: absolute;
+  width: 33%;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+}
+
+.hero-visual__dice {
+  left: 2%;
+  bottom: 6%;
+  z-index: 1;
+  transform: rotate(-9deg);
+}
+
+.hero-visual__coin {
+  left: 24%;
+  bottom: 0%;
+  z-index: 2;
+  transform: rotate(5deg);
+}
+
+.hero-visual__roulette {
+  left: 44%;
+  bottom: 9%;
+  z-index: 1;
+  transform: rotate(-4deg);
+}
+
+.hero-visual__wallet {
+  position: absolute;
+  width: 66%;
+  height: auto;
+  right: 0;
+  top: 6%;
+  z-index: 3;
+}
+
+.hero-visual__verify {
+  position: absolute;
+  width: 20%;
+  height: auto;
+  right: 2%;
+  bottom: 4%;
+  z-index: 4;
+}
+
+@media (min-width: 760px) {
+  .hero-inner {
+    grid-template-columns: 43% 1fr;
+  }
+
+  .hero-visual {
+    max-width: 100%;
+    justify-self: end;
+  }
 }
 
 .section {
@@ -448,50 +688,16 @@ a {
   color: var(--teal);
 }
 
-.reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.delay-1 {
-  animation-delay: 0.12s;
-}
-
-.delay-2 {
-  animation-delay: 0.24s;
-}
-
-.delay-3 {
-  animation-delay: 0.36s;
-}
-
-@keyframes rise {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes drift {
-  from {
-    transform: scale(1.04) translate3d(0, 0, 0);
-  }
-  to {
-    transform: scale(1.08) translate3d(-1.5%, -1%, 0);
-  }
-}
-
+/* MOTION — the old hero's `.reveal`/`.delay-*` entrance fade and its
+   continuous `drift` Ken Burns pan are both removed, not just disabled:
+   the new hero has no entrance animation and no per-frame motion at all
+   (see PHASE 1 — MOTION: "the hero should work without movement"). What's
+   left is just the shared, already-subtle `.btn`/`.menu-toggle`/
+   `.site-header` transitions declared with their own rules above, all
+   150-250ms. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-
-  .reveal,
-  .hero-media img {
-    animation: none !important;
-    opacity: 1;
-    transform: none;
   }
 }
 

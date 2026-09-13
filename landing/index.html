@@ -4,42 +4,49 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Primary SEO -->
-    <title>Tribet — Crypto Casino, Sports & Predictions</title>
+    <!-- Primary SEO
+         PHASE 1 metadata fix only (not a full SEO pass — see the audit):
+         the previous title/description advertised Sports and Predictions as
+         live product surfaces. Casino is the only live MVP arena right now,
+         so the copy is corrected to match reality rather than the aspiration. -->
+    <title>Tribet | Provably Fair Crypto Casino & On-Chain Games</title>
     <meta
       name="description"
-      content="Tribet is a Web3 crypto casino with provably fair on-chain games, live casino, sports betting, and predictions. Connect one wallet to play, earn, and withdraw."
+      content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
     />
     <meta
       name="keywords"
-      content="Tribet, crypto casino, provably fair, Web3 casino, USDT casino, online slots, live casino, sports betting, predictions, on-chain casino"
+      content="Tribet, crypto casino, provably fair, Web3 casino, USDT casino, online slots, on-chain casino"
     />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="Tribet" />
-    <meta name="theme-color" content="#0A0B0D" />
+    <meta name="theme-color" content="#0D0E16" />
     <link rel="canonical" href="https://tribet.gg/" />
 
-    <!-- Open Graph -->
+    <!-- Open Graph / Twitter
+         og:image / twitter:image are intentionally OMITTED this phase: the
+         only image that existed (lobby-preview.png) is the same stale,
+         pre-reskin product screenshot the hero itself is being retired for
+         (see HERO AUDIT) — shipping it as the *social share* image would be
+         worse than shipping no image at all. A real OG asset is deferred to
+         a later phase once the landing visual system is approved, per this
+         task's own "do not generate a temporary low-quality graphic" — not
+         an oversight. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Tribet" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://tribet.gg/" />
-    <meta property="og:title" content="Tribet — Crypto Casino, Sports & Predictions" />
+    <meta property="og:title" content="Tribet | Provably Fair Crypto Casino & On-Chain Games" />
     <meta
       property="og:description"
-      content="One wallet. Every game. Play provably fair on-chain games, live casino, sports, and predictions with fast crypto deposits and withdrawals."
+      content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
     />
-    <meta property="og:image" content="https://tribet.gg/lobby-preview.png" />
-    <meta property="og:image:alt" content="Tribet casino lobby with on-chain games and wallet connect" />
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Tribet — Crypto Casino, Sports & Predictions" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Tribet | Provably Fair Crypto Casino & On-Chain Games" />
     <meta
       name="twitter:description"
-      content="One wallet. Every game. Provably fair on-chain games, live casino, sports betting, and predictions."
+      content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
     />
-    <meta name="twitter:image" content="https://tribet.gg/lobby-preview.png" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/logo.svg" />
@@ -70,12 +77,7 @@
             "@id": "https://tribet.gg/#website",
             "url": "https://tribet.gg/",
             "name": "Tribet",
-            "publisher": { "@id": "https://tribet.gg/#organization" },
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://tribet.gg/?q={search_term_string}",
-              "query-input": "required name=search_term_string"
-            }
+            "publisher": { "@id": "https://tribet.gg/#organization" }
           },
           {
             "@type": "WebPage",
@@ -136,41 +138,88 @@
 
     <header class="site-header">
       <a class="brand" href="/" aria-label="Tribet home">
-        <img src="/logo.svg" width="28" height="28" alt="" />
-        <span>Tribet</span>
+        <img src="/img/brand/logo.png" width="130" height="32" alt="Tribet" />
       </a>
       <nav class="nav" aria-label="Primary">
-        <a href="#originals">On-chain</a>
         <a href="#play">Casino</a>
+        <a href="#originals">On-chain</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <a class="btn btn-teal" href="/casino/lobby">Enter lobby</a>
+      <div class="header-actions">
+        <a class="btn btn-primary" href="/casino/lobby">Enter lobby</a>
+        <button
+          class="menu-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mobile-nav"
+          aria-label="Open menu"
+          data-menu-toggle
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile" hidden>
+        <a href="#play">Casino</a>
+        <a href="#originals">On-chain</a>
+        <a href="#faq">FAQ</a>
+        <a class="btn btn-primary" href="/casino/lobby">Enter lobby</a>
+      </nav>
     </header>
 
     <main id="main">
       <section class="hero" aria-label="Tribet hero">
-        <div class="hero-media" aria-hidden="true">
-          <img
-            src="/lobby-preview.png"
-            alt=""
-            width="1600"
-            height="900"
-            fetchpriority="high"
-          />
-        </div>
-        <div class="hero-veil" aria-hidden="true"></div>
-        <div class="hero-content">
-          <p class="brand-mark reveal">Tribet</p>
-          <h1 class="reveal delay-1">One wallet. Every game.</h1>
-          <p class="lede reveal delay-2">
-            Crypto casino, sports, and predictions — play, earn, and withdraw
-            with a single wallet connection.
-          </p>
-          <div class="cta-row reveal delay-3">
-            <a class="btn btn-teal btn-lg" href="/casino/lobby"
-              >Connect wallet</a
-            >
-            <a class="btn btn-ghost btn-lg" href="#originals">Explore on-chain games</a>
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="hero-eyebrow">Crypto casino</p>
+            <h1>One wallet.<br /><span class="accent">Every game.</span></h1>
+            <p class="hero-lede">
+              Play provably fair on-chain casino games with one wallet
+              connection. Sports and prediction markets are coming next.
+            </p>
+            <div class="cta-row">
+              <a class="btn btn-primary btn-lg" href="/casino/lobby">Connect wallet</a>
+              <a class="btn btn-outline btn-lg" href="#originals">Explore on-chain games</a>
+            </div>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <img
+              class="hero-visual__game hero-visual__dice"
+              src="/img/games/dice.webp"
+              alt=""
+              width="495"
+              height="660"
+              loading="lazy"
+              decoding="async"
+            />
+            <img
+              class="hero-visual__game hero-visual__coin"
+              src="/img/games/coin-toss.webp"
+              alt=""
+              width="495"
+              height="660"
+              loading="lazy"
+              decoding="async"
+            />
+            <img
+              class="hero-visual__game hero-visual__roulette"
+              src="/img/games/roulette.webp"
+              alt=""
+              width="495"
+              height="660"
+              loading="lazy"
+              decoding="async"
+            />
+            <img
+              class="hero-visual__wallet"
+              src="/heroes/promo-wallet.png"
+              alt=""
+              width="1024"
+              height="1024"
+              fetchpriority="high"
+              decoding="async"
+            />
           </div>
         </div>
       </section>
