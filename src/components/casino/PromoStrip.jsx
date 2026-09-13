@@ -205,7 +205,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
           `glow` off for the wrong-network tone only, matching that tone's
           previous behavior (flat warning surface, no ambient bloom). */}
-      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} width="44%" height="90%" />
+      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} width="46%" height="90%" />
     </div>
   );
 }
@@ -565,7 +565,7 @@ function TransparentPlayCard() {
       title="Don't trust. Verify."
       body="Every result can be verified on-chain."
       artworkSrc="/heroes/promo-verify.png"
-      artworkWidth="41%"
+      artworkWidth="44%"
       artworkHeight="81%"
     />
   );
