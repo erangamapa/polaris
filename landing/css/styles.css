@@ -1161,21 +1161,42 @@ a {
 .footer-note {
   margin: 0 0 1.25rem;
   max-width: 62ch;
-  color: var(--muted);
-  font-size: 0.92rem;
+  /* A touch quieter than the meta row below it — the legal disclaimer
+     shouldn't compete for attention with the real links. */
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-size: 0.88rem;
 }
 
+/* Hairline above the meta row — a second, smaller divider separating the
+   disclaimer from the links/copyright, distinct from .site-footer's own
+   border-top above the logo. */
 .footer-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  align-items: center;
+  gap: 1rem;
   margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.9rem;
 }
 
-.footer-meta a:hover {
+/* Same underline-grows-from-the-left treatment as the header nav, not
+   just a color swap on hover. */
+.footer-meta a {
+  padding-bottom: 2px;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0% 1px;
+  transition: background-size var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.footer-meta a:hover,
+.footer-meta a:focus-visible {
   color: var(--accent);
+  background-size: 100% 1px;
 }
 
 /* MOTION — the old hero's `.reveal`/`.delay-*` entrance fade and its
@@ -1205,7 +1226,8 @@ a {
   .text-link__arrow,
   .faq summary,
   .faq-chevron,
-  .faq-item__body {
+  .faq-item__body,
+  .footer-meta a {
     transition: none;
   }
 
