@@ -1067,33 +1067,67 @@ a {
   margin-top: 1.5rem;
 }
 
-.faq details {
+.faq-item {
   border-bottom: 1px solid var(--line);
-  padding: 0.85rem 0 1rem;
+  padding-bottom: 1rem;
 }
 
+/* ≥44px tap target, hover surface bleeding to the section's own edges
+   (negative margin matching the summary's own padding, same trick as the
+   pillar hover in the section above), and a real gap to the chevron
+   instead of the old float-based "+"/"-" (which could collide with long
+   question text). */
 .faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 44px;
+  margin: 0 -1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   list-style: none;
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
 .faq summary::-webkit-details-marker {
   display: none;
 }
 
-.faq summary::after {
-  content: "+";
-  float: right;
-  color: var(--accent);
-  font-weight: 600;
+.faq summary:hover {
+  background: var(--card);
+  color: var(--ink);
 }
 
-.faq details[open] summary::after {
-  content: "–";
+.faq-chevron {
+  flex: none;
+  color: var(--accent);
+  transition: transform var(--dur) var(--ease);
+}
+
+.faq-item[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+
+/* Animated disclosure — grid-template-rows: 0fr/1fr driven by main.js
+   (inline style during the transition), never height:auto. The inner
+   wrapper is what actually clips the collapsing row; padding/margin for
+   the answer text live on it, not on .faq-item__body itself, for the same
+   reason the mobile nav's inner wrapper works (see main.js/styles.css
+   above). */
+.faq-item__body {
+  display: grid;
+  transition: grid-template-rows var(--dur) var(--ease);
+}
+
+.faq-item__body-inner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 .faq p {
@@ -1168,7 +1202,10 @@ a {
   .mobile-nav,
   .pillars li,
   .game-list li,
-  .text-link__arrow {
+  .text-link__arrow,
+  .faq summary,
+  .faq-chevron,
+  .faq-item__body {
     transition: none;
   }
 
