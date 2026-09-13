@@ -422,8 +422,8 @@ a {
 }
 
 .btn-lg {
-  padding: 0.95rem 1.45rem;
-  font-size: 1.02rem;
+  padding: 1rem 1.6rem;
+  font-size: 1.05rem;
 }
 
 /* HERO REBUILD — a clean editorial two-column layout that sits directly on
@@ -453,12 +453,27 @@ a {
    `.brand-mark` at clamp(2.8rem,9vw,5.5rem) was literally larger than the
    H1 itself; this replaces it entirely rather than just recoloring it). */
 .hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 0 0.75rem;
   color: var(--muted);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* A small designed kicker instead of plain grey text — one brand-gradient
+   dot, decorative only (no new words), same "small brand touch" rule the
+   gradient already follows everywhere else on the page. */
+.hero-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--gradient-brand);
 }
 
 .hero h1 {
@@ -468,6 +483,18 @@ a {
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.08;
+}
+
+/* The headline is the page's one real display moment; the base clamp above
+   plateaus at 3.75rem around ~1200px and stays flat forever after, so on a
+   genuinely large desktop it under-delivers relative to how much room the
+   48/52 hero grid (below) now gives it. This raises the ceiling to 4.25rem,
+   ramping from 1280px and settling by ~1480px, without touching the base
+   clamp's behavior below 1280px at all. */
+@media (min-width: 1280px) {
+  .hero h1 {
+    font-size: clamp(3.75rem, 4vw + 0.55rem, 4.25rem);
+  }
 }
 
 /* The one gradient accent this task asks for on the headline — background-
@@ -483,7 +510,7 @@ a {
 
 .hero-lede {
   margin: 1.25rem 0 0;
-  max-width: 42ch;
+  max-width: 46ch;
   color: var(--muted);
   font-size: clamp(1.05rem, 1.6vw, 1.2rem);
 }
@@ -510,8 +537,8 @@ a {
    carry the energy. `aria-hidden` + empty `alt` on every child — decorative
    only, the real product info lives in the copy to the left. */
 .hero-visual {
-  --front-h: clamp(220px, 23vw, 375px);
-  --rear-h: clamp(196px, 20.5vw, 335px);
+  --front-h: clamp(190px, 20vw, 310px);
+  --rear-h: clamp(170px, 17.5vw, 275px);
   position: relative;
   width: 100%;
   max-width: 480px;
@@ -524,43 +551,100 @@ a {
   top: 50%;
   width: auto;
   border-radius: var(--radius);
-  /* Restrained per this task's explicit "no large drop shadows" — just
-     enough to lift the card off the flat #0D0E16 background. */
-  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.5);
+  /* Layered neutral shadow (a tight contact shadow + a soft, wide falloff)
+     plus a 1px near-white hairline so the artwork visibly separates from
+     the near-black background — restrained, no glow/blur/color behind it. */
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 24px 60px -24px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+/* CARD FAN FIX — at the old left:4%/right:4% positions (and the original,
+   larger --front-h/--rear-h ceilings) the front card covered most of each
+   rear card's own title lettering ("DICE" read as "DIC", "ROULETTE" as
+   "ULETTE"): each cover's title runs nearly the card's full width, so any
+   ~35%+ overlap buried most of the word. First attempt was to keep the
+   larger sizes and let the rear cards bleed past the container's own edge
+   (negative left/right) for more separation — legible at the container's
+   max-width, but at narrower desktop widths (~1024px, where the column is
+   narrower than 560px) that bleed pushed the cards past the *page's* own
+   edge into real horizontal overflow. Fixed properly instead: rear cards
+   stay edge-anchored (left:0/right:0, never past the container) and all
+   three --front-h/--rear-h ceilings above came down (~310/275, was
+   ~375/335) so the trio actually fits 560px with only light overlap — a
+   real, deliberate trade-off against this pass's own "significantly
+   larger" precedent, made because full title legibility is this brief's
+   explicit, tested requirement and edge-anchored sizing can't overflow at
+   any width by construction. Also less rotation (-5°/+4°, was -6°/+5°)
+   and a small downward offset so the rear cards read as genuinely behind
+   Coin Toss. Verified in-browser at 1440/1280/1024/768/375 — legible and
+   zero horizontal overflow at all five. `--spread`/`--lift` are 0 at
+   rest; the hover rule below (real pointers + no-preference only)
+   overrides them without redefining the whole transform. */
 .hero-visual__dice {
-  left: 4%;
+  --rot: -5deg;
+  --spread: 0px;
+  left: 0;
   height: var(--rear-h);
   z-index: 1;
-  transform: translateY(-50%) rotate(-6deg);
+  transform: translateY(calc(-50% + 10px)) translateX(var(--spread)) rotate(var(--rot));
 }
 
 .hero-visual__coin {
+  --lift: 0px;
   left: 50%;
   height: var(--front-h);
   z-index: 2;
-  transform: translate(-50%, -50%) rotate(1deg);
+  transform: translate(-50%, calc(-50% + var(--lift))) rotate(1deg);
 }
 
 .hero-visual__roulette {
-  right: 4%;
+  --rot: 4deg;
+  --spread: 0px;
+  right: 0;
   height: var(--rear-h);
   z-index: 1;
-  transform: translateY(-50%) rotate(5deg);
+  transform: translateY(calc(-50% + 10px)) translateX(var(--spread)) rotate(var(--rot));
 }
 
-/* MOBILE — three cards read as crowded at phone widths, so Roulette drops
-   out (Coin Toss + Dice, per this task's explicit preference) and the
-   remaining pair re-centers as its own group rather than keeping the
-   3-card left/center/right math with an empty third slot. Sized with their
-   own clamp floor (not the desktop one) so they stay a real, confident
-   size on a narrow screen instead of inheriting a value tuned for 3 cards
-   sharing the space. */
+/* RESTRAINED HOVER — the fan spreads ~6px and the front card lifts 4px;
+   real pointers only (a touch "hover" would just leave it stuck spread)
+   and gated on prefers-reduced-motion so nothing moves for anyone who's
+   asked not to see it — not just an instant jump instead of an animated
+   one. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hero-visual__game {
+    transition: transform var(--dur) var(--ease);
+  }
+
+  .hero-visual:hover .hero-visual__dice {
+    --spread: -6px;
+  }
+
+  .hero-visual:hover .hero-visual__roulette {
+    --spread: 6px;
+  }
+
+  .hero-visual:hover .hero-visual__coin {
+    --lift: -4px;
+  }
+}
+
+/* MOBILE FIX — at the old left:27%/left:60% pair, Dice sat almost entirely
+   under Coin Toss (read as a rendering bug, not "behind"). Dice now starts
+   flush left with Coin Toss shifted just past center, leaving a real,
+   legible slice of Dice showing — verified in-browser at 375px. Container
+   height also drops to front-card-height + ~1rem (was +2rem): with only
+   two cards and no rear card peeking out taller than the front, the extra
+   rem was dead space below the fan. Roulette drops out entirely (Coin Toss
+   + Dice, per this task's explicit preference) rather than shrinking
+   further to fit three. */
 @media (max-width: 759px) {
   .hero-visual {
     --front-h: clamp(210px, 46vw, 260px);
     --rear-h: clamp(190px, 42vw, 235px);
+    height: calc(var(--front-h) + 1rem);
   }
 
   .hero-visual__roulette {
@@ -568,11 +652,14 @@ a {
   }
 
   .hero-visual__dice {
-    left: 27%;
+    left: 0;
   }
 
+  /* Same "the title runs edge-to-edge" fix as the desktop trio above,
+     re-tuned for a two-card pair on a much narrower container — verified
+     at 375px that "DICE" and "Coin Toss" are both fully legible. */
   .hero-visual__coin {
-    left: 60%;
+    left: 70%;
   }
 }
 
@@ -585,8 +672,24 @@ a {
      was the old wallet-era placement) — centering inside the right column
      already reads as right-of-center relative to the whole hero. */
   .hero-visual {
-    max-width: 520px;
+    max-width: 560px;
     justify-self: center;
+  }
+}
+
+/* The 43/1fr split above was tuned for the old, narrower hero-visual; at
+   1024px+ the copy column has real room to breathe and the lede (now
+   46ch, matching .hero-copy) was wrapping a word early against 43%. 48/52
+   gives both columns closer to their natural width without starving
+   either — as `fr` weights, not literal percentages: `48% 52%` sums to
+   100% of the container and the grid `gap` is added on top of that, which
+   overflowed the page by exactly the gap width (confirmed in-browser:
+   .hero-visual's own column rendered 56px wider than the space actually
+   left after the gap). `fr` units correctly divide the space that
+   *remains* after the gap is subtracted first. */
+@media (min-width: 1024px) {
+  .hero-inner {
+    grid-template-columns: 48fr 52fr;
   }
 }
 
@@ -873,5 +976,11 @@ a {
   .site-header .btn {
     padding: 0.6rem 0.9rem;
     font-size: 0.9rem;
+  }
+
+  /* The two hero CTAs wrapped to different widths below this width, which
+     read as accidental rather than a deliberate stacked layout. */
+  .hero .cta-row .btn {
+    flex: 1 1 100%;
   }
 }
