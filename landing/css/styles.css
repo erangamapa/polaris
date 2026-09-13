@@ -706,6 +706,23 @@ a {
   gap: 2.5rem;
 }
 
+/* Both the copy and the pillar list were short, leaving a wide dead field
+   below both once the section had real width to work with. Sticky copy
+   keeps the heading in view while the pillars scroll past instead of both
+   just sitting there; only kicks in with real room (≥960px) since sticky
+   inside a short single mobile column does nothing useful. */
+@media (min-width: 960px) {
+  #play .section-copy {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+    align-self: start;
+  }
+
+  #play {
+    padding-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+}
+
 .section-copy h2,
 .section-intro h2,
 .offer-copy h2 {
@@ -740,13 +757,26 @@ a {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
+/* Real surface on hover (the --card token this pass puts to work) instead
+   of the list just being three floating text blocks — padding/radius are
+   new specifically to give that surface somewhere to show without
+   touching the text edges. */
 .pillars li {
-  padding: 0;
-  border: 0;
+  padding: 1rem;
+  margin: -1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   background: transparent;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.pillars li:hover {
+  background: var(--card);
+  border-color: var(--line);
+  transform: translateY(-1px);
 }
 
 .pillars h3 {
@@ -774,16 +804,56 @@ a {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  /* flex align-items:center centers against the text's full line-height
+     box, which sits a touch lower than the heading's own cap height —
+     nudge up to visually align with the letterforms instead. */
+  position: relative;
+  top: -1px;
 }
 
 .pillars .status--live {
+  position: relative;
+  padding-left: 1.15rem;
   color: #00D7F2;
   background: color-mix(in srgb, #00D7F2 16%, transparent);
 }
 
+/* Small pulsing dot — the one piece of continuous motion this pass adds,
+   so it's real motion, not just a decorative flourish: it's the one
+   status genuinely live right now. Disabled under reduced-motion below,
+   not just slowed down. */
+.pillars .status--live::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00D7F2;
+  transform: translateY(-50%);
+  animation: status-live-pulse 2s ease infinite;
+}
+
+@keyframes status-live-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: translateY(-50%) scale(1.4);
+  }
+}
+
+/* CONTRAST — plain --muted on its own faint chip read as almost invisible
+   next to the now-brighter "Live now" pill; blended a bit toward --ink
+   (text) and given a touch more background (chip) rather than just
+   brightening the flat color, so it still reads as clearly "quieter" than
+   live without being hard to read. */
 .pillars .status--soon {
-  color: var(--muted);
-  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  color: color-mix(in srgb, var(--muted) 78%, var(--ink) 22%);
+  background: color-mix(in srgb, var(--muted) 24%, transparent);
 }
 
 .pillars p {
@@ -950,8 +1020,13 @@ a {
   .brand img,
   .nav a,
   .menu-toggle__line,
-  .mobile-nav {
+  .mobile-nav,
+  .pillars li {
     transition: none;
+  }
+
+  .pillars .status--live::before {
+    animation: none;
   }
 }
 
