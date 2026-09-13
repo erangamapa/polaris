@@ -24,17 +24,14 @@
     <link rel="canonical" href="https://tribet.gg/" />
 
     <!-- Open Graph / Twitter
-         og:image / twitter:image are intentionally OMITTED (LEGACY VISUAL
-         CLEANUP PASS): the only image ever used here, lobby-preview.png, is
-         a stale pre-reskin product screenshot (old teal brand, old game/
-         content structure) — no longer referenced anywhere in this file.
-         The physical file still exists on disk only because the repo-root
-         SPA shell's own og:image/twitter:image still point at it (see
-         vite.config.js's LANDING_FILES comment); that is out of scope for
-         this landing-only pass. Shipping the stale screenshot as this
-         page's *social share* image would be worse than shipping none. A
-         real OG asset is deferred to a later phase once the new landing
-         visual system is approved — not an oversight. -->
+         og-image.png: composed from the existing brand wordmark
+         (public/img/brand/logo.png) on the page's own flat --bg color —
+         no new artwork, just that logo placed on 1200x630. Replaces the
+         earlier "omitted" state from the LEGACY VISUAL CLEANUP PASS, where
+         the only candidate was lobby-preview.png, a stale pre-reskin
+         product screenshot; that file is still deliberately unreferenced
+         here (see vite.config.js's LANDING_FILES comment for why it's
+         still on disk at all). -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Tribet" />
     <meta property="og:locale" content="en_US" />
@@ -44,12 +41,17 @@
       property="og:description"
       content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
     />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://tribet.gg/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Tribet" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Tribet | Provably Fair Crypto Casino & On-Chain Games" />
     <meta
       name="twitter:description"
       content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
     />
+    <meta name="twitter:image" content="https://tribet.gg/og-image.png" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
@@ -196,7 +198,9 @@
           <div class="hero-visual" aria-hidden="true">
             <img
               class="hero-visual__game hero-visual__dice"
-              src="/img/games/dice.webp"
+              src="/img/games/dice-1x.webp"
+              srcset="/img/games/dice-1x.webp 247w, /img/games/dice.webp 495w"
+              sizes="(min-width: 760px) 220px, 160px"
               alt=""
               width="495"
               height="660"
@@ -204,7 +208,9 @@
             />
             <img
               class="hero-visual__game hero-visual__roulette"
-              src="/img/games/roulette.webp"
+              src="/img/games/roulette-1x.webp"
+              srcset="/img/games/roulette-1x.webp 247w, /img/games/roulette.webp 495w"
+              sizes="(min-width: 760px) 220px, 160px"
               alt=""
               width="495"
               height="660"
@@ -212,7 +218,9 @@
             />
             <img
               class="hero-visual__game hero-visual__coin"
-              src="/img/games/coin-toss.webp"
+              src="/img/games/coin-toss-1x.webp"
+              srcset="/img/games/coin-toss-1x.webp 247w, /img/games/coin-toss.webp 495w"
+              sizes="(min-width: 760px) 260px, 180px"
               alt=""
               width="495"
               height="660"
@@ -259,9 +267,9 @@
           </p>
         </div>
         <ul class="game-list">
-          <li class="has-art"><img class="game-list__art" src="/img/games/dice.webp" alt="" width="495" height="660" loading="lazy" decoding="async" />Dice</li>
-          <li class="has-art"><img class="game-list__art" src="/img/games/coin-toss.webp" alt="" width="495" height="660" loading="lazy" decoding="async" />Coin Toss</li>
-          <li class="has-art"><img class="game-list__art" src="/img/games/roulette.webp" alt="" width="495" height="660" loading="lazy" decoding="async" />Roulette</li>
+          <li class="has-art"><img class="game-list__art" src="/img/games/dice-1x.webp" srcset="/img/games/dice-1x.webp 247w, /img/games/dice.webp 495w" sizes="(min-width: 640px) 220px, 45vw" alt="" width="495" height="660" loading="lazy" decoding="async" />Dice</li>
+          <li class="has-art"><img class="game-list__art" src="/img/games/coin-toss-1x.webp" srcset="/img/games/coin-toss-1x.webp 247w, /img/games/coin-toss.webp 495w" sizes="(min-width: 640px) 220px, 45vw" alt="" width="495" height="660" loading="lazy" decoding="async" />Coin Toss</li>
+          <li class="has-art"><img class="game-list__art" src="/img/games/roulette-1x.webp" srcset="/img/games/roulette-1x.webp 247w, /img/games/roulette.webp 495w" sizes="(min-width: 640px) 220px, 45vw" alt="" width="495" height="660" loading="lazy" decoding="async" />Roulette</li>
           <li>Keno</li>
           <li class="muted">Wheel — soon</li>
           <li class="muted">Plinko — soon</li>
