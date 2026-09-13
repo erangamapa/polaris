@@ -32,9 +32,9 @@ export const CATEGORY_META = {
 // reads "New Releases").
 //
 // The "Originals" id is a legacy internal key — it holds the on-chain games,
-// which come from BetSwirl and are NOT first-party Tribet content. It reads as
-// "BetSwirl" everywhere a player sees it (nav pill, sidebar item, search
-// result, Lobby rail heading). The id and its DOM/rail ids stay as-is because
+// which are NOT first-party Tribet content. It reads as "On-chain" everywhere
+// a player sees it (nav pill, sidebar item, search result, Lobby rail
+// heading); player-visible copy names no author, ours or the vendor's. The id and its DOM/rail ids stay as-is because
 // they are internal routing/test selectors with no player-visible surface;
 // only the label changed. Every consumer reads this override rather than
 // hardcoding the text, so no surface can drift out of sync.
