@@ -71,6 +71,12 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Body scroll lock while the mobile menu is open — toggled by main.js
+   alongside the panel's own open state, never on its own. */
+html.mobile-nav-open {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -146,11 +152,27 @@ a {
   padding: 0 clamp(1.25rem, 4vw, 3rem);
   background: var(--bg);
   border-bottom: 1px solid transparent;
-  transition: border-color 0.25s ease;
+  transition: border-color 0.25s ease, height var(--dur) var(--ease);
 }
 
+/* A small compression cue on scroll — hairline border (already there) plus
+   a shorter header and a smaller logo, both transitioned. Still flat/
+   opaque, no blur, no fade: that decision is already made above and this
+   doesn't revisit it. */
 .site-header.is-scrolled {
+  height: var(--header-h-scrolled);
   border-bottom-color: var(--line);
+}
+
+.site-header.is-scrolled .brand img {
+  height: 24px;
+}
+
+/* The mobile panel's own resting position also has to track the shorter
+   header once scrolled, since it sits inside `.site-header` and anchors
+   to `var(--header-h)` by default. */
+.site-header.is-scrolled #mobile-nav {
+  top: var(--header-h-scrolled);
 }
 
 /* The logo is now the TRIBET wordmark image itself (public/img/brand/
@@ -166,6 +188,7 @@ a {
   display: block;
   height: 28px;
   width: auto;
+  transition: height var(--dur) var(--ease);
 }
 
 .nav {
@@ -176,8 +199,31 @@ a {
   font-weight: 500;
 }
 
+/* Underline grows from the left via background-size, not a border/
+   text-decoration — lets the same declaration serve both the hover
+   affordance and the persistent scroll-spy "active" state below. */
+.nav a {
+  padding-bottom: 3px;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0% 1px;
+  transition: background-size var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
 .nav a:hover {
   color: var(--ink);
+  background-size: 100% 1px;
+}
+
+/* SCROLL-SPY — set by js/main.js's IntersectionObserver as the matching
+   section scrolls into view. Same underline treatment as :hover so the
+   active link reads as "the underline stayed", not a second visual
+   language; color also switches to full --ink so it doesn't rely on the
+   underline alone. */
+.nav a[aria-current="true"] {
+  color: var(--ink);
+  background-size: 100% 1px;
 }
 
 .header-actions {
@@ -211,10 +257,36 @@ a {
   border-color: color-mix(in srgb, var(--ink) 30%, transparent);
 }
 
-/* `[hidden]` is a real HTML attribute here (toggled by main.js), not a
-   class — one less piece of state to keep in sync between the DOM and a
-   stylesheet, and it degrades safely (panel is simply absent) if JS fails
-   to load at all. */
+/* HAMBURGER -> X — three independent <path> lines (not one multi-segment
+   path) so each can transform on its own. Keyed off `aria-expanded` on the
+   button itself (already the real open/close state main.js maintains) —
+   no separate JS-driven icon class needed. */
+.menu-toggle__line {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__line--top {
+  transform: translateY(5px) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__line--mid {
+  opacity: 0;
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__line--bottom {
+  transform: translateY(-5px) rotate(-45deg);
+}
+
+/* ANIMATED DISCLOSURE — `[hidden]` is still the source of truth for "not
+   in the layout or a11y tree at all" (removed by main.js only after the
+   close transition finishes, so nothing is tab-reachable mid-close). The
+   open/close motion itself is the `grid-template-rows: 0fr -> 1fr` trick:
+   `.mobile-nav` is the grid, `.mobile-nav__inner` is the one row/item, and
+   its `overflow: hidden` clips the row to whatever height the track
+   currently computes to — including its own padding, which is why the
+   padding lives on the inner element, not `.mobile-nav` itself. */
 .mobile-nav[hidden] {
   display: none;
 }
@@ -225,12 +297,25 @@ a {
   left: 0;
   right: 0;
   z-index: 49;
+  display: grid;
+  grid-template-rows: 0fr;
+  background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: grid-template-rows var(--dur) var(--ease), border-color var(--dur) var(--ease), top var(--dur) var(--ease);
+}
+
+.mobile-nav.is-open {
+  grid-template-rows: 1fr;
+  border-bottom-color: var(--line);
+}
+
+.mobile-nav__inner {
+  overflow: hidden;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.75rem clamp(1.25rem, 4vw, 3rem) 1.5rem;
-  background: var(--bg);
-  border-bottom: 1px solid var(--line);
 }
 
 .mobile-nav a:not(.btn) {
@@ -742,15 +827,28 @@ a {
 }
 
 /* MOTION — the old hero's `.reveal`/`.delay-*` entrance fade and its
-   continuous `drift` Ken Burns pan are both removed, not just disabled:
-   the new hero has no entrance animation and no per-frame motion at all
-   (see PHASE 1 — MOTION: "the hero should work without movement"). What's
-   left is just the shared, already-subtle `.btn`/`.menu-toggle`/
-   `.site-header` transitions declared with their own rules above, all
-   150-250ms. */
+   continuous `drift` Ken Burns pan are both removed, not just disabled: the
+   hero itself still has no entrance animation and no per-frame motion.
+   POLISH PASS added real interaction motion elsewhere (header/logo scroll
+   compression, nav underline, hamburger morph, animated mobile disclosure,
+   plus more added in later sections of this pass) — every one of them is
+   listed here under `prefers-reduced-motion: reduce`, not left to degrade
+   on its own. `transition: none` is used instead of restating each
+   property at its resting value, since these are all pure CSS transitions
+   (no keyframe animations) triggered by a state class/attribute that
+   itself doesn't change under reduced motion — cutting the transition
+   just makes the state change instant. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .site-header,
+  .brand img,
+  .nav a,
+  .menu-toggle__line,
+  .mobile-nav {
+    transition: none;
   }
 }
 
