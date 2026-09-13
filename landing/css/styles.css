@@ -382,68 +382,85 @@ a {
   margin-top: 2rem;
 }
 
-/* HERO VISUAL — a controlled, hand-placed composition of real product
-   assets (the wallet illustration + three real game covers), never a
-   screenshot of /casino/lobby (the user is one click from the real thing;
-   showing it here would be redundant) and never a generic decorative
-   scene. Square aspect ratio keeps the composition predictable across
-   breakpoints; percentages inside are of THIS box, not the viewport, so
-   the whole group scales as one unit. `aria-hidden` + empty `alt` on every
-   child — this is a decorative brand moment, the actual product
-   information lives in the copy to its left. */
+/* HERO VISUAL — REMOVE WALLET PASS. The wallet illustration is gone for
+   good: the copy ("One wallet. Every game.") already carries that idea, so
+   illustrating it too just competed with the headline and hid the actual
+   games. The visual's whole job now is "here are the games you can play" —
+   three real game covers (Dice/Coin Toss/Roulette), Coin Toss centered and
+   in front (highest z-index, tallest, least rotated), Dice and Roulette
+   peeking out rear-left/rear-right at a slight rotation. Sized in real px
+   via --front-h/--rear-h (clamped, not one hardcoded viewport) because this
+   task's target ("~330-380px / ~300-350px tall on large desktop") is a
+   literal height, not a percentage of some wrapper — percentages of a box
+   are what produced the old wallet-era sizing drift. No glow/blur/3D here:
+   restrained shadow + overlap + rotation only, the colorful covers already
+   carry the energy. `aria-hidden` + empty `alt` on every child — decorative
+   only, the real product info lives in the copy to the left. */
 .hero-visual {
+  --front-h: clamp(220px, 23vw, 375px);
+  --rear-h: clamp(196px, 20.5vw, 335px);
   position: relative;
   width: 100%;
-  max-width: 460px;
-  aspect-ratio: 1 / 1;
+  max-width: 480px;
+  height: calc(var(--front-h) + 2rem);
   justify-self: center;
 }
 
 .hero-visual__game {
   position: absolute;
-  width: 33%;
-  height: auto;
+  top: 50%;
+  width: auto;
   border-radius: var(--radius);
-  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+  /* Restrained per this task's explicit "no large drop shadows" — just
+     enough to lift the card off the flat #0D0E16 background. */
+  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.5);
 }
 
 .hero-visual__dice {
-  left: 2%;
-  bottom: 6%;
+  left: 4%;
+  height: var(--rear-h);
   z-index: 1;
-  transform: rotate(-9deg);
+  transform: translateY(-50%) rotate(-6deg);
 }
 
 .hero-visual__coin {
-  left: 24%;
-  bottom: 0%;
+  left: 50%;
+  height: var(--front-h);
   z-index: 2;
-  transform: rotate(5deg);
+  transform: translate(-50%, -50%) rotate(1deg);
 }
 
 .hero-visual__roulette {
-  left: 44%;
-  bottom: 9%;
+  right: 4%;
+  height: var(--rear-h);
   z-index: 1;
-  transform: rotate(-4deg);
+  transform: translateY(-50%) rotate(5deg);
 }
 
-.hero-visual__wallet {
-  position: absolute;
-  width: 66%;
-  height: auto;
-  right: 0;
-  top: 6%;
-  z-index: 3;
-}
+/* MOBILE — three cards read as crowded at phone widths, so Roulette drops
+   out (Coin Toss + Dice, per this task's explicit preference) and the
+   remaining pair re-centers as its own group rather than keeping the
+   3-card left/center/right math with an empty third slot. Sized with their
+   own clamp floor (not the desktop one) so they stay a real, confident
+   size on a narrow screen instead of inheriting a value tuned for 3 cards
+   sharing the space. */
+@media (max-width: 759px) {
+  .hero-visual {
+    --front-h: clamp(210px, 46vw, 260px);
+    --rear-h: clamp(190px, 42vw, 235px);
+  }
 
-.hero-visual__verify {
-  position: absolute;
-  width: 20%;
-  height: auto;
-  right: 2%;
-  bottom: 4%;
-  z-index: 4;
+  .hero-visual__roulette {
+    display: none;
+  }
+
+  .hero-visual__dice {
+    left: 27%;
+  }
+
+  .hero-visual__coin {
+    left: 60%;
+  }
 }
 
 @media (min-width: 760px) {
@@ -451,9 +468,12 @@ a {
     grid-template-columns: 43% 1fr;
   }
 
+  /* "Center-right", not flush against the column's own right edge (that
+     was the old wallet-era placement) — centering inside the right column
+     already reads as right-of-center relative to the whole hero. */
   .hero-visual {
-    max-width: 100%;
-    justify-self: end;
+    max-width: 520px;
+    justify-self: center;
   }
 }
 
