@@ -29,15 +29,15 @@ describe("CASINO_CATEGORIES", () => {
   // covered separately below via a fresh module load with the env stubbed,
   // mirroring packages/shared/chains.test.js's pattern.
   it("lists every nav-visible entry in the target sidebar/pill order", () => {
+    // Slots and Table Games are absent here because this file loads with no
+    // VITE_ENABLE_BGAMING set, i.e. no external catalogue — see below.
     expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
       "Lobby",
       "Originals",
       "Popular",
       "New",
-      "Slots",
       "Live Casino",
       "Game Shows",
-      "Table Games",
     ]);
   });
 
@@ -45,12 +45,18 @@ describe("CASINO_CATEGORIES", () => {
   // catalogue does now (lib/catalog), so the rule they encode is no longer
   // "never show these" but "only show a category something can actually
   // fill" — which is why each must keep a CATEGORY_META tag to filter on.
-  it("enables Slots and Table Games, each with a real tag to filter on", () => {
+  // Slots and Table Games hold no first-party games whatsoever: every title in
+  // them comes from an external studio catalogue. So they follow that source.
+  // Showing a shelf a player can click into and find nothing is worse than not
+  // showing it, and worse still when the tiles appear but will not launch.
+  it("hides Slots and Table Games when no external catalogue is enabled", () => {
     for (const id of ["Slots", "Table Games"]) {
-      const entry = CASINO_CATEGORIES.find((c) => c.id === id);
-      expect(entry, `${id} should be nav-visible`).toBeTruthy();
-      expect(ROUTED_CATEGORIES).toContain(id);
+      expect(CASINO_CATEGORIES.some((c) => c.id === id), `${id} should be hidden`).toBe(false);
     }
+  });
+
+  it("keeps their routes working regardless, for a bookmarked link", () => {
+    for (const id of ["Slots", "Table Games"]) expect(ROUTED_CATEGORIES).toContain(id);
   });
 
   it("disables Providers by default (betswirl content mode has zero provider-game inventory)", () => {
@@ -129,7 +135,7 @@ describe("CASINO_CATEGORIES in mixed content mode", () => {
     expect(providers.showInSidebar).toBe(true);
     expect(providers.showInTopNav).toBe(true);
     expect(providers.showAsLobbyRow).toBe(true);
-    expect(m.CASINO_CATEGORIES).toHaveLength(9);
+    expect(m.CASINO_CATEGORIES).toHaveLength(7);
     vi.unstubAllEnvs();
     vi.resetModules();
   });

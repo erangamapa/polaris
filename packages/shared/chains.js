@@ -126,6 +126,16 @@ export const ENABLE_WEEKLY_RACE = String(readEnv('VITE_ENABLE_WEEKLY_RACE') ?? '
 const rawAppMode = String(readEnv('VITE_APP_MODE') ?? '').trim().toLowerCase();
 export const APP_MODE = rawAppMode === 'full' ? 'full' : 'mvp';
 
+// Third-party studio demo catalogues (see src/lib/catalog). Only the exact
+// string 'true' turns a source on. Default OFF, and deliberately so: these are
+// public marketing demo endpoints with no agreement behind them, so a source
+// can start refusing traffic at any time. When it does, the failure is a
+// lobby full of tiles that open an empty frame — strictly worse than not
+// listing the games at all — and this flag is the switch that takes them out
+// without a deploy-and-pray. BGaming did exactly that: it began returning
+// HTTP 429 with a ~23h Retry-After to every IP tried, including a clean one.
+export const ENABLE_BGAMING = String(readEnv('VITE_ENABLE_BGAMING') ?? '').trim().toLowerCase() === 'true';
+
 export const baseSepolia = {
   id: BASE_SEPOLIA_ID,
   name: 'Base Sepolia',
