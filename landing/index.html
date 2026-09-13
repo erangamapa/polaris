@@ -24,14 +24,17 @@
     <link rel="canonical" href="https://tribet.gg/" />
 
     <!-- Open Graph / Twitter
-         og:image / twitter:image are intentionally OMITTED this phase: the
-         only image that existed (lobby-preview.png) is the same stale,
-         pre-reskin product screenshot the hero itself is being retired for
-         (see HERO AUDIT) — shipping it as the *social share* image would be
-         worse than shipping no image at all. A real OG asset is deferred to
-         a later phase once the landing visual system is approved, per this
-         task's own "do not generate a temporary low-quality graphic" — not
-         an oversight. -->
+         og:image / twitter:image are intentionally OMITTED (LEGACY VISUAL
+         CLEANUP PASS): the only image ever used here, lobby-preview.png, is
+         a stale pre-reskin product screenshot (old teal brand, old game/
+         content structure) — no longer referenced anywhere in this file.
+         The physical file still exists on disk only because the repo-root
+         SPA shell's own og:image/twitter:image still point at it (see
+         vite.config.js's LANDING_FILES comment); that is out of scope for
+         this landing-only pass. Shipping the stale screenshot as this
+         page's *social share* image would be worse than shipping none. A
+         real OG asset is deferred to a later phase once the new landing
+         visual system is approved — not an oversight. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Tribet" />
     <meta property="og:locale" content="en_US" />
@@ -49,7 +52,7 @@
     />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -68,8 +71,8 @@
             "@id": "https://tribet.gg/#organization",
             "name": "Tribet",
             "url": "https://tribet.gg/",
-            "logo": "https://tribet.gg/logo.svg",
-            "description": "Web3 crypto casino with provably fair games, sports betting, and predictions.",
+            "logo": "https://tribet.gg/img/brand/logo.png",
+            "description": "Non-custodial crypto casino with provably fair on-chain games. Sports and prediction markets are coming next.",
             "sameAs": []
           },
           {
@@ -83,14 +86,10 @@
             "@type": "WebPage",
             "@id": "https://tribet.gg/#webpage",
             "url": "https://tribet.gg/",
-            "name": "Tribet — Crypto Casino, Sports & Predictions",
+            "name": "Tribet — Provably Fair Crypto Casino & On-Chain Games",
             "isPartOf": { "@id": "https://tribet.gg/#website" },
             "about": { "@id": "https://tribet.gg/#organization" },
-            "description": "Tribet is a Web3 crypto casino with provably fair on-chain games, live casino, sports betting, and predictions.",
-            "primaryImageOfPage": {
-              "@type": "ImageObject",
-              "url": "https://tribet.gg/lobby-preview.png"
-            }
+            "description": "Play provably fair on-chain casino games with one wallet connection on Tribet. Sports and prediction markets are coming next."
           },
           {
             "@type": "FAQPage",
@@ -100,7 +99,7 @@
                 "name": "What is Tribet?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Tribet is a Web3 crypto casino and betting platform. Connect your wallet to access casino games, sports betting, and predictions without juggling multiple accounts."
+                  "text": "Tribet is a non-custodial crypto casino. Connect your wallet to play provably fair on-chain casino games. Sports betting and prediction markets are coming next, on the same wallet and account."
                 }
               },
               {
@@ -116,7 +115,7 @@
                 "name": "What games and markets are available?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "The casino lobby includes on-chain games, popular games, new releases, live casino, and game shows. You can also open Sports and Predictions from the main navigation."
+                  "text": "The casino lobby currently offers on-chain games — Dice, Coin Toss, Roulette, Keno, with more on the way. Sports and Predictions are coming soon and are not yet open."
                 }
               },
               {
@@ -228,22 +227,22 @@
         <div class="section-copy">
           <h2 id="play-heading">Casino, sports &amp; predictions</h2>
           <p>
-            Browse the lobby for on-chain games, popular titles, new
-            releases, live casino tables, and game shows — or switch into sports
-            betting and prediction markets from the same account.
+            Casino is live now — provably fair on-chain games with one
+            wallet connection. Sports and prediction markets are coming
+            next, on the same account.
           </p>
         </div>
         <ul class="pillars">
           <li>
-            <h3>Casino</h3>
-            <p>On-chain games, live dealers, and trending games in one lobby.</p>
+            <h3>Casino <span class="status status--live">Live now</span></h3>
+            <p>On-chain games you can play today — Dice, Coin Toss, Roulette, Keno and more.</p>
           </li>
           <li>
-            <h3>Sports</h3>
+            <h3>Sports <span class="status status--soon">Coming soon</span></h3>
             <p>Place bets across live and upcoming sporting events.</p>
           </li>
           <li>
-            <h3>Predictions</h3>
+            <h3>Predictions <span class="status status--soon">Coming soon</span></h3>
             <p>Trade outlooks on markets beyond traditional sportsbooks.</p>
           </li>
         </ul>
@@ -279,7 +278,7 @@
             Promotions and leaderboard races appear in the lobby whenever one is
             running. Open the casino to see what is live right now.
           </p>
-          <a class="btn btn-teal" href="/casino/lobby"
+          <a class="btn btn-primary" href="/casino/lobby"
             >See what is live</a
           >
         </div>
@@ -293,9 +292,10 @@
           <details open>
             <summary>What is Tribet?</summary>
             <p>
-              Tribet is a Web3 crypto casino and betting platform. Connect your
-              wallet to access casino games, sports betting, and predictions
-              without juggling multiple accounts.
+              Tribet is a non-custodial crypto casino. Connect your wallet to
+              play provably fair on-chain casino games. Sports betting and
+              prediction markets are coming next, on the same wallet and
+              account.
             </p>
           </details>
           <details>
@@ -308,9 +308,9 @@
           <details>
             <summary>What games and markets are available?</summary>
             <p>
-              The casino lobby includes on-chain games, popular games, new
-              releases, live casino, and game shows. You can also open Sports and
-              Predictions from the main navigation.
+              The casino lobby currently offers on-chain games — Dice, Coin
+              Toss, Roulette, Keno, with more on the way. Sports and
+              Predictions are coming soon and are not yet open.
             </p>
           </details>
           <details>
@@ -327,8 +327,7 @@
 
     <footer class="site-footer">
       <div class="footer-brand">
-        <img src="/logo.svg" width="24" height="24" alt="" />
-        <span>Tribet</span>
+        <img src="/img/brand/logo.png" width="98" height="24" alt="Tribet" />
       </div>
       <p class="footer-note">
         Gambling involves risk. Play responsibly and only with funds you can

@@ -62,9 +62,12 @@ if (!shellHtml.includes('id="root"')) {
 await rename(path.join(dist, 'index.html'), path.join(dist, APP_SHELL));
 
 // Copies landing/* over dist/*, index.html included. The landing's asset paths
-// (/css, /js, /logo.svg, /favicon.svg, /lobby-preview.png) and its SEO files
-// (/robots.txt, /sitemap.xml) are root-absolute, so they have to land at the
-// root of the output, alongside Vite's /assets and public/'s /games.
+// (/css, /js, /favicon.svg) and its SEO files (/robots.txt, /sitemap.xml) are
+// root-absolute, so they have to land at the root of the output, alongside
+// Vite's /assets and public/'s /games. lobby-preview.png also still lives
+// here and gets copied the same way, but only for the app shell's own
+// og:image/twitter:image (see vite.config.js's LANDING_FILES comment) — the
+// landing page itself no longer references it.
 await cp(landing, dist, { recursive: true });
 
 const copied = (await readdir(landing)).sort().join(', ');

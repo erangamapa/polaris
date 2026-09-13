@@ -12,18 +12,16 @@
   --line: color-mix(in srgb, #1B2342 82%, transparent);
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 
-  /* LEGACY (pre-Phase-1) tokens — deliberately still defined, not deleted.
-     Every section below `.section` (Casino/Sports/Predictions split,
-     On-chain Games, Rewards, FAQ, footer) is explicitly OUT OF SCOPE this
-     phase and still reads --teal/--pink directly (.btn-teal, .eyebrow,
-     .pillars bullet, .text-link, the FAQ +/- marker). Deleting these here
-     would silently break every one of those rules instead of leaving them
-     "functionally intact" as instructed — they get removed for real only
-     when those sections are rebuilt in a later phase. Nothing in the new
-     header/hero below reads any of the three. */
-  --teal: #2ee6c5;
-  --teal-deep: #1bb89c;
-  --pink: #e56ba8;
+  /* LEGACY CLEANUP PASS — the old --teal/--pink tokens (and every rule that
+     read them: .btn-teal, .eyebrow, .pillars bullet, .text-link, the FAQ
+     +/- marker, .btn-ghost, footer link hover) are gone for real now, not
+     just out of scope. Below-the-fold sections still use plain CSS (no
+     framework), just the CURRENT product's tokens instead of the retired
+     brand's. --accent is the one addition: the app's own accessible-on-dark
+     link/inline-accent shade (src/index.css's --global-cta-hover, #6E93FF —
+     ported by value, not reinvented), used only for small text accents
+     (FAQ marker, text links, footer hover) — never a background wash. */
+  --accent: #6E93FF;
 
   /* AUTHORITATIVE TRIBET GRADIENT — copied literally from src/index.css's
      --global-cta-gradient stop colors (#926BFF / #49A1F8 / #00D7F2), which
@@ -268,15 +266,6 @@ a {
   transform: translateY(0);
 }
 
-.btn-teal {
-  background: var(--teal);
-  color: #06120f;
-}
-
-.btn-teal:hover {
-  background: #5ff0d4;
-}
-
 /* PRIMARY CTA — the one Tribet gradient, white text, ported directly from
    the app's own button.jsx `default` variant recipe (background-image, not
    background-color, so nothing else about the button shape/size/text is
@@ -318,17 +307,6 @@ a {
 
 .btn-outline:hover {
   border-color: color-mix(in srgb, var(--ink) 30%, transparent);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--line);
-}
-
-.btn-ghost:hover {
-  border-color: rgba(46, 230, 197, 0.45);
-  color: var(--teal);
 }
 
 .btn-lg {
@@ -512,9 +490,9 @@ a {
 }
 
 .eyebrow {
-  margin: 0 0 0.55rem !important;
-  color: var(--teal) !important;
-  font-size: 0.85rem !important;
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -536,21 +514,39 @@ a {
 
 .pillars h3 {
   margin: 0 0 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   font-family: var(--font-display);
   font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.pillars h3::before {
-  content: "";
-  display: inline-block;
-  width: 0.55rem;
-  height: 0.55rem;
-  margin-right: 0.55rem;
-  border-radius: 2px;
-  background: var(--teal);
-  transform: translateY(-1px);
+/* MVP ACCURACY PASS — replaces the old teal bullet (purely decorative, said
+   nothing) with an explicit status tag, since Casino is the only arena
+   actually live right now and the copy/pillars must not imply otherwise.
+   Solid colors only (a literal stop from --gradient-brand for "live", the
+   existing --muted for "soon") — never a new gradient. */
+.pillars .status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pillars .status--live {
+  color: #00D7F2;
+  background: color-mix(in srgb, #00D7F2 16%, transparent);
+}
+
+.pillars .status--soon {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
 }
 
 .pillars p {
@@ -585,7 +581,7 @@ a {
 }
 
 .text-link {
-  color: var(--teal);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -638,7 +634,7 @@ a {
 .faq summary::after {
   content: "+";
   float: right;
-  color: var(--teal);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -659,13 +655,19 @@ a {
   border-top: 1px solid var(--line);
 }
 
+/* Single wordmark image now (public/img/brand/logo.png already bakes in the
+   brand name — see .brand img in the header), not an icon + separate text
+   label, so there's no second "Tribet" string to duplicate it. */
 .footer-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
   margin-bottom: 1rem;
-  font-family: var(--font-display);
-  font-weight: 700;
+}
+
+.footer-brand img {
+  display: block;
+  height: 24px;
+  width: auto;
 }
 
 .footer-note {
@@ -685,7 +687,7 @@ a {
 }
 
 .footer-meta a:hover {
-  color: var(--teal);
+  color: var(--accent);
 }
 
 /* MOTION — the old hero's `.reveal`/`.delay-*` entrance fade and its
@@ -722,9 +724,5 @@ a {
   .site-header .btn {
     padding: 0.6rem 0.9rem;
     font-size: 0.9rem;
-  }
-
-  .hero-content {
-    margin-bottom: 8vh;
   }
 }

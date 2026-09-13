@@ -53,8 +53,14 @@ const LANDING_FILES = new Set([
   '/index.html',
   '/robots.txt',
   '/sitemap.xml',
-  '/logo.svg',
   '/favicon.svg',
+  // lobby-preview.png is no longer used by the landing page itself (see the
+  // LEGACY VISUAL CLEANUP PASS) but stays served here because the SPA app
+  // shell's own og:image/twitter:image (the repo-root index.html) still
+  // points at it, and dist/lobby-preview.png only exists via this
+  // landing-copy step. Fixing the app shell's stale preview image is out of
+  // scope for a landing-only pass — do not delete this file without also
+  // updating that og:image/twitter:image pair.
   '/lobby-preview.png',
 ])
 
