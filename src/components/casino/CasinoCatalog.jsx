@@ -493,9 +493,13 @@ const RAIL_TILE = TILE_SCALE_CLASS.standard;
 // as top-margin-only utility strings (not a `--section-gap-*` CSS var) so
 // each rail's `className` prop can select one directly; Tailwind's default
 // spacing scale already covers every value needed here.
-const GAP_MAJOR = "mt-8 md:mt-12 lg:mt-16"; // entering the flagship section
-const GAP_REGULAR = "mt-6 md:mt-8 lg:mt-10"; // ordinary section-to-section
-const GAP_COMPACT = "mt-5 md:mt-6 lg:mt-7"; // stepping down into discovery
+// Each tier steps down one notch below md. The desktop scale was set against
+// a wide mockup; on a 390px phone the same gaps repeated at every rail
+// boundary pushed real content off the first screen and left visible empty
+// bands between sections. md and up are unchanged.
+const GAP_MAJOR = "mt-6 md:mt-12 lg:mt-16"; // entering the flagship section
+const GAP_REGULAR = "mt-4 md:mt-8 lg:mt-10"; // ordinary section-to-section
+const GAP_COMPACT = "mt-3 md:mt-6 lg:mt-7"; // stepping down into discovery
 
 const matchesQuery = (game, q) => !q || game.title.toLowerCase().includes(q);
 
