@@ -615,6 +615,9 @@ export default function App() {
     onReady: (game) => { if (game) trackRecent(game); },
   });
   const launchedGame = findGameByFavId(launch.state.gameId);
+  // A Casino game is on screen, so the page below <main> must stay exactly as
+  // tall as <main> — see the Footer gate in the render tree.
+  const gameIsOpen = product === "casino" && isLaunchActive(launch.state.status);
 
   // Game info — a plain sibling piece of state, entirely separate from
   // `launch` (see useCasinoGameLaunch above): opening/closing it never
@@ -1622,10 +1625,19 @@ export default function App() {
               )}
             </ArenaErrorBoundary>
           </ArenaContentStage>
-          <Footer
-            onResponsibleGambling={openRg}
-            onSupport={openSupport}
-          />
+          {/* No site footer under an open game. The game page is sized to fill
+              exactly the space <main> gives it (CasinoGamePage's
+              useAvailableHeight), so anything appended below it turns a page
+              that should fit into a scrolling one — the footer alone added
+              ~646px on mobile, pushing the frame out of view. Nobody reaches
+              for the RG/support links mid-round either; they are one tap away
+              in the menu, and the game's own utility bar is right there. */}
+          {!gameIsOpen && (
+            <Footer
+              onResponsibleGambling={openRg}
+              onSupport={openSupport}
+            />
+          )}
         </main>
 
         {/* Desktop Sports betslip panel — a real flex sibling of Sidebar/
