@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { attachMockHost } from "@/lib/gameBridge";
+import { LAUNCH_EXTERNAL } from "@/lib/catalog/game";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
@@ -51,16 +52,22 @@ export function ProviderGame({ game, onReady, onFailed }) {
   const [loaded, setLoaded] = useState(false);
   const [balance, setBalance] = useState(null);
 
+  // A third-party studio's demo runs its own play-money economy inside the
+  // frame, and it does not speak our bridge. Attaching the mock host to it
+  // would hang a TBET figure above a game showing entirely different credits,
+  // so external games get the iframe and nothing else.
+  const isExternal = game.launch?.kind === LAUNCH_EXTERNAL;
+
   useEffect(() => {
-    if (!loaded || !iframeRef.current) return;
+    if (isExternal || !loaded || !iframeRef.current) return;
     const detach = attachMockHost(iframeRef.current, { currency: "TBET", onBalance: setBalance });
     return detach;
-  }, [loaded]);
+  }, [isExternal, loaded]);
 
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-3 py-1.5 sm:px-4 sm:py-2">
-        <MicroLabel>{CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider game"}</MicroLabel>
+        <MicroLabel>{game.studio ?? CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider game"}</MicroLabel>
         {balance !== null && (
           <div className="rounded-lg bg-zinc-800 px-2.5 py-1 font-mono text-xs tabular-nums text-white sm:px-3 sm:py-1.5 sm:text-sm">{balance.toFixed(2)} TBET</div>
         )}
@@ -81,7 +88,14 @@ export function ProviderGame({ game, onReady, onFailed }) {
           // the genuine network-level failures a browser does report this
           // way, not the primary detection path.
           onError={() => onFailed?.()}
-          sandbox="allow-scripts allow-same-origin allow-pointer-lock"
+          // External studio demos need a little more room than a vendored app:
+          // popups for their help/paytable windows and forms for in-game
+          // controls. `allow-same-origin` on a cross-origin frame grants the
+          // frame its OWN origin, never ours, so this does not hand a third
+          // party access to our page.
+          sandbox={isExternal
+            ? "allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-orientation-lock"
+            : "allow-scripts allow-same-origin allow-pointer-lock"}
           className="h-full w-full border-0"
           data-test-id={`provider-iframe-${game.key}`}
         />

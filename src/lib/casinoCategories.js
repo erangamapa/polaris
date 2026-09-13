@@ -25,6 +25,7 @@ export const CATEGORY_META = {
   "Live Casino": { tag: "live-casino", description: "Real-format, live-style games." },
   "Game Shows": { tag: "game-shows", description: "TV-style games with big multipliers." },
   Slots: { tag: "slots", description: "Reel games." },
+  "Table Games": { tag: "table-games", description: "Roulette, blackjack, baccarat and card games." },
 };
 
 // Display label for a category id where it differs from the routing/
@@ -76,10 +77,10 @@ const ALL_CASINO_CATEGORIES = [
   { id: "Originals", label: CATEGORY_LABEL_OVERRIDE.Originals, kind: "rail", railTarget: "originals-rail", sectionId: "casino-section-originals", icon: Sparkles, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 1 },
   { id: "Popular", label: "Popular", kind: "routed", sectionId: "casino-section-popular", icon: Flame, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 2 },
   { id: "New", label: CATEGORY_LABEL_OVERRIDE.New, kind: "routed", sectionId: "casino-section-new-releases", icon: Rocket, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 3 },
-  { id: "Slots", label: "Slots", kind: "routed", icon: Cherry, enabled: false, showInSidebar: false, showInTopNav: false, showAsLobbyRow: false, order: 4 },
+  { id: "Slots", label: "Slots", kind: "routed", icon: Cherry, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 4 },
   { id: "Live Casino", label: "Live Casino", kind: "routed", sectionId: "casino-section-live-casino", icon: Radio, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 5 },
   { id: "Game Shows", label: "Game Shows", kind: "routed", sectionId: "casino-section-game-shows", icon: Tv, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 6 },
-  { id: "Table Games", label: "Table Games", kind: "unsupported", icon: Spade, enabled: false, showInSidebar: false, showInTopNav: false, showAsLobbyRow: false, order: 7 },
+  { id: "Table Games", label: "Table Games", kind: "routed", icon: Spade, enabled: true, showInSidebar: true, showInTopNav: true, showAsLobbyRow: true, order: 7 },
   // RE-ENABLED: a previous "FINAL QA" pass disabled this because only one
   // provider (Tribet Studio) existed — not enough for a real browsing
   // destination. Superseded now that three real providers exist (see

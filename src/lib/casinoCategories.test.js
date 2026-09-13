@@ -12,7 +12,7 @@ import { CASINO_CATEGORIES, CATEGORY_LABEL, ROUTED_CATEGORIES, CASINO_PROVIDERS,
 // those:
 //
 //  1.  One shared config drives every nav surface       -> code review (CategoryNav, Sidebar/mobile menu, casinoSearch.js's SEARCH_CATEGORIES/SEARCH_PROVIDERS, App.jsx's Casino sidebar builder all import from this module — no second hand-rolled list)
-//  2.  Only real catalog/route content is shown          -> unit test (CASINO_CATEGORIES shape, `enabled` flags) + code review (Slots/Table Games excluded — zero real games/tags for either)
+//  2.  Only real catalog/route content is shown          -> unit test (CASINO_CATEGORIES shape, `enabled` flags); Slots/Table Games are live now that a third-party studio catalogue fills them (see lib/catalog)
 //  3.  Each category has one clear route/filter behavior  -> unit test (activateCasinoCategory)
 //  4.  Providers is real provider browsing, not a mixed rail -> unit test (CASINO_PROVIDERS shape) + code review (see CasinoCatalog.jsx's ProviderTiles)
 //  5.  Tribet Originals naming is consistent everywhere      -> unit test (CATEGORY_LABEL.Originals)
@@ -28,29 +28,38 @@ describe("CASINO_CATEGORIES", () => {
   // entries, not seven. The 'mixed'-mode case (Providers re-enabled) is
   // covered separately below via a fresh module load with the env stubbed,
   // mirroring packages/shared/chains.test.js's pattern.
-  it("has exactly six nav-visible entries in betswirl content mode (Providers hidden — no visible content), in the target sidebar/pill order", () => {
-    expect(CASINO_CATEGORIES).toHaveLength(6);
+  it("lists every nav-visible entry in the target sidebar/pill order", () => {
     expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
       "Lobby",
       "Originals",
       "Popular",
       "New",
+      "Slots",
       "Live Casino",
       "Game Shows",
+      "Table Games",
     ]);
   });
 
-  it("never includes Slots or Table Games (no supported inventory for either)", () => {
-    expect(CASINO_CATEGORIES.some((c) => c.id === "Slots")).toBe(false);
-    expect(CASINO_CATEGORIES.some((c) => c.id === "Table Games")).toBe(false);
+  // Both were dark for one reason only: nothing could fill them. A studio
+  // catalogue does now (lib/catalog), so the rule they encode is no longer
+  // "never show these" but "only show a category something can actually
+  // fill" — which is why each must keep a CATEGORY_META tag to filter on.
+  it("enables Slots and Table Games, each with a real tag to filter on", () => {
+    for (const id of ["Slots", "Table Games"]) {
+      const entry = CASINO_CATEGORIES.find((c) => c.id === id);
+      expect(entry, `${id} should be nav-visible`).toBeTruthy();
+      expect(ROUTED_CATEGORIES).toContain(id);
+    }
   });
 
   it("disables Providers by default (betswirl content mode has zero provider-game inventory)", () => {
     expect(CASINO_CATEGORIES.some((c) => c.id === "Providers")).toBe(false);
   });
 
-  it("still resolves a disabled category's real label (Slots stays a working direct link)", () => {
+  it("resolves real labels for the newly filled categories", () => {
     expect(CATEGORY_LABEL.Slots).toBe("Slots");
+    expect(CATEGORY_LABEL["Table Games"]).toBe("Table Games");
   });
 
   it("gives every entry a non-empty label, icon, and every field the shared config promises", () => {
@@ -95,11 +104,10 @@ describe("CASINO_CATEGORIES", () => {
   });
 
   it("keeps ROUTED_CATEGORIES as every category with a real CATEGORY_META page, independent of `enabled`", () => {
-    // Slots is disabled (not offered as a destination anywhere) but its
-    // route must keep working for a direct/bookmarked link — see the
-    // module's own comment on why this is NOT filtered by `enabled`.
-    expect(ROUTED_CATEGORIES).toContain("Slots");
-    expect(ROUTED_CATEGORIES).toEqual(["Popular", "New", "Live Casino", "Game Shows", "Slots"]);
+    // ROUTED_CATEGORIES is every category with a CATEGORY_META page, which
+    // is deliberately NOT filtered by `enabled` — a category can be hidden
+    // from nav and still answer a direct or bookmarked link.
+    expect(ROUTED_CATEGORIES).toEqual(["Popular", "New", "Live Casino", "Game Shows", "Slots", "Table Games"]);
   });
 });
 
@@ -121,7 +129,7 @@ describe("CASINO_CATEGORIES in mixed content mode", () => {
     expect(providers.showInSidebar).toBe(true);
     expect(providers.showInTopNav).toBe(true);
     expect(providers.showAsLobbyRow).toBe(true);
-    expect(m.CASINO_CATEGORIES).toHaveLength(7);
+    expect(m.CASINO_CATEGORIES).toHaveLength(9);
     vi.unstubAllEnvs();
     vi.resetModules();
   });

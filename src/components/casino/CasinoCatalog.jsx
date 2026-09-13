@@ -9,6 +9,7 @@ import { track } from "@/lib/telemetry";
 import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
 import { PROVIDER_GAMES } from "./ProviderGame";
 import { CASINO_CONTENT_MODE, CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
+import { externalGames } from "@/lib/catalog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MicroLabel } from "@/components/ui/micro-label";
 import { takeUnclaimed } from "@/lib/casinoDedup";
@@ -35,7 +36,9 @@ import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS } fr
 // from CATEGORY_LABEL rather than a literal, so these cards and the section
 // heading they sit under can never disagree.
 export const gameProviderName = (game) =>
-  game.kind === "onchain" ? CATEGORY_LABEL.Originals : (CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider");
+  game.kind === "onchain"
+    ? CATEGORY_LABEL.Originals
+    : (game.studio ?? CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider");
 
 // Shared broken-image detection — one `onError` state machine, reused by
 // every place a game's artwork renders (full cards here, the compact search
@@ -64,7 +67,13 @@ const PROVIDER = PROVIDER_GAMES.map((g) => ({ ...g, favId: `provider:${g.key}`, 
 // see the `playable` handling in CasinoGameCard below) always remain. In
 // 'mixed' mode this is a no-op and the full combined catalog is visible,
 // same as before this flag existed.
-const MASTER_GAMES = [...ONCHAIN, ...PROVIDER];
+// Third-party studio demos (see lib/catalog). They are `kind: "provider"` so
+// they render through the same launch surface as vendored games, but carry
+// their own `source`, so the content-mode filter below treats them as the
+// non-BetSwirl content they are.
+const EXTERNAL = externalGames();
+
+const MASTER_GAMES = [...ONCHAIN, ...PROVIDER, ...EXTERNAL];
 export const ALL_GAMES = CASINO_CONTENT_MODE === "betswirl"
   ? MASTER_GAMES.filter((g) => g.source === "betswirl")
   : MASTER_GAMES;
