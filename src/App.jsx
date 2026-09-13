@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, lazy, Suspense, Component } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import {
   LayoutGrid, Radio,
   Flame, Landmark, Bitcoin, Trophy, Cpu, LineChart, Wallet, ReceiptText,
@@ -1802,6 +1803,7 @@ export default function App() {
           <FundsDialog open={fundsOpen} onClose={closeModal} onCloseAutoFocus={restoreFocus} startAtDisconnectConfirm={fundsStartAtDisconnectConfirm} />
         </Suspense>
       )}
+      <Analytics />
     </div>
   );
 }
