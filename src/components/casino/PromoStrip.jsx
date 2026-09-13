@@ -55,15 +55,21 @@ const stopAnd = (fn) => (e) => {
 // both CARD_H breakpoints (144px/176px) without needing separate tuning per
 // size, since percentages scale with the card automatically.
 //
-// Deliberately NO transform:scale baseline (the old WalletCard's 1.6005 —
-// see git history if that number's own long comment trail is ever needed
-// again) — that hack existed only to compensate for a specific badly-cropped
-// asset that didn't fill its own frame; a properly-supplied transparent
-// asset needs no per-card fudge factor, which is the entire point of "one
-// shared system instead of arbitrary per-card sizing." The `.promo-card__visual`
-// class name is kept so the existing shared hover/press micro-zoom (see
-// index.css — a small, deliberate 1.03-1.05x scale, unrelated to the old
-// per-card baseline hack) still applies uniformly to all three cards.
+// PER-ASSET OPTICAL SCALE PASS: `scale` (default 1) sets
+// --illustration-base-scale, the same CSS variable index.css's
+// `.promo-card__visual` rule already reads (`scale: var(--illustration-base-scale, 1)`,
+// composed with the existing shared hover/press micro-zoom on top — see that
+// rule). This replaced an earlier "deliberately no per-card scale" stance:
+// once the artwork PNGs were normalized onto identical 1024x1024 canvases,
+// each icon's own internal padding (a nearly-square wallet vs. a wide,
+// short arenas/verify cluster) leaves a different fraction of the shared
+// box actually covered by visible pixels under object-contain — same box,
+// different OPTICAL weight. This scale corrects that per asset without
+// touching the box's own width/height/inset (still one shared rule for all
+// three) or the PNGs themselves. transform-origin stays right-center (set
+// on `.promo-card__visual` in index.css), so scaling only ever grows the
+// artwork left and vertically-symmetric — right edge and vertical center
+// never move.
 //
 // No wrapper background and no mask/blend-mode/filter here or anywhere else
 // in this file: the card's own --wallet-card-bg supplies the surface, this
@@ -73,9 +79,12 @@ const stopAnd = (fn) => (e) => {
 // than "a rectangle pasted on top." `glow` defaults on; WalletCard's
 // wrong-network state passes `glow={false}` to match its previous behavior
 // (that tone never got the ambient bloom, only the flat warning surface).
-function PromoIllustration({ src, glow = true }) {
+function PromoIllustration({ src, glow = true, scale = 1 }) {
   return (
-    <div className="promo-card__visual pointer-events-none absolute top-1/2 right-4 h-[82%] w-[40%] -translate-y-1/2 overflow-hidden lg:right-5 lg:w-[42%]">
+    <div
+      className="promo-card__visual pointer-events-none absolute top-1/2 right-4 h-[82%] w-[40%] -translate-y-1/2 overflow-hidden lg:right-5 lg:w-[42%]"
+      style={{ "--illustration-base-scale": scale }}
+    >
       {glow && (
         <div className="promo-card__ambient absolute inset-0" style={{ background: "var(--wallet-card-glow)" }} />
       )}
@@ -189,7 +198,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
           `glow` off for the wrong-network tone only, matching that tone's
           previous behavior (flat warning surface, no ambient bloom). */}
-      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} />
+      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} scale={1.05} />
     </div>
   );
 }
@@ -508,7 +517,7 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
 // path string (not a ReactNode) — both cards' artwork now renders through
 // the same shared PromoIllustration component WalletCard uses above, rather
 // than each card owning its own <img>-wrapping component.
-function InfoCard({ eyebrow, title, body, artworkSrc }) {
+function InfoCard({ eyebrow, title, body, artworkSrc, artworkScale }) {
   return (
     <div
       className={cn(
@@ -524,7 +533,7 @@ function InfoCard({ eyebrow, title, body, artworkSrc }) {
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
       </div>
-      <PromoIllustration src={artworkSrc} />
+      <PromoIllustration src={artworkSrc} scale={artworkScale} />
     </div>
   );
 }
@@ -536,6 +545,7 @@ function AboutTribetCard() {
       title="One wallet. Three arenas."
       body="Built by betting veterans and players."
       artworkSrc="/heroes/promo-three-arenas.png"
+      artworkScale={1.22}
     />
   );
 }
@@ -547,6 +557,7 @@ function TransparentPlayCard() {
       title="Don't trust. Verify."
       body="Every result can be verified on-chain."
       artworkSrc="/heroes/promo-verify.png"
+      artworkScale={1.17}
     />
   );
 }
