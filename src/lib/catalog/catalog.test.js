@@ -79,6 +79,17 @@ describe("bgaming adapter", () => {
     }
   });
 
+  it("puts recent releases on the New Releases shelf, and only recent ones", () => {
+    const tagged = games.filter((g) => g.tags.includes("new"));
+    expect(tagged.length).toBeGreaterThan(0);
+    // The shelf is driven by the studio's real release date, so nothing old
+    // can sit on it however the catalogue is regenerated.
+    const yearAgo = Date.now() - 365 * 86_400_000;
+    for (const g of tagged) expect(Date.parse(g.released)).toBeGreaterThan(yearAgo);
+    // ...and it must not simply be the whole catalogue.
+    expect(tagged.length).toBeLessThan(games.length);
+  });
+
   it("fills the categories that were previously empty", () => {
     for (const tag of ["slots", "table-games", "game-shows"]) {
       expect(games.some((g) => g.tags.includes(tag)), `nothing tagged ${tag}`).toBe(true);

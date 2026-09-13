@@ -276,11 +276,16 @@ html {
   color: color-mix(in srgb, var(--ink-quiet) 75%, var(--muted-foreground) 25%);
 }
 
-/* Shared bottom clearance for any mobile scroll container that sits above
-   MobileBottomNav, so the last card/footer link is never crowded against
-   it. Desktop (md+) has no bottom nav, so this collapses to nothing there. */
+/* Breathing room under the last card in a mobile scroll container, so it is
+   not crowded against MobileBottomNav.
+
+   This deliberately does NOT reserve the nav's height. The nav is `relative
+   shrink-0` in the shell's flex column (see MobileBottomNav.jsx) — it occupies
+   its own space below <main> and never overlays content — and it carries its
+   own safe-area spacer. Adding either here counted both twice and left ~64px
+   of dead space at the bottom of every mobile page. */
 .pb-nav {
-  padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+  padding-bottom: 1rem;
 }
 @media (min-width: 768px) {
   .pb-nav {

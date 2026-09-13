@@ -26,7 +26,7 @@ export const LAUNCH_BRIDGED = "bridged";
 export const LAUNCH_EXTERNAL = "external";
 export const LAUNCH_ONCHAIN = "onchain";
 
-export function makeGame({ key, title, source, kind, image, tags, launch, providerId, studio }) {
+export function makeGame({ key, title, source, kind, image, tags, launch, providerId, studio, released }) {
   return {
     key,
     title,
@@ -41,5 +41,6 @@ export function makeGame({ key, title, source, kind, image, tags, launch, provid
     src: launch?.src,
     providerId,
     studio,
+    released,
   };
 }

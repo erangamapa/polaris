@@ -37,19 +37,31 @@ function useAvailableHeight(ref) {
     if (!el) return undefined;
     const measure = () => {
       const top = el.getBoundingClientRect().top;
-      const vh = window.visualViewport?.height ?? window.innerHeight;
-      // Match CasinoGamePage bottom padding (pb-[20px+safe] / sm:pb-8) so
-      // frame + padding stay inside the viewport — avoids mobile page scroll.
+      // Measure against the scroll container's content box, not the visual
+      // viewport. The viewport bottom sits BELOW the mobile bottom nav and
+      // below <main>'s own bottom padding, and the frame may occupy neither —
+      // sizing to it overflowed the page by hundreds of pixels and pushed the
+      // nav off-screen entirely. The container already accounts for the nav,
+      // the padding and any safe-area inset, so nothing here needs hardcoding.
+      const container = el.closest("main");
+      const limit = container
+        ? container.getBoundingClientRect().bottom - parseFloat(getComputedStyle(container).paddingBottom || "0")
+        : window.visualViewport?.height ?? window.innerHeight;
+      // Mirrors this page's own pb-[20px+safe] / sm:pb-8.
       const sm = window.matchMedia("(min-width: 640px)").matches;
-      const bottomReserve = sm ? 40 : 36;
-      setHeight(Math.max(280, Math.round(vh - top - bottomReserve)));
+      const ownBottomPadding = sm ? 32 : 20;
+      setHeight(Math.max(280, Math.round(limit - top - ownBottomPadding)));
     };
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
+    const container = el.closest("main");
+    const ro = container && typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(container);
     return () => {
       window.removeEventListener("resize", measure);
       window.removeEventListener("orientationchange", measure);
+      ro?.disconnect();
     };
   }, [ref]);
   return height;

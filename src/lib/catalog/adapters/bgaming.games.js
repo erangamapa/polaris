@@ -1,9 +1,9 @@
 // GENERATED — BGaming demo catalogue.
 //
-// Harvested from https://bgaming.com/game-sitemap.xml and resolved against
-// their public demo host (https://demo.bgaming-network.com/play/<game>/FUN).
-// Regenerate rather than hand-edit. `game` is BGaming's own id and is the
-// only field the demo URL depends on; `slug` is our stable key.
+// Harvested from https://bgaming.com/game-sitemap.xml; each game's id, genre
+// and release date come from its own page, because the demo id is NOT
+// derivable from the slug (3-kings-scratch is ThreeKingsScratch).
+// Regenerate rather than hand-edit.
 //
 // 338 games.
 export const BGAMING_GAMES = [
@@ -12,6 +12,7 @@ export const BGAMING_GAMES = [
     "game": "ThreeKingsScratch",
     "title": "3 Kings Scratch",
     "genre": "Scratch",
+    "released": "2024-03-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/65fc39be04db3839240ba098_Three_Kings_Scratch_455x574-1-2.webp"
   },
   {
@@ -19,6 +20,7 @@ export const BGAMING_GAMES = [
     "game": "ThreeLuckyMonkeysHoldAndWin",
     "title": "3 Lucky Monkeys Hold Win",
     "genre": "Slots",
+    "released": "2026-09-28",
     "image": "https://bgaming.com/wp-content/uploads/2026/09/3-Lucky-Monkeys-Hold-Win_1020x1280.webp"
   },
   {
@@ -26,6 +28,7 @@ export const BGAMING_GAMES = [
     "game": "Adventures",
     "title": "Adventures",
     "genre": "Slots",
+    "released": "2024-05-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6669c6f4ab1877ebc99b178f_Adventures_1020x1280.webp"
   },
   {
@@ -33,6 +36,7 @@ export const BGAMING_GAMES = [
     "game": "AlchemistBonanza",
     "title": "Alchemist Bonanza",
     "genre": "Exclusive Slots",
+    "released": "2022-08-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd62bd65ba18cc5d209199_640209c871830c389286401f_Alchemist_Bonanza_FEATURED_vertical.webp"
   },
   {
@@ -40,6 +44,7 @@ export const BGAMING_GAMES = [
     "game": "AliceWonderLuck",
     "title": "Alice Wonderluck",
     "genre": "Slots",
+    "released": "2025-03-04",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67a63af239ba931169e5c224_Alice_wonderluck_1020х1280-2.webp"
   },
   {
@@ -47,6 +52,7 @@ export const BGAMING_GAMES = [
     "game": "AlienFruits",
     "title": "Alien Fruits",
     "genre": "Slots",
+    "released": "2023-04-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695111d83349b152f79f6c9_AlienFruits_bonanza_1020x1280.webp"
   },
   {
@@ -54,6 +60,7 @@ export const BGAMING_GAMES = [
     "game": "AlienFruits2",
     "title": "Alien Fruits 2",
     "genre": "Slots",
+    "released": "2024-06-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6669c60e844716a4ad58f76b_Alien_Fruits_2_1020x1280.webp"
   },
   {
@@ -61,6 +68,7 @@ export const BGAMING_GAMES = [
     "game": "AlienFruits3",
     "title": "Alien Fruits 3",
     "genre": "Slots",
+    "released": "2026-07-01",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/alien_fruits_3_1020_1280-816x1024.webp"
   },
   {
@@ -68,6 +76,7 @@ export const BGAMING_GAMES = [
     "game": "AllLuckyClover",
     "title": "All Lucky Clover",
     "genre": "Slots",
+    "released": "2020-09-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695120b51f2fa07d381cf60_All_Lucky_clovers_1020x1280.webp"
   },
   {
@@ -75,6 +84,7 @@ export const BGAMING_GAMES = [
     "game": "AllStarFruits",
     "title": "All Star Fruits",
     "genre": "Slots",
+    "released": "2025-02-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6790b5b88d15849acf1038ab_All-Star_Fruits_1020х1280-2.webp"
   },
   {
@@ -82,6 +92,7 @@ export const BGAMING_GAMES = [
     "game": "AlohaKingElvis",
     "title": "Aloha King Elvis",
     "genre": "Slots",
+    "released": "2021-07-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951231e41131af0c6f1a85_Aloha_King_Elvis_1020x1280.webp"
   },
   {
@@ -89,6 +100,7 @@ export const BGAMING_GAMES = [
     "game": "AlohaKingElvis",
     "title": "Aloha King Elvis Xmas",
     "genre": "Slots",
+    "released": "2021-07-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fc280af79914c7bc386018_63f1e1217189b99d3b83d152_Aloha_King_Elvis_xmas_FEATURED_vertical.webp"
   },
   {
@@ -96,6 +108,7 @@ export const BGAMING_GAMES = [
     "game": "AlwaysUp",
     "title": "Always Up",
     "genre": "Slots",
+    "released": "2025-09-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/09/Always_Up_1020x618.webp"
   },
   {
@@ -103,6 +116,7 @@ export const BGAMING_GAMES = [
     "game": "AlwaysUpX10000",
     "title": "Always Up X10000",
     "genre": "Slots",
+    "released": "2026-02-04",
     "image": "https://bgaming.com/wp-content/uploads/2026/01/Always_Up_x10000_1020x1280_1_11zon.jpeg"
   },
   {
@@ -110,6 +124,7 @@ export const BGAMING_GAMES = [
     "game": "AmericanRoulette",
     "title": "American Roulette",
     "genre": "Roulette",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669512599161efcef945ad95_American_Roulette_1020x1280.webp"
   },
   {
@@ -117,6 +132,7 @@ export const BGAMING_GAMES = [
     "game": "ArrowSlot",
     "title": "Arrow Slot",
     "genre": "Slots",
+    "released": "2025-04-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67d41535cd3d4512a44c2934_Arrow_Slot_1020х1280-2.webp"
   },
   {
@@ -124,6 +140,7 @@ export const BGAMING_GAMES = [
     "game": "Avalon",
     "title": "Avalon the Lost Kingdom",
     "genre": "Slots",
+    "released": "2020-02-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66951273c04b5ad8887ca481_Avalon_The_Lost_Kingdom_1020х1280-2.webp"
   },
   {
@@ -131,6 +148,7 @@ export const BGAMING_GAMES = [
     "game": "Aviamasters",
     "title": "Aviamasters",
     "genre": "Casual",
+    "released": "2024-07-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66719d9a77a4625b5c843bb2_Aviamasters_1020х1280-2.webp"
   },
   {
@@ -138,6 +156,7 @@ export const BGAMING_GAMES = [
     "game": "Aviamasters2",
     "title": "Aviamasters 2",
     "genre": "Casual",
+    "released": "2026-03-05",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Aviamasters_2__1020x618-1.webp"
   },
   {
@@ -145,6 +164,7 @@ export const BGAMING_GAMES = [
     "game": "AviamastersXmas",
     "title": "Aviamasters x Mas",
     "genre": "Casual",
+    "released": "2025-12-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/11/Aviamaster_X-mas_1020х1280.webp"
   },
   {
@@ -152,6 +172,7 @@ export const BGAMING_GAMES = [
     "game": "AztecClusters",
     "title": "Aztec Clusters",
     "genre": "Slots",
+    "released": "2024-02-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/05/669512bcaebf6869f3675505_Aztec_Cluster_1020x1280-1.webp"
   },
   {
@@ -159,6 +180,7 @@ export const BGAMING_GAMES = [
     "game": "AztecMagicBonanza",
     "title": "Aztec Magic Bonanza",
     "genre": "Slots",
+    "released": "2022-02-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc24e9f79914c7bc35d816_63e9e30abca95c8f1b61945f_AztecMagicBonanzalogo_vertical-2.webp"
   },
   {
@@ -166,6 +188,7 @@ export const BGAMING_GAMES = [
     "game": "AztecMagicDeluxe",
     "title": "Aztec Magic Deluxe",
     "genre": "Slots",
+    "released": "2018-02-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695130e74375590ee57ec83_Aztec_Magic_Deluxe_1020x1280.webp"
   },
   {
@@ -173,6 +196,7 @@ export const BGAMING_GAMES = [
     "game": "AztecMagicMegaways",
     "title": "Aztec Magic Megaways",
     "genre": "Slots",
+    "released": "2022-01-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951355468a02af62842b40_Aztec_Magic_Megaways_1020x1280.webp"
   },
   {
@@ -180,6 +204,7 @@ export const BGAMING_GAMES = [
     "game": "AztecMagicMegaways",
     "title": "Aztec Magic Megaways Branded",
     "genre": "Slots",
+    "released": "2022-01-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/666af749161cc161bbe5348b_AztecMagicMegaways2Blogo_vertical_28129-min-2.webp"
   },
   {
@@ -187,6 +212,7 @@ export const BGAMING_GAMES = [
     "game": "AztecsClawWildDice",
     "title": "Aztecs Claw Wild Dice",
     "genre": "Slots",
+    "released": "2024-09-26",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/66d9aac9e2f1947cf8c4d516_Aztecs_Claw_Wild_Dice_1020х1280-1.webp"
   },
   {
@@ -194,6 +220,7 @@ export const BGAMING_GAMES = [
     "game": "BackyardGrill",
     "title": "Backyard Grill",
     "genre": "Slots",
+    "released": "2025-06-19",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/Backyard_Grill_1020х1280.webp"
   },
   {
@@ -201,6 +228,7 @@ export const BGAMING_GAMES = [
     "game": "BalloonMania",
     "title": "Balloon Mania",
     "genre": "Casual",
+    "released": "2025-05-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/680b7928bbeb799cdd6fb8c3_Balloon_Mania_1020х1280-2.webp"
   },
   {
@@ -208,6 +236,7 @@ export const BGAMING_GAMES = [
     "game": "BeastBand",
     "title": "Beast Band",
     "genre": "Slots",
+    "released": "2023-07-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669513846ff1377cee2e8d89_Beast_Band_1020x1280.webp"
   },
   {
@@ -215,6 +244,7 @@ export const BGAMING_GAMES = [
     "game": "BeerBonanza",
     "title": "Beer Bonanza",
     "genre": "Slots",
+    "released": "2022-09-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669513ac7adf73f5caeca9e9_Beer_Bonanza_1020x1280.webp"
   },
   {
@@ -222,6 +252,7 @@ export const BGAMING_GAMES = [
     "game": "BigAtlantisFrenzy",
     "title": "Big Atlantis Frenzy",
     "genre": "Slots",
+    "released": "2022-06-09",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669513bfd65bcaa513d857c5_Big_Atlantis_Frenzy_1020x1280.webp"
   },
   {
@@ -229,6 +260,7 @@ export const BGAMING_GAMES = [
     "game": "BigTunaBonanza",
     "title": "Big Boat Big Catch",
     "genre": "Slots",
+    "released": "2025-08-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Big_Boat_Big_Catch_1020х1280-e1769531342898.webp"
   },
   {
@@ -236,6 +268,7 @@ export const BGAMING_GAMES = [
     "game": "BigBucksSaloon",
     "title": "Big Bucks Saloon",
     "genre": "Slots",
+    "released": "2025-07-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/685a7b0c19078c3330fafc4c_Big_Bucks_Saloon_1020х1280.webp"
   },
   {
@@ -243,6 +276,7 @@ export const BGAMING_GAMES = [
     "game": "BitcoinMillion",
     "title": "Bitcoin Million",
     "genre": "Exclusive Slots",
+    "released": "2022-01-05",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fd6289666d45a05530932f_640213bf7e93abeed280b997_BitcoinMillionlogo_vertiсal-2.webp"
   },
   {
@@ -250,6 +284,7 @@ export const BGAMING_GAMES = [
     "game": "BlackbeardsBounty",
     "title": "Blackbeards Bounty",
     "genre": "Slots",
+    "released": "2025-05-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/680282d6492a8d95cfdaebee_Blackbeards_Bounty_1020x1280-1.webp"
   },
   {
@@ -257,6 +292,7 @@ export const BGAMING_GAMES = [
     "game": "BlazingFirepots",
     "title": "Blazing Fire Pots Hold Spin",
     "genre": "Slots",
+    "released": "2026-01-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/12/Blazing_Fire_Pots_Hold__Spin_1020x1280.webp"
   },
   {
@@ -264,6 +300,7 @@ export const BGAMING_GAMES = [
     "game": "BlingBlitzDiamondDrop",
     "title": "Bling Blitz Diamond Drop",
     "genre": "Slots",
+    "released": "2026-04-23",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Bling_Blitz_Diamond_Drop_1020_1280_1x-2.webp"
   },
   {
@@ -271,6 +308,7 @@ export const BGAMING_GAMES = [
     "game": "BonanzaBillion",
     "title": "Bonanza Billion",
     "genre": "Slots",
+    "released": "2021-12-02",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/1020x1280-1.webp"
   },
   {
@@ -278,6 +316,7 @@ export const BGAMING_GAMES = [
     "game": "BonanzaBillionMergeUp",
     "title": "Bonanza Billion Merge Up",
     "genre": "Slots",
+    "released": "2026-09-24",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Bonanza_Merge_Up_1020x1280.webp"
   },
   {
@@ -285,6 +324,7 @@ export const BGAMING_GAMES = [
     "game": "BonanzaBillion",
     "title": "Bonanza Billion Xmas",
     "genre": "Slots",
+    "released": "2021-12-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd6845d4610bed95f4d5f1_63f5f64072638c4c6505ec75_Bonanza_Billion_xmas_FEATURED_vertical.webp"
   },
   {
@@ -292,6 +332,7 @@ export const BGAMING_GAMES = [
     "game": "BonanzaBillionXtreme",
     "title": "Bonanza Billion Xtreme",
     "genre": "Slots",
+    "released": "2026-03-10",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Bonanza_Billion_Xtreme__1020х1280-1.webp"
   },
   {
@@ -299,6 +340,7 @@ export const BGAMING_GAMES = [
     "game": "BonanzaTrillion",
     "title": "Bonanza Trillion",
     "genre": "Slots",
+    "released": "2025-09-11",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Bonanza_Trillion__1020х1280-4.webp"
   },
   {
@@ -306,6 +348,7 @@ export const BGAMING_GAMES = [
     "game": "BoneBonanza",
     "title": "Bone Bonanza",
     "genre": "Slots",
+    "released": "2023-09-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951437aa118e9dab004015_Bone_Bonanza_1020x1280.webp"
   },
   {
@@ -313,6 +356,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfCats",
     "title": "Book of Cats",
     "genre": "Slots",
+    "released": "2020-07-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951463757338eefb73e3f5_Book_of_cats_1020x1280.webp"
   },
   {
@@ -320,6 +364,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfCats",
     "title": "Book of Cats Branded",
     "genre": "Slots",
+    "released": "2020-07-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951463757338eefb73e3f5_Book_of_cats_1020x1280.webp"
   },
   {
@@ -327,6 +372,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfCatsMegaways",
     "title": "Book of Cats Megaways",
     "genre": "Slots",
+    "released": "2022-11-03",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951483c7cc98418e19ebdb_Book_of_Cats_Megaways_1020x1280.webp"
   },
   {
@@ -334,6 +380,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfHiddenTombs",
     "title": "Book of Hidden Tombs",
     "genre": "Slots",
+    "released": "2026-08-20",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/Book_of_Hidden_Tombs_1020x1280.webp"
   },
   {
@@ -341,6 +388,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfKemet",
     "title": "Book of Kemet",
     "genre": "Slots",
+    "released": "2023-03-09",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Book_of_Kemet_1020x1280.webp"
   },
   {
@@ -348,6 +396,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfPanda",
     "title": "Book of Panda Megaways Tm",
     "genre": "Slots",
+    "released": "2023-11-09",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669514c9019186e85838027c_Book_of_panda_1020x1280.webp"
   },
   {
@@ -355,6 +404,7 @@ export const BGAMING_GAMES = [
     "game": "BookOfPyramids",
     "title": "Book of Pyramids",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669514dd6218bf24729a78ad_Book_of_Pyramids_1020x1280.webp"
   },
   {
@@ -362,6 +412,7 @@ export const BGAMING_GAMES = [
     "game": "BurningChilli243",
     "title": "Burning Chilli 243",
     "genre": "Slots",
+    "released": "2025-10-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/09/Burning_Chilli_243_1020х1280.webp"
   },
   {
@@ -369,6 +420,7 @@ export const BGAMING_GAMES = [
     "game": "BurningChilliX",
     "title": "Burning Chilli x",
     "genre": "Slots",
+    "released": "2022-11-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669515a834128c9674a9436d_Burning_Chilli_X_1020x1280.webp"
   },
   {
@@ -376,6 +428,7 @@ export const BGAMING_GAMES = [
     "game": "CandyMonsta",
     "title": "Candy Monsta",
     "genre": "Slots",
+    "released": "2021-10-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669515cdb761c5d22cfc7072_Candy_Monsta_1020x1280.webp"
   },
   {
@@ -383,6 +436,7 @@ export const BGAMING_GAMES = [
     "game": "CandyMonsta",
     "title": "Candy Monsta Halloween",
     "genre": "Slots",
+    "released": "2021-10-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd64d1666d45a055321b1d_63f76ed254b92b739acd95d1_CandyMonsta_hallowen_FEATURED_vertical.webp"
   },
   {
@@ -390,6 +444,7 @@ export const BGAMING_GAMES = [
     "game": "CandyMonsta",
     "title": "Candy Monsta St Valentines",
     "genre": "Slots",
+    "released": "2021-10-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd6547db6ee793b9c4b938_63f76d3c64ac6e594d40a584_CandyMonsta_svalentines_FEATURED_vertical.webp"
   },
   {
@@ -397,6 +452,7 @@ export const BGAMING_GAMES = [
     "game": "CandyMonsta",
     "title": "Candy Monsta Xmas",
     "genre": "Slots",
+    "released": "2021-10-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd65106df00192e51734cc_63f76e2e691d0b947a5cc575_CandyMonsta_xmas_FEATURED_vertical.webp"
   },
   {
@@ -404,6 +460,7 @@ export const BGAMING_GAMES = [
     "game": "CapymaniaGreen",
     "title": "Capymania Green",
     "genre": "Scratch",
+    "released": "2024-01-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695160f9e02d8f6513c95ea_Capymania_green_1020x1280.webp"
   },
   {
@@ -411,6 +468,7 @@ export const BGAMING_GAMES = [
     "game": "CapymaniaOrange",
     "title": "Capymania Orange",
     "genre": "Scratch",
+    "released": "2024-01-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951620e3d8811a8843585a_Capymania_orange_1020x1280.webp"
   },
   {
@@ -418,6 +476,7 @@ export const BGAMING_GAMES = [
     "game": "CapymaniaYellow",
     "title": "Capymania Yellow",
     "genre": "Scratch",
+    "released": "2024-01-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669515e7992c1143e9b50199_Capymania_yellow_1020x1280.webp"
   },
   {
@@ -425,6 +484,7 @@ export const BGAMING_GAMES = [
     "game": "CarnivalBonanza",
     "title": "Carnival Bonanza",
     "genre": "Slots",
+    "released": "2024-10-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66e17f75d9a72009f8ae1884_Carnival_Bananza_1020х1280-2.webp"
   },
   {
@@ -432,6 +492,7 @@ export const BGAMING_GAMES = [
     "game": "CatchTheGoldHoldAndWin",
     "title": "Catch the Gold Hold and Win",
     "genre": "Slots",
+    "released": "2024-08-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66952eb878abf3dbff3dd5c7_Catch_the_Gold_Hold__Win_1020x1280-2.webp"
   },
   {
@@ -439,6 +500,7 @@ export const BGAMING_GAMES = [
     "game": "Catdiana",
     "title": "Catdiana",
     "genre": "Slots",
+    "released": "2024-11-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/670e3c8d41afda7deb9ce95a_Catdiana_1020х1280-2.webp"
   },
   {
@@ -446,6 +508,7 @@ export const BGAMING_GAMES = [
     "game": "CatsLoveYummy",
     "title": "Cats Love Yummy",
     "genre": "Slots",
+    "released": "2026-09-30",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Cats_Love_Yummy_1020x1280.webp"
   },
   {
@@ -453,6 +516,7 @@ export const BGAMING_GAMES = [
     "game": "CatsSoup",
     "title": "Cats Soup",
     "genre": "Slots",
+    "released": "2025-07-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/685523d36feabecf6a6302d0_Cats_Soup_1020х1280.webp"
   },
   {
@@ -460,6 +524,7 @@ export const BGAMING_GAMES = [
     "game": "ChickenFire",
     "title": "Chicken Fire",
     "genre": "Slots",
+    "released": "2026-07-22",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Chicken_Fire_1020X1280.webp"
   },
   {
@@ -467,6 +532,7 @@ export const BGAMING_GAMES = [
     "game": "ChickenRush",
     "title": "Chicken Rush",
     "genre": "Slots",
+    "released": "2024-05-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/05/6669c85190a9bd52b1074be8_Chicken_Rush_1020x1280-1.webp"
   },
   {
@@ -474,6 +540,7 @@ export const BGAMING_GAMES = [
     "game": "ChickenRush2",
     "title": "Chicken Rush 2",
     "genre": "Casual",
+    "released": "2026-07-30",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/1020х1280.webp"
   },
   {
@@ -481,6 +548,7 @@ export const BGAMING_GAMES = [
     "game": "ChickenShot",
     "title": "Chicken Shot",
     "genre": "Casual",
+    "released": "2026-05-26",
     "image": "https://bgaming.com/wp-content/uploads/2026/04/Chicken_Shot_1020x1280-1.png"
   },
   {
@@ -488,6 +556,7 @@ export const BGAMING_GAMES = [
     "game": "ClashofGodsAnubisvsHades",
     "title": "Clash of Gods Power Duel",
     "genre": "Slots",
+    "released": "2026-05-04",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Clash_of_Gods_Power_Duel__1020х1280.webp"
   },
   {
@@ -495,6 +564,7 @@ export const BGAMING_GAMES = [
     "game": "ClassicBaccarat",
     "title": "Classic Baccarat",
     "genre": "Cards",
+    "released": "2026-09-22",
     "image": "https://bgaming.com/wp-content/uploads/2026/09/1020x1280.webp"
   },
   {
@@ -502,6 +572,7 @@ export const BGAMING_GAMES = [
     "game": "ClassicMultihandBlackjack",
     "title": "Classic Multihand Blackjack",
     "genre": "Cards",
+    "released": "2025-08-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/688ce086e5410189ec1fac6e_Classic_Multihand_Blackjack_1020х1280.webp"
   },
   {
@@ -509,6 +580,7 @@ export const BGAMING_GAMES = [
     "game": "CloverBonanza",
     "title": "Clover Bonanza",
     "genre": "Slots",
+    "released": "2022-03-03",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669516850594e4cb04b6788a_Clover_Bonanza_1020x1280.webp"
   },
   {
@@ -516,6 +588,7 @@ export const BGAMING_GAMES = [
     "game": "CluckingHell",
     "title": "Clucking Hell",
     "genre": "Slots",
+    "released": "2025-10-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/09/Clucking-Hell_1020x618.webp"
   },
   {
@@ -523,6 +596,7 @@ export const BGAMING_GAMES = [
     "game": "CrystalClusters",
     "title": "Crystal Clusters",
     "genre": "Slots",
+    "released": "2025-08-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/68824de4ff746f28ccc45fa2_Crystal_Clusters__1020х1280.webp"
   },
   {
@@ -530,6 +604,7 @@ export const BGAMING_GAMES = [
     "game": "DeepSea",
     "title": "Deep Sea",
     "genre": "Slots",
+    "released": "2019-12-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Deep_Sea_1020x1280.webp"
   },
   {
@@ -537,6 +612,7 @@ export const BGAMING_GAMES = [
     "game": "DerbyRush",
     "title": "Derby Rush",
     "genre": "Slots",
+    "released": "2026-04-15",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Derby_Rush_1020_1280_1x-1.webp"
   },
   {
@@ -544,6 +620,7 @@ export const BGAMING_GAMES = [
     "game": "DiamondOfJungle",
     "title": "Diamond of Jungle",
     "genre": "Slots",
+    "released": "2024-03-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669517643db97fcaa67446f3_Diamond_of_Jungle_1020x1280.webp"
   },
   {
@@ -551,6 +628,7 @@ export const BGAMING_GAMES = [
     "game": "DiceBonanza",
     "title": "Dice Bonanza",
     "genre": "Slots",
+    "released": "2023-07-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669517c678abf3dbff2e8ea2_Dice_Bonanza_1020x1280.webp"
   },
   {
@@ -558,6 +636,7 @@ export const BGAMING_GAMES = [
     "game": "DiceClash",
     "title": "Dice Clash",
     "genre": "Dice",
+    "released": "2024-11-05",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/670d057e69ed5c3461ff7b35_Dice_Clash_1020х1280-2.webp"
   },
   {
@@ -565,6 +644,7 @@ export const BGAMING_GAMES = [
     "game": "DiceMillion",
     "title": "Dice Million",
     "genre": "Slots",
+    "released": "2023-08-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669517e805dced56e7eef63f_Dice_Million_1020x1280.webp"
   },
   {
@@ -572,6 +652,7 @@ export const BGAMING_GAMES = [
     "game": "DigDigDigger",
     "title": "Dig Dig Digger",
     "genre": "Slots",
+    "released": "2021-07-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951850a759f92eddca3895_Dig_Dig_Digger_1020x1280.webp"
   },
   {
@@ -579,6 +660,7 @@ export const BGAMING_GAMES = [
     "game": "DiscoParty",
     "title": "Disco Party",
     "genre": "Slots",
+    "released": "2025-01-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/675c0f57996882d306d54cd9_Disco_Party_1020x1280.webp"
   },
   {
@@ -586,6 +668,7 @@ export const BGAMING_GAMES = [
     "game": "DivineQueenHeartOfIce",
     "title": "Divine Queen Heart of Ice",
     "genre": "Slots",
+    "released": "2025-11-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Divine_Queen_Heart_of_Ice_1020х1280.webp"
   },
   {
@@ -593,6 +676,7 @@ export const BGAMING_GAMES = [
     "game": "DivineQueenPowerOfSun",
     "title": "Divine Queen Power of Sun",
     "genre": "Slots",
+    "released": "2026-10-01",
     "image": "https://bgaming.com/wp-content/uploads/2026/09/Divine_Queen__Power_of_Sun_1020х1280.webp"
   },
   {
@@ -600,6 +684,7 @@ export const BGAMING_GAMES = [
     "game": "DoddyAndHaddzyBonanza",
     "title": "Doddy and Haddzy Bonanza",
     "genre": "Exclusive Slots",
+    "released": "2023-04-19",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/doddy-and-hadzy-main.webp"
   },
   {
@@ -607,6 +692,7 @@ export const BGAMING_GAMES = [
     "game": "DomnitorsTreasure",
     "title": "Domnitors Treasure",
     "genre": "Slots",
+    "released": "2023-01-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951968950a5ba345d2f5ac_Domnitor_STreasure_1020x1280.webp"
   },
   {
@@ -614,6 +700,7 @@ export const BGAMING_GAMES = [
     "game": "DoomsdaySaloon",
     "title": "Doomsday Saloon",
     "genre": "Slots",
+    "released": "2025-04-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/67e40d639326aeb6b41416b6_Doomsday_Saloon_1020x1280.webp"
   },
   {
@@ -621,6 +708,7 @@ export const BGAMING_GAMES = [
     "game": "DoorsOfSol",
     "title": "Doors of Sol",
     "genre": "Exclusive Slots",
+    "released": "2022-07-04",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fd62466df00192e5153aea_64099b1f9d51fcd2bf28df80_Doors_of_Sollogo_vertiсal-2.webp"
   },
   {
@@ -628,6 +716,7 @@ export const BGAMING_GAMES = [
     "game": "DragonAge",
     "title": "Dragon Age Hold Win",
     "genre": "Slots",
+    "released": "2024-06-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6669c68151839e61cc5e60cd_Dragon-Age_HW_1020x1280-2.webp"
   },
   {
@@ -635,6 +724,7 @@ export const BGAMING_GAMES = [
     "game": "DragonQueenMegaways",
     "title": "Dragon Queen Megaways Tm",
     "genre": "Slots",
+    "released": "2025-06-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/6835d176f986c59cb7082ea4_Dragon_Queen_Megaways_1020x1280-2.webp"
   },
   {
@@ -642,6 +732,7 @@ export const BGAMING_GAMES = [
     "game": "DragonsCrash",
     "title": "Dragons Crash",
     "genre": "Casual",
+    "released": "2024-03-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951aa33db97fcaa6761bae_Dragon_s_Crash_1020x1280.webp"
   },
   {
@@ -649,6 +740,7 @@ export const BGAMING_GAMES = [
     "game": "DragonsGold100",
     "title": "Dragons Gold 100",
     "genre": "Slots",
+    "released": "2021-09-09",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/ragons_gold_100_1020x1280.webp"
   },
   {
@@ -656,6 +748,7 @@ export const BGAMING_GAMES = [
     "game": "DustyDuel",
     "title": "Dusty Duel",
     "genre": "Slots",
+    "released": "2026-06-15",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Dusty-Duel_1020x1280.png"
   },
   {
@@ -663,6 +756,7 @@ export const BGAMING_GAMES = [
     "game": "EasterHeist",
     "title": "Easter Heist",
     "genre": "Slots",
+    "released": "2023-03-23",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951ae4c1691d6a4142d868_Easter_Heist_1020x1280.webp"
   },
   {
@@ -670,6 +764,7 @@ export const BGAMING_GAMES = [
     "game": "EasterPlinko",
     "title": "Easter Plinko",
     "genre": "Casual",
+    "released": "2023-03-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669536c611ca6695da9ea630_Plinko_Easter_1020x1280.webp"
   },
   {
@@ -677,6 +772,7 @@ export const BGAMING_GAMES = [
     "game": "ElementsOfPower",
     "title": "Elements of Power",
     "genre": "Casual",
+    "released": "2026-04-30",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/elements_of_power_1020_1280.webp"
   },
   {
@@ -684,6 +780,7 @@ export const BGAMING_GAMES = [
     "game": "ElvisFrogInPlayamo",
     "title": "Elvis Frog In Playamo",
     "genre": "Exclusive Slots",
+    "released": "2022-05-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc1095e2c33de399dbd116_6412f5a18a2ae0e501b7b72d_ElvisFrog_in_Playamologo_vertiсal-2.webp"
   },
   {
@@ -691,6 +788,7 @@ export const BGAMING_GAMES = [
     "game": "ElvisFrog",
     "title": "Elvis Frog In Vegas",
     "genre": "Slots",
+    "released": "2020-05-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/68ba884e8e18aa91dfb0e9a0_Elvis_frog_in_Vegas_1020x1280.webp"
   },
   {
@@ -698,6 +796,7 @@ export const BGAMING_GAMES = [
     "game": "ElvisFrog",
     "title": "Elvis Frog In Vegas Branded",
     "genre": "Slots",
+    "released": "2020-05-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/68ba884e8e18aa91dfb0e9a0_Elvis_frog_in_Vegas_1020x1280.webp"
   },
   {
@@ -705,6 +804,7 @@ export const BGAMING_GAMES = [
     "game": "ElvisFrogTrueways",
     "title": "Elvis Frog Trueways",
     "genre": "Slots",
+    "released": "2022-10-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc09539c3b33efb1fbec2b_63e60d843086ce7577883b1c_ElvisTruewayslogo_vertical-1-2.webp"
   },
   {
@@ -712,6 +812,7 @@ export const BGAMING_GAMES = [
     "game": "ElvisFrogtrueways",
     "title": "Elvis Frog Trueways Branded",
     "genre": "Slots",
+    "released": "2022-10-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc09539c3b33efb1fbec2b_63e60d843086ce7577883b1c_ElvisTruewayslogo_vertical-1-2.webp"
   },
   {
@@ -719,6 +820,7 @@ export const BGAMING_GAMES = [
     "game": "EuropeanRoulette",
     "title": "European Roulette",
     "genre": "Roulette",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951c4b8114bdd109f66cc4_European_Roulette_1020x1280.webp"
   },
   {
@@ -726,6 +828,7 @@ export const BGAMING_GAMES = [
     "game": "FaceOff",
     "title": "Face Off",
     "genre": "Slots",
+    "released": "2025-10-06",
     "image": "https://bgaming.com/wp-content/uploads/2025/09/Face_Off_1020x618.webp"
   },
   {
@@ -733,6 +836,7 @@ export const BGAMING_GAMES = [
     "game": "FiestaClusters",
     "title": "Fiesta Clusters",
     "genre": "Slots",
+    "released": "2025-10-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/09/Fiesta_Clusters_1020x618.webp"
   },
   {
@@ -740,6 +844,7 @@ export const BGAMING_GAMES = [
     "game": "FireLightning",
     "title": "Fire Lightning",
     "genre": "Slots",
+    "released": "2018-07-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951c8ee41131af0c75604c_Fire_Lightning_1020x1280.webp"
   },
   {
@@ -747,6 +852,7 @@ export const BGAMING_GAMES = [
     "game": "FishingClub",
     "title": "Fishing Club",
     "genre": "Casual",
+    "released": "2024-06-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6669c6af665083602af51cbc_Fishing_Club_1020x1280.webp"
   },
   {
@@ -754,6 +860,7 @@ export const BGAMING_GAMES = [
     "game": "FishingClub2",
     "title": "Fishing Club 2",
     "genre": "Casual",
+    "released": "2026-04-07",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Fishing_Club_2_1020x1280-1.webp"
   },
   {
@@ -761,6 +868,7 @@ export const BGAMING_GAMES = [
     "game": "FishingTime",
     "title": "Fishing Time",
     "genre": "Casual",
+    "released": "2026-06-11",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/FT_NEW_1020x1280-1.jpg"
   },
   {
@@ -768,6 +876,7 @@ export const BGAMING_GAMES = [
     "game": "FootballPlinko",
     "title": "Football Plinko",
     "genre": "Casual",
+    "released": "2025-06-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Football_Plinko_1020x1280_11zon.webp"
   },
   {
@@ -775,6 +884,7 @@ export const BGAMING_GAMES = [
     "game": "Forgotten",
     "title": "Forgotten",
     "genre": "Slots",
+    "released": "2024-10-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66f1745bbd76ab79a04b2a2a_Forgotten_1020х1280-2.webp"
   },
   {
@@ -782,6 +892,7 @@ export const BGAMING_GAMES = [
     "game": "FortunaTrueways",
     "title": "Fortuna Trueways",
     "genre": "Slots",
+    "released": "2024-09-23",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66ccb95293cba5bddbdf9716_Fortuna_Trueways_1020x1280.webp"
   },
   {
@@ -789,6 +900,7 @@ export const BGAMING_GAMES = [
     "game": "FortuneBells",
     "title": "Fortune Bells",
     "genre": "Slots",
+    "released": "2025-03-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/67b85a4750771189273b381a_Fortune_Bells_1020x1280.webp"
   },
   {
@@ -796,6 +908,7 @@ export const BGAMING_GAMES = [
     "game": "FortuneRedPackets",
     "title": "Fortune Red Packets",
     "genre": "Casual",
+    "released": "2026-02-10",
     "image": "https://bgaming.com/wp-content/uploads/2026/01/Fortune_Red_Packets_1020x1280-1.webp"
   },
   {
@@ -803,6 +916,7 @@ export const BGAMING_GAMES = [
     "game": "FortuneSpin",
     "title": "Fortune Spin",
     "genre": "Casual",
+    "released": "2025-09-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/688b73b86d6c5f9871c069d2_Fortune_Spin_1020х1280.webp"
   },
   {
@@ -810,6 +924,7 @@ export const BGAMING_GAMES = [
     "game": "FortuneTrioMinionsOfFu",
     "title": "Fortune Trio Minions of Fu",
     "genre": "Slots",
+    "released": "2026-08-27",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/Fortune_Trio_Minions_of_Fu_1020x1280.webp"
   },
   {
@@ -817,6 +932,7 @@ export const BGAMING_GAMES = [
     "game": "FortyFruityMillion",
     "title": "Forty Fruity Million",
     "genre": "Slots",
+    "released": "2022-09-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951cf505dced56e7f1de7c_Forty_Fruity_Million_1020x1280.webp"
   },
   {
@@ -824,6 +940,7 @@ export const BGAMING_GAMES = [
     "game": "FourLuckyClover",
     "title": "Four Lucky Clover",
     "genre": "Slots",
+    "released": "2020-03-19",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951d1521affb06add3030c_Four_lucky_clover_1020x618.webp"
   },
   {
@@ -831,6 +948,7 @@ export const BGAMING_GAMES = [
     "game": "FourLuckyDiamonds",
     "title": "Four Lucky Diamonds",
     "genre": "Slots",
+    "released": "2021-02-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951e334220bd1e88e0e3aa_Four_lucky_diamonds_1020x1280.webp"
   },
   {
@@ -838,6 +956,7 @@ export const BGAMING_GAMES = [
     "game": "FrenchRoulette",
     "title": "French Roulette",
     "genre": "Roulette",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951e5006f861444deaa4f9_French_Roulette_1020x1280.webp"
   },
   {
@@ -845,6 +964,7 @@ export const BGAMING_GAMES = [
     "game": "FrenzyClusters",
     "title": "Frenzy Clusters",
     "genre": "Slots",
+    "released": "2026-06-23",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Frenzy_Clusters_1020х1280.webp"
   },
   {
@@ -852,6 +972,7 @@ export const BGAMING_GAMES = [
     "game": "FrozenFruit",
     "title": "Frozen Fruit",
     "genre": "Slots",
+    "released": "2025-11-06",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Frozen-Fruit_1020x1280.webp"
   },
   {
@@ -859,6 +980,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fc274da51395bd3ae5af14_63ee3760ad415d96dc4ad79a_Fruit_Million_Game_Hero.webp"
   },
   {
@@ -866,6 +988,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million Branded",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fc274da51395bd3ae5af14_63ee3760ad415d96dc4ad79a_Fruit_Million_Game_Hero.webp"
   },
   {
@@ -873,6 +996,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million Easter",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951e9396677510ed1ce344_Fruit_Million_Easter_1020x1280.webp"
   },
   {
@@ -880,6 +1004,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million Halloween",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951eb7e3d8811a8848fbc5_Fruit_Million_Halloween_1020x1280.webp"
   },
   {
@@ -887,6 +1012,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million Oktoberfest",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951ec66e463dc0f08f18f5_Fruit_Million_Oktoberfest_1020x1280.webp"
   },
   {
@@ -894,6 +1020,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillionRespin",
     "title": "Fruit Million Respin",
     "genre": "Slots",
+    "released": "2026-07-27",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Fruit_Million_Respin_1020х1280.webp"
   },
   {
@@ -901,6 +1028,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million St Patricks",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951efc2569514105c28210_Fruit_Million_StPatrick_1020x1280.webp"
   },
   {
@@ -908,6 +1036,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million St Valentines",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951f085b617b62b4b3d6cf_Fruit_Million_StValentine_1020x1280.webp"
   },
   {
@@ -915,6 +1044,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million Summer",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951f3affcb17a6aff9941e_Fruit_Million_Summer_1020x1280.webp"
   },
   {
@@ -922,6 +1052,7 @@ export const BGAMING_GAMES = [
     "game": "FruitMillion",
     "title": "Fruit Million Xmas",
     "genre": "Slots",
+    "released": "2020-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66951f2a05183d732387310e_Fruit_Million_X-mas_1020x1280.webp"
   },
   {
@@ -929,6 +1060,7 @@ export const BGAMING_GAMES = [
     "game": "Gangsterz",
     "title": "Gangsterz",
     "genre": "Slots",
+    "released": "2022-11-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Gangsterz_1020x1280_main.webp"
   },
   {
@@ -936,6 +1068,7 @@ export const BGAMING_GAMES = [
     "game": "Gemhalla",
     "title": "Gemhalla",
     "genre": "Slots",
+    "released": "2023-06-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66952078041db02c068a1d48_Gemhalla_1020x1280.webp"
   },
   {
@@ -943,6 +1076,7 @@ export const BGAMING_GAMES = [
     "game": "Gemhalla",
     "title": "Gemhalla x Mas",
     "genre": "Slots",
+    "released": "2023-06-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/672df5d8ce75389f20932972_Gemhalla_X-mas_1020х1280.webp"
   },
   {
@@ -950,6 +1084,7 @@ export const BGAMING_GAMES = [
     "game": "GemhallaXtreme",
     "title": "Gemhalla Xtreme",
     "genre": "Slots",
+    "released": "2026-06-04",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/gemhalla_xtreme_1020_1280.webp"
   },
   {
@@ -957,6 +1092,7 @@ export const BGAMING_GAMES = [
     "game": "Gemza",
     "title": "Gemza",
     "genre": "Slots",
+    "released": "2023-12-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669520a0aa118e9dab08761a_Gemza_1020x1280.webp"
   },
   {
@@ -964,6 +1100,7 @@ export const BGAMING_GAMES = [
     "game": "Gemza",
     "title": "Gemza Xmas",
     "genre": "Slots",
+    "released": "2023-12-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669520ac9cad69b8e33daf34_Gemza_X-mas_1020x1280.webp"
   },
   {
@@ -971,6 +1108,7 @@ export const BGAMING_GAMES = [
     "game": "GiftRush",
     "title": "Gift Rush",
     "genre": "Slots",
+    "released": "2022-12-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669520d0c201e6195365c016_Gift_Rush_1020x1280.webp"
   },
   {
@@ -978,6 +1116,7 @@ export const BGAMING_GAMES = [
     "game": "GiftX",
     "title": "Gift x",
     "genre": "Casual",
+    "released": "2023-12-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669520f2e630b0927d993a07_Gift_X_1020x1280.webp"
   },
   {
@@ -985,6 +1124,7 @@ export const BGAMING_GAMES = [
     "game": "GodOfWealthHoldAndWin",
     "title": "God of Wealth Hold and Win",
     "genre": "Slots",
+    "released": "2024-01-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/669521171184bcc386e8d086_God_of_Wealth_HW_1020x1280.webp"
   },
   {
@@ -992,6 +1132,7 @@ export const BGAMING_GAMES = [
     "game": "GoldRushFrog",
     "title": "Gold Rush Frog",
     "genre": "Exclusive Slots",
+    "released": "2023-03-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fc090119ae7b462188a542_6466238b5b385d7defd4f7fe_GoldRushFrog_bitstarz_455x574.webp"
   },
   {
@@ -999,6 +1140,7 @@ export const BGAMING_GAMES = [
     "game": "GoldRushWithJohnny",
     "title": "Gold Rush With Johnny Cash",
     "genre": "Slots",
+    "released": "2022-06-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669521bfe41131af0c78bd78_Gold_Rush_with_Johnny_Cash_1020x1280.webp"
   },
   {
@@ -1006,6 +1148,7 @@ export const BGAMING_GAMES = [
     "game": "GoldenAvalonHoldAndWin",
     "title": "Golden Avalon Hold and Win",
     "genre": "Slots",
+    "released": "2026-03-03",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Golden_Avalon_Hold_and_Win_1080x1280-1.webp"
   },
   {
@@ -1013,6 +1156,7 @@ export const BGAMING_GAMES = [
     "game": "GoldenPawHoldAndWin",
     "title": "Golden Paw Hold Win",
     "genre": "Slots",
+    "released": "2025-11-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Golden_Paw_Hold__Win_243_1020х1280.webp"
   },
   {
@@ -1020,6 +1164,7 @@ export const BGAMING_GAMES = [
     "game": "GoldenPinataHoldAndWin",
     "title": "Golden Pinata Hold and Win",
     "genre": "Casual",
+    "released": "2025-06-03",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/682b23c265c38112417dad9d_Golden_Pinata_Hold__Win_1020x1280.webp"
   },
   {
@@ -1027,6 +1172,7 @@ export const BGAMING_GAMES = [
     "game": "GoldenPride",
     "title": "Golden Pride",
     "genre": "Slots",
+    "released": "2024-11-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/671657034e0370f77cb924c5_Golden_Pride_1020x1280.webp"
   },
   {
@@ -1034,6 +1180,7 @@ export const BGAMING_GAMES = [
     "game": "GoldMagnate",
     "title": "Goldmagnate",
     "genre": "Slots",
+    "released": "2024-07-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695212d874545d49782e61a_Gold_Magnate_1020x1280.webp"
   },
   {
@@ -1041,6 +1188,7 @@ export const BGAMING_GAMES = [
     "game": "GoldOfMinos",
     "title": "Goldofminos",
     "genre": "Slots",
+    "released": "2024-06-06",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6669c6d5a90995776c2ec314_Gold_of_Minos_1020x1280.webp"
   },
   {
@@ -1048,6 +1196,7 @@ export const BGAMING_GAMES = [
     "game": "GrandBuffaloHoldAndWin",
     "title": "Grand Buffalo Hold and Win",
     "genre": "Slots",
+    "released": "2026-04-21",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Grand_Buffalo_Hold_and_Win_1020x1280.webp"
   },
   {
@@ -1055,6 +1204,7 @@ export const BGAMING_GAMES = [
     "game": "GrandMustang",
     "title": "Grand Mustang",
     "genre": "Slots",
+    "released": "2025-08-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/68766408d15b58a8b34a9cbf_Grand_Mustang_1020х1280.webp"
   },
   {
@@ -1062,6 +1212,7 @@ export const BGAMING_GAMES = [
     "game": "GrandPatron7rst",
     "title": "Grand Patron",
     "genre": "Slots",
+    "released": "2024-07-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/6669ba737e8d0e0dffe2b612_Grand_Patron_1020x1280.webp"
   },
   {
@@ -1069,6 +1220,7 @@ export const BGAMING_GAMES = [
     "game": "HalloweenBonanza",
     "title": "Halloween Bonanza",
     "genre": "Slots",
+    "released": "2022-10-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669521daa5ec535c5b33e679_Halloween_Bonanza_1020x1280.webp"
   },
   {
@@ -1076,6 +1228,7 @@ export const BGAMING_GAMES = [
     "game": "HauntedReels",
     "title": "Haunted Reels",
     "genre": "Slots",
+    "released": "2024-10-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66e861590f92fccf9a713045_Haunted_Reels_1020x1280.webp"
   },
   {
@@ -1083,6 +1236,7 @@ export const BGAMING_GAMES = [
     "game": "HeadsTails",
     "title": "Heads and Tails",
     "genre": "Casual",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695220e7d1fbb542195685a_Heads_and_Tails_1020x1280.webp"
   },
   {
@@ -1090,6 +1244,7 @@ export const BGAMING_GAMES = [
     "game": "HeadsTailsXY",
     "title": "Heads and Tails Xy",
     "genre": "Casual",
+    "released": "2022-03-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695222890603568e0e2e906_Heads_and_Tails_XY_1020x1280.webp"
   },
   {
@@ -1097,6 +1252,7 @@ export const BGAMING_GAMES = [
     "game": "HeartOfTiki",
     "title": "Heart of Tiki",
     "genre": "Slots",
+    "released": "2026-02-17",
     "image": "https://bgaming.com/wp-content/uploads/2026/01/Heart_of_Tiki_1020x1280-1.webp"
   },
   {
@@ -1104,6 +1260,7 @@ export const BGAMING_GAMES = [
     "game": "HitTheRoute",
     "title": "Hit the Route",
     "genre": "Slots",
+    "released": "2020-12-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695228283349b152f851688_Hit_the_route_1020x1280.webp"
   },
   {
@@ -1111,6 +1268,7 @@ export const BGAMING_GAMES = [
     "game": "HotChilliBells",
     "title": "Hot Chilli Bells",
     "genre": "Slots",
+    "released": "2025-01-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67656c1f56a66cbe03173f8c_Hot_Chilli_Bells_HW_1020х1280.webp"
   },
   {
@@ -1118,6 +1276,7 @@ export const BGAMING_GAMES = [
     "game": "HotChilliBells100",
     "title": "Hot Chilli Bells 100",
     "genre": "Slots",
+    "released": "2025-11-11",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Hot_Chilli_Bells_100__1020х1280.webp"
   },
   {
@@ -1125,6 +1284,7 @@ export const BGAMING_GAMES = [
     "game": "HotChilliBells100",
     "title": "Hot Chilli Bells 100 Xmas",
     "genre": "Slots",
+    "released": "2025-11-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Hot_Chilli_Bells_100_243_1020х1280.webp"
   },
   {
@@ -1132,6 +1292,7 @@ export const BGAMING_GAMES = [
     "game": "HotRocket532",
     "title": "Hot Rocket 5x 3x 2x",
     "genre": "Slots",
+    "released": "2026-05-19",
     "image": "https://bgaming.com/wp-content/uploads/2026/04/hot_rocket_5x_3x_2x_1020_1280-5.webp"
   },
   {
@@ -1139,6 +1300,7 @@ export const BGAMING_GAMES = [
     "game": "Hottest666",
     "title": "Hottest 666",
     "genre": "Slots",
+    "released": "2023-12-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669522979fbf8620fd9364f2_Hottest_666_1020x1280.webp"
   },
   {
@@ -1146,6 +1308,7 @@ export const BGAMING_GAMES = [
     "game": "IceScratchBronze",
     "title": "Ice Scratch Bronze",
     "genre": "Scratch",
+    "released": "2023-12-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695232e08a500806dba5b48_Ice_Scratch_Bronze_1020x1280.webp"
   },
   {
@@ -1153,6 +1316,7 @@ export const BGAMING_GAMES = [
     "game": "IceScratchGold",
     "title": "Ice Scratch Gold",
     "genre": "Scratch",
+    "released": "2023-12-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af6c9161cc161bbe4a718_Ice_Scratch_Gold_455x574.webp"
   },
   {
@@ -1160,6 +1324,7 @@ export const BGAMING_GAMES = [
     "game": "IceScratchSilver",
     "title": "Ice Scratch Silver",
     "genre": "Scratch",
+    "released": "2023-12-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669523376218bf2472a340a3_Ice_Scratch_Silver_1020x1280.webp"
   },
   {
@@ -1167,6 +1332,7 @@ export const BGAMING_GAMES = [
     "game": "InfinityPull",
     "title": "Infinity Pull",
     "genre": "Casual",
+    "released": "2025-07-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/685eabdf0d3e86890991938c_Infinity_Pull_1020х1280.webp"
   },
   {
@@ -1174,6 +1340,7 @@ export const BGAMING_GAMES = [
     "game": "IzziArt",
     "title": "Izzi Art",
     "genre": "Slots Exclusive",
+    "released": "2023-09-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af6c852b8baa755921653_Izziart_455x574.webp"
   },
   {
@@ -1181,6 +1348,7 @@ export const BGAMING_GAMES = [
     "game": "JewelBoom",
     "title": "Jewel Boom Super Drop",
     "genre": "Slots",
+    "released": "2026-01-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/12/Jewel_Boom_Super_Drop_1020_1280-2.webp"
   },
   {
@@ -1188,6 +1356,7 @@ export const BGAMING_GAMES = [
     "game": "JogoDoBicho",
     "title": "Jogo Do Bicho",
     "genre": "Lottery",
+    "released": "2019-04-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669523685f5e655794590d57_Jogo_do_Bicho_1020x1280.webp"
   },
   {
@@ -1195,6 +1364,7 @@ export const BGAMING_GAMES = [
     "game": "JohnnyCash",
     "title": "Johnny Cash",
     "genre": "Slots",
+    "released": "2020-10-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669523a5b761c5d22c05a08a_Johnny_cash_1020x1280.webp"
   },
   {
@@ -1202,6 +1372,7 @@ export const BGAMING_GAMES = [
     "game": "JohnnyVsChicken",
     "title": "Johnny Vs Chicken",
     "genre": "Slots",
+    "released": "2026-09-15",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Johnny_vs_Chicken_1020x1280.webp"
   },
   {
@@ -1209,6 +1380,7 @@ export const BGAMING_GAMES = [
     "game": "JokerQueen",
     "title": "Joker Queen",
     "genre": "Slots",
+    "released": "2022-03-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af746316b65cd7ee08232_Joker_Queen_GAME_HERO-e1769531647847.webp"
   },
   {
@@ -1216,6 +1388,7 @@ export const BGAMING_GAMES = [
     "game": "JokerQueen",
     "title": "Joker Queen Branded",
     "genre": "Slots",
+    "released": "2022-03-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af746316b65cd7ee08232_Joker_Queen_GAME_HERO-e1769531647847.webp"
   },
   {
@@ -1223,6 +1396,7 @@ export const BGAMING_GAMES = [
     "game": "JokerVsJoker",
     "title": "Joker Vs Joker",
     "genre": "Slots",
+    "released": "2025-08-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/687a31476f54c7686aaeb6cc_Joker_vs_Joker_1020х1280.webp"
   },
   {
@@ -1230,6 +1404,7 @@ export const BGAMING_GAMES = [
     "game": "JokerXLove",
     "title": "Joker x Love",
     "genre": "Slots",
+    "released": "2026-01-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/12/Joker_X_Love_1020x1280-1.webp"
   },
   {
@@ -1237,6 +1412,7 @@ export const BGAMING_GAMES = [
     "game": "JokersMillion",
     "title": "Jokers Million",
     "genre": "Slots",
+    "released": "2025-02-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6787dd8e0ede84e691d98083_Jokers_Million_1020х1280-e1771222902990.webp"
   },
   {
@@ -1244,6 +1420,7 @@ export const BGAMING_GAMES = [
     "game": "JungleQueen",
     "title": "Jungle Queen",
     "genre": "Slots",
+    "released": "2025-02-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/6790caf2d14b554072ae331b_Jungle_Queen_1020х1280.webp"
   },
   {
@@ -1251,6 +1428,7 @@ export const BGAMING_GAMES = [
     "game": "KeepersOfTheSecret7rst",
     "title": "Keepers of the Secret",
     "genre": "Slots",
+    "released": "2024-01-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/6695246c468a02af628f0842_Keepers_Of_The_Secret_1020x1280-1.webp"
   },
   {
@@ -1258,6 +1436,7 @@ export const BGAMING_GAMES = [
     "game": "KickerMania",
     "title": "Kicker Mania",
     "genre": "Casual",
+    "released": "2026-06-30",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/Kicker_Mania_1020x1280.webp"
   },
   {
@@ -1265,6 +1444,7 @@ export const BGAMING_GAMES = [
     "game": "KingOfCash",
     "title": "King of Cash",
     "genre": "Slots Exclusive",
+    "released": "2022-11-10",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fd62f3db6ee793b9c33142_6400b2186674d73d1528a446_King_of_CASHlogo_vertiсal.webp"
   },
   {
@@ -1272,6 +1452,7 @@ export const BGAMING_GAMES = [
     "game": "KrakensHunger",
     "title": "Krakens Hunger",
     "genre": "Slots",
+    "released": "2024-08-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6694eab26ff1377cee14d35e_KrakensHanger_1020x1280.webp"
   },
   {
@@ -1279,6 +1460,7 @@ export const BGAMING_GAMES = [
     "game": "LadyLuckyGun",
     "title": "Lady Lucky Gun",
     "genre": "Slots",
+    "released": "2025-07-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/68551f5319f01d1a9af84532_Lady_Lucky_Gun_1020х1280.webp"
   },
   {
@@ -1286,6 +1468,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyLadyMoon",
     "title": "Lady Wolf Moon",
     "genre": "Slots",
+    "released": "2020-12-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc11aa2a90afe306718e1e_63ef3a53bd155d7136b3dd83_LadyWolfMoonlogo_vertical.webp"
   },
   {
@@ -1293,6 +1476,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyLadyMoon",
     "title": "Lady Wolf Moon Branded",
     "genre": "Slots",
+    "released": "2020-12-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc11aa2a90afe306718e1e_63ef3a53bd155d7136b3dd83_LadyWolfMoonlogo_vertical.webp"
   },
   {
@@ -1300,6 +1484,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyLadyMoonMegaways",
     "title": "Lady Wolf Moon Megaways",
     "genre": "Slots",
+    "released": "2022-07-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695248d1184bcc386eab5db_Lady_Wolf_Moon_Megaways_1020x1280.webp"
   },
   {
@@ -1307,6 +1492,7 @@ export const BGAMING_GAMES = [
     "game": "Limbo",
     "title": "Limbo Xy",
     "genre": "Casual",
+    "released": "2023-06-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669524bbaa03d53c28e02917_Limbo_XY_1020x1280.webp"
   },
   {
@@ -1314,6 +1500,7 @@ export const BGAMING_GAMES = [
     "game": "LokiLoot",
     "title": "Loki Loot",
     "genre": "Slots",
+    "released": "2025-06-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/682b0757651be0d02b5fd897_LokiLoot1020x1280.webp"
   },
   {
@@ -1321,6 +1508,7 @@ export const BGAMING_GAMES = [
     "game": "LuckAndMagic",
     "title": "Luck Magic",
     "genre": "Slots",
+    "released": "2023-08-03",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fb7611ec87ce4ffc39137c_64b964e98c05bc7cad2a215d_Luck_and_Magic_455x574.webp"
   },
   {
@@ -1328,6 +1516,7 @@ export const BGAMING_GAMES = [
     "game": "LuckAndMagicScratch",
     "title": "Luck Magic Scratch",
     "genre": "Scratch",
+    "released": "2024-05-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6695259034e68db985870358_Luck__Magic_Scratch_1020x1280.webp"
   },
   {
@@ -1335,6 +1524,7 @@ export const BGAMING_GAMES = [
     "game": "Lucky8MergeUp",
     "title": "Lucky 8 Merge Up Tm",
     "genre": "Slots",
+    "released": "2024-02-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669525d08114bdd109fd5592_Lucky_8_Merge_Up_1020x1280.webp"
   },
   {
@@ -1342,6 +1532,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyBirds",
     "title": "Lucky Birds",
     "genre": "Casual",
+    "released": "2026-07-13",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/lucky_birds_1020_1280.webp"
   },
   {
@@ -1349,6 +1540,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyCrew",
     "title": "Lucky Crew",
     "genre": "Slots",
+    "released": "2023-05-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669525fe5b1f2aaaab29de77_Lucky_Crew_1020x1280.webp"
   },
   {
@@ -1356,6 +1548,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyDamaMuerta",
     "title": "Lucky Dama Muerta",
     "genre": "Slots",
+    "released": "2021-10-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695261b7c7595b5d53cfc4d_Lucky_Dama_Muerta_1020x1280.webp"
   },
   {
@@ -1363,6 +1556,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyDragonMultiDiceX",
     "title": "Lucky Dragon Multidice x",
     "genre": "Slots",
+    "released": "2024-04-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669526380be9fcd6c9c8d487_Lucky_Dragon_MultiDice_X_1020x1280.webp"
   },
   {
@@ -1370,6 +1564,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyDucky",
     "title": "Lucky Ducky",
     "genre": "Slots",
+    "released": "2024-12-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6765903d7d583728bcc18f73_Lucky_Ducky_Merge_Up_1020х1280.webp"
   },
   {
@@ -1377,6 +1572,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyDucky",
     "title": "Lucky Ducky x Mas Edition",
     "genre": "Slots",
+    "released": "2024-12-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/673488f77149469df9fe2dd9_Lucky_Ducky_X-mas_1020x1280.webp"
   },
   {
@@ -1384,6 +1580,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyFarmBonanza",
     "title": "Lucky Farm Bonanza",
     "genre": "Slots",
+    "released": "2022-04-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af74420af52bf7b53c2f7_Lucky_Farm_Bonanza_GAME_HERO.webp"
   },
   {
@@ -1391,6 +1588,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyFarmBonanza",
     "title": "Lucky Farm Bonanza Easter",
     "genre": "Slots",
+    "released": "2022-04-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695265ca5ec535c5b36f2f1_Lucky_Farm_Bonanza_102x1280.webp"
   },
   {
@@ -1398,6 +1596,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyLadyClover",
     "title": "Lucky Lady Clover",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66952666c00cabf74252ffca_Lucky_Lady_s_Clover_1020x1280.webp"
   },
   {
@@ -1405,6 +1604,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyLagerX9990",
     "title": "Lucky Lager X9990",
     "genre": "Slots",
+    "released": "2025-09-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/68ac0721c4ade2f89ea0bef0_Lucky_Lager_x9990_1020x618.webp"
   },
   {
@@ -1412,6 +1612,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyLu",
     "title": "Lucky Lu",
     "genre": "Slots",
+    "released": "2025-05-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Lucky_Lu_1020х1280.webp"
   },
   {
@@ -1419,6 +1620,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyOak",
     "title": "Lucky Oak",
     "genre": "Slots",
+    "released": "2023-02-23",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669526820511e0be627f88e1_Lucky_Oak_1020x1280.webp"
   },
   {
@@ -1426,6 +1628,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyPack2026Cup",
     "title": "Lucky Pack 2026 Cup",
     "genre": "Slots",
+    "released": "2026-05-21",
     "image": "https://bgaming.com/wp-content/uploads/2026/04/Lucky_Pack_2026_Cup_1020x1280-2.webp"
   },
   {
@@ -1433,6 +1636,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyPinball",
     "title": "Lucky Pinball",
     "genre": "Casual",
+    "released": "2026-08-25",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/Lucky-Pinball_1020x1280.webp"
   },
   {
@@ -1440,6 +1644,7 @@ export const BGAMING_GAMES = [
     "game": "LuckyTurkey",
     "title": "Lucky Turkey",
     "genre": "Slots",
+    "released": "2025-11-04",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/Lucky_Turkey_1020x1280.webp"
   },
   {
@@ -1447,6 +1652,7 @@ export const BGAMING_GAMES = [
     "game": "MagicMummyMegaways",
     "title": "Magic Mummy Megaways",
     "genre": "Slots",
+    "released": "2026-03-12",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Magic_Mummy_Megaways_1020х1280.webp"
   },
   {
@@ -1454,6 +1660,7 @@ export const BGAMING_GAMES = [
     "game": "Maneki88Fortunes",
     "title": "Maneki 88 Fortunes",
     "genre": "Slots",
+    "released": "2023-09-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669526fd798584307197975f_Maneki_88_Fortunes_1020x1280-1.webp"
   },
   {
@@ -1461,6 +1668,7 @@ export const BGAMING_GAMES = [
     "game": "Maneki88Gold",
     "title": "Maneki 88 Gold",
     "genre": "Slots",
+    "released": "2022-08-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af747336a9621cdd811e1_Maneki_88_Gold_GAME_HERO.webp"
   },
   {
@@ -1468,6 +1676,7 @@ export const BGAMING_GAMES = [
     "game": "Maneki88Gold",
     "title": "Maneki 88 Gold Xmas",
     "genre": "Slots",
+    "released": "2022-08-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669527e6bf00c184be4bc7c5_Maneki_88_Gold_xmas_1020x1280.webp"
   },
   {
@@ -1475,6 +1684,7 @@ export const BGAMING_GAMES = [
     "game": "MechanicalClover",
     "title": "Mechanical Clover",
     "genre": "Slots",
+    "released": "2021-04-05",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669531d21276beed4e15eca9_Mechanical_Clover_1020x1280.webp"
   },
   {
@@ -1482,6 +1692,7 @@ export const BGAMING_GAMES = [
     "game": "MergeUp2",
     "title": "Merge Up 2",
     "genre": "Slots",
+    "released": "2025-10-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/09/Merge_Up__1020х1280-1.webp"
   },
   {
@@ -1489,6 +1700,7 @@ export const BGAMING_GAMES = [
     "game": "MergeUp",
     "title": "Merge Up Tm",
     "genre": "Slots",
+    "released": "2023-10-26",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669532016b1c0c3856b182f9_Merge_Up_1020x1280.webp"
   },
   {
@@ -1496,6 +1708,7 @@ export const BGAMING_GAMES = [
     "game": "MiceAndMagic",
     "title": "Mice Magic Wonder Spin",
     "genre": "Slots",
+    "released": "2023-09-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/Mice__Magic_Wonder_Spin.webp"
   },
   {
@@ -1503,6 +1716,7 @@ export const BGAMING_GAMES = [
     "game": "MineGems",
     "title": "Mine Gems",
     "genre": "Casual",
+    "released": "2024-08-19",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/68ba884e8e18aa91dfb0eed9_Mine_Gems_1020х1280.webp"
   },
   {
@@ -1510,6 +1724,7 @@ export const BGAMING_GAMES = [
     "game": "Minesweeper",
     "title": "Minesweeper",
     "genre": "Casual",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953256420f87d37f655216_Minesweeper_1020x1280.webp"
   },
   {
@@ -1517,6 +1732,7 @@ export const BGAMING_GAMES = [
     "game": "MinesweeperXY",
     "title": "Minesweeper Xy",
     "genre": "Casual",
+    "released": "2022-03-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695323dc7b186fcae093061_Minesweeper_XY_1020x1280.webp"
   },
   {
@@ -1524,6 +1740,7 @@ export const BGAMING_GAMES = [
     "game": "MiraxCircusQueen",
     "title": "Mirax Circus Queen",
     "genre": "Slots Exclusive",
+    "released": "2022-08-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fd61fe4c01d1a2dcf6d020_64099de985302e7020b1cc07_Mirax_Circus_Queen_FEATURED_vertical-1.webp"
   },
   {
@@ -1531,6 +1748,7 @@ export const BGAMING_GAMES = [
     "game": "MissCherryFruits",
     "title": "Miss Cherry Fruits",
     "genre": "Slots",
+    "released": "2021-09-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953498d5c4fcfd86eaa5b7_Miss_cherry_fruits_1020x1280.webp"
   },
   {
@@ -1538,6 +1756,7 @@ export const BGAMING_GAMES = [
     "game": "MissCherryFruitsJackpotparty",
     "title": "Miss Cherry Fruits Jackpot Party",
     "genre": "Slots",
+    "released": "2022-07-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695346cf4c129b1c50182eb_Miss_Cherry_Fruits_Jackpot_Party_1020x1280.webp"
   },
   {
@@ -1545,6 +1764,7 @@ export const BGAMING_GAMES = [
     "game": "MissCherryFruits",
     "title": "Miss Cherry Fruits St Valentines",
     "genre": "Slots",
+    "released": "2021-09-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953441f3514f320bb8fdd2_Miss_Cherry_Fruits_Valentine_1020x1280.webp"
   },
   {
@@ -1552,6 +1772,7 @@ export const BGAMING_GAMES = [
     "game": "MissCherryFruits",
     "title": "Miss Cherry Fruits Xmas",
     "genre": "Slots",
+    "released": "2021-09-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669534613130f864e72cd475_Miss_Cherry_Fruits_Xmas_1020x1280.webp"
   },
   {
@@ -1559,6 +1780,7 @@ export const BGAMING_GAMES = [
     "game": "MissCherryWildFrames",
     "title": "Miss Cherry Wild Frames",
     "genre": "Slots",
+    "released": "2026-08-13",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/Miss-Cherry-Wild-Frames_1020x1280.png"
   },
   {
@@ -1566,6 +1788,7 @@ export const BGAMING_GAMES = [
     "game": "MoneyMaker",
     "title": "Money Maker",
     "genre": "Slots",
+    "released": "2026-06-10",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/MoneyMaker_1020x1280.webp"
   },
   {
@@ -1573,6 +1796,7 @@ export const BGAMING_GAMES = [
     "game": "MonsterHunt",
     "title": "Monster Hunt",
     "genre": "Slots",
+    "released": "2023-10-12",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669534b8653f8622c69627b6_Monster_Hunt_1020x1280.webp"
   },
   {
@@ -1580,6 +1804,7 @@ export const BGAMING_GAMES = [
     "game": "MultiRush",
     "title": "Multi Rush",
     "genre": "Slots",
+    "released": "2026-06-17",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Multi_Rush_1020х1280.webp"
   },
   {
@@ -1587,6 +1812,7 @@ export const BGAMING_GAMES = [
     "game": "MultihandBlackjack",
     "title": "Multihand Blackjack",
     "genre": "Cards",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695351f66447192b4939ef8_Multihand_Blackjack_1020x1280.webp"
   },
   {
@@ -1594,6 +1820,7 @@ export const BGAMING_GAMES = [
     "game": "BlackjackPro",
     "title": "Multihand Blackjack Pro",
     "genre": "Cards",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669534ff2f6c78ef41902043_Multihand_Blackjack_Pro_1020x1280.webp"
   },
   {
@@ -1601,6 +1828,7 @@ export const BGAMING_GAMES = [
     "game": "MultihandBlackjackPro2",
     "title": "Multihand Blackjack Pro 2",
     "genre": "Cards",
+    "released": "2025-06-26",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/683f5bb4468620cdf86fe05c_Multihand_Blackjack_Pro_2_1020x1280.webp"
   },
   {
@@ -1608,6 +1836,7 @@ export const BGAMING_GAMES = [
     "game": "MummysGold",
     "title": "Mummys Gold",
     "genre": "Slots",
+    "released": "2023-11-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953539e27373af09f89b47_Mummy_s_Gold_1020x1280.webp"
   },
   {
@@ -1615,6 +1844,7 @@ export const BGAMING_GAMES = [
     "game": "MysteryGarden",
     "title": "Mystery Garden",
     "genre": "Slots",
+    "released": "2025-06-10",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6821c2010407bbd95bbcdf13_Mystery_Garden_1020х1280.webp"
   },
   {
@@ -1622,6 +1852,7 @@ export const BGAMING_GAMES = [
     "game": "MysteryHeist",
     "title": "Mystery Heist",
     "genre": "Slots",
+    "released": "2026-01-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/12/Mystery_Heist_1020х1280.webp"
   },
   {
@@ -1629,6 +1860,7 @@ export const BGAMING_GAMES = [
     "game": "MysticReels",
     "title": "Mystic Reels",
     "genre": "Slots",
+    "released": "2026-08-04",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/Mystic-Reels_1020x1280.png"
   },
   {
@@ -1636,6 +1868,7 @@ export const BGAMING_GAMES = [
     "game": "OlympusTrueways",
     "title": "Olympustrueways",
     "genre": "Slots",
+    "released": "2025-05-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67fcf1d2817c66cc3ba98a84_OlympusTRUEWAYS_1020х1280.webp"
   },
   {
@@ -1643,6 +1876,7 @@ export const BGAMING_GAMES = [
     "game": "Oof",
     "title": "Oof",
     "genre": "Slots",
+    "released": "2024-05-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669535d30dea24436ed6b96d_OOF_The_Goldmine_Planet-_1020x1280.webp"
   },
   {
@@ -1650,6 +1884,7 @@ export const BGAMING_GAMES = [
     "game": "OpenIt",
     "title": "Open It",
     "genre": "Casual",
+    "released": "2025-11-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Open_it_1020x1280.webp"
   },
   {
@@ -1657,6 +1892,7 @@ export const BGAMING_GAMES = [
     "game": "PandaLuck",
     "title": "Panda Luck",
     "genre": "Slots",
+    "released": "2024-05-21",
     "image": "https://bgaming.com/wp-content/uploads/2025/02/669535f3e706a57c76078f35_Panda_Luck_1020x1280.webp"
   },
   {
@@ -1664,6 +1900,7 @@ export const BGAMING_GAMES = [
     "game": "PenaltyDuel",
     "title": "Penalty Duel",
     "genre": "Casual",
+    "released": "2025-07-03",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/68429e08e36ca0085073b075_Penalty_Duel_1020х1280-1.webp"
   },
   {
@@ -1671,6 +1908,7 @@ export const BGAMING_GAMES = [
     "game": "PenaltyDuelWithJulioCesar",
     "title": "Penalty Duel With Julio Cesar",
     "genre": "Casual",
+    "released": "2026-06-08",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/Penalty_Duel_with_Jгlio_CВsar_1020x1280.webp"
   },
   {
@@ -1678,6 +1916,7 @@ export const BGAMING_GAMES = [
     "game": "PennyPelican",
     "title": "Penny Pelican",
     "genre": "Slots",
+    "released": "2022-05-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695361ac99d367b4d815170_Penny_Pelican_1020x1280.webp"
   },
   {
@@ -1685,6 +1924,7 @@ export const BGAMING_GAMES = [
     "game": "PiggyBankHoldAndWin",
     "title": "Piggy Bank Holdwin",
     "genre": "Slots",
+    "released": "2026-03-19",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Piggy_Bank_Hold_and_Win__1020х1280.webp"
   },
   {
@@ -1692,6 +1932,7 @@ export const BGAMING_GAMES = [
     "game": "PinUpBonanza",
     "title": "Pin Up Bonanza",
     "genre": "Exclusive Slots",
+    "released": "2022-01-20",
     "image": "https://bgaming.com/wp-content/uploads/2025/05/pin-up-bonanza.webp"
   },
   {
@@ -1699,6 +1940,7 @@ export const BGAMING_GAMES = [
     "game": "PlatinumLightning",
     "title": "Platinum Lightning",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/Platinum_lightning_main_1020x1280.webp"
   },
   {
@@ -1706,6 +1948,7 @@ export const BGAMING_GAMES = [
     "game": "PlatinumLightningDeluxe",
     "title": "Platinum Lightning Deluxe",
     "genre": "Slots",
+    "released": "2018-02-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695365ca62c9057a8908f03_Platinum_Lightning_Deluxe_1020x1280.webp"
   },
   {
@@ -1713,6 +1956,7 @@ export const BGAMING_GAMES = [
     "game": "Plinko",
     "title": "Plinko",
     "genre": "Casual",
+    "released": "2019-01-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fc12f80a3ae149535f4914_63f20fc0eb83de8545a74b59_Plinko_game_hero.webp"
   },
   {
@@ -1720,6 +1964,7 @@ export const BGAMING_GAMES = [
     "game": "Plinko2",
     "title": "Plinko 2",
     "genre": "Casual",
+    "released": "2025-01-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67532b20426c449f9ce31afa_Plinko_2_1020х1280.webp"
   },
   {
@@ -1727,6 +1972,7 @@ export const BGAMING_GAMES = [
     "game": "Plinko2Halloween",
     "title": "Plinko 2 Halloween",
     "genre": "Casual",
+    "released": "2025-10-09",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/68305abe32f2f65668406672_Football_Plinko_1020x1280-2.webp"
   },
   {
@@ -1734,6 +1980,7 @@ export const BGAMING_GAMES = [
     "game": "PlinkoXY",
     "title": "Plinko Xy",
     "genre": "Casual",
+    "released": "2022-03-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669536e1b49633e732ca9951_Plinko_XY_1020x1280.webp"
   },
   {
@@ -1741,6 +1988,7 @@ export const BGAMING_GAMES = [
     "game": "PopZen",
     "title": "Pop Zen",
     "genre": "Slots",
+    "released": "2024-02-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/03/669537056ecd30f9070dd013_Pop_Zen_1020x1280.webp"
   },
   {
@@ -1748,6 +1996,7 @@ export const BGAMING_GAMES = [
     "game": "PotionSpells",
     "title": "Potion Spells",
     "genre": "Slots",
+    "released": "2023-01-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695371e34a61036b4178ccf_Potion_Spells_1020x1280.webp"
   },
   {
@@ -1755,6 +2004,7 @@ export const BGAMING_GAMES = [
     "game": "PrincessOfSky",
     "title": "Princess of Sky",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695374560a6cdd168bd99f2_Princess_of_Sky_1020x1280.webp"
   },
   {
@@ -1762,6 +2012,7 @@ export const BGAMING_GAMES = [
     "game": "PrincessRoyal",
     "title": "Princess Royal",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695376cf8acfa33973313f3_Princess_Royal_1020x1280.webp"
   },
   {
@@ -1769,6 +2020,7 @@ export const BGAMING_GAMES = [
     "game": "RecycleRiches",
     "title": "Recycle Riches",
     "genre": "Slots",
+    "released": "2026-03-17",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Recycle_Riches__1020х1280-1.webp"
   },
   {
@@ -1776,6 +2028,7 @@ export const BGAMING_GAMES = [
     "game": "RedHotChilliChickens",
     "title": "Red Hot Chilli Chickens",
     "genre": "Slots",
+    "released": "2026-09-17",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Red_Hot_Chilli_Chickens_1020x1280.webp"
   },
   {
@@ -1783,6 +2036,7 @@ export const BGAMING_GAMES = [
     "game": "ReelOfRa",
     "title": "Reel of Ra",
     "genre": "Slots",
+    "released": "2026-07-20",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Reel_of_ra_1020x1280_bgaming-1.webp"
   },
   {
@@ -1790,6 +2044,7 @@ export const BGAMING_GAMES = [
     "game": "BInvestLive",
     "title": "Retro Trader",
     "genre": "Casual",
+    "released": "2025-05-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67f679718e6f18bcef0c6e85_Retro_Trader_1020х1280.webp"
   },
   {
@@ -1797,6 +2052,7 @@ export const BGAMING_GAMES = [
     "game": "Road2Riches",
     "title": "Road 2 Riches",
     "genre": "Slots",
+    "released": "2021-11-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/666af7066bdd773c0745fdd2_Road2Riches_FEATURED_vertical.webp"
   },
   {
@@ -1804,6 +2060,7 @@ export const BGAMING_GAMES = [
     "game": "Road2Riches",
     "title": "Road 2 Riches Xmas",
     "genre": "Slots",
+    "released": "2021-11-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd687e4c01d1a2dcfc6350_63f4a5088b8a115fefb871fe_Road2Riches_xmas_-FEATURED_vertical.webp"
   },
   {
@@ -1811,6 +2068,7 @@ export const BGAMING_GAMES = [
     "game": "Robospin",
     "title": "Robospin",
     "genre": "Casual",
+    "released": "2024-09-03",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/66b65a44b91406fa6042e222_Robospin_1020x1280.webp"
   },
   {
@@ -1818,6 +2076,7 @@ export const BGAMING_GAMES = [
     "game": "RocketDice",
     "title": "Rocket Dice",
     "genre": "Dice",
+    "released": "2018-10-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669538126ec0ef9b50abbf2b_Rocket_dice_1020x1280.webp"
   },
   {
@@ -1825,6 +2084,7 @@ export const BGAMING_GAMES = [
     "game": "RocketDiceXY",
     "title": "Rocket Dice Xy",
     "genre": "Dice",
+    "released": "2022-03-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669537ff866a6e2945cb0dc4_Rocket_dice_XY_1020x1280.webp"
   },
   {
@@ -1832,6 +2092,7 @@ export const BGAMING_GAMES = [
     "game": "RocketEruptionTripleBlast",
     "title": "Rocket Eruption Triple Blast",
     "genre": "Slots",
+    "released": "2026-02-24",
     "image": "https://bgaming.com/wp-content/uploads/2026/01/Rocket_Eruption_Triple_Blast_1020x1280-1.webp"
   },
   {
@@ -1839,6 +2100,7 @@ export const BGAMING_GAMES = [
     "game": "RotatingElement",
     "title": "Rotating Element",
     "genre": "Slots",
+    "released": "2024-10-23",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66f14ac92db9ea42c3832d1b_Rotating_Element_1020x1280.webp"
   },
   {
@@ -1846,6 +2108,7 @@ export const BGAMING_GAMES = [
     "game": "RoyalBeellionHoldAndWin",
     "title": "Royal Beellion Hold Win",
     "genre": "Slots",
+    "released": "2026-04-28",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Royal_Beellion_1020_1280_1x.webp"
   },
   {
@@ -1853,6 +2116,7 @@ export const BGAMING_GAMES = [
     "game": "RoyalEaster",
     "title": "Royal Easter",
     "genre": "Slots",
+    "released": "2026-03-26",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Royal_Easter_1020x1280.webp"
   },
   {
@@ -1860,6 +2124,7 @@ export const BGAMING_GAMES = [
     "game": "RoyalFruitsMultiLines",
     "title": "Royal Fruits Multilines",
     "genre": "Slots",
+    "released": "2024-09-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66be1f927573e7f2247b8b74_Royal_Fruits_Multilines_1020х1280.webp"
   },
   {
@@ -1867,6 +2132,7 @@ export const BGAMING_GAMES = [
     "game": "RoyalHighRoad",
     "title": "Royal High Road",
     "genre": "Slots",
+    "released": "2023-05-11",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695382d028e25da32dee9b7_Royal_High-Road_1020x1280.webp"
   },
   {
@@ -1874,6 +2140,7 @@ export const BGAMING_GAMES = [
     "game": "RoyalRoulette500X",
     "title": "Royal Roulette 500x",
     "genre": "Roulette",
+    "released": "2026-03-24",
     "image": "https://bgaming.com/wp-content/uploads/2026/02/Royal_Roulette_x500_1020x1280-2-1.webp"
   },
   {
@@ -1881,6 +2148,7 @@ export const BGAMING_GAMES = [
     "game": "SakuraRiches60",
     "title": "Sakura Riches 60",
     "genre": "Slots",
+    "released": "2025-01-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Sakura_Riches_60_1020х1280.webp"
   },
   {
@@ -1888,6 +2156,7 @@ export const BGAMING_GAMES = [
     "game": "SavageBuffaloSpirit",
     "title": "Savage Buffalo Spirit",
     "genre": "Slots",
+    "released": "2023-05-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695386d555550213c647165_Savage_Buffalo_Spirit_1020x1280.webp"
   },
   {
@@ -1895,6 +2164,7 @@ export const BGAMING_GAMES = [
     "game": "SavageBuffaloSpiritMegaways",
     "title": "Savage Buffalo Spirit Megaways Tm",
     "genre": "Slots",
+    "released": "2023-08-24",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669538655d4d213998d69a55_Savage_Buffalo_Spirit_Megaways_1020x1280.webp"
   },
   {
@@ -1902,6 +2172,7 @@ export const BGAMING_GAMES = [
     "game": "ScratchAlpacaBronze",
     "title": "Scratch Alpaca Bronze",
     "genre": "Scratch",
+    "released": "2023-10-19",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695389f4484b480cbe88d50_Scratch_Alpaca_Bronze_1020x1280.webp"
   },
   {
@@ -1909,6 +2180,7 @@ export const BGAMING_GAMES = [
     "game": "ScratchAlpacaGold",
     "title": "Scratch Alpaca Gold",
     "genre": "Scratch",
+    "released": "2023-10-19",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669538cc200b059bd6187a26_Scratch_Alpaca_Gold_1020x1280.webp"
   },
   {
@@ -1916,6 +2188,7 @@ export const BGAMING_GAMES = [
     "game": "ScratchAlpacaSilver",
     "title": "Scratch Alpaca Silver",
     "genre": "Scratch",
+    "released": "2023-10-19",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669538ae522baad460a23213_Scratch_Alpaca_Silver_1020x1280.webp"
   },
   {
@@ -1923,6 +2196,7 @@ export const BGAMING_GAMES = [
     "game": "ScratchDice",
     "title": "Scratch Dice",
     "genre": "Scratch",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669538f1ab556ca0842f472c_Scratch_Dice_1020x1280.webp"
   },
   {
@@ -1930,6 +2204,7 @@ export const BGAMING_GAMES = [
     "game": "ScrollOfAdventure",
     "title": "Scroll of Adventure",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695392cdc852b06366457f4_Scroll_of_Adventure_1020x1280.webp"
   },
   {
@@ -1937,6 +2212,7 @@ export const BGAMING_GAMES = [
     "game": "SecretBarMultiDiceX",
     "title": "Secret Bar Multidice x",
     "genre": "Slots",
+    "released": "2024-07-23",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66797eb170cde467689bb7a8_Secret_Bar_MultidiceX_1020x1280.webp"
   },
   {
@@ -1944,6 +2220,7 @@ export const BGAMING_GAMES = [
     "game": "SharkAndSparkHoldAndWin",
     "title": "Shark Spark Hold Win",
     "genre": "Slots",
+    "released": "2026-05-28",
     "image": "https://bgaming.com/wp-content/uploads/2026/04/Shark_Spark_Hold_Win_1020_1280_1x.webp"
   },
   {
@@ -1951,6 +2228,7 @@ export const BGAMING_GAMES = [
     "game": "SlotMachine",
     "title": "Slot Machine",
     "genre": "Slots",
+    "released": "2023-12-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953a0be1aaa4b8470dc6a9_Slot_machine_Xmas_1020x1280.webp"
   },
   {
@@ -1958,6 +2236,7 @@ export const BGAMING_GAMES = [
     "game": "SlotMachine",
     "title": "Slot Machine 2",
     "genre": "Slots",
+    "released": "2023-12-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6695394d9b34dda681ada9ac_Slot_machine_1020x1280.webp"
   },
   {
@@ -1965,6 +2244,7 @@ export const BGAMING_GAMES = [
     "game": "SlotMachine",
     "title": "Slot Machine St Patrick",
     "genre": "Slots",
+    "released": "2023-12-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953965e0fe76a9a353db45_Slot_machine_stPatrick_1020x1280.webp"
   },
   {
@@ -1972,6 +2252,7 @@ export const BGAMING_GAMES = [
     "game": "SlotMachine",
     "title": "Slot Machine St Valentine",
     "genre": "Slots",
+    "released": "2023-12-07",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/669539d7c9e19b48e8ec062e_Slot_machine_stValentine_1020x1280.webp"
   },
   {
@@ -1979,6 +2260,7 @@ export const BGAMING_GAMES = [
     "game": "SnoopDoggDollars",
     "title": "Snoop Dogg Dollars",
     "genre": "Slots",
+    "released": "2024-10-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66b4819917127efab8511147_Snoop_Dogg_Dollars_1020х1280.webp"
   },
   {
@@ -1986,6 +2268,7 @@ export const BGAMING_GAMES = [
     "game": "Soccermania",
     "title": "Soccermania",
     "genre": "Slots",
+    "released": "2022-11-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/07/Soccermania_1020x1280.webp"
   },
   {
@@ -1993,6 +2276,7 @@ export const BGAMING_GAMES = [
     "game": "SpaceXY",
     "title": "Space Xy",
     "genre": "Casual",
+    "released": "2022-01-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953c2579c8c4181afaa3f1_Space_XY_1020x1280.webp"
   },
   {
@@ -2000,6 +2284,7 @@ export const BGAMING_GAMES = [
     "game": "SpaceXY",
     "title": "Space Xy Branded",
     "genre": "Casual",
+    "released": "2022-01-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953c2579c8c4181afaa3f1_Space_XY_1020x1280.webp"
   },
   {
@@ -2007,6 +2292,7 @@ export const BGAMING_GAMES = [
     "game": "SpinAndSpell",
     "title": "Spin and Spell",
     "genre": "Slots",
+    "released": "2019-10-17",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953c626a2f248cc6848ac2_Spin_And_Spell_1020x1280.webp"
   },
   {
@@ -2014,6 +2300,7 @@ export const BGAMING_GAMES = [
     "game": "StPatricksPotsHoldAndWin",
     "title": "St Patricks Pots Hold and Win",
     "genre": "Slots",
+    "released": "2026-08-11",
     "image": "https://bgaming.com/wp-content/uploads/2026/07/St.-Patricks_Pots_Hold_and_Win_1020x1280.png"
   },
   {
@@ -2021,6 +2308,7 @@ export const BGAMING_GAMES = [
     "game": "StarTrekNextGen",
     "title": "Star Trek the Next Generation",
     "genre": "Slots",
+    "released": "2025-11-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Star_Trek_The_Next_Generation_243_1020х1280.webp"
   },
   {
@@ -2028,6 +2316,7 @@ export const BGAMING_GAMES = [
     "game": "StarsAndStripesHoldAndWin",
     "title": "Stars Stripes Hold and Win",
     "genre": "Slots",
+    "released": "2026-06-30",
     "image": "https://bgaming.com/wp-content/uploads/2026/05/Stars_and_Stripes_1020x1280.png"
   },
   {
@@ -2035,6 +2324,7 @@ export const BGAMING_GAMES = [
     "game": "StreetPower",
     "title": "Street Power",
     "genre": "Casual",
+    "released": "2024-08-06",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/668d3be7f8d2441d9bf4baaa_StreetPower_1020х1280.webp"
   },
   {
@@ -2042,6 +2332,7 @@ export const BGAMING_GAMES = [
     "game": "SugarMergeUp",
     "title": "Sugar Merge Up",
     "genre": "Slots",
+    "released": "2026-03-31",
     "image": "https://bgaming.com/wp-content/uploads/2026/03/Sugar_Merge_UpTM_1020х1280-1.webp"
   },
   {
@@ -2049,6 +2340,7 @@ export const BGAMING_GAMES = [
     "game": "SugarMix",
     "title": "Sugar Mix",
     "genre": "Slots",
+    "released": "2025-04-22",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67dae9d330088948c2f724f3_Sugar_Mix_1020х1280.webp"
   },
   {
@@ -2056,6 +2348,7 @@ export const BGAMING_GAMES = [
     "game": "SugarPlinko",
     "title": "Sugar Plinko",
     "genre": "Casual",
+    "released": "2026-09-01",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Sugar-Plinko_1020x1280.webp"
   },
   {
@@ -2063,6 +2356,7 @@ export const BGAMING_GAMES = [
     "game": "SurrenderMultihandBlackjack",
     "title": "Surrender Multihand Blackjack",
     "genre": "Cards",
+    "released": "2026-01-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/12/Surrender_Multihand_Blackjack_1020x1280webp-2.webp"
   },
   {
@@ -2070,6 +2364,7 @@ export const BGAMING_GAMES = [
     "game": "SweetRushMegaways",
     "title": "Sweet Royale Megaways",
     "genre": "Slots",
+    "released": "2023-02-16",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Sweet-Royale-Megaways_1020х1280.webp"
   },
   {
@@ -2077,6 +2372,7 @@ export const BGAMING_GAMES = [
     "game": "SweetSamurai",
     "title": "Sweet Samurai",
     "genre": "Slots",
+    "released": "2026-06-25",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Sweet_Samurai_1020x1280-1.webp"
   },
   {
@@ -2084,6 +2380,7 @@ export const BGAMING_GAMES = [
     "game": "GatesOfPower",
     "title": "Temple of Power",
     "genre": "Slots",
+    "released": "2026-04-01",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Temple-of-Power_1020x1280.png"
   },
   {
@@ -2091,6 +2388,7 @@ export const BGAMING_GAMES = [
     "game": "TheGodfather3PillarsOfPower",
     "title": "The Godfather 3 Pillars of Power",
     "genre": "Slots",
+    "released": "2026-07-15",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/The-Godfather_-3-Pillars-of-Power_1020x1280.png"
   },
   {
@@ -2098,6 +2396,7 @@ export const BGAMING_GAMES = [
     "game": "TileMaster",
     "title": "Tile Master",
     "genre": "Casual",
+    "released": "2024-12-10",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/672ce33a7151d63a486f6463_Tile_Master_1020x1280.webp"
   },
   {
@@ -2105,6 +2404,7 @@ export const BGAMING_GAMES = [
     "game": "TopEagle",
     "title": "Top Eagle",
     "genre": "Casual",
+    "released": "2024-09-13",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66e1615512c98e24c88742f7_Top_Eagle_1020x1280.webp"
   },
   {
@@ -2112,6 +2412,7 @@ export const BGAMING_GAMES = [
     "game": "TotallyHot",
     "title": "Totally Hot",
     "genre": "Slots",
+    "released": "2025-12-09",
     "image": "https://bgaming.com/wp-content/uploads/2025/11/Totally_Hot_1020_1280.webp"
   },
   {
@@ -2119,6 +2420,7 @@ export const BGAMING_GAMES = [
     "game": "TotallyHot",
     "title": "Totally Hot 2",
     "genre": "Slots",
+    "released": "2026-01-15",
     "image": "https://bgaming.com/wp-content/uploads/2026/01/Totally_hot_1020_1280.webp"
   },
   {
@@ -2126,6 +2428,7 @@ export const BGAMING_GAMES = [
     "game": "TrainHeistJohnnyCash",
     "title": "Train Heist Johnny Cash",
     "genre": "Slots",
+    "released": "2026-07-08",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/train_heist_johnny_cash_1020_1280-816x1024.webp"
   },
   {
@@ -2133,6 +2436,7 @@ export const BGAMING_GAMES = [
     "game": "TrainToRioGrande",
     "title": "Train To Rio Grande",
     "genre": "Slots",
+    "released": "2024-08-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/669a28f3f8e9588b26b02d98_Train_to_Rio-Grande_1020x1280-1-1.webp"
   },
   {
@@ -2140,6 +2444,7 @@ export const BGAMING_GAMES = [
     "game": "TrampDay",
     "title": "Tramp Day",
     "genre": "Slots",
+    "released": "2023-11-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953cf1537ef6bea5c7240c_Tramp_day_1020x1280.webp"
   },
   {
@@ -2147,6 +2452,7 @@ export const BGAMING_GAMES = [
     "game": "TrampDayTrueways",
     "title": "Tramp Day Trueways Tm",
     "genre": "Slots",
+    "released": "2025-07-10",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/685a5687310931bd642cd5bb_Tramp_Day_TrueWays_1020x1280_11zon.webp"
   },
   {
@@ -2154,6 +2460,7 @@ export const BGAMING_GAMES = [
     "game": "TreasureExplorer",
     "title": "Treasure Explorer",
     "genre": "Slots",
+    "released": "2026-01-08",
     "image": "https://bgaming.com/wp-content/uploads/2025/12/Treasure_Explorer_1020х1280.webp"
   },
   {
@@ -2161,6 +2468,7 @@ export const BGAMING_GAMES = [
     "game": "TreasureOfAnubis",
     "title": "Treasure of Anubis",
     "genre": "Slots",
+    "released": "2025-03-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/67a62f0385291a6d3e60fb10_Treasure_of_Anubis_1020x1280.webp"
   },
   {
@@ -2168,6 +2476,7 @@ export const BGAMING_GAMES = [
     "game": "TripleNipple",
     "title": "Triple Nipple",
     "genre": "Casual",
+    "released": "2026-08-18",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/Triple-Nipple_1020x618.webp"
   },
   {
@@ -2175,6 +2484,7 @@ export const BGAMING_GAMES = [
     "game": "UFOPyramids",
     "title": "Ufo Pyramids",
     "genre": "Slots",
+    "released": "2025-12-16",
     "image": "https://bgaming.com/wp-content/uploads/2025/11/UFOPyramids_1020х1280.webp"
   },
   {
@@ -2182,6 +2492,7 @@ export const BGAMING_GAMES = [
     "game": "Ultras",
     "title": "Ultras",
     "genre": "Slots",
+    "released": "2026-05-07",
     "image": "https://bgaming.com/wp-content/uploads/2026/04/Ultras_1020x1280.webp"
   },
   {
@@ -2189,6 +2500,7 @@ export const BGAMING_GAMES = [
     "game": "VaveCrash",
     "title": "Vave Crash",
     "genre": "Casual Exclusive",
+    "released": "2022-10-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc104a1fd5e57fd6e5ee9e_6409a308a8b32089ed4a1ee0_Vave_crashlogo_vertiсal.webp"
   },
   {
@@ -2196,6 +2508,7 @@ export const BGAMING_GAMES = [
     "game": "VoodooPeople",
     "title": "Voodoo People",
     "genre": "Slots",
+    "released": "2024-09-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/66d0c487bb2eb03c05645076_Voodoo_People_1020х1280.webp"
   },
   {
@@ -2203,6 +2516,7 @@ export const BGAMING_GAMES = [
     "game": "WbcRingOfRiches",
     "title": "Wbc Ring of Riches",
     "genre": "Slots",
+    "released": "2021-05-27",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953d14af650755aa1b335c_WBC_Ring_of_riches_1020x1280.webp"
   },
   {
@@ -2210,6 +2524,7 @@ export const BGAMING_GAMES = [
     "game": "WestTown",
     "title": "West Town",
     "genre": "Slots",
+    "released": "2016-04-02",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953d80ac74c5cc77b9f7dc_West_Town_1020x1280.webp"
   },
   {
@@ -2217,6 +2532,7 @@ export const BGAMING_GAMES = [
     "game": "WildCardGang",
     "title": "Wild Card Gang",
     "genre": "Slots",
+    "released": "2025-02-26",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/6790cb317e2cf39d98c7f789_WildCardGang_MergeUp_1020x1280.webp"
   },
   {
@@ -2224,6 +2540,7 @@ export const BGAMING_GAMES = [
     "game": "WildCash",
     "title": "Wild Cash",
     "genre": "Slots",
+    "released": "2022-04-14",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fc22b51fd5e57fd6f53c38_63e4face6d75cc08149b97cd_Wild_Cash_GAME_HERO-1.webp"
   },
   {
@@ -2231,6 +2548,7 @@ export const BGAMING_GAMES = [
     "game": "WildCashDice",
     "title": "Wild Cash Dice",
     "genre": "Slots",
+    "released": "2023-09-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953dbaa69a2e72e70d3a29_Wild_Cash_Dice_1020x1280.webp"
   },
   {
@@ -2238,6 +2556,7 @@ export const BGAMING_GAMES = [
     "game": "WildCashX9990",
     "title": "Wild Cash X9990",
     "genre": "Slots",
+    "released": "2022-08-31",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd678fdb6ee793b9c6561a_63f49e0bfcd2a38eb9827c02_Wild_Cash_x9990_logo_vertical.webp"
   },
   {
@@ -2245,6 +2564,7 @@ export const BGAMING_GAMES = [
     "game": "WildCashX9990",
     "title": "Wild Cash X9990 Branded",
     "genre": "Slots",
+    "released": "2022-08-31",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fd678fdb6ee793b9c6561a_63f49e0bfcd2a38eb9827c02_Wild_Cash_x9990_logo_vertical.webp"
   },
   {
@@ -2252,6 +2572,7 @@ export const BGAMING_GAMES = [
     "game": "WildChicago",
     "title": "Wild Chicago",
     "genre": "Slots",
+    "released": "2023-06-29",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953e13abc3f80989204a97_Wild_Chicago_1020x1280.webp"
   },
   {
@@ -2259,6 +2580,7 @@ export const BGAMING_GAMES = [
     "game": "WildClustersP",
     "title": "Wild Clusters",
     "genre": "Slots",
+    "released": "2025-04-01",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/67c7161d9ba4fe649936fd2b_Wild_Clusters_1020х1280.webp"
   },
   {
@@ -2266,6 +2588,7 @@ export const BGAMING_GAMES = [
     "game": "WildHeart",
     "title": "Wild Heart",
     "genre": "Slots",
+    "released": "2024-01-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953e31ac74c5cc77ba80fe_Wild_Heart_1020x1280.webp"
   },
   {
@@ -2273,6 +2596,7 @@ export const BGAMING_GAMES = [
     "game": "WildMillion",
     "title": "Wild Million",
     "genre": "Slots",
+    "released": "2025-11-18",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Wild_Million_1020х1280.webp"
   },
   {
@@ -2280,6 +2604,7 @@ export const BGAMING_GAMES = [
     "game": "WildMoonThieves",
     "title": "Wild Moon Thieves",
     "genre": "Slots",
+    "released": "2024-11-26",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/676abfcf08c66c81c2af9340_Wild_Moon_Thieves_1020х1280.webp"
   },
   {
@@ -2287,6 +2612,7 @@ export const BGAMING_GAMES = [
     "game": "WildMoonThieves",
     "title": "Wild Moon Thieves x Mas",
     "genre": "Slots",
+    "released": "2024-11-26",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/67165d40091bf2e4bb0e590b_Wild_Moon_Thieves_Xmas_1020x1280.webp"
   },
   {
@@ -2294,6 +2620,7 @@ export const BGAMING_GAMES = [
     "game": "WildTiger",
     "title": "Wild Tiger",
     "genre": "Slots",
+    "released": "2024-01-04",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/66953e45ae4cf9fd3c5b2a0e_Wild_Tiger_1020x1280.webp"
   },
   {
@@ -2301,6 +2628,7 @@ export const BGAMING_GAMES = [
     "game": "WildTiger2",
     "title": "Wild Tiger 2",
     "genre": "Slots",
+    "released": "2025-09-23",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/Wild_Tiger_2_1020x618.webp"
   },
   {
@@ -2308,6 +2636,7 @@ export const BGAMING_GAMES = [
     "game": "WildWestBonanza",
     "title": "Wild West Bonanza",
     "genre": "Slots Exclusive",
+    "released": "2022-09-15",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/64fc083815ed201d5b2201f8_646632b44aeb86bf8d7c6465_Wild_West_Bonanza_FEATURED_vertical.webp"
   },
   {
@@ -2315,6 +2644,7 @@ export const BGAMING_GAMES = [
     "game": "WildWestTrueways",
     "title": "Wild West Trueways",
     "genre": "Slots",
+    "released": "2024-07-30",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/667e6d409d99b6ea7e8390d1_Wild_West_TrueWays_1020x1280.webp"
   },
   {
@@ -2322,6 +2652,7 @@ export const BGAMING_GAMES = [
     "game": "WildWick",
     "title": "Wild Wick",
     "genre": "Slots",
+    "released": "2025-11-04",
     "image": "https://bgaming.com/wp-content/uploads/2025/10/Wild_Wick_1020х1280-2.webp"
   },
   {
@@ -2329,6 +2660,7 @@ export const BGAMING_GAMES = [
     "game": "WincentWolf",
     "title": "Wincent Wolf",
     "genre": "Slots",
+    "released": "2026-09-08",
     "image": "https://bgaming.com/wp-content/uploads/2026/08/1020x1280-copy.webp"
   },
   {
@@ -2336,6 +2668,7 @@ export const BGAMING_GAMES = [
     "game": "WinterFishingClub",
     "title": "Winter Fishing Club",
     "genre": "Casual",
+    "released": "2025-01-28",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/6761942aa34bc6f6b65db777_Winter_Fishing_Club_1020х1280.webp"
   },
   {
@@ -2343,6 +2676,7 @@ export const BGAMING_GAMES = [
     "game": "WinterTrophyHoldAndWin",
     "title": "Winter Trophy Hold and Win",
     "genre": "Slots",
+    "released": "2026-02-02",
     "image": "https://bgaming.com/wp-content/uploads/2026/01/Winter_Trophy_Hold_and_Win_1200х1280-2.webp"
   },
   {
@@ -2350,6 +2684,7 @@ export const BGAMING_GAMES = [
     "game": "Yokai",
     "title": "Yokai",
     "genre": "Slots",
+    "released": "2026-07-06",
     "image": "https://bgaming.com/wp-content/uploads/2026/06/Yokai_1020х1280.webp"
   },
   {
@@ -2357,6 +2692,7 @@ export const BGAMING_GAMES = [
     "game": "YommiRush",
     "title": "Yommi Rush",
     "genre": "Slots",
+    "released": "2025-09-25",
     "image": "https://bgaming.com/wp-content/uploads/2025/08/68add8f11d197d91efde34fd_Yommi_Rush_1020х1280-1.webp"
   },
   {
@@ -2364,6 +2700,7 @@ export const BGAMING_GAMES = [
     "game": "ZeusGoesWild",
     "title": "Zeus Goes Wild",
     "genre": "Slots",
+    "released": "2025-04-10",
     "image": "https://bgaming.com/wp-content/uploads/2025/04/67cf10f2ed14304feb6789a3_Zeus_Goes_Wild_1020x1280.webp"
   },
   {
@@ -2371,6 +2708,7 @@ export const BGAMING_GAMES = [
     "game": "ZeusSanctuary",
     "title": "Zeus Sanctuary",
     "genre": "Exclusive Slots",
+    "released": "2022-05-04",
     "image": "https://bgaming.com/wp-content/uploads/2025/06/64fd5eeb7fae295e3d3a9c43_640f2f0f93b3429a0f8b6491_Zeus_Sanctuarylogo_vertiсal.webp"
   }
 ];
