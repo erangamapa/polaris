@@ -54,7 +54,6 @@ const LANDING_FILES = new Set([
   '/robots.txt',
   '/sitemap.xml',
   '/favicon.svg',
-  '/og-image.png',
   // lobby-preview.png is no longer used by the landing page itself (see the
   // LEGACY VISUAL CLEANUP PASS) but stays served here because the SPA app
   // shell's own og:image/twitter:image (the repo-root index.html) still
