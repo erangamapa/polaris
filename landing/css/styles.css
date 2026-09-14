@@ -706,20 +706,37 @@ a {
   gap: 2.5rem;
 }
 
-/* Both the copy and the pillar list were short, leaving a wide dead field
-   below both once the section had real width to work with. Sticky copy
-   keeps the heading in view while the pillars scroll past instead of both
-   just sitting there; only kicks in with real room (≥960px) since sticky
-   inside a short single mobile column does nothing useful. */
+/* STICKY TREATMENT REMOVED (Slot A integration) — the sticky copy column
+   was added because both the copy and the pillar list were short, leaving
+   a wide dead field below both. The section-art image now fills that
+   space directly, and it also makes .section-copy (338px with the image)
+   taller than .pillars (274px) beside it — a sticky column taller than
+   its neighbour never actually sticks (nothing to scroll past), so it was
+   just dead weight at that point. Dropping the image's own bottom margin
+   (1.75rem -> 1.25rem, the brief's other suggested fix) only closes 8px of
+   a 65px gap, nowhere near enough — removing the treatment is the actual
+   fix, not a partial one. .play's own tighter bottom padding stays: with
+   real art in the copy column now, the "dead field" this whole treatment
+   was fighting is gone on its own. */
 @media (min-width: 960px) {
-  #play .section-copy {
-    position: sticky;
-    top: calc(var(--header-h) + 2rem);
-    align-self: start;
-  }
-
   #play {
     padding-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+}
+
+/* Decorative promo graphic for #play — no border/radius/background: the
+   asset's own ground is #0D0E16, the same as --bg, so it's meant to
+   dissolve into the page rather than sit in a framed box. */
+.section-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 1.75rem;
+}
+
+@media (max-width: 600px) {
+  .section-art {
+    display: none;
   }
 }
 
