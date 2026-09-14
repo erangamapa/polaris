@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { BRAND_NAME } from "@/lib/brand";
 import { CASINO_USE_MAINNET, CASINO_CHAIN } from "@shared/chains";
+import { CASINO_CATEGORIES, CATEGORY_LABEL } from "@/lib/casinoCategories";
 
 // The money disclosure has to track the network the build actually bets on
 // (see VITE_USE_MAINNET in @shared/chains). On testnet the balances really are
@@ -32,14 +33,22 @@ const MONEY_SENTENCE = CASINO_USE_MAINNET
 // handlers) so the underlying "open the real dialog" wiring survives being
 // muted and is ready the moment `enabled` flips, matching every other
 // column's shape instead of a bespoke Support-only branch.
+// FOLLOW-UP FIX (footer named a disabled category): "Providers" was a
+// plain hardcoded label here, so disabling it in casinoCategories.js (the
+// real taxonomy) didn't remove it from the footer too — two lists,
+// drifted. Only ids in this candidate list AND currently enabled in
+// CASINO_CATEGORIES render, so the footer can never again name a category
+// that isn't actually offered — re-enabling "Providers" there brings it
+// back here automatically, no second edit required.
+const CASINO_FOOTER_CATEGORY_IDS = ["Lobby", "Slots", "Providers"];
+const enabledCasinoCategoryIds = new Set(CASINO_CATEGORIES.map((c) => c.id));
+
 const FOOTER_COLUMNS = [
   {
     title: "Casino",
-    items: [
-      { label: "Lobby", enabled: false },
-      { label: "Slots", enabled: false },
-      { label: "Providers", enabled: false },
-    ],
+    items: CASINO_FOOTER_CATEGORY_IDS
+      .filter((id) => enabledCasinoCategoryIds.has(id))
+      .map((id) => ({ label: CATEGORY_LABEL[id], enabled: false })),
   },
   {
     title: "Sports",

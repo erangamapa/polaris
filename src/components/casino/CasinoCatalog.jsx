@@ -196,7 +196,7 @@ const STATUS_LABEL = { "coming-soon": "Coming soon" };
 // OWN internal UI (favorite heart, Coming Soon badge, broken-image
 // fallback text), never the artwork, which stays dominant at either size
 // per this task's own "do not blindly scale every element" rule.
-export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context, size = "standard" }) {
+export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showFavorite = true, context, size = "standard" }) {
   const faved = isFav?.(game);
   const onLaunch = game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider;
   // Only onchain games can be non-playable in this catalog (see STATUS_LABEL
@@ -207,15 +207,6 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
   const { broken, onError } = useBrokenImage();
   const testKey = game.favId.replace(":", "-");
   const isFeatured = size === "featured";
-  // A11Y: the link's accessible NAME stays "Play {title}" (short, so tabbing
-  // through a full grid of cards doesn't get verbose) — studio is reachable
-  // to AT via aria-describedby instead, which (unlike descendant content) is
-  // unaffected by the aria-label set on the <a> below: aria-label overrides
-  // name computation from content entirely, so a hidden span placed inside
-  // the link would be silently ignored, but aria-describedby is a separate
-  // computation and works regardless. See the sr-only <span id={studioDescId}>
-  // right after the closing </a>.
-  const studioDescId = `${testKey}-studio`;
 
   return (
     <div
@@ -250,7 +241,6 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
         tabIndex={playable ? undefined : -1}
         data-test-id={`game-card-${testKey}`}
         aria-label={playable ? `Play ${game.title}` : `${game.title} — ${statusLabel}`}
-        aria-describedby={showProvider ? studioDescId : undefined}
         className={cn(
           "absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           !playable && "pointer-events-none cursor-not-allowed"
@@ -272,34 +262,23 @@ export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav,
             )}
           />
         )}
-        {/* HOTFIX (double titles): every real cover-art asset in this
-            catalog already bakes its own title (and, for provider games,
-            a studio wordmark) directly into the image — see
-            public/img/games/*.svg/.webp. This HTML overlay duplicated
-            that text on top of the art. It's only real content when
-            there's no baked title to show at all, i.e. the `broken`
-            fallback (missing/failed image, plain icon) — everywhere a
-            real image renders, this stays hidden. Shape/reach of the
-            gradient is otherwise unchanged from before. */}
-        {broken && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/43 to-transparent p-2 pt-6">
-            <div className={cn("line-clamp-2 font-bold leading-snug text-white", isFeatured ? "text-lg" : "text-xs")}>{game.title}</div>
-            {showProvider && <div className={cn("truncate leading-snug text-zinc-400", isFeatured ? "text-[13px]" : "text-[10px]")}>{gameProviderName(game)}</div>}
-          </div>
-        )}
+        {/* TITLE OVERLAY — this used to render only for the `broken` (no
+            image) fallback, on the assumption every cover-art asset baked
+            its own title into the image. True for the old hand-picked
+            18-game catalog, not for BGaming's 338 third-party titles (long,
+            varied names like "3 Lucky Monkeys Hold Win" with no guarantee
+            of a legible baked-in label at tile size) — a player had nothing
+            but artwork to scan by, and no fallback if an image was slow or
+            failed. Always rendered now, real game name, one line
+            (text-overflow: ellipsis, not line-clamp-2 — catalog titles run
+            long). No studio line: with a single real provider (BGaming) on
+            338 games, repeating the same word under every tile is noise,
+            not information — reintroduce it once a second provider exists
+            and the distinction is actually useful. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/43 to-transparent p-2 pt-6">
+          <div className={cn("truncate font-bold leading-snug text-foreground", isFeatured ? "text-lg" : "text-xs")}>{game.title}</div>
+        </div>
       </a>
-      {/* A11Y: studio, reachable to AT via the aria-describedby wired above
-          without adding to the link's accessible name (see studioDescId's
-          own comment) — read automatically on focus by NVDA/JAWS/VoiceOver
-          at default verbosity. Always rendered here (not only inside the
-          `broken` fallback above), so a screen reader user gets the same
-          studio attribution a sighted user reads off the artwork in the
-          normal case too, not just when the image fails to load. */}
-      {showProvider && (
-        <span id={studioDescId} className="sr-only">
-          {gameProviderName(game)}
-        </span>
-      )}
       {/* Semi-transparent black background is a deliberate exception (needs
           to stay legible over arbitrary colorful game artwork, not a
           neutral card surface) — font/weight/size/tracking/radius/case
@@ -465,11 +444,12 @@ const RAIL_TRACK =
   "flex gap-3 overflow-x-auto p-1 pr-4 snap-x snap-proximity [scrollbar-width:none] [&::-webkit-scrollbar]:hidden " +
   "md:grid md:grid-cols-4 md:overflow-visible md:snap-none xl:grid-cols-8";
 
-// MOBILE CASINO CATALOG REDESIGN (BetSwirl/Originals rail only — every
-// other rail above keeps RAIL_TRACK's horizontal-scroll mobile presentation
-// untouched, per that task's explicit scope). At the current MVP's catalog
-// size (~8 games), a partially-scrollable carousel makes no sense on
-// mobile — this is a real 2-column CSS grid below `md:` instead: no
+// MOBILE CASINO CATALOG REDESIGN (the Lobby's flagship first rail only —
+// today that's Popular; every other rail above keeps RAIL_TRACK's
+// horizontal-scroll mobile presentation untouched, per that task's
+// explicit scope). A partially-scrollable carousel makes no sense on
+// mobile for the flagship row — this is a real 2-column CSS grid below
+// `md:` instead: no
 // overflow-x, no scroll-snap, no peeking next card, no separate inset (the
 // grid fills the exact same content width Search/promo cards/the section
 // heading already use — see PromoStrip.jsx/CasinoCatalog's shared page
@@ -478,7 +458,7 @@ const RAIL_TRACK =
 // (same 4/8-column grid, same uniform gap-3, same p-1/pr-4 breathing room)
 // so desktop stays pixel-identical to every other rail — only the sub-md
 // tier differs.
-const BETSWIRL_TRACK = "grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-4 md:gap-3 md:p-1 md:pr-4 xl:grid-cols-8";
+const FLAGSHIP_GRID_TRACK = "grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-4 md:gap-3 md:p-1 md:pr-4 xl:grid-cols-8";
 
 // TITLE TYPOGRAPHY FIX: every Casino Lobby section title (Recently Played,
 // Favorites, Tribet Originals, Popular, New Releases, Providers, Live
@@ -622,11 +602,11 @@ export function CasinoGameRail({ title, subtitle, icon, badge, games, tileProps,
         testId={testId}
         onSeeAll={onSeeAll}
       />
-      {/* mobileLayout="grid" (BetSwirl/Originals only — see BETSWIRL_TRACK
-          above) is a real grid at every breakpoint, never a scrollable
-          track, so it gets no "carousel" label; every other rail keeps its
-          existing aria-label unchanged. */}
-      <div aria-label={mobileLayout === "grid" ? undefined : `${title} carousel`} className={mobileLayout === "grid" ? BETSWIRL_TRACK : RAIL_TRACK}>
+      {/* mobileLayout="grid" (the Lobby's flagship rail only — see
+          FLAGSHIP_GRID_TRACK above) is a real grid at every breakpoint,
+          never a scrollable track, so it gets no "carousel" label; every
+          other rail keeps its existing aria-label unchanged. */}
+      <div aria-label={mobileLayout === "grid" ? undefined : `${title} carousel`} className={mobileLayout === "grid" ? FLAGSHIP_GRID_TRACK : RAIL_TRACK}>
         {shown.map((game) => (
           <div key={game.favId} className={mobileLayout === "grid" ? "w-full" : cn(tileClass, "snap-start md:w-full")}>
             {game.isPlaceholder ? <PlaceholderGameCard game={game} /> : <CasinoGameCard game={game} {...tileProps} context={context} />}
@@ -1004,12 +984,9 @@ function CategoryDestinationPage({ category, tileProps, onBrowseGames }) {
 
       {/* NAV SPEC §7: "Filter left, sort right, same row, directly under
           search and directly above the grid. Both are labelled dropdowns,
-          not icon-only." On /casino/category/tribet-originals, the filter
-          is hidden — every result is already onchain, so the control would
-          have one meaningless option — leaving Sort alone, still right-
-          aligned in the same row position. */}
+          not icon-only." */}
       <div className="mb-4 mt-3 flex items-center justify-between gap-3">
-        {category !== "Originals" ? <FilterSelect value={chip} onChange={setChip} /> : <span />}
+        <FilterSelect value={chip} onChange={setChip} />
         <SortSelect value={sort} onChange={setSort} />
       </div>
 
@@ -1399,42 +1376,28 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
 
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
 
-  // Discovery rails dedup sequentially against each other so the same game
-  // never repeats across adjacent "what's hot" sections — Popular/New are
-  // additive tags that can land on any genre, so they claim first; the five
-  // genre-based rails below (Slots/Casual/Table Games/Scratch/Exclusive)
-  // are already mutually exclusive by construction (tagsFor assigns
-  // exactly one genre tag per game), so they only ever lose games to
-  // Popular/New, never to each other. Favorites/Recently Played are exempt:
-  // overlap between a personalized rail and a discovery rail is expected (a
-  // favorited game still belongs in Popular).
-  const seen = new Set();
+  // FOLLOW-UP FIX (Table Games undercounted 13 -> 7): Popular and New
+  // Releases still dedup against each other (both are "what's hot"
+  // editorial rows — a hand-picked pick that's also newly released showing
+  // twice in adjacent rows is the one real repetition worth avoiding). The
+  // five genre rows (Slots/Casual/Table Games/Scratch/Exclusive) are NOT
+  // deduped against Popular/New anymore: they used to claim last, silently
+  // losing any of their own titles that Popular or New had already picked
+  // up (3 of Table Games' 13 titles are in the curated Popular list, 3 more
+  // are recently-released "new" — 6 of 13 gone, invisible on a 255-game
+  // Slots row, catastrophic on a 13-game one). A genre row's whole purpose
+  // is to be a complete, browsable "everything in this genre" listing
+  // matching its own category page exactly — overlapping with Popular/New
+  // is expected (a popular game still belongs to its genre too), not a bug.
   const popularCandidates = byTag("popular");
   const newReleasesCandidates = byTag("new");
-  const slotsCandidates = byTag("slots");
-  const casualCandidates = byTag("casual");
-  const tableGamesCandidates = byTag("table-games");
-  const scratchCandidates = byTag("scratch");
-  const exclusiveCandidates = byTag("exclusive");
-  const popularRow = takeUnclaimed(popularCandidates, seen);
-  const newReleasesRow = takeUnclaimed(newReleasesCandidates, seen);
-  const slotsRow = takeUnclaimed(slotsCandidates, seen);
-  const casualRow = takeUnclaimed(casualCandidates, seen);
-  const tableGamesRow = takeUnclaimed(tableGamesCandidates, seen);
-  const scratchRow = takeUnclaimed(scratchCandidates, seen);
-  const exclusiveRow = takeUnclaimed(exclusiveCandidates, seen);
-  // See all is only worth showing when its destination (the category's own
-  // full, undeduped page) actually reveals more than this rail already
-  // does — true whenever dedup removed anything. A rail that happens to
-  // equal its own category's complete list has nothing further to reveal
-  // (see SEE ALL: "there are more items than shown in the rail").
-  const popularHasMore = popularRow.length < popularCandidates.length;
-  const newReleasesHasMore = newReleasesRow.length < newReleasesCandidates.length;
-  const slotsHasMore = slotsRow.length < slotsCandidates.length;
-  const casualHasMore = casualRow.length < casualCandidates.length;
-  const tableGamesHasMore = tableGamesRow.length < tableGamesCandidates.length;
-  const scratchHasMore = scratchRow.length < scratchCandidates.length;
-  const exclusiveHasMore = exclusiveRow.length < exclusiveCandidates.length;
+  const popularRow = popularCandidates;
+  const newReleasesRow = takeUnclaimed(newReleasesCandidates, new Set(popularRow.map((g) => g.favId)));
+  const slotsRow = byTag("slots");
+  const casualRow = byTag("casual");
+  const tableGamesRow = byTag("table-games");
+  const scratchRow = byTag("scratch");
+  const exclusiveRow = byTag("exclusive");
 
   const isEmpty = q && !recentGames.length
     && !popularRow.length && !newReleasesRow.length && !slotsRow.length && !casualRow.length
@@ -1557,7 +1520,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(popularRow, "popular")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={popularHasMore ? seeAll("Popular") : undefined}
+        onSeeAll={seeAll("Popular")}
       />
       <CasinoGameRail
         sectionId="casino-section-new-releases"
@@ -1571,7 +1534,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(newReleasesRow, "new")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={newReleasesHasMore ? seeAll("New") : undefined}
+        onSeeAll={seeAll("New")}
       />
       <CasinoGameRail
         sectionId="casino-section-slots"
@@ -1584,7 +1547,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(slotsRow, "slots")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={slotsHasMore ? seeAll("Slots") : undefined}
+        onSeeAll={seeAll("Slots")}
       />
       <CasinoGameRail
         sectionId="casino-section-casual"
@@ -1597,7 +1560,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(casualRow, "casual")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={casualHasMore ? seeAll("Casual") : undefined}
+        onSeeAll={seeAll("Casual")}
       />
       <ProviderTiles onSelectProvider={onSelectProvider} placeholdersEnabled={placeholdersEnabled} className={GAP_REGULAR} />
       <CasinoGameRail
@@ -1611,7 +1574,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(tableGamesRow, "table-games")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={tableGamesHasMore ? seeAll("Table Games") : undefined}
+        onSeeAll={seeAll("Table Games")}
       />
       <CasinoGameRail
         sectionId="casino-section-scratch"
@@ -1624,7 +1587,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(scratchRow, "scratch")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={scratchHasMore ? seeAll("Scratch") : undefined}
+        onSeeAll={seeAll("Scratch")}
       />
       <CasinoGameRail
         sectionId="casino-section-exclusive"
@@ -1637,7 +1600,7 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         games={withPlaceholders(exclusiveRow, "exclusive")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={exclusiveHasMore ? seeAll("Exclusive") : undefined}
+        onSeeAll={seeAll("Exclusive")}
       />
     </div>
   );
