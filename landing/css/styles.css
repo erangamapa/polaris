@@ -410,10 +410,37 @@ a {
    three stops via color-mix, matching the app's own
    --global-cta-gradient-hover/-active exactly rather than inventing a new
    feel. No glow, no scale, no animation beyond the shared 150-250ms
-   color/transform transition every other `.btn` already uses. */
+   color/transform transition every other `.btn` already uses.
+
+   CTA CONTRAST SCRIM (ported from src/index.css's .global-cta-scrim, same
+   recipe): white text stays legible over the purple/blue left/middle of
+   the gradient but loses contrast over the bright cyan right end. Rather
+   than darken the whole button, a very subtle radial scrim sits behind
+   the label only, centered on it and faded to nothing before the button's
+   edges, so the gradient itself still reads unchanged at a glance. The
+   pseudo uses z-index:-1 (not a z-index bump on the label) so it paints
+   above this button's own gradient background but below its text/icon
+   content without needing to touch the label markup at all. */
 .btn-primary {
+  position: relative;
   background-image: var(--gradient-brand);
   color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(7, 10, 20, 0.22) 0%,
+    rgba(7, 10, 20, 0.12) 40%,
+    transparent 72%
+  );
 }
 
 .btn-primary:hover {

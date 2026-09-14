@@ -194,7 +194,7 @@ export function SportsArena({
         <button
           onClick={() => setSlipOpen(true)}
           data-test-id="betslip-reopen-pill"
-          className="fixed inset-x-4 z-[85] flex min-h-12 items-center justify-center gap-2 rounded-xl [background-image:var(--global-cta-gradient)] px-4 text-sm font-semibold text-[var(--global-cta-text)] shadow-lg shadow-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden"
+          className="global-cta-scrim fixed inset-x-4 z-[85] flex min-h-12 items-center justify-center gap-2 rounded-xl [background-image:var(--global-cta-gradient)] px-4 text-sm font-semibold text-[var(--global-cta-text)] shadow-lg shadow-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden"
           style={{ bottom: "calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px)" }}
         >
           <Ticket className="size-4" aria-hidden="true" />

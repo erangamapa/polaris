@@ -143,7 +143,7 @@ export function ResponsibleGamblingDialog({ open, onClose, complianceStatus, onS
           type="button"
           onClick={supportSelected}
           data-test-id="rg-support"
-          className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg [background-image:var(--global-cta-gradient)] text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="global-cta-scrim flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg [background-image:var(--global-cta-gradient)] text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LifeBuoy className="size-4" aria-hidden="true" /> Contact Support
         </button>

@@ -45,7 +45,7 @@ export function GameLoading({ game, delayed, onRestart, onBack, onReportIssue })
               type="button"
               onClick={onRestart}
               data-test-id="game-loading-retry"
-              className="rounded-lg [background-image:var(--global-cta-gradient)] px-3 py-1.5 text-xs font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="global-cta-scrim rounded-lg [background-image:var(--global-cta-gradient)] px-3 py-1.5 text-xs font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Retry
             </button>

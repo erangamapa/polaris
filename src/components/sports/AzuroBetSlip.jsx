@@ -182,7 +182,7 @@ export function AzuroBetSlip({ selections, stake, setStake, removeSelection, com
                 data-test-id="betslip-submit"
                 // CTA OWNERSHIP SYSTEM: placing a bet is a Sports arena
                 // action, not a platform action — Sports Action Blue.
-                className="flex min-h-[52px] w-full items-center justify-center rounded-lg [background-image:var(--global-cta-gradient)] text-base font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-[var(--global-cta)] disabled:[background-image:none] disabled:opacity-50"
+                className="global-cta-scrim flex min-h-[52px] w-full items-center justify-center rounded-lg [background-image:var(--global-cta-gradient)] text-base font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-[var(--global-cta)] disabled:[background-image:none] disabled:opacity-50"
               >
                 Place bet
               </button>

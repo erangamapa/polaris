@@ -41,7 +41,7 @@ export function GameUnavailable({ status, onBrowseGames, headingRef }) {
         type="button"
         onClick={onBrowseGames}
         data-test-id="game-unavailable-browse"
-        className="mt-2 rounded-lg [background-image:var(--global-cta-gradient)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="global-cta-scrim mt-2 rounded-lg [background-image:var(--global-cta-gradient)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         Browse games
       </button>

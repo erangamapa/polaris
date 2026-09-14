@@ -91,7 +91,7 @@ export function GameError({ status, errorCode, onRetry, onBrowseGames, onReportI
             data-test-id={`game-error-${action}`}
             className={
               action === "retry" || action === "restart-session"
-                ? "rounded-lg [background-image:var(--global-cta-gradient)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                ? "global-cta-scrim rounded-lg [background-image:var(--global-cta-gradient)] px-4 py-2 text-sm font-bold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 : "rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             }
           >

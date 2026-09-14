@@ -979,6 +979,53 @@ html {
   --sports-text-accent: #8AAAE4;
 }
 
+/* CTA CONTRAST SCRIM — the brand gradient (--global-cta-gradient above) is
+   locked as-is; white label text stays fully legible over the purple/blue
+   left/middle but loses contrast over the bright cyan right end. Rather
+   than darken the whole button (which would dull the gradient everywhere,
+   not just where it's needed), this sits a very subtle radial scrim behind
+   the label only — centered on it, faded to nothing well before the
+   button's edges, so the gradient itself reads unchanged at a glance and
+   only the text's local backdrop gets darker. z-index:-1 on the pseudo
+   (not a z-index/position bump on the label) so it paints above the
+   button's own gradient background but below whatever the label markup
+   actually is — plain text node, icon+text, doesn't matter, no per-call-
+   site JSX changes needed beyond adding this one class. Disabled buttons
+   fall back to a flat, non-gradient fill (see button.jsx's `default`
+   variant) this scrim was never meant for, so it's fully suppressed there
+   via `content: none` rather than left visible over a flat color.
+   `position: relative` is set via :where() (specificity 0) rather than a
+   plain rule — this class lands on a couple of call sites that are
+   already `fixed`/`absolute` (e.g. SportsArena.jsx's reopen pill) for
+   real layout reasons unrelated to this scrim; a normal same-specificity
+   rule declared after Tailwind's own utilities in this file would win the
+   cascade and silently turn `fixed` into `relative`, breaking that
+   positioning. At specificity 0 this only ever fills in `position` where
+   nothing else has already claimed it. */
+:where(.global-cta-scrim) {
+  position: relative;
+}
+.global-cta-scrim {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+.global-cta-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(7, 10, 20, 0.22) 0%,
+    rgba(7, 10, 20, 0.12) 40%,
+    transparent 72%
+  );
+}
+.global-cta-scrim:disabled::before {
+  content: none;
+}
+
 /* ════════════════════════════════════════════════════════════════════════
    THEME-READINESS TOKEN ARCHITECTURE
    ════════════════════════════════════════════════════════════════════════

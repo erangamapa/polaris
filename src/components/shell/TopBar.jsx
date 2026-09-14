@@ -166,7 +166,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
               <button
                 onClick={onManageWallet}
                 data-test-id="reconnect"
-                className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg [background-image:var(--global-cta-gradient)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="global-cta-scrim flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg [background-image:var(--global-cta-gradient)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Reconnect
               </button>
@@ -185,7 +185,7 @@ export function TopBar({ onBurger, burgerLabel = "Toggle menu", onAccount, onMan
             onClick={onManageWallet}
             aria-label="Connect Wallet"
             data-test-id="wallet-hud-action"
-            className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg [background-image:var(--global-cta-gradient)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="global-cta-scrim flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg [background-image:var(--global-cta-gradient)] px-3.5 text-sm font-semibold text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Connect Wallet
           </button>

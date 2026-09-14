@@ -43,7 +43,7 @@ const buttonVariants = cva(
         // pass. focus-visible ring is the shared base classlist's own
         // ring, untouched here.
         default:
-          "[background-image:var(--global-cta-gradient)] text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] disabled:bg-[var(--global-cta)] disabled:[background-image:none]",
+          "global-cta-scrim [background-image:var(--global-cta-gradient)] text-[var(--global-cta-text)] hover:[background-image:var(--global-cta-gradient-hover)] active:[background-image:var(--global-cta-gradient-active)] disabled:bg-[var(--global-cta)] disabled:[background-image:none]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         // Prediction Markets semantic exception (YES) — see index.css.
