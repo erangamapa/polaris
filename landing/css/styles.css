@@ -1010,72 +1010,39 @@ a {
   margin-top: 1.5rem;
 }
 
-/* REWARDS PANEL — a heading, a paragraph and a button floating in a wide
-   empty band; restructured as the same two-column split #play uses
-   (.section-split), with a purely decorative, copy-free panel filling the
-   right column instead of empty space. No numbers, no names, no new
-   text — three plain divs per row (rank/bar/value) suggesting a
-   leaderboard shape, aria-hidden since none of it is real content. Puts
-   --shadow to work (declared but unused before this pass). Solid --line
-   fill only, never the brand gradient — that stays limited to CTA fills
-   and the "Every game." accent, per this page's own one-gradient rule. */
-.offer-panel {
-  display: grid;
-  align-content: center;
-  gap: 1.1rem;
-  padding: 1.75rem;
-  margin-top: 2rem;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+/* REWARDS ART (Slot B) — replaces the earlier placeholder (an abstract
+   "leaderboard shape" CSS panel filling the second column before a real
+   asset existed) now that real artwork is available for this slot. No
+   border/radius/background: its own ground is #0D0E16, the same as --bg,
+   so it's meant to dissolve into the page rather than sit in a frame. */
+.offer-art {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
+/* .section-split's own default (1.1fr/0.9fr, tuned for #play) undershoots
+   here — Rewards wants a more even split and the copy/art vertically
+   centered against each other rather than top-aligned. minmax(0, ...)
+   on both tracks (not bare fr) matters here specifically: a grid item's
+   default min-width is auto, i.e. its content's intrinsic minimum, and an
+   <img> with width/height attributes reports THOSE as its intrinsic size
+   whenever the real image fails to load — max-width:100% does not override
+   that minimum. A broken 960px-wide image previously forced this column to
+   960px and crushed .offer-copy into 212px with page overflow at 1024px;
+   minmax(0, ...) caps each track's minimum at 0 so a broken image can only
+   ever be squeezed by the grid, never blow it out. */
 @media (min-width: 760px) {
-  .offer-panel {
-    margin-top: 0;
+  .offer.section-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    align-items: center;
   }
 }
 
-.offer-panel__row {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.offer-panel__rank {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--line);
-}
-
-.offer-panel__bar {
-  flex: 1 1 auto;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--line);
-}
-
-.offer-panel__row:nth-child(1) .offer-panel__bar {
-  max-width: 85%;
-}
-
-.offer-panel__row:nth-child(2) .offer-panel__bar {
-  max-width: 65%;
-}
-
-.offer-panel__row:nth-child(3) .offer-panel__bar {
-  max-width: 45%;
-}
-
-.offer-panel__value {
-  flex: none;
-  width: 48px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--line);
+@media (max-width: 600px) {
+  .offer-art {
+    display: none;
+  }
 }
 
 .faq {
@@ -1259,7 +1226,10 @@ a {
   }
 
   .section-split {
-    grid-template-columns: 1.1fr 0.9fr;
+    /* minmax(0, ...) on both tracks: see the .offer.section-split override
+       below for why bare fr values are unsafe here. #play carries the same
+       exposure via .section-art (width="1200" inside .section-copy). */
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     align-items: start;
     gap: 4rem;
   }
