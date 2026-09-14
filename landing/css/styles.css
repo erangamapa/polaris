@@ -145,14 +145,33 @@ a {
   inset: 0 0 auto;
   z-index: 50;
   height: var(--header-h);
+  background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.25s ease, height var(--dur) var(--ease);
+}
+
+/* HEADER ALIGNMENT FIX — the header used to carry its own independent
+   horizontal padding (clamp(1.25rem, 4vw, 3rem)), so its logo/CTA never
+   lined up with the hero or any section below, which all share
+   .site-container's width formula instead of a padding-based gutter. This
+   is the same width/margin math as .hero-inner (1180px cap; the brief's
+   own explicit reference point — every other landing section/.site-footer
+   uses a separate, narrower 1100px cap, deliberately left alone here since
+   only the header's misalignment against the HERO was reported). .site-
+   header itself stays unpadded and full-width so its background/border
+   still bleed edge-to-edge; this inner element is what actually centers
+   and caps the content. */
+.site-container {
+  width: min(1180px, calc(100% - 2.5rem));
+  margin: 0 auto;
+}
+
+.header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0 clamp(1.25rem, 4vw, 3rem);
-  background: var(--bg);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.25s ease, height var(--dur) var(--ease);
+  height: 100%;
 }
 
 /* A small compression cue on scroll — hairline border (already there) plus
@@ -315,7 +334,13 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  padding: 0.75rem clamp(1.25rem, 4vw, 3rem) 1.5rem;
+  /* Matches .site-container's effective gutter (2.5rem total, split by
+     margin: 0 auto) throughout this panel's entire visible range (it only
+     ever shows below the 760px breakpoint, well under .site-container's
+     1220px lock-in point) — so the mobile menu's own links/CTA line up
+     with the collapsed header's logo above them, per the brief's "same
+     mobile content gutters as the page below" requirement. */
+  padding: 0.75rem 1.25rem 1.5rem;
 }
 
 .mobile-nav a:not(.btn) {
