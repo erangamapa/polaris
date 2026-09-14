@@ -459,7 +459,7 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
             shell's own current (possibly still-animating) width. */}
         <div className="relative h-full">
           <div
-            className="absolute inset-y-0 start-0 overflow-y-auto overflow-x-hidden transition-opacity motion-reduce:transition-none"
+            className="tribet-scrollbar absolute inset-y-0 start-0 overflow-y-auto overflow-x-hidden transition-opacity motion-reduce:transition-none"
             style={{
               width: SIDEBAR_COLLAPSED_WIDTH_PX,
               opacity: compactOpacity,
@@ -482,7 +482,7 @@ export function Sidebar({ railMode, product, setProduct, items, selected, onSele
             />
           </div>
           <div
-            className="absolute inset-y-0 start-0 overflow-y-auto overflow-x-hidden transition-opacity motion-reduce:transition-none"
+            className="tribet-scrollbar absolute inset-y-0 start-0 overflow-y-auto overflow-x-hidden transition-opacity motion-reduce:transition-none"
             style={{
               width: SIDEBAR_EXPANDED_WIDTH_PX,
               opacity: expandedOpacity,
