@@ -55,7 +55,7 @@ async function shellIdentity(page) {
 
 test.describe("Arena switch from an active Casino game", () => {
   test("Casino game -> Sports terminates the game (unmounts, no confirmation dialog)", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await expect(page.locator('[data-test-id="game-stage"]')).toBeVisible();
     await page.waitForTimeout(500);
 
@@ -69,7 +69,7 @@ test.describe("Arena switch from an active Casino game", () => {
   });
 
   test("Casino game -> Predictions terminates the game", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await clickArena(page, "predictions");
     await page.waitForTimeout(400);
@@ -78,7 +78,7 @@ test.describe("Arena switch from an active Casino game", () => {
   });
 
   test("Casino game -> Sports -> Casino opens the main lobby, not the previous game", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await clickArena(page, "sports");
     await page.waitForTimeout(400);
@@ -89,11 +89,11 @@ test.describe("Arena switch from an active Casino game", () => {
     await expect(page.locator('[data-test-id="game-stage"]')).toHaveCount(0);
     await expect(page.locator('[data-test-id="casino-game-page"]')).toHaveCount(0);
     // The lobby (not the game page) is what's actually rendered.
-    await expect(page.locator('[data-test-id="game-card-provider-tumble"]').first()).toBeVisible();
+    await expect(page.locator('[data-test-id="game-card-bgaming-aloha-king-elvis"]').first()).toBeVisible();
   });
 
   test("Casino game -> Predictions -> Casino opens the main lobby, not the previous game", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await clickArena(page, "predictions");
     await page.waitForTimeout(400);
@@ -105,7 +105,7 @@ test.describe("Arena switch from an active Casino game", () => {
   });
 
   test("A game launched from a category -> Sports -> Casino still opens the main lobby (arena return destination), not that category", async ({ page }) => {
-    await page.goto("/casino/popular?play=provider:tumble");
+    await page.goto("/casino/popular?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await clickArena(page, "sports");
     await page.waitForTimeout(400);
@@ -129,7 +129,7 @@ test.describe("Fullscreen and overlay cleanup on arena switch", () => {
   // genuine platform restriction with a fake interaction.
   test("Fullscreen exits when the game route is torn down (browser Back) while fullscreen is active", async ({ page }) => {
     await page.goto("/casino/lobby");
-    await page.locator('[data-test-id="game-card-provider-tumble"]').first().click();
+    await page.locator('[data-test-id="game-card-bgaming-aloha-king-elvis"]').first().click();
     await page.waitForTimeout(600);
     await page.locator('[data-test-id="game-utility-fullscreen"]').click();
     await page.waitForTimeout(300);
@@ -150,7 +150,7 @@ test.describe("Fullscreen and overlay cleanup on arena switch", () => {
   // correctly here (unlike real fullscreen, force-clicking through a CSS
   // backdrop does reach the underlying element).
   test("Game Info closes when switching to Predictions mid-game", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await page.locator('[data-test-id="game-header-menu"]').click();
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -163,7 +163,7 @@ test.describe("Fullscreen and overlay cleanup on arena switch", () => {
 
 test.describe("Casino-internal navigation while a game is active", () => {
   test("Selecting Favorites in the sidebar while playing closes the game and opens Favorites", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await clickNavItem(page, "Favorites");
     await page.waitForTimeout(400);
@@ -176,7 +176,7 @@ test.describe("Casino-internal navigation while a game is active", () => {
 test.describe("Internal Game Back is unaffected by arena-switch teardown", () => {
   test("Casino lobby -> Game -> Back -> Casino lobby", async ({ page }) => {
     await page.goto("/casino/lobby");
-    await page.locator('[data-test-id="game-card-provider-tumble"]').first().click();
+    await page.locator('[data-test-id="game-card-bgaming-aloha-king-elvis"]').first().click();
     await page.waitForTimeout(500);
     await page.locator('[data-test-id="game-header-back"]').click();
     await page.waitForTimeout(300);
@@ -191,7 +191,7 @@ test.describe("Internal Game Back is unaffected by arena-switch teardown", () =>
     // dashboard instead), which is why this needs the new URL.
     await page.goto("/casino/category/new");
     await page.waitForTimeout(300);
-    await page.locator('[data-test-id="game-card-provider-tumble"]').first().click();
+    await page.locator('[data-test-id="game-card-bgaming-aloha-king-elvis"]').first().click();
     await page.waitForTimeout(500);
     await page.locator('[data-test-id="game-header-back"]').click();
     await page.waitForTimeout(300);
@@ -201,7 +201,7 @@ test.describe("Internal Game Back is unaffected by arena-switch teardown", () =>
 
 test.describe("Browser history around an arena switch", () => {
   test("Browser Back after Casino game -> Sports does not resurrect the game", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await clickArena(page, "sports");
     await page.waitForTimeout(400);
@@ -222,7 +222,7 @@ test.describe("Browser history around an arena switch", () => {
 
 test.describe("Shell regression", () => {
   test("AppShell (shell-row, main-content) never remounts across game -> arena-switch -> back-to-casino", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     await installIdentityTracker(page);
     const before = await shellIdentity(page);
@@ -242,7 +242,7 @@ test.describe("Shell regression", () => {
   });
 
   test("Wallet control remains visible and stable throughout", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const walletButton = page.locator('[data-test-id="wallet-hud-action"]');
     await expect(walletButton).toBeVisible();

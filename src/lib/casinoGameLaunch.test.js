@@ -28,10 +28,10 @@ import { resolveUnavailableOutcome } from "../components/casino/GameUnavailable"
 describe("gameLaunchReducer", () => {
   it("opens a fresh loading launch from idle", () => {
     const next = gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, {
-      type: "REQUEST", gameId: "provider:crash", source: "home", categoryId: "Lobby", now: 1000,
+      type: "REQUEST", gameId: "bgaming:crash", source: "home", categoryId: "Lobby", now: 1000,
     });
     expect(next.status).toBe(GAME_LAUNCH_STATUS.REQUESTED);
-    expect(next.gameId).toBe("provider:crash");
+    expect(next.gameId).toBe("bgaming:crash");
     expect(next.source).toBe("home");
     expect(next.categoryId).toBe("Lobby");
     expect(next.attempt).toBe(1);
@@ -39,11 +39,11 @@ describe("gameLaunchReducer", () => {
   });
 
   it("ignores a duplicate request for the same game while requested or loading", () => {
-    const requested = gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "provider:crash", now: 1 });
-    const loading = gameLaunchReducer(requested, { type: "LOADING", gameId: "provider:crash" });
+    const requested = gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "bgaming:crash", now: 1 });
+    const loading = gameLaunchReducer(requested, { type: "LOADING", gameId: "bgaming:crash" });
 
-    const dupeWhileRequested = gameLaunchReducer(requested, { type: "REQUEST", gameId: "provider:crash", now: 2 });
-    const dupeWhileLoading = gameLaunchReducer(loading, { type: "REQUEST", gameId: "provider:crash", now: 3 });
+    const dupeWhileRequested = gameLaunchReducer(requested, { type: "REQUEST", gameId: "bgaming:crash", now: 2 });
+    const dupeWhileLoading = gameLaunchReducer(loading, { type: "REQUEST", gameId: "bgaming:crash", now: 3 });
 
     // Same object reference, not just equal shape — this is what makes a
     // React effect keyed on this state bail out of re-running for a
@@ -54,69 +54,69 @@ describe("gameLaunchReducer", () => {
 
   it("supersedes cleanly when a different game is requested mid-launch, no confirmation state", () => {
     const loading = gameLaunchReducer(
-      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "provider:crash", now: 1 }),
-      { type: "LOADING", gameId: "provider:crash" }
+      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "bgaming:crash", now: 1 }),
+      { type: "LOADING", gameId: "bgaming:crash" }
     );
-    const superseded = gameLaunchReducer(loading, { type: "REQUEST", gameId: "casino:dice", source: "search", now: 2 });
+    const superseded = gameLaunchReducer(loading, { type: "REQUEST", gameId: "bgaming:dice", source: "search", now: 2 });
 
     expect(superseded.status).toBe(GAME_LAUNCH_STATUS.REQUESTED);
-    expect(superseded.gameId).toBe("casino:dice");
+    expect(superseded.gameId).toBe("bgaming:dice");
     expect(superseded.attempt).toBe(1); // fresh attempt count for the new game, not inherited
     expect(superseded.delayed).toBe(false);
   });
 
   it("drops a stale LOADING/DELAYED/FAILED for a gameId that's no longer current", () => {
     const loadingA = gameLaunchReducer(
-      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "provider:crash", now: 1 }),
-      { type: "LOADING", gameId: "provider:crash" }
+      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "bgaming:crash", now: 1 }),
+      { type: "LOADING", gameId: "bgaming:crash" }
     );
-    const loadingB = gameLaunchReducer(loadingA, { type: "REQUEST", gameId: "casino:dice", now: 2 });
+    const loadingB = gameLaunchReducer(loadingA, { type: "REQUEST", gameId: "bgaming:dice", now: 2 });
 
     // A timer/callback from the superseded launch (A) arriving after B has
     // already taken over must not touch B's state at all.
-    expect(gameLaunchReducer(loadingB, { type: "LOADING", gameId: "provider:crash" })).toBe(loadingB);
-    expect(gameLaunchReducer(loadingB, { type: "DELAYED", gameId: "provider:crash" })).toBe(loadingB);
-    expect(gameLaunchReducer(loadingB, { type: "FAILED", gameId: "provider:crash", errorCode: FAILED_ERROR_CODE.TIMEOUT })).toBe(loadingB);
+    expect(gameLaunchReducer(loadingB, { type: "LOADING", gameId: "bgaming:crash" })).toBe(loadingB);
+    expect(gameLaunchReducer(loadingB, { type: "DELAYED", gameId: "bgaming:crash" })).toBe(loadingB);
+    expect(gameLaunchReducer(loadingB, { type: "FAILED", gameId: "bgaming:crash", errorCode: FAILED_ERROR_CODE.TIMEOUT })).toBe(loadingB);
   });
 
   it("READY cannot resurrect a launch that already failed or closed", () => {
     const loading = gameLaunchReducer(
-      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "provider:crash", now: 1 }),
-      { type: "LOADING", gameId: "provider:crash" }
+      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "bgaming:crash", now: 1 }),
+      { type: "LOADING", gameId: "bgaming:crash" }
     );
-    const failed = gameLaunchReducer(loading, { type: "FAILED", gameId: "provider:crash", errorCode: FAILED_ERROR_CODE.TIMEOUT });
+    const failed = gameLaunchReducer(loading, { type: "FAILED", gameId: "bgaming:crash", errorCode: FAILED_ERROR_CODE.TIMEOUT });
     const closed = gameLaunchReducer(loading, { type: "CLOSE" });
 
     // A slow iframe onLoad firing after the user already gave up (timed out)
     // or closed the surface must not flip it back to ready behind their back.
-    expect(gameLaunchReducer(failed, { type: "READY", gameId: "provider:crash" })).toBe(failed);
-    expect(gameLaunchReducer(closed, { type: "READY", gameId: "provider:crash" })).toBe(closed);
+    expect(gameLaunchReducer(failed, { type: "READY", gameId: "bgaming:crash" })).toBe(failed);
+    expect(gameLaunchReducer(closed, { type: "READY", gameId: "bgaming:crash" })).toBe(closed);
   });
 
   it("READY only applies to the matching in-flight gameId", () => {
     const loading = gameLaunchReducer(
-      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "provider:crash", now: 1 }),
-      { type: "LOADING", gameId: "provider:crash" }
+      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "bgaming:crash", now: 1 }),
+      { type: "LOADING", gameId: "bgaming:crash" }
     );
-    expect(gameLaunchReducer(loading, { type: "READY", gameId: "casino:dice" })).toBe(loading);
-    const ready = gameLaunchReducer(loading, { type: "READY", gameId: "provider:crash" });
+    expect(gameLaunchReducer(loading, { type: "READY", gameId: "bgaming:dice" })).toBe(loading);
+    const ready = gameLaunchReducer(loading, { type: "READY", gameId: "bgaming:crash" });
     expect(ready.status).toBe(GAME_LAUNCH_STATUS.READY);
     expect(ready.errorCode).toBeNull();
   });
 
   it("retry only starts from FAILED, and increments the attempt count", () => {
     const idle = INITIAL_GAME_LAUNCH_STATE;
-    expect(gameLaunchReducer(idle, { type: "RETRY", gameId: "provider:crash", now: 5 })).toBe(idle);
+    expect(gameLaunchReducer(idle, { type: "RETRY", gameId: "bgaming:crash", now: 5 })).toBe(idle);
 
     const loading = gameLaunchReducer(
-      gameLaunchReducer(idle, { type: "REQUEST", gameId: "provider:crash", now: 1 }),
-      { type: "LOADING", gameId: "provider:crash" }
+      gameLaunchReducer(idle, { type: "REQUEST", gameId: "bgaming:crash", now: 1 }),
+      { type: "LOADING", gameId: "bgaming:crash" }
     );
     // Can't retry a launch that hasn't failed yet.
-    expect(gameLaunchReducer(loading, { type: "RETRY", gameId: "provider:crash", now: 5 })).toBe(loading);
+    expect(gameLaunchReducer(loading, { type: "RETRY", gameId: "bgaming:crash", now: 5 })).toBe(loading);
 
-    const failed = gameLaunchReducer(loading, { type: "FAILED", gameId: "provider:crash", errorCode: FAILED_ERROR_CODE.INIT_FAILED });
-    const retried = gameLaunchReducer(failed, { type: "RETRY", gameId: "provider:crash", now: 5 });
+    const failed = gameLaunchReducer(loading, { type: "FAILED", gameId: "bgaming:crash", errorCode: FAILED_ERROR_CODE.INIT_FAILED });
+    const retried = gameLaunchReducer(failed, { type: "RETRY", gameId: "bgaming:crash", now: 5 });
     expect(retried.status).toBe(GAME_LAUNCH_STATUS.REQUESTED);
     expect(retried.attempt).toBe(2);
     expect(retried.errorCode).toBeNull();
@@ -125,16 +125,16 @@ describe("gameLaunchReducer", () => {
 
   it("close always returns to a clean idle state", () => {
     const failed = gameLaunchReducer(
-      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "provider:crash", now: 1 }),
-      { type: "FAILED", gameId: "provider:crash", errorCode: FAILED_ERROR_CODE.TIMEOUT }
+      gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "REQUEST", gameId: "bgaming:crash", now: 1 }),
+      { type: "FAILED", gameId: "bgaming:crash", errorCode: FAILED_ERROR_CODE.TIMEOUT }
     );
     expect(gameLaunchReducer(failed, { type: "CLOSE" })).toEqual(INITIAL_GAME_LAUNCH_STATE);
   });
 
   it("unavailable and not-found short-circuit straight to a terminal state", () => {
-    const unavailable = gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "UNAVAILABLE", gameId: "casino:wheel", source: "home" });
+    const unavailable = gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "UNAVAILABLE", gameId: "bgaming:wheel", source: "home" });
     expect(unavailable.status).toBe(GAME_LAUNCH_STATUS.UNAVAILABLE);
-    expect(unavailable.gameId).toBe("casino:wheel");
+    expect(unavailable.gameId).toBe("bgaming:wheel");
 
     const notFound = gameLaunchReducer(INITIAL_GAME_LAUNCH_STATE, { type: "NOT_FOUND" });
     expect(notFound.status).toBe(GAME_LAUNCH_STATUS.NOT_FOUND);

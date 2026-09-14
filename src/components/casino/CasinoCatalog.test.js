@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { gameProviderName, ALL_GAMES, railCardsPerPage } from "./CasinoCatalog";
-import { CATEGORY_LABEL } from "@/lib/casinoCategories";
 
 // CASINO GAME-CARD SYSTEM AUDIT AND CLEANUP — scenario coverage. The only
 // genuinely pure logic this task introduces is gameProviderName (relocated
@@ -33,25 +32,15 @@ import { CATEGORY_LABEL } from "@/lib/casinoCategories";
 //  20. Reduced motion is respected                                                      -> Playwright (motion-reduce:animate-none on the skeleton; computed animation-name is "none" under reduced-motion emulation)
 
 describe("gameProviderName", () => {
-  // FINAL QA fix: no longer the internal SDK name "BetSwirl" — see
-  // gameProviderName's own comment for why "Tribet Originals" is the
-  // correct, non-invented, already-approved label instead.
-  it("labels every onchain game Tribet Originals", () => {
-    for (const game of ALL_GAMES.filter((g) => g.kind === "onchain")) {
-      expect(gameProviderName(game)).toBe(CATEGORY_LABEL.Originals);
-    }
-  });
-
-  // NAV SPEC §6.1: provider games resolve their display name via a real
-  // `providerId` FK (against CASINO_PROVIDERS), not a repeated display
-  // string — three real providers now split the vendored catalog (see
-  // ProviderGame.jsx's deterministic block assignment).
-  it("labels every provider game via its real providerId FK (one of the three real providers)", () => {
-    const validIds = new Set(["provider-1", "provider-2", "provider-3"]);
-    for (const game of ALL_GAMES.filter((g) => g.kind === "provider")) {
-      expect(validIds.has(game.providerId)).toBe(true);
-      expect(game.badge).toBeUndefined();
-      expect(gameProviderName(game)).toBe(`Provider #${game.providerId.split("-")[1]}`);
+  // BGAMING-ONLY REWORK — the 6 onchain BetSwirl games and the 12
+  // placeholder provider games (provider-1/2/3) are gone. Every game is a
+  // BGaming provider game now, resolving its display name via `studio`
+  // (set by the adapter), never `providerId` — CASINO_PROVIDERS is empty
+  // today (no real provider has one), so the providerId branch is a
+  // fallback with nothing to fall back to yet.
+  it("labels every game via its real studio name", () => {
+    for (const game of ALL_GAMES) {
+      expect(gameProviderName(game)).toBe(game.studio);
     }
   });
 

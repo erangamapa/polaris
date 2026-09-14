@@ -46,7 +46,7 @@ async function shellIdentity(page) {
 
 test.describe("Casino game page — composition", () => {
   test("page contains exactly GameHeader, GameStage and GameUtilityBar inside one GamePlayerFrame — no recommendations, carousels, or extra sections", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
 
     const frame = page.locator('[data-test-id="game-player-frame"]');
@@ -72,7 +72,7 @@ test.describe("Casino game page — composition", () => {
 
 test.describe("Casino game page — alignment", () => {
   test("GameHeader, GameStage and GameUtilityBar share identical left/right edges", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
 
     const header = await page.locator('[data-test-id="game-header"]').boundingBox();
@@ -86,7 +86,7 @@ test.describe("Casino game page — alignment", () => {
   });
 
   test("Back/title align to the player's left edge; Favourite/More align to the right edge", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
 
     const stage = await page.locator('[data-test-id="game-stage"]').boundingBox();
@@ -106,7 +106,7 @@ test.describe("Casino game page — alignment", () => {
 
   test("GameUtilityBar spans the exact same width as GameStage (the game viewport), not the wider page", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
 
     const stage = await page.locator('[data-test-id="game-stage"]').boundingBox();
@@ -116,7 +116,7 @@ test.describe("Casino game page — alignment", () => {
   });
 
   test("GameUtilityBar docks flush against GameStage — zero gap, one continuous silhouette", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
 
     const stage = await page.locator('[data-test-id="game-stage"]').boundingBox();
@@ -126,7 +126,7 @@ test.describe("Casino game page — alignment", () => {
 
   test("ultra-wide desktop respects a sensible maximum width (frame is not full 1728px)", async ({ page }) => {
     await page.setViewportSize({ width: 1728, height: 900 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
     const frame = await page.locator('[data-test-id="game-player-frame"]').boundingBox();
     expect(frame.width).toBeLessThan(1600);
@@ -135,7 +135,7 @@ test.describe("Casino game page — alignment", () => {
 
 test.describe("Casino game page — GameStage regression (must not reintroduce the shallow-strip bug)", () => {
   test("game stage dominates the viewport and the iframe fills it", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     const stage = page.locator('[data-test-id="game-stage"]');
     await expect(stage).toBeVisible();
     await page.waitForTimeout(500);
@@ -144,12 +144,12 @@ test.describe("Casino game page — GameStage regression (must not reintroduce t
     const stageBox = await stage.boundingBox();
     expect(stageBox.height).toBeGreaterThan(viewport.height * 0.5);
 
-    const iframeBox = await page.locator('[data-test-id="provider-iframe-tumble"]').boundingBox();
+    const iframeBox = await page.locator('[data-test-id="provider-iframe-aloha-king-elvis"]').boundingBox();
     expect(iframeBox.height).toBeGreaterThan(400);
   });
 
   test("frame height is identical across READY and an error state — loading/error never collapses the page", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const readyHeight = await page.locator('[data-test-id="game-player-frame"]').evaluate((el) => el.getBoundingClientRect().height);
 
@@ -167,7 +167,7 @@ test.describe("Casino game page — GameStage regression (must not reintroduce t
   test("no horizontal scrollbar / overflow at any tested viewport", async ({ page }) => {
     for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/casino/lobby?play=provider:tumble");
+      await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
       await page.waitForTimeout(400);
       const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
       expect(hasOverflow, `horizontal overflow at ${vp.name}`).toBe(false);
@@ -177,7 +177,7 @@ test.describe("Casino game page — GameStage regression (must not reintroduce t
 
 test.describe("Casino game page — header", () => {
   test("header has no thumbnail — only back, name/provider, favorite, and menu", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     const header = page.locator('[data-test-id="game-header"]');
     await expect(header).toBeVisible();
     const thumbCount = await header.locator("img, [style*='background-image']").count();
@@ -187,7 +187,7 @@ test.describe("Casino game page — header", () => {
   });
 
   test("Favourite and More share the same dimensions", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const fav = await page.locator('[data-fav]').first().boundingBox();
     const more = await page.locator('[data-test-id="game-header-menu"]').boundingBox();
@@ -197,7 +197,7 @@ test.describe("Casino game page — header", () => {
 
   test("header height stays within the compact target range", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const height = await page.locator('[data-test-id="game-header"]').evaluate((el) => el.getBoundingClientRect().height);
     expect(height).toBeGreaterThanOrEqual(48);
@@ -208,7 +208,7 @@ test.describe("Casino game page — header", () => {
 test.describe("Casino game page — utility bar", () => {
   test("exactly three utility actions render (Theatre Mode removed), each an exact equal third", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const bar = page.locator('[data-test-id="game-utility-bar"]');
     const buttons = bar.locator("button");
@@ -230,7 +230,7 @@ test.describe("Casino game page — utility bar", () => {
 
   test("first slot starts at the stage's left edge, last slot ends at the stage's right edge", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const stage = await page.locator('[data-test-id="game-stage"]').boundingBox();
     const buttons = page.locator('[data-test-id="game-utility-bar"] button');
@@ -241,7 +241,7 @@ test.describe("Casino game page — utility bar", () => {
   });
 
   test("subtle vertical dividers separate the three actions", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const buttons = page.locator('[data-test-id="game-utility-bar"] button');
     // First slot has no left divider; the other two do (dividerLeft prop).
@@ -253,7 +253,7 @@ test.describe("Casino game page — utility bar", () => {
 
   test("labels are correct on desktop", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     for (const label of ["Game Info", "Report Issue", "Fullscreen"]) {
       await expect(page.locator('[data-test-id="game-utility-bar"]').getByText(label, { exact: true })).toBeVisible();
@@ -262,7 +262,7 @@ test.describe("Casino game page — utility bar", () => {
 
   test("mobile uses three equal-width controls, no horizontal scrolling, no clipped labels", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const bar = page.locator('[data-test-id="game-utility-bar"]');
     const buttons = bar.locator("button");
@@ -276,7 +276,7 @@ test.describe("Casino game page — utility bar", () => {
 
   test("no clipped labels at the narrowest tested width (360px)", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(500);
     const clipped = await page.locator('[data-test-id="game-utility-bar"] button span:not(.hidden)').evaluateAll(
       (spans) => spans.map((s) => ({ text: s.textContent, clipped: s.scrollWidth > s.clientWidth + 1 }))
@@ -311,7 +311,7 @@ test.describe("Casino game page — shell persistence and routing", () => {
     await installIdentityTracker(page);
     const before = await shellIdentity(page);
 
-    await page.locator('[data-test-id="game-card-provider-tumble"]').first().click();
+    await page.locator('[data-test-id="game-card-bgaming-aloha-king-elvis"]').first().click();
     await page.waitForTimeout(500);
     const duringGame = await shellIdentity(page);
 
@@ -339,7 +339,7 @@ test.describe("Casino game page — shell persistence and routing", () => {
     // "the page is tall enough to scroll to exactly 900px".
     const scrollBefore = await main.evaluate((el) => el.scrollTop);
 
-    await page.locator('[data-test-id="game-card-provider-tumble"]').first().click();
+    await page.locator('[data-test-id="game-card-bgaming-aloha-king-elvis"]').first().click();
     await page.waitForTimeout(600);
     await page.locator('[data-test-id="game-header-back"]').click();
     await page.waitForTimeout(500);
@@ -363,7 +363,7 @@ test.describe("Casino game page — shell persistence and routing", () => {
 
 test.describe("Casino game page — fullscreen", () => {
   test("Fullscreen removes GameStage's height cap and engages the real Fullscreen API", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
     const fsBtn = page.locator('[data-test-id="game-utility-fullscreen"]');
     await fsBtn.click();
@@ -384,7 +384,7 @@ test.describe("Casino game page — fullscreen", () => {
   // began. Fixed by fullscreening a wrapper around GameStage + GameUtilityBar
   // together (see CasinoGamePage.jsx's fullscreenTargetRef).
   test("GameUtilityBar (including the Fullscreen button itself) stays reachable while fullscreen is active", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
     const fsBtn = page.locator('[data-test-id="game-utility-fullscreen"]');
     await fsBtn.click();
@@ -407,7 +407,7 @@ test.describe("Casino game page — fullscreen", () => {
   });
 
   test("Game Info and Report Issue remain reachable while fullscreen is active", async ({ page }) => {
-    await page.goto("/casino/lobby?play=provider:tumble");
+    await page.goto("/casino/lobby?play=bgaming:aloha-king-elvis");
     await page.waitForTimeout(600);
     await page.locator('[data-test-id="game-utility-fullscreen"]').click();
     await page.waitForTimeout(300);

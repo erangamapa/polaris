@@ -28,10 +28,9 @@ describe('metadataFor', () => {
   });
 
   it('uses the display label, not the internal id', () => {
-    // "New" renders as "New Releases", "Originals" as "On-chain" - the id is
-    // a routing key and must never surface in a search result.
+    // "New" renders as "New Releases" - the id is a routing key and must
+    // never surface in a search result.
     expect(metadataFor(casino({ casinoCategory: 'New', casinoView: 'category' })).title).toBe('New Releases Games | Tribet');
-    expect(metadataFor(casino({ casinoCategory: 'Originals', casinoView: 'category' })).title).toBe('On-chain Games | Tribet');
   });
 
   it.each([
@@ -41,12 +40,15 @@ describe('metadataFor', () => {
     expect(metadataFor(casino({ casinoCategory })).title).toBe(expected);
   });
 
-  it('titles the providers index and a single provider differently', () => {
+  it('titles the providers index page', () => {
     expect(metadataFor(casino({ casinoView: 'providers' })).title).toBe('Game Providers | Tribet');
-    expect(metadataFor(casino({ casinoView: 'provider', casinoProviderSlug: 'provider-1' })).title).toBe('Provider #1 Games | Tribet');
   });
 
-  it('falls back gracefully for an unknown provider slug', () => {
+  // CASINO_PROVIDERS is empty now (the 12 placeholder provider games are
+  // gone, and BGaming isn't wired in as a provider entry — see
+  // casinoCategories.js), so every provider slug is "unknown" until a real
+  // second provider is integrated.
+  it('falls back gracefully for a provider slug (none are real today)', () => {
     const m = metadataFor(casino({ casinoView: 'provider', casinoProviderSlug: 'nope' }));
     expect(m.title).toBe('Provider Games | Tribet');
     expect(m.description).not.toContain('undefined');

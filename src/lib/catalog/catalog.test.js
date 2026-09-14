@@ -4,6 +4,8 @@ import { bgaming, demoUrl } from "./adapters/bgaming.js";
 import { externalGames } from "./index.js";
 import { LAUNCH_EXTERNAL } from "./game.js";
 import { CATEGORY_META } from "@/lib/casinoCategories";
+import { POPULAR_SLUGS } from "./adapters/bgaming.popular.js";
+import { BGAMING_GAMES } from "./adapters/bgaming.games.js";
 
 // The lobby only understands the tags in CATEGORY_META. An adapter emitting
 // anything else produces a game that renders nowhere, which is invisible in
@@ -15,26 +17,41 @@ describe("tagsFor", () => {
   it.each([
     ["Roulette", "table-games"],
     ["Cards", "table-games"],
-    ["Scratch", "instant"],
-    ["Casual", "instant"],
+    ["Dice", "table-games"],
+    ["Scratch", "scratch"],
+    ["Lottery", "scratch"],
+    ["Casual", "casual"],
+    ["Casual Exclusive", "casual"],
     ["Slots", "slots"],
-    ["Exclusive Slots", "slots"],
+    ["Exclusive Slots", "exclusive"],
+    ["Slots Exclusive", "exclusive"],
   ])("maps the studio genre %s to %s", (genre, tag) => {
     expect(tagsFor({ genre })).toContain(tag);
   });
 
-  it("reads the game name when the genre is uninformative", () => {
-    expect(tagsFor({ genre: "Casual", slug: "dragons-crash" })).toContain("crash");
+  it("normalizes both spellings of the Exclusive shelf to one tag", () => {
+    expect(tagsFor({ genre: "Exclusive Slots" })).toEqual(tagsFor({ genre: "Slots Exclusive" }));
   });
 
-  it("files crash and instant under Game Shows too, so that shelf is reachable", () => {
-    expect(tagsFor({ genre: "Casual", slug: "easter-plinko" })).toContain("game-shows");
+  it("falls back to slug/title keywords only when genre is missing or unrecognized", () => {
+    expect(tagsFor({ genre: null, slug: "american-roulette" })).toContain("table-games");
   });
 
   it("never leaves a game with no shelf", () => {
     // A game tagged with nothing renders in the catalogue but under no
     // category at all — the one outcome this function must not produce.
     expect(tagsFor({ genre: null, slug: "something-unrecognisable", title: "?" })).not.toHaveLength(0);
+  });
+});
+
+describe("bgaming.popular", () => {
+  it("is a real, curated subset of the actual catalog", () => {
+    const realSlugs = new Set(BGAMING_GAMES.map((g) => g.slug));
+    for (const slug of POPULAR_SLUGS) expect(realSlugs.has(slug), `${slug} is not a real slug`).toBe(true);
+  });
+
+  it("clears the minimum a nav category needs to show", () => {
+    expect(POPULAR_SLUGS.size).toBeGreaterThanOrEqual(12);
   });
 });
 
@@ -64,9 +81,7 @@ describe("bgaming adapter", () => {
   it("only ever emits tags the lobby has a shelf for", () => {
     const extra = new Set();
     for (const g of games) for (const t of g.tags) if (!SHELF_TAGS.has(t)) extra.add(t);
-    // 'crash' and 'instant' are internal groupings that always travel with
-    // 'game-shows', so they are permitted; anything else is a bug.
-    expect([...extra].filter((t) => !["crash", "instant"].includes(t))).toEqual([]);
+    expect([...extra]).toEqual([]);
   });
 
   it("gives every game the fields the lobby renders", () => {
@@ -90,8 +105,8 @@ describe("bgaming adapter", () => {
     expect(tagged.length).toBeLessThan(games.length);
   });
 
-  it("fills the categories that were previously empty", () => {
-    for (const tag of ["slots", "table-games", "game-shows"]) {
+  it("populates every real category", () => {
+    for (const tag of ["slots", "casual", "table-games", "scratch", "exclusive", "popular"]) {
       expect(games.some((g) => g.tags.includes(tag)), `nothing tagged ${tag}`).toBe(true);
     }
   });

@@ -14,11 +14,8 @@ import { CASINO_CATEGORIES } from "./casinoCategories";
 //
 //  1.  Popular pill scrolls to Popular section          -> Playwright (casino-section-popular scrolled into view, offset applied)
 //  2.  New Releases pill scrolls to New Releases          -> Playwright
-//  3.  Live Casino pill scrolls to Live Casino             -> Playwright
-//  4.  Slots pill scrolls to Slots                          -> N/A — Slots has no supported inventory (see lib/casinoCategories.js), so it has no sectionId and never renders as a pill; the underlying mechanism is unit-tested generically below (categoryIdForSection/scrollTargetFor), ready the moment Slots is re-enabled
-//  5.  Game Shows pill scrolls to Game Shows                 -> Playwright
-//  6.  Tribet Originals pill scrolls to Originals             -> Playwright
-//  7.  Providers scrolls only when its section exists          -> Playwright (providers-rail/casino-section-providers always renders on Lobby; unit test below covers the "no sectionId" no-op path generically)
+//  3.  Slots/Casual/Table Games/Scratch/Exclusive pills scroll to their own sections -> Playwright
+//  4.  Providers is disabled (no second real provider yet) — N/A, no sectionId, never renders as a pill; the underlying mechanism is unit-tested generically below (categoryIdForSection/scrollTargetFor), ready the moment it's re-enabled
 //  8.  Lobby pill scrolls to top                                 -> Playwright (scrollTo({top:0}))
 //  9.  Pill clicks do not open standalone category pages           -> Playwright (casinoCategory/route stays "Lobby" after every pill click) + unit test (activateLobbyPill never calls onNavigateToLobby when already on Lobby)
 //  10. Active pill updates after click                               -> unit test (setActiveSectionId called synchronously) + Playwright
@@ -108,8 +105,8 @@ describe("activateLobbyPill", () => {
       querySelector: () => ({ scrollTo, getBoundingClientRect: () => ({ top: 0 }), scrollTop: 0 }),
       getElementById: () => ({ getBoundingClientRect: () => ({ top: 400 }) }),
     });
-    const liveCasino = CASINO_CATEGORIES.find((c) => c.id === "Live Casino");
-    activateLobbyPill(liveCasino, { currentCategory: "Lobby", onNavigateToLobby, setActiveSectionId });
+    const tableGames = CASINO_CATEGORIES.find((c) => c.id === "Table Games");
+    activateLobbyPill(tableGames, { currentCategory: "Lobby", onNavigateToLobby, setActiveSectionId });
     expect(onNavigateToLobby).not.toHaveBeenCalled();
     expect(scrollTo).toHaveBeenCalled();
     vi.unstubAllGlobals();
@@ -119,7 +116,7 @@ describe("activateLobbyPill", () => {
     const onNavigateToLobby = vi.fn();
     const setActiveSectionId = vi.fn();
     vi.stubGlobal("document", { querySelector: () => null });
-    const fakeDisabledCategory = { id: "Slots", kind: "routed" }; // no sectionId — mirrors Slots today
+    const fakeDisabledCategory = { id: "Fake", kind: "routed" }; // no sectionId at all
     expect(() => activateLobbyPill(fakeDisabledCategory, { currentCategory: "Lobby", onNavigateToLobby, setActiveSectionId })).not.toThrow();
     expect(onNavigateToLobby).not.toHaveBeenCalled();
     expect(setActiveSectionId).not.toHaveBeenCalled();

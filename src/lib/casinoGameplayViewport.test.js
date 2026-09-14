@@ -37,13 +37,13 @@ describe("classifyOrientation", () => {
 
 describe("needsRotateHint", () => {
   it("is false when the game has no orientation metadata (every real game today)", () => {
-    expect(needsRotateHint({ favId: "provider:crash" }, "portrait")).toBe(false);
+    expect(needsRotateHint({ favId: "bgaming:crash" }, "portrait")).toBe(false);
   });
   it("is false in landscape even for a landscape-only game", () => {
-    expect(needsRotateHint({ favId: "provider:x", orientation: "landscape" }, "landscape")).toBe(false);
+    expect(needsRotateHint({ favId: "bgaming:x", orientation: "landscape" }, "landscape")).toBe(false);
   });
   it("is true only for a landscape-only game viewed in portrait", () => {
-    expect(needsRotateHint({ favId: "provider:x", orientation: "landscape" }, "portrait")).toBe(true);
+    expect(needsRotateHint({ favId: "bgaming:x", orientation: "landscape" }, "portrait")).toBe(true);
   });
   it("is false when there is no game at all (unavailable/not-found states)", () => {
     expect(needsRotateHint(null, "portrait")).toBe(false);

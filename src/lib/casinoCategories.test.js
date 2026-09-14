@@ -9,63 +9,34 @@ import { CASINO_CATEGORIES, CATEGORY_LABEL, ROUTED_CATEGORIES, CASINO_PROVIDERS,
 // menu, Casino search, the Lobby's provider tiles) is presentational/DOM
 // behavior, verified manually via Playwright against the running dev
 // server — see CasinoCatalog.test.js's own scenario-coverage blocks for
-// those:
+// those.
 //
-//  1.  One shared config drives every nav surface       -> code review (CategoryNav, Sidebar/mobile menu, casinoSearch.js's SEARCH_CATEGORIES/SEARCH_PROVIDERS, App.jsx's Casino sidebar builder all import from this module — no second hand-rolled list)
-//  2.  Only real catalog/route content is shown          -> unit test (CASINO_CATEGORIES shape, `enabled` flags); Slots/Table Games are live now that a third-party studio catalogue fills them (see lib/catalog)
-//  3.  Each category has one clear route/filter behavior  -> unit test (activateCasinoCategory)
-//  4.  Providers is real provider browsing, not a mixed rail -> unit test (CASINO_PROVIDERS shape) + code review (see CasinoCatalog.jsx's ProviderTiles)
-//  5.  Tribet Originals naming is consistent everywhere      -> unit test (CATEGORY_LABEL.Originals)
-//  6.  Personal destinations are modeled separately from Casino content categories -> unit test (CASINO_PERSONAL_DESTINATIONS shape)
-//  7.  A disabled category's route still resolves its real label            -> unit test (CATEGORY_LABEL.Slots)
+// BGAMING-ONLY REWORK — this taxonomy is no longer gated on build-time
+// content-mode flags; BGaming is the only source, always on. Every
+// category below has real inventory (see lib/catalog's genre-based
+// tagging) except Providers, which is `enabled: false` until a second
+// real provider is integrated (BGaming carries no `providerId`).
 
 describe("CASINO_CATEGORIES", () => {
-  // CASINO CONTENT MODE — the process env in this test file has no
-  // VITE_CASINO_CONTENT_MODE set, so the static import above resolves under
-  // the real default: 'betswirl'. Providers carries zero content in that
-  // mode (it's exclusively vendored local games — see casinoCategories.js's
-  // own comment on the entry) and is hidden from nav accordingly; six
-  // entries, not seven. The 'mixed'-mode case (Providers re-enabled) is
-  // covered separately below via a fresh module load with the env stubbed,
-  // mirroring packages/shared/chains.test.js's pattern.
   it("lists every nav-visible entry in the target sidebar/pill order", () => {
-    // Slots and Table Games are absent here because this file loads with no
-    // VITE_ENABLE_BGAMING set, i.e. no external catalogue — see below.
     expect(CASINO_CATEGORIES.map((c) => c.id)).toEqual([
       "Lobby",
-      "Originals",
       "Popular",
       "New",
-      "Live Casino",
-      "Game Shows",
+      "Slots",
+      "Casual",
+      "Table Games",
+      "Scratch",
+      "Exclusive",
     ]);
   });
 
-  // Both were dark for one reason only: nothing could fill them. A studio
-  // catalogue does now (lib/catalog), so the rule they encode is no longer
-  // "never show these" but "only show a category something can actually
-  // fill" — which is why each must keep a CATEGORY_META tag to filter on.
-  // Slots and Table Games hold no first-party games whatsoever: every title in
-  // them comes from an external studio catalogue. So they follow that source.
-  // Showing a shelf a player can click into and find nothing is worse than not
-  // showing it, and worse still when the tiles appear but will not launch.
-  it("hides Slots and Table Games when no external catalogue is enabled", () => {
-    for (const id of ["Slots", "Table Games"]) {
-      expect(CASINO_CATEGORIES.some((c) => c.id === id), `${id} should be hidden`).toBe(false);
-    }
-  });
-
-  it("keeps their routes working regardless, for a bookmarked link", () => {
-    for (const id of ["Slots", "Table Games"]) expect(ROUTED_CATEGORIES).toContain(id);
-  });
-
-  it("disables Providers by default (betswirl content mode has zero provider-game inventory)", () => {
+  it("disables Providers — BGaming carries no providerId, so it has nothing to show today", () => {
     expect(CASINO_CATEGORIES.some((c) => c.id === "Providers")).toBe(false);
   });
 
-  it("resolves real labels for the newly filled categories", () => {
-    expect(CATEGORY_LABEL.Slots).toBe("Slots");
-    expect(CATEGORY_LABEL["Table Games"]).toBe("Table Games");
+  it("keeps Providers' route working regardless, for a bookmarked link, and keeps it fully modeled", () => {
+    expect(CATEGORY_LABEL.Providers).toBe("Providers");
   });
 
   it("gives every entry a non-empty label, icon, and every field the shared config promises", () => {
@@ -84,22 +55,10 @@ describe("CASINO_CATEGORIES", () => {
     for (const c of CASINO_CATEGORIES) expect(c.enabled).toBe(true);
   });
 
-  // The "Originals" id is a legacy internal key holding the on-chain games,
-  // which are BetSwirl's. Labelling them as Tribet content misattributed a
-  // third party's games as first-party, so every player-facing surface reads
-  // "BetSwirl" and no surface may reintroduce the old wording.
-  it("labels the on-chain category as On-chain everywhere a player sees it", () => {
-    // The internal id stays "Originals" (routing key, test selector); the
-    // player-visible label must never assert who authored the games - not
-    // Tribet, which did not build them, and no vendor name either.
-    expect(CATEGORY_LABEL.Originals).toBe("On-chain");
-    expect(CASINO_CATEGORIES.find((c) => c.id === "Originals").label).toBe("On-chain");
-  });
-
-  it("never presents the on-chain games as Tribet-authored", () => {
-    const entry = CASINO_CATEGORIES.find((c) => c.id === "Originals");
-    expect(entry.label).not.toMatch(/tribet/i);
-    expect(CATEGORY_LABEL.Originals).not.toMatch(/original/i);
+  it("uses the display label override only where one is defined ('New' -> 'New Releases')", () => {
+    expect(CATEGORY_LABEL.New).toBe("New Releases");
+    expect(CATEGORY_LABEL.Slots).toBe("Slots");
+    expect(CATEGORY_LABEL["Table Games"]).toBe("Table Games");
   });
 
   it("gives every rail-kind entry a railTarget, and no other kind one", () => {
@@ -109,42 +68,20 @@ describe("CASINO_CATEGORIES", () => {
     }
   });
 
+  it("gives every showAsLobbyRow entry a sectionId to scroll to", () => {
+    for (const c of CASINO_CATEGORIES) {
+      if (c.showAsLobbyRow) expect(c.sectionId).toBeTruthy();
+    }
+  });
+
   it("keeps ROUTED_CATEGORIES as every category with a real CATEGORY_META page, independent of `enabled`", () => {
     // ROUTED_CATEGORIES is every category with a CATEGORY_META page, which
-    // is deliberately NOT filtered by `enabled` — a category can be hidden
-    // from nav and still answer a direct or bookmarked link.
-    expect(ROUTED_CATEGORIES).toEqual(["Popular", "New", "Live Casino", "Game Shows", "Slots", "Table Games"]);
-  });
-});
-
-// Fresh module load with VITE_CASINO_CONTENT_MODE stubbed to 'mixed' — the
-// only way to exercise the combined-catalog branch, since CASINO_CATEGORIES
-// above resolves the content mode once at module load (see chains.js).
-describe("CASINO_CATEGORIES in mixed content mode", () => {
-  async function loadCasinoCategories(contentMode) {
-    vi.resetModules();
-    vi.stubEnv("VITE_CASINO_CONTENT_MODE", contentMode);
-    return import("./casinoCategories");
-  }
-
-  it("re-enables Providers now that three real providers exist (supersedes the prior FINAL QA disable)", async () => {
-    const m = await loadCasinoCategories("mixed");
-    const providers = m.CASINO_CATEGORIES.find((c) => c.id === "Providers");
-    expect(providers).toBeTruthy();
-    expect(providers.enabled).toBe(true);
-    expect(providers.showInSidebar).toBe(true);
-    expect(providers.showInTopNav).toBe(true);
-    expect(providers.showAsLobbyRow).toBe(true);
-    expect(m.CASINO_CATEGORIES).toHaveLength(7);
-    vi.unstubAllEnvs();
-    vi.resetModules();
+    // is deliberately NOT filtered by `enabled`.
+    expect(ROUTED_CATEGORIES).toEqual(["Popular", "New", "Slots", "Casual", "Table Games", "Scratch", "Exclusive"]);
   });
 });
 
 describe("CASINO_PERSONAL_DESTINATIONS", () => {
-  // HEART REDESIGN — the prior "Following" (followed providers) destination
-  // has been removed entirely (not just hidden): Personal now contains only
-  // Favorites and Recently Played, never a Casino content category.
   it("lists exactly Favorites and Recently Played — never a Casino content category", () => {
     expect(CASINO_PERSONAL_DESTINATIONS.map((d) => d.id)).toEqual(["Favorites", "Recently Played"]);
   });
@@ -169,20 +106,12 @@ describe("CASINO_PERSONAL_DESTINATIONS", () => {
 });
 
 describe("CASINO_PROVIDERS", () => {
-  // NAV SPEC §6.6 — Tribet Originals (the onchain/BetSwirl catalog) is
-  // first-party content and a category, never a provider; it must never
-  // appear in the Providers rail/directory. Three real providers exist in
-  // this catalog now (superseding the prior "exactly one" FINAL QA state).
-  it("lists exactly the three real providers, excluding Tribet Originals", () => {
-    expect(CASINO_PROVIDERS).toHaveLength(3);
-    expect(CASINO_PROVIDERS.map((p) => p.id)).toEqual(["provider-1", "provider-2", "provider-3"]);
-    expect(CASINO_PROVIDERS.some((p) => p.id === "tribet-studio")).toBe(false);
-    expect(CASINO_PROVIDERS.some((p) => p.id.includes("original"))).toBe(false);
-  });
-
-  it("maps each provider to a distinct real rail destination", () => {
-    const targets = CASINO_PROVIDERS.map((p) => p.railTarget);
-    expect(new Set(targets).size).toBe(CASINO_PROVIDERS.length);
+  // The 12 placeholder provider games (provider-1/2/3) are gone. BGaming is
+  // the only real source and sets no `providerId` (see ProviderGame.jsx),
+  // so there is nothing real to list here — kept empty, not deleted, since
+  // downstream code structurally depends on the export existing.
+  it("is empty — no real provider has a providerId to browse by today", () => {
+    expect(CASINO_PROVIDERS).toEqual([]);
   });
 });
 
@@ -200,13 +129,13 @@ describe("activateCasinoCategory", () => {
     // no-jsdom test environment doesn't provide — stub it like the browser
     // would (immediate callback) since only activateCasinoCategory's own
     // synchronous behavior (the onSelectCategory call) is under test here.
+    // Providers is the one rail-kind category (currently disabled in nav,
+    // but the function itself is generic and doesn't care about `enabled`).
     vi.stubGlobal("requestAnimationFrame", (cb) => cb());
     vi.stubGlobal("document", { querySelector: () => null });
     const onSelectCategory = vi.fn();
-    // "Originals" is a "rail"-kind category (same as "Providers"), so it
-    // exercises the identical redirect-to-Lobby branch.
-    const originals = CASINO_CATEGORIES.find((c) => c.id === "Originals");
-    activateCasinoCategory(originals, onSelectCategory);
+    const providers = { id: "Providers", kind: "rail", railTarget: "providers-rail" };
+    activateCasinoCategory(providers, onSelectCategory);
     expect(onSelectCategory).toHaveBeenCalledWith("Lobby");
     expect(onSelectCategory).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
@@ -215,8 +144,8 @@ describe("activateCasinoCategory", () => {
   it("does not throw when onSelectCategory is omitted", () => {
     vi.stubGlobal("requestAnimationFrame", (cb) => cb());
     vi.stubGlobal("document", { querySelector: () => null });
-    const originals = CASINO_CATEGORIES.find((c) => c.id === "Originals");
-    expect(() => activateCasinoCategory(originals, undefined)).not.toThrow();
+    const providers = { id: "Providers", kind: "rail", railTarget: "providers-rail" };
+    expect(() => activateCasinoCategory(providers, undefined)).not.toThrow();
     vi.unstubAllGlobals();
   });
 });
