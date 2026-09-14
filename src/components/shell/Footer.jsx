@@ -38,8 +38,6 @@ const FOOTER_COLUMNS = [
     items: [
       { label: "Lobby", enabled: false },
       { label: "Slots", enabled: false },
-      { label: "Live Casino", enabled: false },
-      { label: "Game Shows", enabled: false },
       { label: "Providers", enabled: false },
     ],
   },

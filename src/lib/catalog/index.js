@@ -8,12 +8,9 @@
 // Order matters only for de-duplication: earlier sources win a key collision,
 // so first-party content is never displaced by a third party shipping a game
 // with the same slug.
-import { ENABLE_BGAMING } from "@shared/chains";
 import { bgaming } from "./adapters/bgaming.js";
 
-// A source that is off contributes nothing; it is not merely hidden, so no
-// rail, search index or category can surface a game that will not launch.
-const ADAPTERS = [ENABLE_BGAMING && bgaming].filter(Boolean);
+const ADAPTERS = [bgaming];
 
 export function externalGames() {
   const seen = new Set();

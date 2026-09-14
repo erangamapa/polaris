@@ -2,13 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { History, Heart, Gamepad2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/telemetry";
-// Imported from betswirlCatalog.js directly, NOT useBetSwirl.js — that file
-// pulls in the real @betswirl/sdk-core SDK (needed to place bets), which
-// this catalog listing must never require just to show card metadata (see
-// PERFORMANCE task: "Lobby cards do not import full game implementations").
-import { BETSWIRL_GAMES } from "@/web3/betswirlCatalog";
-import { PROVIDER_GAMES } from "./ProviderGame";
-import { CASINO_CONTENT_MODE, CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 import { externalGames } from "@/lib/catalog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MicroLabel } from "@/components/ui/micro-label";
@@ -19,26 +12,14 @@ import { useDevMockState } from "@/lib/devMock";
 import { createPlaceholderGames, notifyPlaceholderClicked, PLACEHOLDER_TITLE, PLACEHOLDER_ARIA_LABEL, PLACEHOLDER_TARGET_TOTAL, createPlaceholderProviders, notifyPlaceholderProviderClicked } from "@/lib/casinoPlaceholders";
 import { CATEGORY_META, CASINO_CATEGORIES, CATEGORY_LABEL, CASINO_PROVIDERS } from "@/lib/casinoCategories";
 
-// Onchain games carry no provider field of their own (BETSWIRL_GAMES has
-// none — see useBetSwirl.js) and get their own category/rail rather than a
-// row in the Providers rail (nav spec §6.6). Provider-kind games resolve
-// their display name via the real `providerId` FK against CASINO_PROVIDERS
-// (see ProviderGame.jsx/casinoCategories.js) — not a repeated display-string
-// match. Lives here (not in casinoSearch.js, which already imports FROM this
-// file) so both CasinoGameCard and search can use the exact same label
-// without a circular import.
-//
-// These cards read "BetSwirl", not "Tribet Originals". An earlier naming pass
-// hid the vendor name as exposed prototype terminology, but the replacement
-// asserted Tribet authored Dice/Roulette/Keno, which is false — BetSwirl
-// builds and settles them, and Tribet's own games are the provider-kind ones
-// badged Tribet Studio. Attribution beats tidiness here. The label still comes
-// from CATEGORY_LABEL rather than a literal, so these cards and the section
-// heading they sit under can never disagree.
+// Provider-kind games resolve their display name via `studio` (set by the
+// adapter, e.g. "BGaming") or the real `providerId` FK against
+// CASINO_PROVIDERS (see ProviderGame.jsx/casinoCategories.js) — not a
+// repeated display-string match. Lives here (not in casinoSearch.js, which
+// already imports FROM this file) so both CasinoGameCard and search can use
+// the exact same label without a circular import.
 export const gameProviderName = (game) =>
-  game.kind === "onchain"
-    ? CATEGORY_LABEL.Originals
-    : (game.studio ?? CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider");
+  game.studio ?? CASINO_PROVIDERS.find((p) => p.id === game.providerId)?.name ?? "Provider";
 
 // Shared broken-image detection — one `onError` state machine, reused by
 // every place a game's artwork renders (full cards here, the compact search
@@ -49,42 +30,18 @@ export function useBrokenImage() {
   return { broken, onError: () => setBroken(true) };
 }
 
-// Games carry a namespaced favId so the on-chain "dice" and the provider "dice"
-// never collide in the favorites set. `source` is explicit and set once here,
-// never inferred downstream from title/provider/image/route — it is what the
-// content-mode filter below (and only that filter) branches on.
-const ONCHAIN = BETSWIRL_GAMES.map((g) => ({ ...g, favId: `casino:${g.key}`, kind: "onchain", source: "betswirl" }));
-const PROVIDER = PROVIDER_GAMES.map((g) => ({ ...g, favId: `provider:${g.key}`, kind: "provider", source: "local" }));
+// BGaming-only catalog. Games are `kind: "provider"` so they render through
+// the same launch surface (ProviderGame.jsx's iframe) the vendored
+// placeholder games used before removal — no separate onchain launch path
+// exists anymore.
+export const ALL_GAMES = externalGames();
 
-// MASTER_GAMES is the full, unfiltered catalog (BetSwirl + vendored local
-// PROVIDER_GAMES) — deliberately not exported. Every rail, search index,
-// Favorites/Recently Played resolver, category/See-All page and Providers
-// page must read ALL_GAMES below instead, so CASINO_CONTENT_MODE is enforced
-// at this one chokepoint rather than re-filtered per call site (see
-// packages/shared/chains.js). In 'betswirl' mode (the default) this drops
-// every PROVIDER_GAMES entry; the six BetSwirl games (including
-// playable:false Wheel/Plinko, which stay visible as "Coming soon" tiles —
-// see the `playable` handling in CasinoGameCard below) always remain. In
-// 'mixed' mode this is a no-op and the full combined catalog is visible,
-// same as before this flag existed.
-// Third-party studio demos (see lib/catalog). They are `kind: "provider"` so
-// they render through the same launch surface as vendored games, but carry
-// their own `source`, so the content-mode filter below treats them as the
-// non-BetSwirl content they are.
-const EXTERNAL = externalGames();
-
-const MASTER_GAMES = [...ONCHAIN, ...PROVIDER, ...EXTERNAL];
-export const ALL_GAMES = CASINO_CONTENT_MODE === "betswirl"
-  ? MASTER_GAMES.filter((g) => g.source === "betswirl")
-  : MASTER_GAMES;
-
-// Whether any vendored/local provider game is currently visible — used to
-// hide the Providers rail/nav destination entirely rather than rendering a
-// row of "0 games" tiles when content mode excludes them (see ProviderTiles
-// and casinoCategories.js's CASINO_CATEGORIES, which reads the content mode
-// directly since Providers is, by construction, exclusively non-BetSwirl
-// content — see that file's own comment).
-const HAS_VISIBLE_PROVIDER_GAMES = ALL_GAMES.some((g) => g.kind === "provider");
+// Whether any provider game is currently visible — used to hide the
+// Providers rail/nav destination entirely rather than rendering a row of
+// "0 games" tiles (see ProviderTiles and casinoCategories.js's
+// CASINO_PROVIDERS, which is empty until a second real provider besides
+// BGaming is integrated).
+const HAS_VISIBLE_PROVIDER_GAMES = ALL_GAMES.some((g) => g.kind === "provider" && g.providerId);
 
 // Deep-link helper: build/read the `?play=<favId>` query param a tile's
 // href points to, so a plain URL (new tab, reload, shared link) can open
@@ -118,12 +75,12 @@ export const findGameByFavId = (favId) => ALL_GAMES.find((g) => g.favId === favI
 // Active-state coral (`--favorite-heart`) is shared by both variants so
 // "favorited" reads identically everywhere; only the surrounding chrome
 // differs.
-// `size`: "default" (every existing surface — game-first mode's featured
-// cards are the one exception) or "large" (~1.2-1.3x the default chip/heart
-// footprint, used only by CasinoGameCard's size="featured" — see
-// CASINO_LAYOUT_MODE=game-first). Purely a visual-footprint switch — the
-// toggle handler, aria attributes, press-pulse animation and active-state
-// color are all untouched and identical at either size.
+// `size`: "default" (every current surface) or "large" (~1.2-1.3x the
+// default chip/heart footprint, for CasinoGameCard's size="featured" — not
+// used by any surface today, kept for a future larger-card presentation).
+// Purely a visual-footprint switch — the toggle handler, aria attributes,
+// press-pulse animation and active-state color are all untouched and
+// identical at either size.
 export function FavStar({ faved, onToggle, title, className, tabIndex = 0, onMouseDown, variant = "chip", size = "default", ...rest }) {
   const [pulse, setPulse] = useState(0);
   const isChip = variant === "chip";
@@ -229,17 +186,16 @@ const STATUS_LABEL = { "coming-soon": "Coming soon" };
 // launch's `source`, so casino_game_launch_requested/ready/failed can report
 // which section a launch came from (see useCasinoGameLaunch.js). Never
 // changes rendering.
-// `size`: "standard" (every existing surface — classic mode, every rail,
-// every fluid GRID) or "featured" (~1.4-1.5x title / ~1.25-1.35x provider /
-// ~1.2-1.3x favorite heart / ~1.15-1.25x badges — used only when
-// CASINO_LAYOUT_MODE is 'game-first', see GameFirstLobby/FEATURED_GRID
-// below). The card's own footprint (width/height) is NOT controlled here at
-// all — this component has no width of its own, only aspect-[3/4]; its
-// rendered size is entirely a function of the grid cell it's placed in
-// (FEATURED_GRID vs. GRID/RAIL_TILE) — `size` only scales the card's OWN
-// internal UI (favorite heart, Coming Soon badge, broken-image fallback
-// text), never the artwork, which stays dominant at either size per this
-// task's own "do not blindly scale every element" rule.
+// `size`: "standard" (every current surface — every rail, every fluid GRID)
+// or "featured" (~1.4-1.5x title / ~1.25-1.35x provider / ~1.2-1.3x
+// favorite heart / ~1.15-1.25x badges — not used by any surface today, kept
+// for a future larger-card presentation). The card's own footprint
+// (width/height) is NOT controlled here at all — this component has no
+// width of its own, only aspect-[3/4]; its rendered size is entirely a
+// function of the grid cell it's placed in — `size` only scales the card's
+// OWN internal UI (favorite heart, Coming Soon badge, broken-image
+// fallback text), never the artwork, which stays dominant at either size
+// per this task's own "do not blindly scale every element" rule.
 export function CasinoGameCard({ game, onLaunchOnchain, onLaunchProvider, isFav, onFav, showProvider = true, showFavorite = true, context, size = "standard" }) {
   const faved = isFav?.(game);
   const onLaunch = game.kind === "onchain" ? onLaunchOnchain : onLaunchProvider;
@@ -447,33 +403,6 @@ function PlaceholderGameCard({ game }) {
 // now add columns instead of enlarging cards; card size stays effectively
 // unchanged at today's common desktop widths.
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]";
-
-// GAME-FIRST MODE ONLY (CASINO_LAYOUT_MODE=game-first — see GameFirstLobby
-// below) — the featured/large game-card grid, used wherever a grid of full
-// cards renders in that mode (the Lobby's own BetSwirl section, plus
-// FavoritesPage/RecentlyPlayedPage for a consistent presentation). Classic
-// mode's GRID above is completely untouched by this addition.
-//
-// Floor is ~1.45x classic's own "large" RAIL tile (152x203px — tileScale=
-// "large" in TILE_SCALE_CLASS below, the size the Lobby's BetSwirl/
-// Originals rail already renders at): 152 * 1.45 ≈ 220px; aspect-[3/4] on
-// the card itself derives the ~293px height automatically, same as every
-// other grid in this file — no explicit height is ever set here.
-//
-// `auto-fit` (not `auto-fill`) at md:/2xl: so this catalog's few real cards
-// stretch to fill each row rather than leaving blank reserved tracks (see
-// this task's own "prefer grid, not a carousel built for hundreds of
-// games" framing) — mathematically overflow-safe at any width, since a
-// track that doesn't fit the floor is simply dropped rather than
-// squeezed. base/sm use an explicit 1/2-column count instead: the 220px
-// floor doesn't reliably clear two columns at the narrowest phone widths
-// this mode is tested at (390-430px) without crowding, so those tiers use
-// a smaller, deliberate column count rather than letting auto-fit round
-// awkwardly close to overflow. The 2xl: floor bump (280px) caps runaway
-// column growth on very wide desktops (1728-1920px) at the ~4-5 columns
-// this task calls for, rather than auto-fit quietly reaching 6+.
-const FEATURED_GRID =
-  "grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-6 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] md:gap-7 lg:gap-8 2xl:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]";
 
 // Fixed-width tile used by every horizontal Rail. Tailwind needs each
 // arbitrary-value class to appear literally in source (a class built by
@@ -911,15 +840,6 @@ export function CategoryNav({ selected, activeView, onSelectHomeFilter, onPillAc
     onSelectHomeFilter?.(category.id);
   };
 
-  // CASINO NAV MODE (@shared/chains, VITE_CASINO_NAV_MODE) — 'minimal' (the
-  // current MVP default) hides this whole pill row rather than filtering
-  // individual pills down to nothing, so a lone "Lobby" chip never renders
-  // by itself. CASINO_CATEGORIES itself, and every category's route, stay
-  // fully intact — 'full' mode needs zero code changes to bring this back.
-  // Placed after the hooks above so this stays a plain conditional return,
-  // never a conditional hook call.
-  if (CASINO_NAV_MODE !== "full") return null;
-
   return (
     <nav aria-label="Casino categories" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {CASINO_CATEGORIES.map((category) => {
@@ -970,35 +890,25 @@ export function CategoryNav({ selected, activeView, onSelectHomeFilter, onPillAc
   );
 }
 
-// NAV SPEC (§4.1/§4.2) — "Originals" has no CATEGORY_META entry (it's
-// sourced straight from the onchain game list, never a `tags` filter — see
-// LobbyDashboard below), so it needs its own small resolution layer rather
-// than assuming every one of the spec's 5 tag categories has a real
-// CATEGORY_META row. `TAG_CATEGORY_DESCRIPTIONS` supplies the one missing
-// description (Originals) that CATEGORY_META doesn't carry, reusing the
-// exact subtitle its Lobby rail already shows so the two surfaces agree.
-const TAG_CATEGORY_DESCRIPTIONS = { Originals: "On-chain games, provably fair and verifiable" };
 function isTagCategory(category) {
-  return category === "Originals" || Boolean(CATEGORY_META[category]);
+  return Boolean(CATEGORY_META[category]);
 }
 function tagCategoryDescription(category) {
-  return CATEGORY_META[category]?.description ?? TAG_CATEGORY_DESCRIPTIONS[category] ?? null;
+  return CATEGORY_META[category]?.description ?? null;
 }
 function gamesForTagCategory(category) {
-  if (category === "Originals") return ONCHAIN;
   const tag = CATEGORY_META[category]?.tag;
   return tag ? ALL_GAMES.filter((g) => g.tags?.includes(tag)) : [];
 }
 
 // NAV SPEC §7 DEFAULT sort options are Popular/Newest/Most Players/
 // Featured — this catalog has no live player-count field and no editorial
-// "featured" flag anywhere in the game data (confirmed: BETSWIRL_GAMES/
-// PROVIDER_GAMES carry only key/title/image/tags(/playable/control) or
-// (/src/badge)), so those two are omitted rather than inventing production
-// data. "Popular" is the catalog's own authored order (a no-op sort, not a
-// fabricated score); "Newest" is a real, derived stable-partition on the
-// same "new" tag New Releases itself is built from — tagged games first,
-// in their existing relative order, everything else after.
+// "featured" flag anywhere in the game data, so those two are omitted
+// rather than inventing production data. "Popular" is the catalog's own
+// authored order (a no-op sort, not a fabricated score); "Newest" is a
+// real, derived stable-partition on the same "new" tag New Releases itself
+// is built from — tagged games first, in their existing relative order,
+// everything else after.
 const SORT_OPTIONS = [
   { id: "popular", label: "Popular" },
   { id: "newest", label: "Newest" },
@@ -1252,9 +1162,9 @@ function FavoritesPage({ favorites, q, query, tileProps, onBrowseGames }) {
         )}
       </div>
       {favorites.length ? (
-        <div className={CASINO_LAYOUT_MODE === "game-first" ? FEATURED_GRID : GRID}>
+        <div className={GRID}>
           {favorites.map((game) => (
-            <CasinoGameCard key={game.favId} game={game} {...tileProps} context="favorites" size={CASINO_LAYOUT_MODE === "game-first" ? "featured" : "standard"} />
+            <CasinoGameCard key={game.favId} game={game} {...tileProps} context="favorites" size="standard" />
           ))}
         </div>
       ) : q ? (
@@ -1299,9 +1209,9 @@ function RecentlyPlayedPage({ recentGames, q, query, tileProps, onBrowseGames, p
         )}
       </div>
       {recentGames.length ? (
-        <div className={CASINO_LAYOUT_MODE === "game-first" ? FEATURED_GRID : GRID}>
+        <div className={GRID}>
           {recentGames.map((game) => (
-            <CasinoGameCard key={game.favId} game={game} {...tileProps} context="recent" size={CASINO_LAYOUT_MODE === "game-first" ? "featured" : "standard"} />
+            <CasinoGameCard key={game.favId} game={game} {...tileProps} context="recent" size="standard" />
           ))}
         </div>
       ) : q ? (
@@ -1383,16 +1293,6 @@ export function CasinoCatalog({ category, view = "dashboard", providerSlug, quer
   }
   if (isTagCategory(category)) {
     return <CategoryDestinationPage category={category} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
-  }
-
-  // CASINO LAYOUT MODE (@shared/chains, VITE_CASINO_LAYOUT_MODE) — the one
-  // centralized branch point between the two Lobby presentations. Both read
-  // the exact same game data/search filtering computed above; only the
-  // composition differs (see GameFirstLobby vs. LobbyDashboard below).
-  // 'classic' (the default) is completely unchanged from before this flag
-  // existed.
-  if (CASINO_LAYOUT_MODE === "game-first") {
-    return <GameFirstLobby q={q} query={query} tileProps={tileProps} onBrowseGames={onBrowseGames} />;
   }
 
   return (
@@ -1484,58 +1384,6 @@ function ProviderTiles({ onSelectProvider, placeholdersEnabled, className }) {
   );
 }
 
-// GAME-FIRST LOBBY (CASINO_LAYOUT_MODE=game-first) — the alternate MVP
-// presentation for the current small BetSwirl-only catalog: no promo row
-// (that's handled one level up, in App.jsx's CasinoLobby, which skips
-// PromoStrip entirely in this mode), no discovery rails/Providers/Popular/
-// New Releases/Live Casino/Game Shows sections, just the BetSwirl games as
-// the immediate hero content in a large featured grid. Shares the exact
-// same game data (ONCHAIN), search filtering (matchesQuery) and card
-// component (CasinoGameCard, size="featured") as classic mode — only the
-// composition differs; no business logic is duplicated. RailHeader is
-// reused verbatim (not reimplemented) so the "BetSwirl · Provably fair·
-// On-chain games, provably fair and settled by BetSwirl" heading is
-// pixel-identical to classic mode's own Originals/BetSwirl rail heading.
-//
-// Deliberately simpler than LobbyDashboard: no dedup-against-other-rails
-// bookkeeping, no placeholder fixtures, no expandable rail paging — none of
-// that applies once there's exactly one section on the page. See
-// LobbyDashboard directly below for the unchanged classic dashboard this
-// replaces only when CASINO_LAYOUT_MODE is 'game-first'.
-function GameFirstLobby({ q, query, tileProps, onBrowseGames }) {
-  const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
-
-  useEffect(() => {
-    if (onchain.length) track("casino_lobby_section_viewed", { sections: ["originals"], layoutMode: "game-first" });
-  }, [q, onchain.length]);
-
-  if (q && !onchain.length) {
-    return (
-      <EmptyState
-        icon={<Gamepad2 className="size-5 text-zinc-500" aria-hidden="true" />}
-        title={`No games match "${query}"`}
-        cta={onBrowseGames ? <BrowseGamesButton onClick={onBrowseGames} /> : undefined}
-      />
-    );
-  }
-
-  return (
-    <section id="casino-section-originals" data-test-id="originals-grid">
-      <RailHeader
-        title={CATEGORY_LABEL.Originals}
-        subtitle="On-chain games, provably fair and verifiable"
-        badge="Provably fair"
-        tier="primary"
-      />
-      <div className={FEATURED_GRID}>
-        {onchain.map((game) => (
-          <CasinoGameCard key={game.favId} game={game} {...tileProps} context="home" size="featured" />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 // Its own component (not just a branch inside CasinoCatalog) so its
 // view-tracking effect is a plain, unconditionally-called hook — CasinoCatalog
 // itself returns early for Favorites/CategoryPage before this would ever be
@@ -1549,24 +1397,32 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
   const mock = useDevMockState();
   const placeholdersEnabled = DEV_PANEL_ENABLED && mock.casinoPlaceholderRails && !q;
 
-  const onchain = ONCHAIN.filter((g) => matchesQuery(g, q));
   const byTag = (tag) => ALL_GAMES.filter((g) => g.tags?.includes(tag)).filter((g) => matchesQuery(g, q));
 
-  // Discovery rails dedup sequentially against each other (and against the
-  // always-shown Originals row) so the same game never repeats across
-  // adjacent "what's hot" sections — e.g. Roulette is tagged both "popular"
-  // and "live-casino", so it now only ever shows once. Favorites/Recently
-  // Played are exempt: overlap between a personalized rail and a discovery
-  // rail is expected (a favorited game still belongs in Popular).
-  const seen = new Set(onchain.map((g) => g.favId));
+  // Discovery rails dedup sequentially against each other so the same game
+  // never repeats across adjacent "what's hot" sections — Popular/New are
+  // additive tags that can land on any genre, so they claim first; the five
+  // genre-based rails below (Slots/Casual/Table Games/Scratch/Exclusive)
+  // are already mutually exclusive by construction (tagsFor assigns
+  // exactly one genre tag per game), so they only ever lose games to
+  // Popular/New, never to each other. Favorites/Recently Played are exempt:
+  // overlap between a personalized rail and a discovery rail is expected (a
+  // favorited game still belongs in Popular).
+  const seen = new Set();
   const popularCandidates = byTag("popular");
   const newReleasesCandidates = byTag("new");
-  const liveCasinoCandidates = byTag("live-casino");
-  const gameShowsCandidates = byTag("game-shows");
+  const slotsCandidates = byTag("slots");
+  const casualCandidates = byTag("casual");
+  const tableGamesCandidates = byTag("table-games");
+  const scratchCandidates = byTag("scratch");
+  const exclusiveCandidates = byTag("exclusive");
   const popularRow = takeUnclaimed(popularCandidates, seen);
   const newReleasesRow = takeUnclaimed(newReleasesCandidates, seen);
-  const liveCasinoRow = takeUnclaimed(liveCasinoCandidates, seen);
-  const gameShowsRow = takeUnclaimed(gameShowsCandidates, seen);
+  const slotsRow = takeUnclaimed(slotsCandidates, seen);
+  const casualRow = takeUnclaimed(casualCandidates, seen);
+  const tableGamesRow = takeUnclaimed(tableGamesCandidates, seen);
+  const scratchRow = takeUnclaimed(scratchCandidates, seen);
+  const exclusiveRow = takeUnclaimed(exclusiveCandidates, seen);
   // See all is only worth showing when its destination (the category's own
   // full, undeduped page) actually reveals more than this rail already
   // does — true whenever dedup removed anything. A rail that happens to
@@ -1574,11 +1430,15 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
   // (see SEE ALL: "there are more items than shown in the rail").
   const popularHasMore = popularRow.length < popularCandidates.length;
   const newReleasesHasMore = newReleasesRow.length < newReleasesCandidates.length;
-  const liveCasinoHasMore = liveCasinoRow.length < liveCasinoCandidates.length;
-  const gameShowsHasMore = gameShowsRow.length < gameShowsCandidates.length;
+  const slotsHasMore = slotsRow.length < slotsCandidates.length;
+  const casualHasMore = casualRow.length < casualCandidates.length;
+  const tableGamesHasMore = tableGamesRow.length < tableGamesCandidates.length;
+  const scratchHasMore = scratchRow.length < scratchCandidates.length;
+  const exclusiveHasMore = exclusiveRow.length < exclusiveCandidates.length;
 
-  const isEmpty = q && !recentGames.length && !onchain.length
-    && !popularRow.length && !newReleasesRow.length && !liveCasinoRow.length && !gameShowsRow.length;
+  const isEmpty = q && !recentGames.length
+    && !popularRow.length && !newReleasesRow.length && !slotsRow.length && !casualRow.length
+    && !tableGamesRow.length && !scratchRow.length && !exclusiveRow.length;
 
   // Personalized rows only count as "visible" once populated — they no
   // longer render an empty placeholder that would otherwise count as shown
@@ -1589,12 +1449,14 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
   // LOBBY REMOVAL below.
   const visibleSections = [
     recentGames.length > 0 && "recently-played",
-    "originals",
     popularRow.length > 0 && "popular",
     newReleasesRow.length > 0 && "new-releases",
+    slotsRow.length > 0 && "slots",
+    casualRow.length > 0 && "casual",
+    tableGamesRow.length > 0 && "table-games",
+    scratchRow.length > 0 && "scratch",
+    exclusiveRow.length > 0 && "exclusive",
     !q && (HAS_VISIBLE_PROVIDER_GAMES || placeholdersEnabled) && "providers",
-    liveCasinoRow.length > 0 && "live-casino",
-    gameShowsRow.length > 0 && "game-shows",
   ].filter(Boolean).join(",");
   useEffect(() => {
     if (!isEmpty) track("casino_lobby_section_viewed", { sections: visibleSections.split(",") });
@@ -1656,25 +1518,16 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
   // CASINO_PERSONAL_DESTINATIONS) — the Lobby's own row order is now
   // static regardless of favorite state: Recently Played (conditional,
   // hidden when empty), then the stable discovery base every player sees
-  // regardless of history: Tribet Originals, Popular, New Releases,
-  // Providers, Live Casino, Game Shows. Slots/Table Games are omitted —
-  // no supported inventory exists for either (see FINAL RESPONSE:
-  // Slots-inventory findings).
+  // regardless of history: Popular, New Releases, Slots, Casual, Table
+  // Games, Scratch, Exclusive, Providers (BGAMING-ONLY REWORK — replaces
+  // the old on-chain-originals-centric taxonomy; see casinoCategories.js).
   //
-  // LOBBY HIERARCHY PASS: replaced the previous single `space-y-8` (one
-  // identical gap between every section, regardless of importance) with a
-  // per-section top margin so the page reads in three tiers instead of one
-  // flat wall — three tier assignments below map directly onto the pass's
-  // own worked examples ("trending or popular games, Tribet Originals, live
-  // casino" -> primary; "Recently Played, Favourites, New Releases, Game
-  // Shows" -> secondary; "providers, collections" -> tertiary, which is
-  // the Providers row's role here, the one stable "browse by studio"
-  // catch-all — see ProviderTiles' own comment above). GAP_MAJOR appears
-  // exactly once, right before Originals, the one section this pass calls
-  // the flagship; every other boundary is GAP_REGULAR; GAP_COMPACT appears
-  // once, stepping down into the lowest-priority discovery rail at the very
-  // end. Recently Played (first on the page) carries no top margin of its
-  // own.
+  // LOBBY HIERARCHY PASS: a per-section top margin so the page reads in
+  // three tiers instead of one flat wall of identical gaps. GAP_MAJOR
+  // appears exactly once, right before the first flagship discovery rail;
+  // every other boundary is GAP_REGULAR; GAP_COMPACT appears once, stepping
+  // down into the lowest-priority discovery rail at the very end. Recently
+  // Played (first on the page) carries no top margin of its own.
   return (
     <div>
       <CasinoGameRail
@@ -1691,31 +1544,16 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
       />
 
       <CasinoGameRail
-        sectionId="casino-section-originals"
-        testId="originals-rail"
-        visibleCount={expandedRails?.get("originals-rail")}
-        onExpand={(total) => onExpandRail?.("originals-rail", total)}
-        title={CATEGORY_LABEL.Originals}
-        subtitle="On-chain games, provably fair and verifiable"
-        badge="Provably fair"
-        tier="primary"
-        tileScale="large"
-        mobileLayout="grid"
-        className={GAP_MAJOR}
-        games={withPlaceholders(onchain, "originals")}
-        tileProps={tileProps}
-        context="home"
-      />
-
-      <CasinoGameRail
         sectionId="casino-section-popular"
         testId="popular-rail"
         visibleCount={expandedRails?.get("popular-rail")}
         onExpand={(total) => onExpandRail?.("popular-rail", total)}
         title="Popular"
-        subtitle="Based on recent player activity"
+        subtitle="Hand-picked across the catalog"
         tier="primary"
-        className={GAP_REGULAR}
+        tileScale="large"
+        mobileLayout="grid"
+        className={GAP_MAJOR}
         games={withPlaceholders(popularRow, "popular")}
         tileProps={tileProps}
         context="home"
@@ -1728,39 +1566,78 @@ function LobbyDashboard({ category, query, q, recentGames, tileProps, onBrowseGa
         onExpand={(total) => onExpandRail?.("new-releases-rail", total)}
         title="New Releases"
         subtitle="Newly added to the casino"
-        tier="secondary"
+        tier="primary"
         className={GAP_REGULAR}
         games={withPlaceholders(newReleasesRow, "new")}
         tileProps={tileProps}
         context="home"
         onSeeAll={newReleasesHasMore ? seeAll("New") : undefined}
       />
-      <ProviderTiles onSelectProvider={onSelectProvider} placeholdersEnabled={placeholdersEnabled} className={GAP_REGULAR} />
       <CasinoGameRail
-        sectionId="casino-section-live-casino"
-        testId="live-casino-rail"
-        visibleCount={expandedRails?.get("live-casino-rail")}
-        onExpand={(total) => onExpandRail?.("live-casino-rail", total)}
-        title="Live Casino"
-        tier="primary"
+        sectionId="casino-section-slots"
+        testId="slots-rail"
+        visibleCount={expandedRails?.get("slots-rail")}
+        onExpand={(total) => onExpandRail?.("slots-rail", total)}
+        title="Slots"
+        tier="secondary"
         className={GAP_REGULAR}
-        games={withPlaceholders(liveCasinoRow, "live-casino")}
+        games={withPlaceholders(slotsRow, "slots")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={liveCasinoHasMore ? seeAll("Live Casino") : undefined}
+        onSeeAll={slotsHasMore ? seeAll("Slots") : undefined}
       />
       <CasinoGameRail
-        sectionId="casino-section-game-shows"
-        testId="game-shows-rail"
-        visibleCount={expandedRails?.get("game-shows-rail")}
-        onExpand={(total) => onExpandRail?.("game-shows-rail", total)}
-        title="Game Shows"
+        sectionId="casino-section-casual"
+        testId="casual-rail"
+        visibleCount={expandedRails?.get("casual-rail")}
+        onExpand={(total) => onExpandRail?.("casual-rail", total)}
+        title="Casual"
         tier="secondary"
-        className={GAP_COMPACT}
-        games={withPlaceholders(gameShowsRow, "game-shows")}
+        className={GAP_REGULAR}
+        games={withPlaceholders(casualRow, "casual")}
         tileProps={tileProps}
         context="home"
-        onSeeAll={gameShowsHasMore ? seeAll("Game Shows") : undefined}
+        onSeeAll={casualHasMore ? seeAll("Casual") : undefined}
+      />
+      <ProviderTiles onSelectProvider={onSelectProvider} placeholdersEnabled={placeholdersEnabled} className={GAP_REGULAR} />
+      <CasinoGameRail
+        sectionId="casino-section-table-games"
+        testId="table-games-rail"
+        visibleCount={expandedRails?.get("table-games-rail")}
+        onExpand={(total) => onExpandRail?.("table-games-rail", total)}
+        title="Table Games"
+        tier="secondary"
+        className={GAP_REGULAR}
+        games={withPlaceholders(tableGamesRow, "table-games")}
+        tileProps={tileProps}
+        context="home"
+        onSeeAll={tableGamesHasMore ? seeAll("Table Games") : undefined}
+      />
+      <CasinoGameRail
+        sectionId="casino-section-scratch"
+        testId="scratch-rail"
+        visibleCount={expandedRails?.get("scratch-rail")}
+        onExpand={(total) => onExpandRail?.("scratch-rail", total)}
+        title="Scratch"
+        tier="secondary"
+        className={GAP_REGULAR}
+        games={withPlaceholders(scratchRow, "scratch")}
+        tileProps={tileProps}
+        context="home"
+        onSeeAll={scratchHasMore ? seeAll("Scratch") : undefined}
+      />
+      <CasinoGameRail
+        sectionId="casino-section-exclusive"
+        testId="exclusive-rail"
+        visibleCount={expandedRails?.get("exclusive-rail")}
+        onExpand={(total) => onExpandRail?.("exclusive-rail", total)}
+        title="Exclusive"
+        tier="secondary"
+        className={GAP_COMPACT}
+        games={withPlaceholders(exclusiveRow, "exclusive")}
+        tileProps={tileProps}
+        context="home"
+        onSeeAll={exclusiveHasMore ? seeAll("Exclusive") : undefined}
       />
     </div>
   );

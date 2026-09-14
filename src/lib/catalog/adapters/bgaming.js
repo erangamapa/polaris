@@ -13,6 +13,7 @@
 import { makeGame, LAUNCH_EXTERNAL } from "../game.js";
 import { tagsFor } from "../normalize.js";
 import { BGAMING_GAMES } from "./bgaming.games.js";
+import { POPULAR_SLUGS } from "./bgaming.popular.js";
 
 const DEMO_HOST = "https://demo.bgaming-network.com";
 export const demoUrl = (gameId) => `${DEMO_HOST}/play/${gameId}/FUN?server=demo`;
@@ -34,6 +35,7 @@ export const bgaming = {
     return BGAMING_GAMES.map((g) => {
       const tags = tagsFor({ genre: g.genre, slug: g.slug, title: g.title });
       if (isRecent(g.released)) tags.push("new");
+      if (POPULAR_SLUGS.has(g.slug)) tags.push("popular");
       return makeGame({
         key: g.slug,
         title: g.title,

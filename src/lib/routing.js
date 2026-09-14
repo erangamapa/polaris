@@ -16,12 +16,12 @@ import { PRED_CATEGORIES } from "@/lib/predictionsData";
 import { MVP_SPORT_IDS } from "@/lib/sportsModel";
 
 // TAG_CATEGORIES — every category the two-route split (spec §4.1) applies
-// to: the 5 content-tag categories a "home"/"category" URL pair can exist
-// for. "Originals" has no CATEGORY_META entry (it's sourced straight from
-// the onchain game list, not a `tags` filter — see CasinoCatalog.jsx's
-// LobbyDashboard), so it's listed here explicitly rather than derived from
-// ROUTED_CATEGORIES alone.
-const TAG_CATEGORIES = ["Originals", ...ROUTED_CATEGORIES];
+// to: the content-tag categories a "home"/"category" URL pair can exist
+// for. Every one of these has a real CATEGORY_META entry (see
+// casinoCategories.js) — unlike the removed "Originals" category, which
+// was sourced straight from the onchain game list rather than a `tags`
+// filter and had to be listed here explicitly.
+const TAG_CATEGORIES = [...ROUTED_CATEGORIES];
 
 const slug = (s) => s.toLowerCase().replace(/\s+/g, "-");
 
