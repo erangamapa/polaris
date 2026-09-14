@@ -7,107 +7,45 @@ import { ALL_GAMES } from "@/components/casino/CasinoCatalog";
 // be unit-tested here (does the content-box actually render at the
 // derived size, does a fullscreen button actually appear/work in a real
 // browser) is verified manually via Playwright against the running dev
-// server, matching this project's established convention:
+// server.
 //
-//  - every game's content-box renders at its profile's declared size -> Playwright
-//  - Tribet Originals render in a compact, non-stretched box            -> Playwright
-//  - the fullscreen button toggles a real Fullscreen API state           -> Playwright
-//  - no visible layout shift between loading and ready geometry           -> Playwright
+// GAME_OVERRIDES is empty now — the BetSwirl on-chain games and the
+// placeholder provider games it had confirmed-by-evidence entries for have
+// been removed. Every game (all BGaming now) resolves to the FLEXIBLE
+// default until a specific `bgaming:<slug>` override is added.
 
-describe("getGameDisplayMetadata — Tribet Originals (on-chain)", () => {
-  it("assigns the compact profile to every on-chain BetSwirl game", () => {
-    for (const favId of ["casino:dice", "casino:coin-toss", "casino:roulette", "casino:keno", "casino:wheel", "casino:plinko"]) {
-      const meta = getGameDisplayMetadata({ favId, kind: "onchain" });
-      expect(meta.displayProfile).toBe(DISPLAY_PROFILE.COMPACT);
-      expect(meta.implementation).toBe("internal");
-      expect(meta.provider).toBe("tribet-originals");
-    }
-  });
-
-  it("compact profile uses intrinsic sizing, not a forced aspect ratio", () => {
-    const meta = getGameDisplayMetadata({ favId: "casino:dice", kind: "onchain" });
-    expect(meta.sizingMode).toBe("intrinsic");
-    expect(meta.preferredAspectRatio).toBeNull();
-  });
-
-  it("compact profile's content-box is meaningfully narrower than the old universal 1100px box", () => {
-    const meta = getGameDisplayMetadata({ favId: "casino:dice", kind: "onchain" });
-    expect(meta.contentBoxMaxWidthPx).toBeLessThan(600);
-  });
-
-  it("does not enable fullscreen for a compact centered form by default", () => {
-    const meta = getGameDisplayMetadata({ favId: "casino:dice", kind: "onchain" });
-    expect(meta.hostControls.fullscreen).toBe(false);
-    expect(meta.supportsFullscreen).toBe(false);
-  });
-});
-
-describe("getGameDisplayMetadata — provider games with real evidence", () => {
-  it("assigns landscape-wide to crash (evidence: max-width:1440px, .game-column layout)", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:crash", kind: "provider", badge: "Tribet Studio" });
-    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.LANDSCAPE_WIDE);
+describe("getGameDisplayMetadata — default profile (no override)", () => {
+  it("assigns the flexible profile and iframe implementation to any game with no override", () => {
+    const meta = getGameDisplayMetadata({ favId: "bgaming:aloha-king-elvis", kind: "provider", studio: "BGaming" });
+    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
     expect(meta.implementation).toBe("iframe");
+    expect(meta.sizingMode).toBe("fill");
+    expect(meta.contentBoxMaxWidthPx).toBe(1100);
+    expect(meta.contentBoxMaxHeightPx).toBe(720);
   });
 
-  it("assigns compact to nova-wheel (evidence: aspect-ratio:1 wheel, max-width:420px controls)", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:nova-wheel", kind: "provider" });
-    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.COMPACT);
+  it("resolves provider from providerId, falling back to studio, falling back to bgaming", () => {
+    expect(getGameDisplayMetadata({ favId: "a", providerId: "provider-9" }).provider).toBe("provider-9");
+    expect(getGameDisplayMetadata({ favId: "a", studio: "BGaming" }).provider).toBe("BGaming");
+    expect(getGameDisplayMetadata({ favId: "a" }).provider).toBe("bgaming");
   });
 
-  it("declares Vector Dice's own history/help modals so the host does not duplicate them", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:dice", kind: "provider" });
-    expect(meta.providerControls.history).toBe(true);
-    expect(meta.providerControls.help).toBe(true);
-  });
-
-  it("declares Drunken Pirate's own sound control so the host does not duplicate it", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:drunken-pirate", kind: "provider" });
-    expect(meta.providerControls.sound).toBe(true);
-  });
-
-  it("assigns flexible + sound to Coin Fighters (stage layout; confirmed music/SFX mutes)", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:coin-fighters", kind: "provider" });
-    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
-    expect(meta.providerControls.sound).toBe(true);
-    expect(meta.minimumViewport.mobile.width).toBe(320);
-  });
-
-  it("assigns flexible to Mage Keno (full-bleed Studio iframe; no confirmed internal mute UI)", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:mage-keno", kind: "provider" });
-    expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
-    expect(meta.providerControls.sound).toBe(false);
-    expect(meta.minimumViewport.mobile.width).toBe(320);
-  });
-
-  it("every OTHER provider game defaults to the flexible profile (today's exact existing box, no invented shape)", () => {
-    const unclassified = ["provider:coinflip", "provider:spacex-rush", "provider:tumble", "provider:raiders-escape", "provider:keymines-v2", "provider:bubble-girl"];
-    for (const favId of unclassified) {
-      const meta = getGameDisplayMetadata({ favId, kind: "provider" });
-      expect(meta.displayProfile).toBe(DISPLAY_PROFILE.FLEXIBLE);
-      expect(meta.contentBoxMaxWidthPx).toBe(1100);
-      expect(meta.contentBoxMaxHeightPx).toBe(720);
-    }
-  });
-
-  it("provider games without confirmed internal controls default every providerControls field to false (never assumed)", () => {
-    const meta = getGameDisplayMetadata({ favId: "provider:coinflip", kind: "provider" });
+  it("provider games without a specific override default every providerControls field to false (never assumed)", () => {
+    const meta = getGameDisplayMetadata({ favId: "bgaming:aloha-king-elvis", kind: "provider" });
     expect(meta.providerControls).toEqual({ close: false, fullscreen: false, sound: false, help: false, history: false });
   });
 });
 
 describe("getGameDisplayMetadata — host controls contract", () => {
   it("close, favorite, and gameInfo are always available regardless of profile", () => {
-    for (const favId of ["casino:dice", "provider:crash", "provider:coinflip"]) {
-      const meta = getGameDisplayMetadata({ favId, kind: favId.startsWith("casino") ? "onchain" : "provider" });
-      expect(meta.hostControls.close).toBe(true);
-      expect(meta.hostControls.favorite).toBe(true);
-      expect(meta.hostControls.gameInfo).toBe(true);
-    }
+    const meta = getGameDisplayMetadata({ favId: "bgaming:aloha-king-elvis", kind: "provider" });
+    expect(meta.hostControls.close).toBe(true);
+    expect(meta.hostControls.favorite).toBe(true);
+    expect(meta.hostControls.gameInfo).toBe(true);
   });
 
-  it("landscape-wide and flexible profiles enable host fullscreen by default", () => {
-    expect(getGameDisplayMetadata({ favId: "provider:crash", kind: "provider" }).hostControls.fullscreen).toBe(true);
-    expect(getGameDisplayMetadata({ favId: "provider:coinflip", kind: "provider" }).hostControls.fullscreen).toBe(true);
+  it("the flexible default profile enables host fullscreen by default", () => {
+    expect(getGameDisplayMetadata({ favId: "bgaming:aloha-king-elvis", kind: "provider" }).hostControls.fullscreen).toBe(true);
   });
 
   it("handles an unknown/missing game gracefully (no id, defaults to flexible, no throw)", () => {
@@ -120,6 +58,7 @@ describe("getGameDisplayMetadata — host controls contract", () => {
 
 describe("every real catalog game resolves to a valid, complete metadata object", () => {
   it("ALL_GAMES entries each produce a metadata object with every required field present", () => {
+    expect(ALL_GAMES.length).toBeGreaterThan(0);
     for (const game of ALL_GAMES) {
       const meta = getGameDisplayMetadata(game);
       expect(meta.id).toBe(game.favId);

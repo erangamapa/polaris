@@ -99,35 +99,12 @@ const DEFAULT_HOST_CONTROLS = { close: true, favorite: true, gameInfo: true };
 const DEFAULT_PROVIDER_CONTROLS = { close: false, fullscreen: false, sound: false, help: false, history: false };
 
 // Per-game overrides, keyed by the exact favId CasinoCatalog.jsx computes
-// (`casino:<key>` / `provider:<key>`) — kept here rather than inline on
-// BETSWIRL_GAMES/PROVIDER_GAMES so this file stays the one place display
-// behavior is decided, and attaching it doesn't require restructuring
-// either existing catalog array (no game added, removed, or renamed).
-const GAME_OVERRIDES = {
-  "casino:dice": { displayProfile: DISPLAY_PROFILE.COMPACT },
-  "casino:coin-toss": { displayProfile: DISPLAY_PROFILE.COMPACT },
-  "casino:roulette": { displayProfile: DISPLAY_PROFILE.COMPACT },
-  "casino:keno": { displayProfile: DISPLAY_PROFILE.COMPACT },
-  "casino:wheel": { displayProfile: DISPLAY_PROFILE.COMPACT },
-  "casino:plinko": { displayProfile: DISPLAY_PROFILE.COMPACT },
-
-  "provider:crash": { displayProfile: DISPLAY_PROFILE.LANDSCAPE_WIDE },
-  // Vector Dice's own fairness/history/help modals — confirmed evidence,
-  // see the inventory doc's provider-controls table.
-  "provider:dice": { providerControls: { history: true, help: true } },
-  "provider:nova-wheel": { displayProfile: DISPLAY_PROFILE.COMPACT },
-  // Confirmed real `id="btnMuteSound"` control — see the inventory doc.
-  "provider:drunken-pirate": { providerControls: { sound: true } },
-  // Coin Fighters: 960×540 stage + mobile 100dvh; own music/SFX mute toggles.
-  "provider:coin-fighters": {
-    displayProfile: DISPLAY_PROFILE.FLEXIBLE,
-    providerControls: { sound: true },
-  },
-  // Mage Keno: full-bleed Studio iframe (mobile portrait + desktop split).
-  "provider:mage-keno": {
-    displayProfile: DISPLAY_PROFILE.FLEXIBLE,
-  },
-};
+// (`bgaming:<slug>`) — kept here rather than inline on the catalog data so
+// this file stays the one place display behavior is decided. Empty for now:
+// the removed BetSwirl/placeholder-provider games were the only ones with
+// confirmed-by-evidence overrides; add a `bgaming:<slug>` entry here once a
+// specific BGaming title needs one.
+const GAME_OVERRIDES = {};
 
 // Resolves the final, fully-merged display metadata for one game object
 // (as found in CasinoCatalog.jsx's ALL_GAMES — has `favId`, `kind`,
@@ -137,11 +114,10 @@ export function getGameDisplayMetadata(game) {
   const override = (game && GAME_OVERRIDES[game.favId]) || {};
   const displayProfile = override.displayProfile ?? DISPLAY_PROFILE.FLEXIBLE;
   const profile = VIEWPORT_PROFILES[displayProfile];
-  const isOnchain = game?.kind === "onchain";
   return {
     id: game?.favId ?? null,
-    provider: isOnchain ? "tribet-originals" : (game?.providerId ?? "provider-1"),
-    implementation: isOnchain ? "internal" : "iframe",
+    provider: game?.providerId ?? game?.studio ?? "bgaming",
+    implementation: "iframe",
     displayProfile,
     sizingMode: profile.sizingMode,
     preferredAspectRatio: profile.preferredAspectRatio,

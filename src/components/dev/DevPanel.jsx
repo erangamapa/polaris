@@ -5,7 +5,7 @@ import { toast } from "@/lib/toast";
 import { useDevMockState, setDevMockState, resetDevMockState, closeDevPanel } from "@/lib/devMock";
 import { useDevPanelShortcut } from "@/lib/useDevPanelShortcut";
 import { DEV_PANEL_ENABLED } from "@/lib/devPanelFlag";
-import { BETSWIRL_ENV, CASINO_CONTENT_MODE, CASINO_NAV_MODE, CASINO_LAYOUT_MODE, APP_MODE, ENABLE_WELCOME_BONUS, ENABLE_WEEKLY_RACE } from "@shared/chains";
+import { APP_MODE, ENABLE_WELCOME_BONUS, ENABLE_WEEKLY_RACE } from "@shared/chains";
 
 // Developer Panel — Shift+D toggles it (see useDevPanelShortcut). Gated end
 // to end on `DEV_PANEL_ENABLED` (devPanelFlag.js), currently `true` in every
@@ -158,58 +158,6 @@ export function DevPanel() {
         </Section>
 
         <Section title="Casino">
-          <Field label="Betswirl environment">
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
-              <span
-                className={cn(
-                  "font-mono text-xs font-bold uppercase tracking-wide",
-                  BETSWIRL_ENV === "production" ? "text-[var(--danger)]" : "text-[var(--success)]"
-                )}
-              >
-                {BETSWIRL_ENV}
-              </span>
-              <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_BETSWIRL_ENV)</span>
-            </div>
-          </Field>
-          <Field label="Content mode">
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
-              <span
-                className={cn(
-                  "font-mono text-xs font-bold uppercase tracking-wide",
-                  CASINO_CONTENT_MODE === "mixed" ? "text-[var(--danger)]" : "text-[var(--success)]"
-                )}
-              >
-                {CASINO_CONTENT_MODE}
-              </span>
-              <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_CASINO_CONTENT_MODE)</span>
-            </div>
-          </Field>
-          <Field label="Nav mode">
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
-              <span
-                className={cn(
-                  "font-mono text-xs font-bold uppercase tracking-wide",
-                  CASINO_NAV_MODE === "full" ? "text-[var(--danger)]" : "text-[var(--success)]"
-                )}
-              >
-                {CASINO_NAV_MODE}
-              </span>
-              <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_CASINO_NAV_MODE)</span>
-            </div>
-          </Field>
-          <Field label="Layout mode">
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
-              <span
-                className={cn(
-                  "font-mono text-xs font-bold uppercase tracking-wide",
-                  CASINO_LAYOUT_MODE === "game-first" ? "text-[var(--danger)]" : "text-[var(--success)]"
-                )}
-              >
-                {CASINO_LAYOUT_MODE}
-              </span>
-              <span className="text-[11px] text-muted-foreground">Read-only · build-time (VITE_CASINO_LAYOUT_MODE)</span>
-            </div>
-          </Field>
           <Field label="Welcome Bonus">
             <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-interactive)] bg-[var(--surface-interactive)] px-2 py-1.5">
               <span

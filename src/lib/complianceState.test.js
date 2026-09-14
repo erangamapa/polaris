@@ -46,17 +46,17 @@ import { COMPLIANCE_STATUS, canPerformAction, getComplianceState } from "./compl
 
 describe("canPerformAction", () => {
   it("allows sensitive actions when compliance status is clear", () => {
-    expect(canPerformAction({ action: "launch-real-game", complianceStatus: "clear" })).toBe(true);
-    expect(canPerformAction({ action: "launch-real-game", complianceStatus: undefined })).toBe(true);
+    expect(canPerformAction({ action: "fund-wallet", complianceStatus: "clear" })).toBe(true);
+    expect(canPerformAction({ action: "fund-wallet", complianceStatus: undefined })).toBe(true);
   });
 
-  it("blocks launch-real-game for every blocking compliance status", () => {
+  it("blocks a sensitive action for every blocking compliance status", () => {
     for (const status of [
       COMPLIANCE_STATUS.KYC_REQUIRED, COMPLIANCE_STATUS.KYC_PENDING, COMPLIANCE_STATUS.KYC_FAILED,
       COMPLIANCE_STATUS.RESTRICTED, COMPLIANCE_STATUS.REGION_BLOCKED, COMPLIANCE_STATUS.AGE_RESTRICTED,
       COMPLIANCE_STATUS.SELF_EXCLUDED, COMPLIANCE_STATUS.COOL_OFF, COMPLIANCE_STATUS.LOADING, COMPLIANCE_STATUS.ERROR,
     ]) {
-      expect(canPerformAction({ action: "launch-real-game", complianceStatus: status })).toBe(false);
+      expect(canPerformAction({ action: "fund-wallet", complianceStatus: status })).toBe(false);
     }
   });
 
@@ -81,7 +81,7 @@ describe("getComplianceState", () => {
 
   it("reports the blocked sensitive actions for a restricted status", () => {
     const state = getComplianceState({ complianceStatus: COMPLIANCE_STATUS.RESTRICTED });
-    expect(state.blockingActions).toContain("launch-real-game");
+    expect(state.blockingActions).toContain("fund-wallet");
     expect(state.title).toBe("Account access limited");
   });
 

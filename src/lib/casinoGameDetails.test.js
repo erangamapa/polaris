@@ -15,41 +15,31 @@ import { getGameDetails, resolveFairnessSummary, formatRtp, FAIRNESS_TYPE } from
 //  7.  RTP formatting matches the task's exact decimal convention      -> below
 
 describe("getGameDetails", () => {
-  it("merges real catalog identity with authored facts for a known game", () => {
-    const details = getGameDetails({ favId: "provider:crash", title: "Warpout", kind: "provider", tags: ["new", "popular"] });
+  // GAME_FACTS is empty now — the BetSwirl on-chain games and the
+  // placeholder provider games it had authored facts for have been
+  // removed, and BGaming's own demo games have no per-game facts recorded
+  // yet (see casinoGameDetails.js's own header comment). Every game
+  // therefore returns a safe, fact-free shape until a specific
+  // `bgaming:<slug>` entry is added.
+  it("merges real catalog identity with a safe, fact-free shape for a game with no authored facts", () => {
+    const details = getGameDetails({ favId: "bgaming:aloha-king-elvis", title: "Aloha King Elvis", kind: "provider", tags: ["slots"] });
     expect(details.status).toBe("available");
-    expect(details.name).toBe("Warpout");
-    expect(details.rtp.value).toBe(98.0);
-    expect(details.fairness.type).toBe(FAIRNESS_TYPE.PROVABLY_FAIR);
-    expect(details.rules[0].steps.length).toBeGreaterThan(0);
-  });
-
-  it("strips rules/RTP/fairness/limits from a non-playable (coming-soon) onchain game", () => {
-    const details = getGameDetails({ favId: "casino:wheel", title: "Wheel", kind: "onchain", playable: false, tags: ["new"] });
-    expect(details.status).toBe("coming-soon");
-    expect(details.rtp).toBeUndefined();
-    expect(details.rules).toBeUndefined();
-    expect(details.fairness).toBeUndefined();
-    expect(details.minimumBet).toBeUndefined();
-  });
-
-  it("returns a safe shape for a game with no authored facts at all", () => {
-    const details = getGameDetails({ favId: "provider:unknown-game", title: "Mystery Game", kind: "provider", tags: [] });
-    expect(details.status).toBe("available");
+    expect(details.name).toBe("Aloha King Elvis");
     expect(details.description).toBeUndefined();
     expect(details.rtp).toBeUndefined();
     expect(details.fairness).toBeUndefined();
+    expect(details.rules).toBeUndefined();
+    expect(details.minimumBet).toBeUndefined();
+    expect(details.maximumBet).toBeUndefined();
+  });
+
+  it("status is always available — there is no chain-gated coming-soon state left", () => {
+    const details = getGameDetails({ favId: "bgaming:aloha-king-elvis", title: "Aloha King Elvis", kind: "provider" });
+    expect(details.status).toBe("available");
   });
 
   it("returns null for no game (unavailable/not-found launch states)", () => {
     expect(getGameDetails(null)).toBeNull();
-  });
-
-  it("never invents bet limits — only Drunken Pirate has real ones on record", () => {
-    expect(getGameDetails({ favId: "provider:crash", title: "Warpout", kind: "provider" }).minimumBet).toBeUndefined();
-    const pirate = getGameDetails({ favId: "provider:drunken-pirate", title: "The Drunken Pirate", kind: "provider" });
-    expect(pirate.minimumBet).toBe("$0.01");
-    expect(pirate.maximumBet).toBe("$100");
   });
 });
 

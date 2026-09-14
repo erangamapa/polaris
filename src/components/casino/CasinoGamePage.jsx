@@ -105,7 +105,6 @@ export function CasinoGamePage({
   const availableHeight = useAvailableHeight(wrapperRef);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(document.fullscreenElement === fullscreenTargetRef.current);
@@ -178,7 +177,6 @@ export function CasinoGamePage({
           <GameHeader
             game={game}
             onBack={onBack}
-            backDisabled={busy}
             isFav={isFav}
             onFav={onFav}
             onOpenMenu={onOpenGameInfo}
@@ -202,7 +200,6 @@ export function CasinoGamePage({
               onBack={onBack}
               onBrowseGames={onBrowseGames}
               onReportIssue={onReportIssue}
-              onBusyChange={setBusy}
             >
               {children}
             </GameStage>

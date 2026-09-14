@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { RotateCw } from "lucide-react";
 import { GAME_LAUNCH_STATUS, isLoadingStatus } from "@/lib/casinoGameLaunch";
 import { getGameDisplayMetadata } from "@/lib/gameDisplay";
@@ -7,7 +7,7 @@ import { GameLoading } from "./GameLoading";
 import { GameError } from "./GameError";
 import { GameUnavailable } from "./GameUnavailable";
 
-// GameStage owns: the iframe/BetSwirlGame surface itself, the loading/
+// GameStage owns: the game iframe surface itself, the loading/
 // error/unavailable overlay swap, per-game sizing (via lib/gameDisplay.js,
 // unchanged from the previous CasinoGameplayFrame/GameLaunchSurface split),
 // and its own visual adaptation while fullscreen. It does NOT own the
@@ -33,23 +33,15 @@ export function GameStage({
   onBack,
   onBrowseGames,
   onReportIssue,
-  onBusyChange,
   children,
 }) {
   const { status, delayed, errorCode, orientation, viewportClass } = launch;
   const headingRef = useRef(null);
 
-  // Only BetSwirlGame reads `onBusyChange` (reporting a pending on-chain
-  // bet confirmation — the one real "abandoning this has a consequence"
-  // case in this app); ProviderGame ignores the extra prop. CasinoGamePage
-  // uses this to disable its "Back to Casino" header control while busy —
-  // see that file. Same technique the previous GameLaunchSurface used.
-  const content = isValidElement(children) ? cloneElement(children, { onBusyChange }) : children;
-
   // ACCESSIBILITY: a non-ready status's heading is the one focus target —
   // ready hands focus ownership to whatever the game surface itself wants
-  // (BetSwirlGame/ProviderGame never grab focus programmatically, so this
-  // simply leaves focus wherever the user's last action put it, e.g. the
+  // (ProviderGame never grabs focus programmatically, so this simply
+  // leaves focus wherever the user's last action put it, e.g. the
   // Play/lobby-card control they clicked).
   useEffect(() => {
     if (status === GAME_LAUNCH_STATUS.READY || status === GAME_LAUNCH_STATUS.IDLE) return;
@@ -152,7 +144,7 @@ export function GameStage({
 
       {showChildren && (
         <div className={status === GAME_LAUNCH_STATUS.READY ? readyWrapperClassName : "absolute inset-0 flex flex-col opacity-0"}>
-          {content}
+          {children}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, lazy, Suspense, Component } from "react";
+import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import {
   LayoutGrid, Radio,
@@ -14,15 +14,10 @@ import { Toaster } from "./components/shell/Toaster";
 import { DevPanel } from "./components/dev/DevPanel";
 import { PromoStrip, ScopedSearch } from "./components/casino/PromoStrip";
 import { CasinoCatalog, CategoryNav, gameHref, findGameByFavId, ALL_GAMES } from "./components/casino/CasinoCatalog";
-// Not lazy-loaded: this component has no heavy dependencies of its own (a
-// small iframe wrapper — the actual weight for provider games is each
-// vendored game's own HTML/JS under public/games/*, already loaded
-// on-demand via the iframe's `src`, unrelated to JS bundling), and its
-// module also exports PROVIDER_GAMES, which CasinoCatalog needs eagerly
-// for every Lobby render — Rolldown correctly flagged splitting it as
-// ineffective (see betswirlCatalog.js for the equivalent, genuinely
-// effective split on the BetSwirl side, where the catalog data and the SDK
-// really were separable).
+// Not lazy-loaded: this component has no heavy dependencies of its own — a
+// small iframe wrapper. The actual weight for every game (BGaming's demo
+// pages) is loaded on-demand via the iframe's own `src`, unrelated to this
+// component's own JS bundling.
 import { ProviderGame } from "./components/casino/ProviderGame";
 import { CASINO_CATEGORIES, CASINO_PERSONAL_DESTINATIONS, activateCasinoCategory } from "./lib/casinoCategories";
 import { useCasinoSearch } from "./components/casino/CasinoSearch";
@@ -32,20 +27,18 @@ import { toast } from "./lib/toast";
 import { parsePath, pathFor, DEFAULT_NAV } from "./lib/routing";
 import { applyRouteMetadata } from "./lib/seo";
 import { isArenaAllowed, resolveScopedProduct, resolveEffectivePlatformScope, isFullPlatformFeatureEnabled } from "./lib/platformScope";
-import { CASINO_NAV_MODE, CASINO_LAYOUT_MODE } from "@shared/chains";
 // PERFORMANCE task: heavy, on-demand-only surfaces are code-split via
 // React.lazy rather than statically imported, so their code (and, for
 // Sports/Predictions, their SDK dependencies — @azuro-org/sdk,
-// @azuro-org/toolkit, @apollo/client, graphql; for game clients,
-// @betswirl/sdk-core and each dialog's own weight) never ships in the
-// initial Casino MVP bundle. Each is already either conditionally rendered
+// @azuro-org/toolkit, @apollo/client, graphql; plus each dialog's own
+// weight) never ships in the initial Casino MVP bundle. Each is already
+// either conditionally rendered
 // (Sports/Predictions/DesktopBetslipPanel, gated on `product`) or gated
 // behind its own `open` boolean (the dialogs below) — see each render call
 // site further down for the matching Suspense boundary.
 const PredictionsApp = lazy(() => import("./components/predictions/PredictionsApp").then((m) => ({ default: m.PredictionsApp })));
 const SportsArena = lazy(() => import("./components/sports/SportsArena").then((m) => ({ default: m.SportsArena })));
 const DesktopBetslipPanel = lazy(() => import("./components/sports/DesktopBetslipPanel").then((m) => ({ default: m.DesktopBetslipPanel })));
-const BetSwirlGame = lazy(() => import("./components/casino/BetSwirlGame").then((m) => ({ default: m.BetSwirlGame })));
 const FundsDialog = lazy(() => import("./components/wallet/FundsDialog").then((m) => ({ default: m.FundsDialog })));
 const AccountDialog = lazy(() => import("./components/wallet/AccountDialog").then((m) => ({ default: m.AccountDialog })));
 const BetHistoryDialog = lazy(() => import("./components/activity/BetHistoryDialog").then((m) => ({ default: m.BetHistoryDialog })));
@@ -73,7 +66,6 @@ import { track } from "./lib/telemetry";
 import { useDevMockState, getDevMockState, setDevMockState } from "./lib/devMock";
 import { DEV_PANEL_ENABLED } from "./lib/devPanelFlag";
 import { PROFILE_VARIANT, getProfileVariant, getSignOutAction } from "./lib/profileState";
-import { canPerformAction } from "./lib/complianceState";
 import { toggleFavorite } from "./lib/casinoFavorites";
 import { usePlayerSettings } from "./lib/usePlayerSettings.jsx";
 import { useRealityCheck } from "./lib/useRealityCheck";
@@ -81,7 +73,6 @@ import { installDevFetchInterceptor } from "./lib/devFetchInterceptor";
 import { useCasinoGameLaunch } from "./lib/useCasinoGameLaunch";
 import { GAME_LAUNCH_STATUS, isLaunchActive } from "./lib/casinoGameLaunch";
 import { CasinoGamePage } from "./components/casino/CasinoGamePage";
-import { normalizePendingRound, normalizeLiveResultRound } from "./lib/casinoRounds";
 
 // Module-load-time, not inside the component — idempotent (see its own
 // `installed` guard) and needs to be active before BetHistoryDialog's
@@ -141,24 +132,6 @@ function ArenaLoadingFallback({ label }) {
       <p className="text-sm">Loading {label}…</p>
     </div>
   );
-}
-
-// Maps a game CLIENT chunk load failure (BetSwirlGame/ProviderGame's own
-// dynamic import rejecting — a network hiccup, not a game-specific error)
-// onto the exact same FAILED launch state ProviderGame's own onFailed/
-// onError already produces (see CHUNK LOAD ERRORS: "map to existing Unable
-// to launch game state... allow retry... no Recently Played update" — all
-// of that already falls out of the existing launch state machine once this
-// dispatches the same action). Renders nothing itself: GameStage's own
-// status overlay takes over the instant `launch.state.status` becomes
-// FAILED, which un-mounts this boundary's subtree (showChildren becomes
-// false), so there's no stale error UI to reset on retry — the next
-// attempt remounts a fresh instance (keyed by `${favId}:${attempt}`).
-class GameChunkErrorBoundary extends Component {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch() { this.props.onChunkError(); }
-  render() { return this.state.hasError ? null : this.props.children; }
 }
 
 // Favorites and recently-played are PLAYER SETTINGS now, stored per wallet and
@@ -567,40 +540,13 @@ export default function App() {
     updateSettings("casino", { recentlyPlayed: [game.favId, ...list.filter((id) => id !== game.favId)].slice(0, RECENT_CAP) });
   };
 
-  // Casino-only "just happened in this tab" round cache — feeds
-  // BetHistoryDialog's Casino tab (see lib/casinoRounds.js's mergeCasinoRounds)
-  // so a round appears immediately without waiting for the next
-  // /api/casino-history refetch, and so a bet shows as pending the moment
-  // its transaction confirms. Deliberately separate from the older
-  // `activity`/`logRound` state below (that one still feeds Sports/
-  // Predictions' own demo betslip + badges — see CASINO-ONLY ACTIVITY SCOPE:
-  // "do not merge incompatible arena data into one generic receipt
-  // prematurely"). Capped the same way recentIds is, for the same reason:
-  // this only needs to bridge "just played" to "the next real chain read",
-  // not grow forever.
-  const ACTIVITY_CAP = 20;
-  const [casinoPendingRounds, setCasinoPendingRounds] = useState([]);
-  const [casinoLiveResults, setCasinoLiveResults] = useState([]);
-  const recordCasinoRoundPending = (e) => {
-    setCasinoPendingRounds((list) => [normalizePendingRound(e), ...list].slice(0, ACTIVITY_CAP));
-  };
-  const recordCasinoRoundResolved = (e) => {
-    setCasinoLiveResults((list) => [normalizeLiveResultRound(e), ...list].slice(0, ACTIVITY_CAP));
-    // The pending placeholder for this exact tx is now redundant —
-    // mergeCasinoRounds would already dedupe it, but dropping it here too
-    // means the row doesn't even flash through both states in one render.
-    setCasinoPendingRounds((list) => list.filter((r) => r.txHash !== e.txnHash));
-  };
-
-  // Known-unavailable before any init is attempted: a real non-playable
-  // onchain game (see BETSWIRL_GAMES' own `playable` flag — Wheel/Plinko
-  // revert on this testnet), or a Developer Panel simulation of a
-  // provider-side outage. Returning any truthy reason here is what makes
-  // useCasinoGameLaunch skip straight to UNAVAILABLE instead of ever opening
-  // the launch surface's loading state (see UNAVAILABLE GAME STATE: "do not
-  // open a loading state first when availability is already known").
-  const checkGameAvailability = (game) =>
-    (game.kind === "onchain" && !game.playable ? "coming-soon" : null) ||
+  // Known-unavailable before any init is attempted: a Developer Panel
+  // simulation of a provider-side outage. Returning any truthy reason here
+  // is what makes useCasinoGameLaunch skip straight to UNAVAILABLE instead
+  // of ever opening the launch surface's loading state (see UNAVAILABLE
+  // GAME STATE: "do not open a loading state first when availability is
+  // already known").
+  const checkGameAvailability = () =>
     (DEV_PANEL_ENABLED && DEV_UNAVAILABLE_GAME_STATUSES.has(devMock.gameStatus) ? devMock.gameStatus : null);
 
   // The one shared Casino game-launch state machine — every entry point
@@ -824,33 +770,12 @@ export default function App() {
   // useCasinoGameLaunch's analytics, never used for any gating/behavior
   // decision here.
   //
-  // ensureAuth gates onchain games behind a connected wallet on the right
-  // chain (see AUTH AND WALLET INDEPENDENCE — provider games need neither;
-  // they run on a mock economy, not a wallet). This is the one place both a
-  // card click and a direct `?play=` link apply that same gate, so a
-  // bookmarked/shared onchain-game URL can't bypass it.
-  //
-  // GAME LAUNCH INTEGRATION: the same `kind === "onchain" && playable`
-  // check IS this app's one real-money action (launching a playable
-  // onchain BetSwirl game is placing a bet — see complianceState.js's
-  // SENSITIVE_ACTIONS comment), so the shared compliance gate sits right
-  // next to ensureAuth, checked first — neither the launch reducer nor
-  // ensureAuth's wallet-connect prompt ever runs when compliance blocks the
-  // attempt, so no loading starts, no Recently Played update, and no
-  // pending round is ever created for a blocked attempt (see GAME LAUNCH
-  // INTEGRATION: "do not start loading if play is already blocked").
-  // Provider games are untouched by this — they're this app's only real
-  // "demo" mode (no wallet, mock economy), which the task explicitly allows
-  // to remain available (see GAME LAUNCH INTEGRATION: "demo games may
-  // remain available only if actual policy supports them" — it does here).
+  // Every game is a provider (BGaming) game — no wallet gate, no compliance
+  // gate: this app's only real-money action was launching a playable
+  // onchain BetSwirl game, which no longer exists (see complianceState.js's
+  // SENSITIVE_ACTIONS comment). Provider games run on a mock economy and
+  // need neither (see AUTH AND WALLET INDEPENDENCE).
   const attemptLaunch = (game, source, categoryId) => {
-    if (game && game.kind === "onchain" && game.playable) {
-      if (!canPerformAction({ action: "launch-real-game", complianceStatus: devMock.complianceStatus })) {
-        openModal("compliance-block");
-        return;
-      }
-      if (!ensureAuth()) return;
-    }
     launch.launchCasinoGame({ gameId: game ? game.favId : null, source, categoryId });
   };
   // ARENA-SWITCH TEARDOWN — Game Info and Report Issue are global overlays
@@ -1254,27 +1179,17 @@ export default function App() {
       // builder only attaches the things that must be App-level closures
       // (Favorites' live count).
       const lobbyEntry = CASINO_CATEGORIES.find((c) => c.id === "Lobby");
-      // CASINO NAV MODE (@shared/chains, VITE_CASINO_NAV_MODE) — 'minimal'
-      // (the current MVP default) drops the whole Games section rather than
-      // filtering it category-by-category: CASINO_CATEGORIES itself, the
-      // routes, and every category component stay fully intact, so 'full'
-      // mode needs zero code changes here to restore the richer nav. See
-      // CategoryNav in CasinoCatalog.jsx for the matching horizontal-pill-row
-      // gate — one flag, checked once each, not scattered per-category.
-      const gamesItems = CASINO_NAV_MODE === "full"
-        ? CASINO_CATEGORIES.filter((c) => c.kind !== "lobby").map((c) => ({ id: c.id, label: c.label, icon: c.icon }))
-        : [];
+      const gamesItems = CASINO_CATEGORIES.filter((c) => c.kind !== "lobby").map((c) => ({ id: c.id, label: c.label, icon: c.icon }));
       // NAV SPEC §3.2.1 — count badges belong on every PERSONAL-band row
       // whose count changes whether the click is worth it (Favorites,
       // Recently Played), hidden entirely at zero, never on a GAMES-band
       // row.
       //
       // Counts only ids that still resolve to a VISIBLE game (findGameByFavId
-      // reads CasinoCatalog.jsx's content-mode-filtered ALL_GAMES) — a stale
-      // persisted favorite/recently-played id for a game the active content
-      // mode hides (e.g. a local provider game while CASINO_CONTENT_MODE is
-      // 'betswirl') stays in storage but must not count toward, or appear
-      // in, what the player sees here.
+      // reads CasinoCatalog.jsx's ALL_GAMES) — a stale persisted favorite/
+      // recently-played id for a game no longer in the catalog stays in
+      // storage but must not count toward, or appear in, what the player
+      // sees here.
       const personalCount = (id) => {
         if (id === "Favorites") {
           const visible = [...favs].filter((favId) => findGameByFavId(favId)).length;
@@ -1554,17 +1469,7 @@ export default function App() {
                     onOpenGameInfo={launchedGame ? () => openGameInfo(launchedGame.favId, "gameplay-frame") : undefined}
                     onReportIssue={openSupport}
                   >
-                    {launchedGame?.kind === "onchain" ? (
-                      <GameChunkErrorBoundary key={`${launchedGame.favId}:${launch.state.attempt}`} onChunkError={() => launch.markFailed(launchedGame.favId)}>
-                        <Suspense fallback={null}>
-                          <BetSwirlGame
-                            game={launchedGame}
-                            onRound={(r) => { logRound(r); recordCasinoRoundResolved(r); }}
-                            onRoundPending={recordCasinoRoundPending}
-                          />
-                        </Suspense>
-                      </GameChunkErrorBoundary>
-                    ) : launchedGame ? (
+                    {launchedGame ? (
                       <ProviderGame
                         key={`${launchedGame.favId}:${launch.state.attempt}`}
                         game={launchedGame}
@@ -1747,15 +1652,6 @@ export default function App() {
             open={historyOpen}
             onClose={closeModal}
             onCloseAutoFocus={restoreFocus}
-            casinoPendingRounds={casinoPendingRounds}
-            casinoLiveResults={casinoLiveResults}
-            profileVariant={profileVariant}
-            onLogin={openFunds}
-            onPlayAgain={(gameId) => {
-              const game = findGameByFavId(gameId);
-              if (game) launchGame(game, "receipt");
-            }}
-            onViewGameInfo={(gameId) => openGameInfo(gameId, "receipt")}
           />
         </Suspense>
       )}
@@ -1853,23 +1749,6 @@ function CasinoLobby({ category, view, providerSlug, onLaunchOnchain, onLaunchPr
         <div className="space-y-4">
           <ScopedSearch query={query} onQuery={setQuery} {...searchPanelProps} />
           {mobileOverlay}
-        </div>
-      ) : CASINO_LAYOUT_MODE === "game-first" ? (
-        /* CASINO LAYOUT MODE (game-first) — the promo row (PromoStrip) is
-           skipped entirely rather than hidden with CSS; PromoStrip's own
-           code/assets/flags are untouched, classic mode below still renders
-           it normally. Search itself is the exact same ScopedSearch call
-           the isDestination branch above already uses bare (no promo
-           wrapper) — reusing that proven pattern, not a new composition.
-           CategoryNav still renders unconditionally here: it already
-           self-hides under CASINO_NAV_MODE=minimal (see CategoryNav in
-           CasinoCatalog.jsx) — layout mode and nav mode are deliberately
-           separate concerns, so a hypothetical game-first+full combination
-           would still show pills here without any change to this branch. */
-        <div className="space-y-4">
-          <ScopedSearch query={query} onQuery={setQuery} {...searchPanelProps} />
-          {mobileOverlay}
-          <CategoryNav selected={category} activeView={view} onSelectHomeFilter={selectHomeFilter} onPillActivated={onPillActivated} />
         </div>
       ) : (
         /* LOBBY HIERARCHY PASS: search + category pills read as one

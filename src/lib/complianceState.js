@@ -79,15 +79,15 @@ const COPY = {
   },
 };
 
-// Actions this app can actually gate today. Casino has exactly one
-// real-money action (launching a playable onchain BetSwirl game IS placing
-// a bet — see App.jsx's ensureAuth, which already keys off the same
-// `kind === "onchain" && playable` distinction). `fund-wallet`/`withdraw`
-// are included for shape-compatibility with the task's suggested
-// `canPerformAction` signature but are never actually invoked anywhere —
-// wallet funding/withdrawal architecture is explicitly deferred for this
-// task (see PRODUCT SCOPE), so no new gating is wired into FundsDialog.
-const SENSITIVE_ACTIONS = new Set(["launch-real-game", "fund-wallet", "withdraw"]);
+// Actions this app can actually gate today. Casino's one real-money action
+// (launching a playable onchain BetSwirl game) is gone along with BetSwirl
+// itself — every Casino game now runs on a mock economy via a provider
+// iframe, needing no compliance gate. `fund-wallet`/`withdraw` are included
+// for shape-compatibility with the task's suggested `canPerformAction`
+// signature but are never actually invoked anywhere — wallet funding/
+// withdrawal architecture is explicitly deferred for this task (see
+// PRODUCT SCOPE), so no new gating is wired into FundsDialog.
+const SENSITIVE_ACTIONS = new Set(["fund-wallet", "withdraw"]);
 
 // Never blocked regardless of compliance status — safety/support access
 // must survive every restricted state (see RESTRICTED ACCOUNT STATE:
