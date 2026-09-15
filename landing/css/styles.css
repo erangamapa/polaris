@@ -220,10 +220,14 @@ a {
 
 /* Underline grows from the left via background-size, not a border/
    text-decoration — lets the same declaration serve both the hover
-   affordance and the persistent scroll-spy "active" state below. */
+   affordance and the persistent scroll-spy "active" state below.
+   Brand gradient (same --gradient-brand as the logo/primary CTA), not the
+   flat --accent blue — a solid-color "gradient" here read as a plain
+   underline; using the real three-stop gradient ties this small detail
+   back to the one brand mark on the page instead of an unrelated blue. */
 .nav a {
   padding-bottom: 3px;
-  background-image: linear-gradient(var(--accent), var(--accent));
+  background-image: var(--gradient-brand);
   background-repeat: no-repeat;
   background-position: left bottom;
   background-size: 0% 1px;
