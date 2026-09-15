@@ -35,10 +35,18 @@
 .wallet-disclosure { margin:14px 0 0; color:var(--muted); font-size:12px; line-height:1.7; }
 @media(max-width:800px) { .wallet-showcase__main { padding:28px; gap:28px; grid-template-columns:1.4fr 1fr; }.wallet-network { padding-left:28px; }.wallet-brands ul { gap:10px; }.wallet-brand-icon { width:68px; height:68px; border-radius:18px; }.wallet-brand-icon img { width:52px; height:52px; }.wallet-brands strong { font-size:13px; }.wallet-intro > p { display:none; }.wallet-showcase__footer { padding:22px 28px; }.wallet-showcase__footer p { display:none; } }
 @media(max-width:600px) { .wallet-intro { margin-bottom:24px; }.wallet-showcase__main { grid-template-columns:1fr; padding:24px 18px; gap:28px; }.wallet-network { border-left:0; border-top:1px solid #2a2e3e; padding:24px 0 0; display:grid; grid-template-columns:1fr 1fr; gap:12px; }.wallet-network h3 { grid-column:1 / -1; margin-bottom:6px; }.wallet-network__row { gap:9px; margin:0; }.wallet-network__row strong { font-size:13px; }.wallet-network__row strong span { margin-left:0; }.wallet-chain-icon,.wallet-coin-icon { width:32px; height:32px; }.wallet-coin-icon img { width:24px; height:32px; }.wallet-network__row p { font-size:11px; }.wallet-showcase__footer { padding:20px; flex-direction:column; gap:16px; }.wallet-showcase__footer .btn { width:100%; }.wallet-showcase__footer .text-link { margin-left:0; }.wallet-brands li > span:last-child { font-size:10px; } }
-.how-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; padding:0; margin:24px 0; list-style:none; }
-.how-grid > li { border-top:1px solid var(--line); padding-top:20px; }
-.how-grid li > span { color:var(--accent); font-size:14px; font-weight:600; }
-.how-grid h3 { margin:10px 0; font-size:18px; }.how-grid p { margin:0; color:var(--muted); font-size:14px; }
+.verticals-intro { text-align:center; max-width:850px; margin:0 auto; }
+.verticals-intro h2 { font-size:clamp(28px,3.4vw,40px); line-height:1.2; letter-spacing:-.035em; margin:0 0 20px; }
+.verticals-intro > p:last-child { max-width:660px; margin:0 auto; font-size:16px; line-height:1.7; color:var(--muted); }
+.verticals-art { width:100%; height:auto; margin:28px 0 0; }
+.verticals-labels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); text-align:center; list-style:none; padding:0; margin:0; gap:16px; }
+.verticals-labels h3 { font-size:20px; font-weight:600; margin:0 0 8px; color:#929bb0; }
+.verticals-labels .verticals-casino h3 { color:var(--ink); }
+.verticals-status { font-size:12px; color:#929bb0; margin:0; }
+.verticals-status--live { color:#b4c5ff; display:flex; align-items:center; justify-content:center; gap:7px; }
+.verticals-status--live span { width:6px; height:6px; border-radius:50%; background:#9bacff; }
+.verticals-casino .btn { margin-top:22px; gap:20px; }
+@media(max-width:600px) { .verticals-intro { text-align:left; }.verticals-intro > p:last-child { font-size:14px; }.verticals-art { margin-top:20px; }.verticals-labels { gap:6px; }.verticals-labels h3 { font-size:13px; line-height:1.4; min-height:36px; margin:0 0 6px; }.verticals-status { font-size:10px; }.verticals-casino .btn { font-size:11px; padding:10px 8px; min-height:42px; gap:4px; white-space:nowrap; }.verticals-status--live { gap:4px; } }
 .help-page { max-width:800px; padding-top:32px; }.help-page nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:64px; gap:20px; }
 .help-page h1 { font-size:clamp(32px,6vw,52px); line-height:1.15; }.help-page section { margin:48px 0; scroll-margin-top:24px; }
 .help-page section h2 { font-size:24px; }.help-page section p,.help-page footer { color:var(--muted); }
@@ -47,6 +55,5 @@
 @media (max-width:600px) {
   .section-heading { display:block; }.section-heading > a { display:inline-block; margin-top:8px; }
   .featured-games { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 12px; }
-  .how-grid { grid-template-columns:1fr; }
   .hero { padding-bottom:24px; }.help-page nav { margin-bottom:40px; }
 }
