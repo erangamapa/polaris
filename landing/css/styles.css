@@ -1065,12 +1065,23 @@ a {
 /* REWARDS ART (Slot B) — replaces the earlier placeholder (an abstract
    "leaderboard shape" CSS panel filling the second column before a real
    asset existed) now that real artwork is available for this slot. No
-   border/radius/background: its own ground is #0D0E16, the same as --bg,
-   so it's meant to dissolve into the page rather than sit in a frame. */
+   border/radius/background: the previous asset's own ground was #0D0E16,
+   the same as --bg, so it dissolved into the page rather than sitting in
+   a frame.
+   TROPHY ASSET SWAP: source is trophy_asset.jpeg (1536x704, same ~2.18:1
+   aspect ratio as the asset it replaces) — object-fit:contain so the grid
+   can never crop or stretch it regardless of column width, width/height
+   attributes above updated to the real intrinsic size for correct
+   aspect-ratio reservation before load. NOTE: unlike the previous asset,
+   this one's own background is a lit blue radial glow, not a near-black
+   flat tone — it no longer dissolves into --bg as seamlessly (visible as
+   a soft rectangle at the image edges). Left as-is per instruction: the
+   source file is not to be filtered/darkened to fake a match. */
 .offer-art {
   display: block;
   width: 100%;
   height: auto;
+  object-fit: contain;
 }
 
 /* .section-split's own default (1.1fr/0.9fr, tuned for #play) undershoots
