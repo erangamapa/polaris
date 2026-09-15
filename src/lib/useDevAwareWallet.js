@@ -39,14 +39,9 @@ const BALANCE_PRESET_VALUES = {
 
 export function useDevAwareWallet() {
   const real = useWallet();
-  if (!DEV_PANEL_ENABLED) return { ...real, loggedInNoWallet: false, sessionExpired: false, authStatus: "default" };
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- DEV_PANEL_ENABLED
-  // is a plain module-level constant; this branch never changes within a
-  // running build (every build currently takes it, since the flag is
-  // `true` everywhere — flipping it off would make the early return above
-  // dead-code-eliminate this whole rest of the function instead).
+  // Keep hook order unconditional; the store itself handles the disabled flag.
   const mock = useDevMockState();
+  if (!DEV_PANEL_ENABLED) return { ...real, loggedInNoWallet: false, sessionExpired: false, authStatus: "default" };
 
   let view = { ...real, wrongNetworkOverride: null };
 

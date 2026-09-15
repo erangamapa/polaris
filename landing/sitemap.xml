@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Two pages, both linked from the homepage, so Google would find them by
+  Pages linked from the homepage, so Google would find them by
   crawling regardless — this exists so discovery does not depend on that.
 
   <lastmod> is the only hint Google actually uses here; it ignores
@@ -12,10 +12,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://tribet.gg/</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://tribet.gg/casino/lobby</loc>
     <lastmod>2026-09-11</lastmod>
+  </url>
+  <url>
+    <loc>https://tribet.gg/help.html</loc>
+    <lastmod>2026-09-15</lastmod>
   </url>
 </urlset>

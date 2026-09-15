@@ -552,8 +552,8 @@ function AboutTribetCard() {
   return (
     <InfoCard
       eyebrow="ABOUT TRIBET"
-      title="One wallet. Three arenas."
-      body="Built by betting veterans and players."
+      title="Casino now. More to come."
+      body="Explore games. Sports and predictions are coming later."
       artworkSrc="/heroes/promo-three-arenas.png"
       artworkWidth="46%"
       artworkHeight="85%"
@@ -565,8 +565,8 @@ function TransparentPlayCard() {
   return (
     <InfoCard
       eyebrow="TRANSPARENT PLAY"
-      title="Don't trust. Verify."
-      body="Every result can be verified on-chain."
+      title="Know how you play."
+      body="Check each game’s rules and information before playing."
       artworkSrc="/heroes/promo-verify.png"
       artworkWidth="44%"
       artworkHeight="86%"
@@ -626,7 +626,7 @@ export function PlayerTile({ onManageWallet }) {
             <br />
             <span className="text-[var(--global-cta-hover)]">Every game.</span>
           </h3>
-          <p className="promo-card__body mt-1 text-[var(--ink-dim)]">Play, earn and withdraw with one connection.</p>
+          <p className="promo-card__body mt-1 text-[var(--ink-dim)]">Connect your wallet. Game credits stay separate.</p>
         </div>
         {/* Not converted to the promo-outline secondary style — the task's
             own list ("View wallet, Claim bonus, View race") doesn't

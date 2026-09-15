@@ -51,6 +51,7 @@ function servePublicGames() {
 const LANDING_FILES = new Set([
   '/',
   '/index.html',
+  '/help.html',
   '/robots.txt',
   '/sitemap.xml',
   '/favicon.svg',

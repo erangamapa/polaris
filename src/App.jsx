@@ -452,6 +452,24 @@ export default function App() {
   // Wallet connection replaces password login. Connecting (on the right network)
   // is the gate for placing bets; the Reown modal handles the connect flow.
   const wallet = useWallet();
+  // A landing CTA must perform its named action, not merely navigate here.
+  // Consume the intent once: refresh/Back must not repeatedly reopen AppKit.
+  const connectIntentHandled = useRef(false);
+  useEffect(() => {
+    if (modal !== "connect" || connectIntentHandled.current) return;
+    if (wallet.status === "reconnecting") return;
+    connectIntentHandled.current = true;
+    const url = new URL(window.location.href);
+    if (wallet.isConnected) url.searchParams.set("modal", "funds");
+    else url.searchParams.delete("modal");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setModal(wallet.isConnected ? "funds" : null);
+    if (!wallet.isConnected) {
+      Promise.resolve(wallet.connect()).catch(() => {
+        toast.error("Wallet picker could not open", { message: "Please try Connect Wallet again." });
+      });
+    }
+  }, [modal, wallet]);
   // Dev-aware ONLY for the mobile account section's isConnected read below
   // (see accountItems) — everything else in this file (ensureAuth, balance
   // merging, chain tracking) deliberately keeps using the real `wallet`

@@ -33,7 +33,7 @@ function casinoMetadata({ casinoCategory, casinoView, casinoProviderSlug }) {
     return {
       title: titleWithBrand(name ? `${name} Games` : "Provider Games"),
       description: name
-        ? `Play ${name} games on ${BRAND_NAME} with crypto deposits and instant withdrawals.`
+        ? `Play ${name} games on ${BRAND_NAME} from the current casino catalogue.`
         : `Play provider games on ${BRAND_NAME}.`,
     };
   }
@@ -50,12 +50,12 @@ function casinoMetadata({ casinoCategory, casinoView, casinoProviderSlug }) {
     const label = CATEGORY_LABEL[casinoCategory] ?? casinoCategory;
     return {
       title: titleWithBrand(`${label} Games`),
-      description: `Play ${label} games on ${BRAND_NAME} — provably fair, on-chain, wallet-only.`,
+      description: `Play ${label} games on ${BRAND_NAME} — explore the current casino catalogue.`,
     };
   }
   return {
     title: titleWithBrand("Casino Lobby"),
-    description: `Play provably fair on-chain casino games on ${BRAND_NAME}. Connect a wallet — no account, no deposit hold.`,
+    description: `Explore slots, table games and quick-play favourites on ${BRAND_NAME}. Current games use provider credits with no cash winnings.`,
   };
 }
 

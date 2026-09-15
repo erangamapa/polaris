@@ -1,49 +1,31 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { LifeBuoy, Check, ChevronRight } from "lucide-react";
+import { LifeBuoy, ChevronRight } from "lucide-react";
 
 const TOPICS = [
-  "How do deposits and withdrawals work?",
-  "Why is my withdrawal pending?",
-  "How do I complete verification (KYC)?",
-  "Understanding bet settlement & cash-out",
-  "Responsible gambling & account limits",
+  { label: "Understanding game credits", href: "/help.html#game-modes" },
+  { label: "Wallets, coins and networks", href: "/help.html#wallets" },
+  { label: "Responsible play and account limits", href: "/help.html#responsible-play" },
 ];
 
 export function SupportDialog({ open, onClose, onCloseAutoFocus }) {
-  const [caseId, setCaseId] = useState(null);
-
-  const contact = () => setCaseId("#SUP-" + Math.random().toString(36).slice(2, 7).toUpperCase());
-
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && (onClose(), setCaseId(null))}>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><LifeBuoy className="size-4 text-[var(--global-cta-hover)]" /> Help &amp; support</DialogTitle>
-          <DialogDescription>Find an answer or contact our team. Demo — no live agents.</DialogDescription>
+          <DialogDescription>Read our game and wallet guide. Live support and monitored tickets are not available yet.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Popular topics</div>
           {TOPICS.map((t) => (
-            <button key={t} className="flex w-full items-center gap-2 rounded-lg border bg-card p-2.5 text-left text-sm transition hover:border-ring/40">
-              {t}
+            <a key={t.href} href={t.href} className="flex w-full items-center gap-2 rounded-lg border bg-card p-2.5 text-left text-sm transition hover:border-ring/40">
+              {t.label}
               <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" />
-            </button>
+            </a>
           ))}
         </div>
 
-        {caseId ? (
-          <div className="flex items-center gap-2 rounded-lg border border-[var(--success)]/40 bg-[var(--success-bg)] p-3 text-sm">
-            <Check className="size-4 text-[var(--success)]" />
-            <span>Case <span className="font-mono font-medium text-[var(--success)]">{caseId}</span> opened — we'll reply by email.</span>
-          </div>
-        ) : (
-          <Button className="w-full font-bold" onClick={contact}>
-            Contact support
-          </Button>
-        )}
       </DialogContent>
     </Dialog>
   );

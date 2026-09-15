@@ -59,7 +59,7 @@ if (menuToggle && mobileNav && mobileNavInner) {
 // Scroll-spy: mark the nav link(s) matching the section closest to the
 // viewport center with aria-current; scoped to .nav/.mobile-nav so it
 // never touches the hero CTA sharing an href with a nav link.
-const spySections = ["#play", "#originals", "#faq"].map((id) => document.querySelector(id)).filter(Boolean);
+const spySections = ["#play", "#wallets", "#faq"].map((id) => document.querySelector(id)).filter(Boolean);
 if (spySections.length) {
   const linksFor = (id) => document.querySelectorAll(`.nav a[href="${id}"], .mobile-nav a[href="${id}"]`);
   const observer = new IntersectionObserver(

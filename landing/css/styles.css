@@ -55,7 +55,7 @@
      hand-picked curve per rule. Existing hardcoded transitions elsewhere in
      this file are left as they are — retiming them to --dur/--ease would
      change their rendered curve, not just its name. */
-  --space-section: clamp(4rem, 10vw, 7rem);
+  --space-section: clamp(3rem, 6vw, 4.5rem);
   --space-block: 2rem;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur: 200ms;

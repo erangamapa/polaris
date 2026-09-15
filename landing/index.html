@@ -4,19 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Primary SEO
-         PHASE 1 metadata fix only (not a full SEO pass — see the audit):
-         the previous title/description advertised Sports and Predictions as
-         live product surfaces. Casino is the only live MVP arena right now,
-         so the copy is corrected to match reality rather than the aspiration. -->
-    <title>Tribet | Provably Fair Crypto Casino & On-Chain Games</title>
+    <!-- Static, crawlable marketing page; product claims match the current catalogue. -->
+    <title>Tribet | Casino Games, Slots & Wallet Compatibility</title>
     <meta
       name="description"
-      content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
-    />
-    <meta
-      name="keywords"
-      content="Tribet, crypto casino, provably fair, Web3 casino, USDT casino, online slots, on-chain casino"
+      content="Explore slots, table games and quick-play favourites on Tribet. Browse the casino catalogue and learn about supported wallets and ETH on Arbitrum One."
     />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="Tribet" />
@@ -40,10 +32,10 @@
     <meta property="og:site_name" content="Tribet" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://tribet.gg/" />
-    <meta property="og:title" content="Tribet | Provably Fair Crypto Casino & On-Chain Games" />
+    <meta property="og:title" content="Tribet | Casino Games, Slots & Wallet Compatibility" />
     <meta
       property="og:description"
-      content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
+      content="Explore slots, table games and quick-play favourites on Tribet. Browse the casino catalogue and learn about supported wallets and ETH on Arbitrum One."
     />
     <meta property="og:image" content="https://tribet.gg/img/promo/og-image.png" />
     <meta property="og:image:width" content="1200" />
@@ -51,10 +43,10 @@
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:alt" content="Tribet" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Tribet | Provably Fair Crypto Casino & On-Chain Games" />
+    <meta name="twitter:title" content="Tribet | Casino Games, Slots & Wallet Compatibility" />
     <meta
       name="twitter:description"
-      content="Play provably fair on-chain casino games with one wallet connection. Explore Dice, Coin Toss, Roulette and more on Tribet."
+      content="Explore slots, table games and quick-play favourites on Tribet. Browse the casino catalogue and learn about supported wallets and ETH on Arbitrum One."
     />
     <meta name="twitter:image" content="https://tribet.gg/img/promo/og-image.png" />
 
@@ -74,77 +66,100 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/catalogue.css" />
 
     <!-- Structured data -->
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://tribet.gg/#organization",
-            "name": "Tribet",
-            "url": "https://tribet.gg/",
-            "logo": "https://tribet.gg/img/brand/logo.png",
-            "description": "Non-custodial crypto casino with provably fair on-chain games. Sports and prediction markets are coming next.",
-            "sameAs": []
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://tribet.gg/#website",
-            "url": "https://tribet.gg/",
-            "name": "Tribet",
-            "publisher": { "@id": "https://tribet.gg/#organization" }
-          },
-          {
-            "@type": "WebPage",
-            "@id": "https://tribet.gg/#webpage",
-            "url": "https://tribet.gg/",
-            "name": "Tribet — Provably Fair Crypto Casino & On-Chain Games",
-            "isPartOf": { "@id": "https://tribet.gg/#website" },
-            "about": { "@id": "https://tribet.gg/#organization" },
-            "description": "Play provably fair on-chain casino games with one wallet connection on Tribet. Sports and prediction markets are coming next."
-          },
-          {
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "What is Tribet?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Tribet is a non-custodial crypto casino. Connect your wallet to play provably fair on-chain casino games. Sports betting and prediction markets are coming next, on the same wallet and account."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Are the on-chain casino games provably fair?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Yes. The on-chain games are labeled provably fair, so you can verify on-chain that outcomes were generated fairly."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What games and markets are available?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "The casino lobby currently offers on-chain games — Dice, Coin Toss, Roulette, Keno, with more on the way. Sports and Predictions are coming soon and are not yet open."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "How do deposits and withdrawals work?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Tribet is built around a single wallet connection so you can play, earn, and withdraw from one place. Open the lobby and connect to get started."
-                }
-              }
-            ]
-          }
-        ]
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://tribet.gg/#organization",
+      "name": "Tribet",
+      "url": "https://tribet.gg/",
+      "logo": "https://tribet.gg/img/brand/logo.png",
+      "description": "Explore casino games, slots and wallet compatibility on Tribet. The current BGaming catalogue uses demo credits.",
+      "sameAs": []
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://tribet.gg/#website",
+      "url": "https://tribet.gg/",
+      "name": "Tribet",
+      "publisher": {
+        "@id": "https://tribet.gg/#organization"
       }
-    </script>
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://tribet.gg/#webpage",
+      "url": "https://tribet.gg/",
+      "name": "Tribet | Casino Games, Slots & Wallet Compatibility",
+      "isPartOf": {
+        "@id": "https://tribet.gg/#website"
+      },
+      "about": {
+        "@id": "https://tribet.gg/#organization"
+      },
+      "description": "Explore casino games, slots and wallet compatibility on Tribet. The current BGaming catalogue uses demo credits."
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What can I play on Tribet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Explore BGaming slots, casual games, table games and scratch games. The current catalogue uses provider demo credits, with no cash winnings. Sports and prediction markets are not available yet."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which wallets can I connect?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The connection menu offers MetaMask, Base (formerly Coinbase Wallet), and WalletConnect. Compatible installed wallets, such as Phantom, may also appear. Use an EVM-compatible wallet with Arbitrum One support. Availability depends on your device."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which coins and networks are supported?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The current wallet configuration uses ETH on Arbitrum One. This is wallet compatibility, not a list of currencies accepted by the current game catalogue. Other casino payment currencies have not been enabled."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to deposit to try the games?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Current BGaming games use provider demo credits, separate from your connected wallet balance. These credits have no cash value and cannot be withdrawn. Do not send funds to play a demo."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are game results verified on-chain?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The current catalogue opens third-party BGaming games in demo mode. Tribet does not settle these rounds on-chain or claim on-chain verification of their outcomes. Check each game’s own rules and information."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who can use Tribet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You must be at least 18 and meet the legal age requirement in your jurisdiction. Availability varies by region. Treat games as entertainment, take breaks and never gamble with money you cannot afford to lose."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -155,8 +170,8 @@
           <img src="/img/brand/logo.png" width="190" height="28" alt="Tribet" />
         </a>
         <nav class="nav" aria-label="Primary">
-          <a href="#play">Casino</a>
-          <a href="#originals">On-chain</a>
+          <a href="#play">Games</a>
+          <a href="#wallets">Wallets &amp; coins</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div class="header-actions">
@@ -179,8 +194,8 @@
       </div>
       <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile" hidden>
         <div class="mobile-nav__inner">
-          <a href="#play">Casino</a>
-          <a href="#originals">On-chain</a>
+          <a href="#play">Games</a>
+          <a href="#wallets">Wallets &amp; coins</a>
           <a href="#faq">FAQ</a>
           <a class="btn btn-primary" href="/casino/lobby">Enter lobby</a>
         </div>
@@ -192,177 +207,72 @@
         <div class="hero-inner">
           <div class="hero-copy">
             <p class="hero-eyebrow">Crypto casino</p>
-            <h1>One wallet.<br /><span class="accent">Every game.</span></h1>
+            <h1>More games.<br /><span class="accent">One destination.</span></h1>
             <p class="hero-lede">
-              Play provably fair on-chain casino games with one wallet
-              connection. Sports and prediction markets are coming next.
+              Explore slots, table games and quick-play favourites.
+              Find something new in the Tribet casino.
             </p>
             <div class="cta-row">
-              <a class="btn btn-primary btn-lg" href="/casino/lobby">Connect wallet</a>
-              <a class="btn btn-outline btn-lg" href="#originals">Explore on-chain games</a>
+              <a class="btn btn-primary btn-lg" href="/casino/lobby">Explore casino</a>
+              <a class="btn btn-outline btn-lg" href="#play">Browse games</a>
             </div>
           </div>
           <div class="hero-visual" aria-hidden="true">
-            <img
-              class="hero-visual__game hero-visual__dice"
-              src="/img/games/dice-1x.webp"
-              srcset="/img/games/dice-1x.webp 247w, /img/games/dice.webp 495w"
-              sizes="(min-width: 760px) 220px, 160px"
-              alt=""
-              width="495"
-              height="660"
-              decoding="async"
-            />
-            <img
-              class="hero-visual__game hero-visual__roulette"
-              src="/img/games/roulette-1x.webp"
-              srcset="/img/games/roulette-1x.webp 247w, /img/games/roulette.webp 495w"
-              sizes="(min-width: 760px) 220px, 160px"
-              alt=""
-              width="495"
-              height="660"
-              decoding="async"
-            />
-            <img
-              class="hero-visual__game hero-visual__coin"
-              src="/img/games/coin-toss-1x.webp"
-              srcset="/img/games/coin-toss-1x.webp 247w, /img/games/coin-toss.webp 495w"
-              sizes="(min-width: 760px) 260px, 180px"
-              alt=""
-              width="495"
-              height="660"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </div>
+<!-- featured-hero:start -->
+            <img class="hero-visual__game hero-visual__dice" src="https://bgaming.com/wp-content/uploads/2025/04/6695111d83349b152f79f6c9_AlienFruits_bonanza_1020x1280.webp" alt="" width="455" height="574" decoding="async" />
+            <img class="hero-visual__game hero-visual__coin" src="https://bgaming.com/wp-content/uploads/2026/03/Bling_Blitz_Diamond_Drop_1020_1280_1x-2.webp" alt="" width="455" height="574" decoding="async" fetchpriority="high"/>
+            <img class="hero-visual__game hero-visual__roulette" src="https://bgaming.com/wp-content/uploads/2026/04/Chicken_Shot_1020x1280-1.png" alt="" width="455" height="574" decoding="async" />
+<!-- featured-hero:end -->
+</div>
         </div>
       </section>
 
-      <section class="section section-split" id="play" aria-labelledby="play-heading">
-        <div class="section-copy">
-          <img
-            class="section-art"
-            src="/img/promo/verticals.webp"
-            alt=""
-            width="1200"
-            height="360"
-            loading="lazy"
-            decoding="async"
-          />
-          <h2 id="play-heading">Casino, sports &amp; predictions</h2>
-          <p>
-            Casino is live now — provably fair on-chain games with one
-            wallet connection. Sports and prediction markets are coming
-            next, on the same account.
-          </p>
-        </div>
-        <ul class="pillars">
-          <li>
-            <h3>Casino <span class="status status--live">Live now</span></h3>
-            <p>On-chain games you can play today — Dice, Coin Toss, Roulette, Keno and more.</p>
-          </li>
-          <li>
-            <h3>Sports <span class="status status--soon">Coming soon</span></h3>
-            <p>Place bets across live and upcoming sporting events.</p>
-          </li>
-          <li>
-            <h3>Predictions <span class="status status--soon">Coming soon</span></h3>
-            <p>Trade outlooks on markets beyond traditional sportsbooks.</p>
-          </li>
+      <section class="section" id="play" aria-labelledby="play-heading">
+        <div class="section-heading"><div><p class="eyebrow">Find your favourite</p><h2 id="play-heading">Explore our casino games</h2></div><a class="text-link" href="/casino/lobby">View all games →</a></div>
+        <p class="section-lede">Slots, table games and quick-play discoveries from the BGaming catalogue.</p>
+        <ul class="featured-games" aria-label="Featured casino games">
+<!-- featured-games:start -->
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aalien-fruits"><img src="https://bgaming.com/wp-content/uploads/2025/04/6695111d83349b152f79f6c9_AlienFruits_bonanza_1020x1280.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Alien Fruits</span><span class="featured-game__meta">Slots · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aaloha-king-elvis"><img src="https://bgaming.com/wp-content/uploads/2025/04/66951231e41131af0c6f1a85_Aloha_King_Elvis_1020x1280.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Aloha King Elvis</span><span class="featured-game__meta">Slots · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aamerican-roulette"><img src="https://bgaming.com/wp-content/uploads/2025/04/669512599161efcef945ad95_American_Roulette_1020x1280.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">American Roulette</span><span class="featured-game__meta">Roulette · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aballoon-mania"><img src="https://bgaming.com/wp-content/uploads/2025/06/680b7928bbeb799cdd6fb8c3_Balloon_Mania_1020х1280-2.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Balloon Mania</span><span class="featured-game__meta">Casual · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Achicken-shot"><img src="https://bgaming.com/wp-content/uploads/2026/04/Chicken_Shot_1020x1280-1.png" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Chicken Shot</span><span class="featured-game__meta">Casual · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Adice-clash"><img src="https://bgaming.com/wp-content/uploads/2025/06/670d057e69ed5c3461ff7b35_Dice_Clash_1020х1280-2.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Dice Clash</span><span class="featured-game__meta">Dice · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aalien-fruits-3"><img src="https://bgaming.com/wp-content/uploads/2026/06/alien_fruits_3_1020_1280-816x1024.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Alien Fruits 3</span><span class="featured-game__meta">Slots · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aalways-up"><img src="https://bgaming.com/wp-content/uploads/2025/09/Always_Up_1020x618.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Always Up</span><span class="featured-game__meta">Slots · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Aaviamasters-2"><img src="https://bgaming.com/wp-content/uploads/2026/02/Aviamasters_2__1020x618-1.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Aviamasters 2</span><span class="featured-game__meta">Casual · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Ablazing-fire-pots-hold-spin"><img src="https://bgaming.com/wp-content/uploads/2025/12/Blazing_Fire_Pots_Hold__Spin_1020x1280.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Blazing Fire Pots Hold Spin</span><span class="featured-game__meta">Slots · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3Abling-blitz-diamond-drop"><img src="https://bgaming.com/wp-content/uploads/2026/03/Bling_Blitz_Diamond_Drop_1020_1280_1x-2.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">Bling Blitz Diamond Drop</span><span class="featured-game__meta">Slots · BGaming</span></a></li>
+          <li><a class="featured-game" href="/casino/lobby?play=bgaming%3A3-kings-scratch"><img src="https://bgaming.com/wp-content/uploads/2025/06/65fc39be04db3839240ba098_Three_Kings_Scratch_455x574-1-2.webp" alt="" width="455" height="574" loading="lazy" decoding="async" /><span class="featured-game__title">3 Kings Scratch</span><span class="featured-game__meta">Scratch · BGaming</span></a></li>
+<!-- featured-games:end -->
         </ul>
+        <p class="catalogue-note">Currently available with demo credits. No deposit needed; no cash winnings.</p>
+        <p class="roadmap-note">Coming next: sports and prediction markets. Not available yet.</p>
       </section>
-
-      <section class="section" id="originals" aria-labelledby="originals-heading">
-        <div class="section-intro">
-          <p class="eyebrow">Provably fair</p>
-          <h2 id="originals-heading">On-chain Games</h2>
-          <p>
-            Games that settle on-chain, designed for fast rounds and verifiable
-            outcomes — including Dice, Coin Toss, Roulette, and Keno, with more
-            on the way.
-          </p>
+      <section class="section" id="wallets" aria-labelledby="wallets-heading">
+        <div class="section-intro"><p class="eyebrow">Know what’s supported</p><h2 id="wallets-heading">Wallets, coins &amp; networks</h2><p>Your connected wallet and a game’s credits are separate. Here is what the current wallet setup supports.</p></div>
+        <div class="compatibility-grid">
+          <div class="compatibility-card"><h3>Connect your wallet</h3><ul class="wallet-list"><li>MetaMask</li><li>Base <span>formerly Coinbase Wallet</span></li><li>WalletConnect <span>connection option</span></li></ul><p>Compatible installed wallets, including Phantom, may also appear. EVM and Arbitrum One support are required.</p><a class="btn btn-outline" href="/casino/lobby?modal=connect">Connect wallet</a></div>
+          <div class="compatibility-card"><h3>Coin &amp; network</h3><div class="network-pair"><span class="coin-symbol" aria-hidden="true">Ξ</span><div><strong>ETH <span>Ether</span></strong><p>on Arbitrum One</p></div></div><p>The current games do not spend your ETH. Demo credits have no cash value and cannot be withdrawn.</p><a class="text-link" href="/help.html#wallets">Wallet and network details →</a></div>
         </div>
-        <ul class="game-list">
-          <li class="has-art"><img class="game-list__art" src="/img/games/dice-1x.webp" srcset="/img/games/dice-1x.webp 247w, /img/games/dice.webp 495w" sizes="(min-width: 640px) 220px, 45vw" alt="" width="495" height="660" loading="lazy" decoding="async" />Dice</li>
-          <li class="has-art"><img class="game-list__art" src="/img/games/coin-toss-1x.webp" srcset="/img/games/coin-toss-1x.webp 247w, /img/games/coin-toss.webp 495w" sizes="(min-width: 640px) 220px, 45vw" alt="" width="495" height="660" loading="lazy" decoding="async" />Coin Toss</li>
-          <li class="has-art"><img class="game-list__art" src="/img/games/roulette-1x.webp" srcset="/img/games/roulette-1x.webp 247w, /img/games/roulette.webp 495w" sizes="(min-width: 640px) 220px, 45vw" alt="" width="495" height="660" loading="lazy" decoding="async" />Roulette</li>
-          <li>Keno</li>
-          <li class="muted">Wheel — soon</li>
-          <li class="muted">Plinko — soon</li>
-        </ul>
-        <a class="text-link" href="/casino/lobby"
-          >Open the casino lobby <span aria-hidden="true" class="text-link__arrow">→</span></a
-        >
       </section>
-
-      <section class="section offer section-split" aria-labelledby="offer-heading">
-        <div class="offer-copy">
-          <h2 id="offer-heading">Rewards and leaderboards</h2>
-          <p>
-            Promotions and leaderboard races appear in the lobby whenever one is
-            running. Open the casino to see what is live right now.
-          </p>
-          <a class="btn btn-primary btn-lg" href="/casino/lobby"
-            >See what is live</a
-          >
-        </div>
-        <img
-          class="offer-art"
-          src="/img/promo/trophy_asset.jpeg"
-          alt=""
-          width="1536"
-          height="704"
-          loading="lazy"
-          decoding="async"
-        />
+      <section class="section" id="originals" aria-labelledby="how-heading">
+        <div class="section-intro"><p class="eyebrow">Simple from the start</p><h2 id="how-heading">Explore at your own pace</h2></div>
+        <ol class="how-grid"><li><span>01</span><h3>Find a game</h3><p>Browse by category or search the lobby for a title you know.</p></li><li><span>02</span><h3>Get to know it</h3><p>Read the rules and explore how the game works. No deposit is required.</p></li><li><span>03</span><h3>Keep it balanced</h3><p>Take regular breaks. Games are entertainment, not a way to earn income.</p></li></ol>
+        <a class="text-link" href="/help.html#game-modes">How game modes work →</a>
       </section>
-
       <section class="section" id="faq" aria-labelledby="faq-heading">
         <div class="section-intro">
           <h2 id="faq-heading">Frequently asked questions</h2>
         </div>
         <div class="faq">
-          <details class="faq-item" open>
-            <summary>What is Tribet?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
-            <div class="faq-item__body"><div class="faq-item__body-inner">
-            <p>
-              Tribet is a non-custodial crypto casino. Connect your wallet to
-              play provably fair on-chain casino games. Sports betting and
-              prediction markets are coming next, on the same wallet and
-              account.
-            </p>
-            </div></div>
-          </details>
-          <details class="faq-item">
-            <summary>Are the on-chain casino games provably fair?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
-            <div class="faq-item__body"><div class="faq-item__body-inner">
-            <p>
-              Yes. The on-chain games are labeled provably fair, so you can verify
-              on-chain that outcomes were generated fairly.
-            </p>
-            </div></div>
-          </details>
-          <details class="faq-item">
-            <summary>What games and markets are available?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
-            <div class="faq-item__body"><div class="faq-item__body-inner">
-            <p>
-              The casino lobby currently offers on-chain games — Dice, Coin
-              Toss, Roulette, Keno, with more on the way. Sports and
-              Predictions are coming soon and are not yet open.
-            </p>
-            </div></div>
-          </details>
-          <details class="faq-item">
-            <summary>How do deposits and withdrawals work?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
-            <div class="faq-item__body"><div class="faq-item__body-inner">
-            <p>
-              Tribet is built around a single wallet connection so you can play,
-              earn, and withdraw from one place. Open the lobby and connect to
-              get started.
-            </p>
-            </div></div>
-          </details>
-        </div>
+<details class="faq-item"><summary>What can I play on Tribet?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="faq-item__body"><div class="faq-item__body-inner"><p>Explore BGaming slots, casual games, table games and scratch games. The current catalogue uses provider demo credits, with no cash winnings. Sports and prediction markets are not available yet.</p></div></div></details>
+<details class="faq-item"><summary>Which wallets can I connect?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="faq-item__body"><div class="faq-item__body-inner"><p>The connection menu offers MetaMask, Base (formerly Coinbase Wallet), and WalletConnect. Compatible installed wallets, such as Phantom, may also appear. Use an EVM-compatible wallet with Arbitrum One support. Availability depends on your device.</p></div></div></details>
+<details class="faq-item"><summary>Which coins and networks are supported?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="faq-item__body"><div class="faq-item__body-inner"><p>The current wallet configuration uses ETH on Arbitrum One. This is wallet compatibility, not a list of currencies accepted by the current game catalogue. Other casino payment currencies have not been enabled.</p></div></div></details>
+<details class="faq-item"><summary>Do I need to deposit to try the games?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="faq-item__body"><div class="faq-item__body-inner"><p>No. Current BGaming games use provider demo credits, separate from your connected wallet balance. These credits have no cash value and cannot be withdrawn. Do not send funds to play a demo.</p></div></div></details>
+<details class="faq-item"><summary>Are game results verified on-chain?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="faq-item__body"><div class="faq-item__body-inner"><p>The current catalogue opens third-party BGaming games in demo mode. Tribet does not settle these rounds on-chain or claim on-chain verification of their outcomes. Check each game’s own rules and information.</p></div></div></details>
+<details class="faq-item"><summary>Who can use Tribet?<svg class="faq-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="faq-item__body"><div class="faq-item__body-inner"><p>You must be at least 18 and meet the legal age requirement in your jurisdiction. Availability varies by region. Treat games as entertainment, take breaks and never gamble with money you cannot afford to lose.</p></div></div></details>
+</div>
       </section>
     </main>
 
@@ -371,12 +281,14 @@
         <img src="/img/brand/logo.png" width="163" height="24" alt="Tribet" />
       </div>
       <p class="footer-note">
-        Gambling involves risk. Play responsibly and only with funds you can
+        18+ and legal age in your jurisdiction. Gambling involves risk. Play responsibly and only with funds you can
         afford to lose. You must be of legal age in your jurisdiction to use
         Tribet. Availability may vary by region.
       </p>
       <p class="footer-meta">
         <a href="/casino/lobby">Casino lobby</a>
+        <a href="/help.html">Help &amp; game information</a>
+        <a href="/help.html#responsible-play">Responsible play</a>
         <span aria-hidden="true">·</span>
         <span>© <span id="year"></span> Tribet</span>
       </p>
