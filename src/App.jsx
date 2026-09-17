@@ -45,6 +45,7 @@ const BetHistoryDialog = lazy(() => import("./components/activity/BetHistoryDial
 const ResponsibleGamblingDialog = lazy(() => import("./components/trust/ResponsibleGamblingDialog").then((m) => ({ default: m.ResponsibleGamblingDialog })));
 const ComplianceBlockDialog = lazy(() => import("./components/trust/ComplianceBlockDialog").then((m) => ({ default: m.ComplianceBlockDialog })));
 const SupportDialog = lazy(() => import("./components/trust/SupportDialog").then((m) => ({ default: m.SupportDialog })));
+const CasinoConcierge = lazy(() => import("./components/casino/CasinoConcierge"));
 const GameInfoPanel = lazy(() => import("./components/casino/GameInfoPanel").then((m) => ({ default: m.GameInfoPanel })));
 import { useSportsDesktopBetslipUi, useIsDesktopBetslipLayout } from "./lib/sportsDesktopBetslipUi";
 import { ArenaTileRow } from "./components/shell/ArenaTileRow";
@@ -1646,6 +1647,9 @@ export default function App() {
         onFocusMainContent={focusMainContent}
       />
       <Toaster />
+      {import.meta.env.VITE_CONCIERGE_ENABLED === 'true' && product === 'casino' && !modal && !infoFavId && !mobileMenuOpen && !isLaunchActive(launch.state.status) && (
+        <Suspense fallback={null}><CasinoConcierge /></Suspense>
+      )}
       <DevPanel />
 
       {/* PERFORMANCE task: each dialog below is only mounted (and its chunk
