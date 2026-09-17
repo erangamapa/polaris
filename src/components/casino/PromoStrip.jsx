@@ -208,7 +208,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
           `glow` off for the wrong-network tone only, matching that tone's
           previous behavior (flat warning surface, no ambient bloom). */}
-      <PromoIllustration src="/heroes/promo-wallet.png" glow={tone !== "warning"} width="46%" height="90%" />
+      <PromoIllustration src="/img/promo/promo-wallet-cutout.png" glow={tone !== "warning"} width="46%" height="90%" />
     </div>
   );
 }
@@ -513,21 +513,10 @@ function WeeklyRaceCard({ eyebrow, title, metadata, cta, onCtaClick }) {
 // WeeklyRaceCard exactly as before (see PromoStrip's own render below) with
 // no other change — these are independent, additive, not a replacement.
 
-// Static, non-interactive card shell shared by AboutTribetCard/
-// TransparentPlayCard below — same CARD_H/radius/border/background/shadow
-// "card system" as the interactive Wallet/Welcome Offer/Weekly Race cards
-// above (same two-column text+artwork structure WelcomeOfferCard's own
-// comment explains), but genuinely never interactive: no role/tabIndex/
-// onClick/onKeyDown, no CTA button at all (not a hidden/disabled one).
-// `.promo-card--static` (index.css) additionally neutralizes the shell's
-// own hover/press lift and artwork zoom, so it never LOOKS clickable
-// either. `eyebrow`/`title`/`body`/`artworkSrc` are plain props so a future
-// task can add an optional `href` here without touching AboutTribetCard/
-// TransparentPlayCard themselves. `artworkSrc` is a plain public/heroes/
-// path string (not a ReactNode) — both cards' artwork now renders through
-// the same shared PromoIllustration component WalletCard uses above, rather
-// than each card owning its own <img>-wrapping component.
-function InfoCard({ eyebrow, title, body, artworkSrc, artworkWidth, artworkHeight }) {
+// Static shell shared by AboutTribetCard and FeedbackCard. Keep the shell
+// non-interactive; the optional secondary CTA is disabled until the feedback
+// form exists. Artwork uses the same transparent-image renderer as WalletCard.
+function InfoCard({ eyebrow, title, body, artworkSrc, artworkWidth, artworkHeight, ctaLabel }) {
   return (
     <div
       className={cn(
@@ -542,6 +531,7 @@ function InfoCard({ eyebrow, title, body, artworkSrc, artworkWidth, artworkHeigh
           <h3 className="promo-card__title mt-1.5 font-bold text-[var(--foreground)]">{title}</h3>
           <p className="promo-card__body mt-1 text-[var(--ink-dim)]">{body}</p>
         </div>
+        {ctaLabel && <Button variant="promo-outline" size="sm" disabled className="mt-2 w-fit">{ctaLabel}</Button>}
       </div>
       <PromoIllustration src={artworkSrc} width={artworkWidth} height={artworkHeight} />
     </div>
@@ -554,20 +544,21 @@ function AboutTribetCard() {
       eyebrow="ABOUT TRIBET"
       title="Casino now. More to come."
       body="Explore games. Sports and predictions are coming later."
-      artworkSrc="/heroes/promo-three-arenas.png"
+      artworkSrc="/img/promo/promo-arenas-cutout.png"
       artworkWidth="46%"
       artworkHeight="85%"
     />
   );
 }
 
-function TransparentPlayCard() {
+function FeedbackCard() {
   return (
     <InfoCard
-      eyebrow="TRANSPARENT PLAY"
-      title="Know how you play."
-      body="Check each game’s rules and information before playing."
-      artworkSrc="/heroes/promo-verify.png"
+      eyebrow="YOUR FEEDBACK"
+      title="We want to hear your feedback."
+      body="Help us shape a better Tribet."
+      ctaLabel="Share feedback"
+      artworkSrc="/img/promo/promo-feedback-cutout.png"
       artworkWidth="44%"
       artworkHeight="86%"
     />
@@ -1122,7 +1113,7 @@ export function PromoStrip({ query, onQuery, searchPanelProps, onManageWallet })
           {ENABLE_WEEKLY_RACE ? (
             <WeeklyRaceCard eyebrow={p2.eyebrow} title={p2.title} metadata={p2.body} cta={p2.cta} />
           ) : (
-            <TransparentPlayCard />
+            <FeedbackCard />
           )}
         </div>
       </div>
