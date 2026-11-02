@@ -208,7 +208,7 @@ function WalletCard({ children, tone = "neutral", onActivate, activateLabel }) {
       {/* SHARED PROMO ILLUSTRATION SYSTEM (see PromoIllustration above) —
           `glow` off for the wrong-network tone only, matching that tone's
           previous behavior (flat warning surface, no ambient bloom). */}
-      <PromoIllustration src="/img/promo/promo-wallet-cutout.png" glow={tone !== "warning"} width="46%" height="90%" />
+      <PromoIllustration src="/img/promo/promo-wallet-cutout-v2.png" glow={tone !== "warning"} width="46%" height="90%" />
     </div>
   );
 }
@@ -544,7 +544,7 @@ function AboutTribetCard() {
       eyebrow="ABOUT TRIBET"
       title="Casino now. More to come."
       body="Explore games. Sports and predictions are coming later."
-      artworkSrc="/img/promo/promo-arenas-cutout.png"
+      artworkSrc="/img/promo/promo-arenas-cutout-v2.png"
       artworkWidth="46%"
       artworkHeight="85%"
     />
@@ -558,7 +558,7 @@ function FeedbackCard() {
       title="We want to hear your feedback."
       body="Help us shape a better Tribet."
       ctaLabel="Share feedback"
-      artworkSrc="/img/promo/promo-feedback-cutout.png"
+      artworkSrc="/img/promo/promo-feedback-cutout-v2.png"
       artworkWidth="44%"
       artworkHeight="86%"
     />
