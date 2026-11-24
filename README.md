@@ -36,6 +36,7 @@ Open the local URL it prints (usually http://localhost:5173).
 | `npm run build` | Production build to `dist/` |
 | `npm run preview` | Preview the production build |
 | `npm run lint` | Lint with oxlint |
+| `npm test` | Unit tests (vitest) |
 
 ## Project structure
 
@@ -77,3 +78,7 @@ Start with [`docs/architecture/README.md`](docs/architecture/README.md). Highlig
 
 A separate near-term refactor of the current prototype is in
 [`docs/architecture-refactor-plan.md`](docs/architecture-refactor-plan.md).
+
+## License
+
+MIT, see [LICENSE](./LICENSE).
